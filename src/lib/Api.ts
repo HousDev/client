@@ -40,7 +40,7 @@ const BASE =
   (typeof import.meta !== 'undefined' &&
     (import.meta as any).env &&
     (import.meta as any).env.VITE_API_URL) ||
-  'https://hously.in/api';
+  'http://hously.in/api';
   
 
 /* ----- token helpers ----- */
