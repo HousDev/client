@@ -40,7 +40,8 @@ const BASE =
   (typeof import.meta !== 'undefined' &&
     (import.meta as any).env &&
     (import.meta as any).env.VITE_API_URL) ||
-  'http://localhost:4000/api';
+  'https://hously.in/api';
+  
 
 /* ----- token helpers ----- */
 export function getToken(): string | null {
