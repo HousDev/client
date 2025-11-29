@@ -224,7 +224,7 @@ export default function Login() {
           </div>
 
           <h1 className="text-3xl font-bold text-center text-gray-800 mb-2">
-            Real Estate Developer
+            Nayash Group
           </h1>
           <p className="text-center text-gray-600 mb-8">
             Vendor & Purchase Management System
