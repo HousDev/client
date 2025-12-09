@@ -1,3 +1,4 @@
+// // src/components/VendorsEnhanced.tsx
 // import React, { useEffect, useState } from 'react';
 // import {
 //   Plus,
@@ -15,10 +16,15 @@
 // } from 'lucide-react';
 // import PhoneInput from '../components/PhoneInput';
 // import { validators, errorMessages } from '../utils/validators';
+// import vendorApi from '../lib/vendorApi'; // getVendors, createVendor, updateVendor, deleteVendor
+// import poTypeApi from '../lib/poTypeApi'; // getPOTypes
 
+// /* ---------------------------
+//    Types
+// ----------------------------*/
 // interface VendorFormData {
 //   name: string;
-//   category_id: string;
+//   category_name: string;
 //   pan_number: string;
 //   gst_number: string;
 //   contact_person_name: string;
@@ -38,9 +44,9 @@
 // }
 
 // interface Vendor {
-//   id: string;
+//   id: number | string;
 //   name: string;
-//   category_id: string;
+//   category_name: string;
 //   pan_number?: string;
 //   gst_number?: string;
 //   contact_person_name?: string;
@@ -57,31 +63,31 @@
 //   manager_email?: string;
 //   manager_phone?: string;
 //   phone_country_code?: string;
-//   // convenience: not stored separately — computed at render
-//   // vendor_categories?: { id: string; name: string };
 // }
 
 // interface Category {
-//   id: string;
+//   id?: string;
 //   name: string;
 // }
 
-// const VENDORS_KEY = 'app_vendors_v1';
-// const CATEGORIES_KEY = 'app_vendor_categories_v1';
-
-// export default function VendorsEnhanced() {
+// /* ---------------------------
+//    Component
+// ----------------------------*/
+// export default function VendorsEnhanced(): JSX.Element {
 //   const [vendors, setVendors] = useState<Vendor[]>([]);
 //   const [categories, setCategories] = useState<Category[]>([]);
+//   const [poTypes, setPoTypes] = useState<Category[]>([]);
+//   const [poTypesLoading, setPoTypesLoading] = useState<boolean>(false);
 //   const [loading, setLoading] = useState(true);
 //   const [searchTerm, setSearchTerm] = useState('');
 //   const [showModal, setShowModal] = useState(false);
-//   const [editingId, setEditingId] = useState<string | null>(null);
+//   const [editingId, setEditingId] = useState<number | string | null>(null);
 //   const [errors, setErrors] = useState<any>({});
 //   const [submitting, setSubmitting] = useState(false);
 
 //   const [formData, setFormData] = useState<VendorFormData>({
 //     name: '',
-//     category_id: '',
+//     category_name: '',
 //     pan_number: '',
 //     gst_number: '',
 //     contact_person_name: '',
@@ -100,103 +106,54 @@
 //     phone_country_code: '+91',
 //   });
 
-//   // helpers for localStorage persistence
-//   const loadVendorsFromStorage = (): Vendor[] => {
-//     try {
-//       const raw = localStorage.getItem(VENDORS_KEY);
-//       if (!raw) return [];
-//       const parsed = JSON.parse(raw);
-//       return Array.isArray(parsed) ? parsed : [];
-//     } catch (e) {
-//       console.error('Error parsing vendors from storage', e);
-//       return [];
-//     }
-//   };
-
-//   const saveVendorsToStorage = (items: Vendor[]) => {
-//     localStorage.setItem(VENDORS_KEY, JSON.stringify(items));
-//   };
-
-//   const loadCategoriesFromStorage = (): Category[] => {
-//     try {
-//       const raw = localStorage.getItem(CATEGORIES_KEY);
-//       if (!raw) return [];
-//       const parsed = JSON.parse(raw);
-//       return Array.isArray(parsed) ? parsed : [];
-//     } catch (e) {
-//       console.error('Error parsing categories from storage', e);
-//       return [];
-//     }
-//   };
-
-//   const saveCategoriesToStorage = (items: Category[]) => {
-//     localStorage.setItem(CATEGORIES_KEY, JSON.stringify(items));
-//   };
-
-//   const generateId = () => `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`;
-
 //   useEffect(() => {
-//     loadInitial();
+//     loadData();
 //     // eslint-disable-next-line react-hooks/exhaustive-deps
 //   }, []);
 
-//   async function loadInitial() {
+//   async function loadData() {
 //     setLoading(true);
 //     try {
-//       // load categories & vendors from localStorage
-//       let cats = loadCategoriesFromStorage();
-//       // Seed categories if empty (you can remove or change seed)
-//       if (cats.length === 0) {
-//         cats = [
-//           { id: generateId(), name: 'Civil Works' },
-//           { id: generateId(), name: 'Electrical' },
-//           { id: generateId(), name: 'Plumbing' },
-//         ];
-//         saveCategoriesToStorage(cats);
-//       }
-//       setCategories(cats);
-
-//       let vends = loadVendorsFromStorage();
-//       // optional seed vendor for empty state (comment if not wanted)
-//       if (vends.length === 0) {
-//         vends = [
-//           {
-//             id: generateId(),
-//             name: 'ABC Construction Pvt Ltd',
-//             category_id: cats[0]?.id || '',
-//             pan_number: '',
-//             gst_number: '',
-//             contact_person_name: 'Ramesh Kumar',
-//             contact_person_phone: '9876543210',
-//             contact_person_email: 'ramesh@abc.com',
-//             office_street: '123, Example Street',
-//             office_city: 'Mumbai',
-//             office_state: 'Maharashtra',
-//             office_pincode: '400001',
-//             office_country: 'India',
-//             company_email: 'info@abc.com',
-//             company_phone: '9876543210',
-//             manager_name: 'Suresh',
-//             manager_email: 'suresh@abc.com',
-//             manager_phone: '9876500000',
-//             phone_country_code: '+91',
-//           },
-//         ];
-//         saveVendorsToStorage(vends);
-//       }
-//       setVendors(vends);
-//     } catch (error) {
-//       console.error('Error loading initial vendor data:', error);
+//       // fetch vendors and PO types in parallel
+//       const [vendorsRes, poTypesRes] = await Promise.all([vendorApi.getVendors(), loadPOTypes()]);
+//       setVendors(vendorsRes || []);
+//       // derive categories from vendor records (fallback)
+//       const unique = Array.from(new Set((vendorsRes || []).map((v: Vendor) => v.category_name || '').filter(Boolean)));
+//       setCategories(unique.map((n) => ({ name: n })));
+//       // poTypes state handled in loadPOTypes
+//     } catch (err) {
+//       console.error('Error loading data:', err);
+//       setVendors([]);
 //     } finally {
 //       setLoading(false);
 //     }
 //   }
 
+//   async function loadPOTypes() {
+//     setPoTypesLoading(true);
+//     try {
+//       const data = await poTypeApi.getPOTypes();
+//       const list = Array.isArray(data) ? data : Array.isArray((data as any)?.data) ? (data as any).data : [];
+//       const mapped = list.map((t: any) => ({ name: t.name || t.type_name || String(t.id) }));
+//       setPoTypes(mapped);
+//       return list;
+//     } catch (err) {
+//       console.warn('loadPOTypes failed, fallback to empty', err);
+//       setPoTypes([]);
+//       return [];
+//     } finally {
+//       setPoTypesLoading(false);
+//     }
+//   }
+
+//   /* ---------------------------
+//      Validation
+//   ----------------------------*/
 //   const validateForm = (): boolean => {
 //     const newErrors: any = {};
 
 //     if (!formData.name.trim()) newErrors.name = errorMessages.required;
-//     if (!formData.category_id) newErrors.category_id = errorMessages.required;
+//     if (!formData.category_name || !formData.category_name.trim()) newErrors.category_name = errorMessages.required;
 
 //     if (formData.pan_number && !validators.pan(formData.pan_number)) {
 //       newErrors.pan_number = errorMessages.pan;
@@ -246,6 +203,9 @@
 //     return Object.keys(newErrors).length === 0;
 //   };
 
+//   /* ---------------------------
+//      Submit create / update via API
+//   ----------------------------*/
 //   const handleSubmit = async (e: React.FormEvent) => {
 //     e.preventDefault();
 //     if (submitting) return;
@@ -254,32 +214,14 @@
 //     setSubmitting(true);
 //     try {
 //       if (editingId) {
-//         // update vendor locally
-//         const updated = vendors.map((v) =>
-//           v.id === editingId
-//             ? {
-//               ...v,
-//               ...formData,
-//             }
-//             : v
-//         );
-//         setVendors(updated);
-//         saveVendorsToStorage(updated);
+//         await vendorApi.updateVendor(editingId, formData);
 //       } else {
-//         // create vendor locally
-//         const newVendor: Vendor = {
-//           id: generateId(),
-//           ...formData,
-//         };
-//         const updated = [...vendors, newVendor].sort((a, b) => (a.name || '').localeCompare(b.name || ''));
-//         setVendors(updated);
-//         saveVendorsToStorage(updated);
+//         await vendorApi.createVendor(formData);
 //       }
 
 //       setShowModal(false);
 //       resetForm();
-//       // reload to keep everything consistent
-//       await loadInitial();
+//       await loadData();
 //     } catch (error) {
 //       console.error('Error saving vendor:', error);
 //       alert('Error saving vendor — check console for details');
@@ -288,11 +230,14 @@
 //     }
 //   };
 
+//   /* ---------------------------
+//      Edit / Delete
+//   ----------------------------*/
 //   const handleEdit = (vendor: Vendor) => {
 //     setEditingId(vendor.id);
 //     setFormData({
 //       name: vendor.name || '',
-//       category_id: vendor.category_id || '',
+//       category_name: vendor.category_name || '',
 //       pan_number: vendor.pan_number || '',
 //       gst_number: vendor.gst_number || '',
 //       contact_person_name: vendor.contact_person_name || '',
@@ -313,23 +258,21 @@
 //     setShowModal(true);
 //   };
 
-//   const handleDelete = async (id: string) => {
+//   const handleDelete = async (id: number | string) => {
 //     if (!confirm('Are you sure you want to delete this vendor?')) return;
 //     try {
-//       const updated = vendors.filter((v) => v.id !== id);
-//       setVendors(updated);
-//       saveVendorsToStorage(updated);
+//       await vendorApi.deleteVendor(id);
+//       await loadData();
 //     } catch (error) {
 //       console.error('Error deleting vendor:', error);
 //       alert('Error deleting vendor');
-//       await loadInitial();
 //     }
 //   };
 
 //   const resetForm = () => {
 //     setFormData({
 //       name: '',
-//       category_id: '',
+//       category_name: '',
 //       pan_number: '',
 //       gst_number: '',
 //       contact_person_name: '',
@@ -352,23 +295,32 @@
 //     setSubmitting(false);
 //   };
 
+//   /* ---------------------------
+//      Filtered vendors for local search
+//   ----------------------------*/
 //   const filteredVendors = vendors.filter((vendor) =>
 //     (vendor.name || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
 //     (vendor.contact_person_name || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
 //     (vendor.pan_number || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
-//     (vendor.gst_number || '').toLowerCase().includes(searchTerm.toLowerCase())
+//     (vendor.gst_number || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+//     (vendor.category_name || '').toLowerCase().includes(searchTerm.toLowerCase())
 //   );
 
-//   const getCategoryName = (category_id?: string) => {
-//     return categories.find((c) => c.id === category_id)?.name || '';
+//   const getCategoryName = (category_name?: string) => {
+//     return category_name || '';
 //   };
+
+//   /* ---------------------------
+//      Category source: prefer PO Types, fallback to vendor-derived categories
+//   ----------------------------*/
+//   const categoryOptions = poTypes.length > 0 ? poTypes : categories;
 
 //   return (
 //     <div className="p-6">
 //       <div className="flex justify-between items-center mb-6">
 //         <div>
 //           <h1 className="text-3xl font-bold text-gray-800">Vendors</h1>
-//           <p className="text-gray-600 mt-1">Manage your vendor database (local)</p>
+//           <p className="text-gray-600 mt-1">Manage your vendor database</p>
 //         </div>
 //         <button
 //           onClick={() => {
@@ -387,7 +339,7 @@
 //           <Search className="absolute left-4 top-3.5 text-gray-400 w-5 h-5" />
 //           <input
 //             type="text"
-//             placeholder="Search vendors by name, PAN, GST, or contact person..."
+//             placeholder="Search vendors by name, PAN, GST, contact person or category..."
 //             value={searchTerm}
 //             onChange={(e) => setSearchTerm(e.target.value)}
 //             className="w-full pl-12 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
@@ -412,7 +364,7 @@
 //                     </div>
 //                     <div>
 //                       <h3 className="text-xl font-bold text-gray-800">{vendor.name}</h3>
-//                       <p className="text-sm text-gray-600">{getCategoryName(vendor.category_id)}</p>
+//                       <p className="text-sm text-gray-600">{getCategoryName(vendor.category_name)}</p>
 //                     </div>
 //                   </div>
 
@@ -560,21 +512,27 @@
 //                       <label className="block text-sm font-medium text-gray-700 mb-2">
 //                         Category <span className="text-red-500">*</span>
 //                       </label>
-//                       <select
-//                         value={formData.category_id}
-//                         onChange={(e) => setFormData({ ...formData, category_id: e.target.value })}
-//                         className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${errors.category_id ? 'border-red-300' : 'border-gray-300'
-//                           }`}
-//                         required
-//                       >
-//                         <option value="">Select Category</option>
-//                         {categories.map((cat) => (
-//                           <option key={cat.id} value={cat.id}>
-//                             {cat.name}
-//                           </option>
-//                         ))}
-//                       </select>
-//                       {errors.category_id && <p className="mt-1 text-sm text-red-600">{errors.category_id}</p>}
+
+//                       <div className="flex gap-2">
+//                         <select
+//                           value={formData.category_name}
+//                           onChange={(e) => setFormData({ ...formData, category_name: e.target.value })}
+//                           className={`flex-1 px-4 py-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${errors.category_name ? 'border-red-300' : 'border-gray-300'
+//                             }`}
+//                           required
+//                         >
+//                           <option value="">Select Category</option>
+//                           {categoryOptions.map((cat) => (
+//                             <option key={cat.name} value={cat.name}>
+//                               {cat.name}
+//                             </option>
+//                           ))}
+//                         </select>
+
+//                         {/* Add button removed as requested */}
+//                       </div>
+
+//                       {errors.category_name && <p className="mt-1 text-sm text-red-600">{errors.category_name}</p>}
 //                     </div>
 
 //                     <div>
@@ -859,7 +817,8 @@
 //     </div>
 //   );
 // }
-// src/pages/VendorsEnhanced.tsx
+
+// src/components/VendorsEnhanced.tsx
 import React, { useEffect, useState } from 'react';
 import {
   Plus,
@@ -877,7 +836,9 @@ import {
 } from 'lucide-react';
 import PhoneInput from '../components/PhoneInput';
 import { validators, errorMessages } from '../utils/validators';
-import vendorApi from '../lib/vendorApi'; // <-- vendorApi should export getVendors, createVendor, updateVendor, deleteVendor
+import vendorApi from '../lib/vendorApi'; // getVendors, createVendor, updateVendor, deleteVendor
+import poTypeApi from '../lib/poTypeApi'; // getPOTypes
+import poApi from '../lib/poApi'; // getItems
 
 /* ---------------------------
    Types
@@ -901,6 +862,8 @@ interface VendorFormData {
   manager_email: string;
   manager_phone: string;
   phone_country_code: string;
+  // new optional field to save the selected material/service item id
+  sub_item_id?: string;
 }
 
 interface Vendor {
@@ -923,11 +886,20 @@ interface Vendor {
   manager_email?: string;
   manager_phone?: string;
   phone_country_code?: string;
+  sub_item_id?: string;
 }
 
 interface Category {
-  id?: string; // not used, categories are inferred strings here
+  id?: string;
   name: string;
+}
+
+interface ItemOption {
+  id: string;
+  name: string;
+  code?: string;
+  hsn?: string;
+  category?: string;
 }
 
 /* ---------------------------
@@ -936,6 +908,10 @@ interface Category {
 export default function VendorsEnhanced(): JSX.Element {
   const [vendors, setVendors] = useState<Vendor[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
+  const [poTypes, setPoTypes] = useState<Category[]>([]);
+  const [poTypesLoading, setPoTypesLoading] = useState<boolean>(false);
+  const [materials, setMaterials] = useState<ItemOption[]>([]);
+  const [services, setServices] = useState<ItemOption[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [showModal, setShowModal] = useState(false);
@@ -962,30 +938,65 @@ export default function VendorsEnhanced(): JSX.Element {
     manager_email: '',
     manager_phone: '',
     phone_country_code: '+91',
+    sub_item_id: '',
   });
 
-  /* ---------------------------
-     Load vendors from API
-  ----------------------------*/
   useEffect(() => {
-    loadVendors();
+    loadData();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  async function loadVendors() {
+  async function loadData() {
     setLoading(true);
     try {
-      const data = await vendorApi.getVendors();
-      setVendors(data || []);
-      // derive categories from vendor records
-      const unique = Array.from(new Set((data || []).map((v: Vendor) => v.category_name || '').filter(Boolean)));
+      // fetch vendors and PO types and items in parallel
+      await Promise.all([vendorApi.getVendors().then((v) => setVendors(v || [])), loadPOTypes(), loadItems()]);
+      // derive categories from vendor records (fallback)
+      const unique = Array.from(new Set((vendors || []).map((v: Vendor) => v.category_name || '').filter(Boolean)));
       setCategories(unique.map((n) => ({ name: n })));
     } catch (err) {
-      console.error('Error loading vendors:', err);
+      console.error('Error loading data:', err);
       setVendors([]);
-      setCategories([]);
     } finally {
       setLoading(false);
+    }
+  }
+
+  async function loadPOTypes() {
+    setPoTypesLoading(true);
+    try {
+      const data = await poTypeApi.getPOTypes();
+      const list = Array.isArray(data) ? data : Array.isArray((data as any)?.data) ? (data as any).data : [];
+      const mapped = list.map((t: any) => ({ name: t.name || t.type_name || String(t.id) }));
+      setPoTypes(mapped);
+      return list;
+    } catch (err) {
+      console.warn('loadPOTypes failed, fallback to empty', err);
+      setPoTypes([]);
+      return [];
+    } finally {
+      setPoTypesLoading(false);
+    }
+  }
+
+  async function loadItems() {
+    try {
+      const data = await poApi.getItems();
+      const arr = Array.isArray(data) ? data : Array.isArray((data as any)?.data) ? (data as any).data : [];
+      // normalize each item into ItemOption
+      const normalized: ItemOption[] = arr.map((it: any) => ({
+        id: String(it.id || it._id || it.item_id || it.key || ''),
+        name: String(it.item_name || it.name || it.title || 'Unnamed'),
+        code: it.item_code || it.code || '',
+        hsn: it.hsn_code || it.hsn || '',
+        category: (it.category || it.type || '').toString().toLowerCase(),
+      }));
+      setMaterials(normalized.filter((i) => (i.category || '').includes('material')));
+      setServices(normalized.filter((i) => (i.category || '').includes('service') || (i.category || '').includes('services')));
+    } catch (err) {
+      console.warn('loadItems failed', err);
+      setMaterials([]);
+      setServices([]);
     }
   }
 
@@ -1056,15 +1067,19 @@ export default function VendorsEnhanced(): JSX.Element {
 
     setSubmitting(true);
     try {
+      const payload = {
+        ...formData,
+      };
+
       if (editingId) {
-        await vendorApi.updateVendor(editingId, formData);
+        await vendorApi.updateVendor(editingId, payload);
       } else {
-        await vendorApi.createVendor(formData);
+        await vendorApi.createVendor(payload);
       }
 
       setShowModal(false);
       resetForm();
-      await loadVendors();
+      await loadData();
     } catch (error) {
       console.error('Error saving vendor:', error);
       alert('Error saving vendor — check console for details');
@@ -1097,6 +1112,7 @@ export default function VendorsEnhanced(): JSX.Element {
       manager_email: vendor.manager_email || '',
       manager_phone: vendor.manager_phone || '',
       phone_country_code: vendor.phone_country_code || '+91',
+      sub_item_id: vendor.sub_item_id || '',
     });
     setShowModal(true);
   };
@@ -1105,8 +1121,7 @@ export default function VendorsEnhanced(): JSX.Element {
     if (!confirm('Are you sure you want to delete this vendor?')) return;
     try {
       await vendorApi.deleteVendor(id);
-      // refresh
-      await loadVendors();
+      await loadData();
     } catch (error) {
       console.error('Error deleting vendor:', error);
       alert('Error deleting vendor');
@@ -1133,6 +1148,7 @@ export default function VendorsEnhanced(): JSX.Element {
       manager_email: '',
       manager_phone: '',
       phone_country_code: '+91',
+      sub_item_id: '',
     });
     setEditingId(null);
     setErrors({});
@@ -1155,14 +1171,15 @@ export default function VendorsEnhanced(): JSX.Element {
   };
 
   /* ---------------------------
-     Add category locally (helps when user wants to type new category)
+     Category source: prefer PO Types, fallback to vendor-derived categories
   ----------------------------*/
-  const addCategoryLocally = (name: string) => {
-    if (!name) return;
-    if (categories.find((c) => c.name === name)) return;
-    setCategories((prev) => [...prev, { name }]);
-    setFormData((prev) => ({ ...prev, category_name: name }));
-  };
+  const categoryOptions = poTypes.length > 0 ? poTypes : categories;
+
+  /* ---------------------------
+     Helpers for conditional render
+  ----------------------------*/
+  const isCategoryMaterial = (cat?: string) => (cat || '').toLowerCase().includes('material');
+  const isCategoryService = (cat?: string) => (cat || '').toLowerCase().includes('service');
 
   return (
     <div className="p-6">
@@ -1214,6 +1231,9 @@ export default function VendorsEnhanced(): JSX.Element {
                     <div>
                       <h3 className="text-xl font-bold text-gray-800">{vendor.name}</h3>
                       <p className="text-sm text-gray-600">{getCategoryName(vendor.category_name)}</p>
+                      {vendor.sub_item_id && (
+                        <p className="text-xs text-gray-500 mt-1">Linked item ID: {vendor.sub_item_id}</p>
+                      )}
                     </div>
                   </div>
 
@@ -1365,33 +1385,63 @@ export default function VendorsEnhanced(): JSX.Element {
                       <div className="flex gap-2">
                         <select
                           value={formData.category_name}
-                          onChange={(e) => setFormData({ ...formData, category_name: e.target.value })}
+                          onChange={(e) => {
+                            // reset sub_item_id when category changed
+                            setFormData({ ...formData, category_name: e.target.value, sub_item_id: '' });
+                          }}
                           className={`flex-1 px-4 py-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${errors.category_name ? 'border-red-300' : 'border-gray-300'
                             }`}
                           required
                         >
                           <option value="">Select Category</option>
-                          {categories.map((cat) => (
+                          {categoryOptions.map((cat) => (
                             <option key={cat.name} value={cat.name}>
                               {cat.name}
                             </option>
                           ))}
-                          <option value="__new__">-- Add new category --</option>
                         </select>
-
-                        <button
-                          type="button"
-                          className="px-3 py-2 border rounded-lg text-sm"
-                          onClick={() => {
-                            const name = prompt('Enter new category name');
-                            if (name && name.trim()) addCategoryLocally(name.trim());
-                          }}
-                        >
-                          Add
-                        </button>
                       </div>
 
                       {errors.category_name && <p className="mt-1 text-sm text-red-600">{errors.category_name}</p>}
+                    </div>
+
+                    {/* New conditional sub-item field */}
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">Sub Item (based on Category)</label>
+
+                      {isCategoryMaterial(formData.category_name) && (
+                        <select
+                          value={formData.sub_item_id || ''}
+                          onChange={(e) => setFormData({ ...formData, sub_item_id: e.target.value })}
+                          className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                        >
+                          <option value="">Select Material</option>
+                          {materials.map((m) => (
+                            <option key={m.id} value={m.id}>
+                              {m.name} {m.code ? `| ${m.code}` : ''} {m.hsn ? `| HSN: ${m.hsn}` : ''}
+                            </option>
+                          ))}
+                        </select>
+                      )}
+
+                      {isCategoryService(formData.category_name) && (
+                        <select
+                          value={formData.sub_item_id || ''}
+                          onChange={(e) => setFormData({ ...formData, sub_item_id: e.target.value })}
+                          className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                        >
+                          <option value="">Select Service</option>
+                          {services.map((s) => (
+                            <option key={s.id} value={s.id}>
+                              {s.name} {s.code ? `| ${s.code}` : ''}
+                            </option>
+                          ))}
+                        </select>
+                      )}
+
+                      {!isCategoryMaterial(formData.category_name) && !isCategoryService(formData.category_name) && (
+                        <div className="text-xs text-gray-500">Select a Category with "Material" or "Service" to pick sub-items.</div>
+                      )}
                     </div>
 
                     <div>

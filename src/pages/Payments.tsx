@@ -197,7 +197,7 @@ export default function Payments() {
     <div className="space-y-6">
       <div>
         <h1 className="text-3xl font-bold text-gray-800">Payment Management</h1>
-        <p className="text-gray-600 mt-1">Track all payments and payment terms (demo)</p>
+        <p className="text-gray-600 mt-1">Track all payments and payment terms</p>
       </div>
 
       <div className="flex gap-4">

@@ -95,7 +95,7 @@ export default function Dashboard() {
     <div className="space-y-6">
       <div>
         <h1 className="text-3xl font-bold text-gray-800">Dashboard</h1>
-        <p className="text-gray-600 mt-1">Welcome to your Real Estate Management System (demo)</p>
+        <p className="text-gray-600 mt-1">Welcome to your Real Estate Management System</p>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
@@ -141,7 +141,7 @@ export default function Dashboard() {
               }}
               className="px-4 py-2 border rounded-lg hover:bg-gray-50 transition"
             >
-              Reset Demo Data
+              Reset Data
             </button>
           </div>
         </div>

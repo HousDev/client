@@ -222,7 +222,7 @@ export default function Reports() {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-bold text-gray-800">Reports & MIS</h1>
-          <p className="text-gray-600 mt-1">View business metrics and insights (demo)</p>
+          <p className="text-gray-600 mt-1">View business metrics and insights</p>
         </div>
         <div className="flex gap-3">
           <button
@@ -244,7 +244,7 @@ export default function Reports() {
             className="bg-gray-100 text-gray-800 px-3 py-2 rounded-lg hover:bg-gray-200 transition"
             title="Reset demo data"
           >
-            Reset Demo
+            Reset
           </button>
         </div>
       </div>
