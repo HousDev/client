@@ -1,7 +1,18 @@
 // src/components/UsersMaster.tsx
-import React, { useEffect, useState } from 'react';
-import { Plus, Edit2, Trash2, Users, X, Search, Shield, Eye, EyeOff } from 'lucide-react';
-import { UsersApi } from '../lib/Api'; // adjust path if needed
+import React, { useEffect, useState } from "react";
+import {
+  Plus,
+  Edit2,
+  Trash2,
+  Users,
+  X,
+  Search,
+  Shield,
+  Eye,
+  EyeOff,
+} from "lucide-react";
+import { api, UsersApi } from "../lib/Api"; // adjust path if needed
+import { getAllRoles } from "../lib/rolesApi";
 
 // Keep your local type definitions (or import them from Api.ts if you exported them there)
 interface Permissions {
@@ -50,24 +61,24 @@ interface UserFormData {
 
 // canonical full-permissions shape (used only to compute admin = all true)
 const canonicalPermissionsKeys = [
-  'view_vendors',
-  'edit_vendors',
-  'delete_vendors',
-  'view_pos',
-  'create_pos',
-  'edit_pos',
-  'delete_pos',
-  'approve_pos',
-  'view_service_orders',
-  'create_service_orders',
-  'edit_service_orders',
-  'view_materials',
-  'receive_materials',
-  'view_payments',
-  'make_payments',
-  'view_reports',
-  'manage_masters',
-  'manage_users',
+  "view_vendors",
+  "edit_vendors",
+  "delete_vendors",
+  "view_pos",
+  "create_pos",
+  "edit_pos",
+  "delete_pos",
+  "approve_pos",
+  "view_service_orders",
+  "create_service_orders",
+  "edit_service_orders",
+  "view_materials",
+  "receive_materials",
+  "view_payments",
+  "make_payments",
+  "view_reports",
+  "manage_masters",
+  "manage_users",
 ] as (keyof Permissions)[];
 
 const defaultPermissions: Partial<Permissions> = {
@@ -78,31 +89,33 @@ export default function UsersMaster() {
   const [users, setUsers] = useState<UserProfile[]>([]);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
-  const [searchTerm, setSearchTerm] = useState('');
+  const [searchTerm, setSearchTerm] = useState("");
   const [showModal, setShowModal] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
+  const [allRoles, setAllRoles] = useState<any>([]);
   const [formData, setFormData] = useState<UserFormData>({
-    email: '',
-    full_name: '',
-    phone: '',
-    role: 'user',
-    department: '',
-    password: '',
+    email: "",
+    full_name: "",
+    phone: "",
+    role: "user",
+    department: "",
+    password: "",
     is_active: true,
     permissions: defaultPermissions,
   });
 
-  const generateId = () => `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`;
+  const generateId = () =>
+    `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`;
 
   const resetForm = () => {
     setFormData({
-      email: '',
-      full_name: '',
-      phone: '',
-      role: 'user',
-      department: '',
-      password: '',
+      email: "",
+      full_name: "",
+      phone: "",
+      role: "user",
+      department: "",
+      password: "",
       is_active: true,
       permissions: defaultPermissions,
     });
@@ -112,8 +125,11 @@ export default function UsersMaster() {
 
   // Role -> permissions map (only include keys you want displayed for that role)
   // admin: all keys true
+
   const rolePermissionsMap: Record<string, Partial<Permissions>> = {
-    admin: Object.fromEntries(canonicalPermissionsKeys.map((k) => [k, true])) as Partial<Permissions>,
+    admin: Object.fromEntries(
+      canonicalPermissionsKeys.map((k) => [k, true])
+    ) as Partial<Permissions>,
     manager: {
       view_vendors: true,
       edit_vendors: true,
@@ -164,36 +180,44 @@ export default function UsersMaster() {
         const normalized = (data || []).map((u: any) => ({
           id: u.id,
           email: u.email,
-          full_name: u.full_name || '',
-          phone: u.phone || '',
-          role: u.role || 'user',
-          department: u.department || '',
+          full_name: u.full_name || "",
+          phone: u.phone || "",
+          role: u.role || "user",
+          department: u.department || "",
           is_active: u.is_active ?? true,
           permissions: (u.permissions as Partial<Permissions>) ?? undefined,
         })) as UserProfile[];
-
         // if API returned nothing, you may want to seed with an admin user — optional
-        setUsers(normalized.length ? normalized : [
-          {
-            id: generateId(),
-            email: 'admin@example.com',
-            full_name: 'Administrator',
-            role: 'admin',
-            is_active: true,
-            permissions: rolePermissionsMap.admin,
-          },
-        ]);
+
+        getAllRoles().then((d) => {
+          console.log(d, "from useEffects");
+          setAllRoles(d);
+        });
+        setUsers(
+          normalized.length
+            ? normalized
+            : [
+                {
+                  id: generateId(),
+                  email: "admin@example.com",
+                  full_name: "Administrator",
+                  role: "admin",
+                  is_active: true,
+                  permissions: rolePermissionsMap.admin,
+                },
+              ]
+        );
       })
       .catch((err) => {
-        console.error('Failed to load users', err);
-        alert('Failed to load users. See console for details.');
+        console.error("Failed to load users", err);
+        alert("Failed to load users. See console for details.");
         // fallback seed
         setUsers([
           {
             id: generateId(),
-            email: 'admin@example.com',
-            full_name: 'Administrator',
-            role: 'admin',
+            email: "admin@example.com",
+            full_name: "Administrator",
+            role: "admin",
             is_active: true,
             permissions: rolePermissionsMap.admin,
           },
@@ -212,11 +236,11 @@ export default function UsersMaster() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!formData.email) {
-      alert('Email is required');
+      alert("Email is required");
       return;
     }
     if (!editingId && formData.password.length < 6) {
-      alert('Password must be at least 6 characters');
+      alert("Password must be at least 6 characters");
       return;
     }
 
@@ -235,15 +259,22 @@ export default function UsersMaster() {
         if (formData.password) payload.password = formData.password;
 
         const updated = await UsersApi.update(editingId, payload);
-        setUsers((prev) => prev.map((u) => (u.id === updated.id ? { ...u, ...updated } : u)));
-        alert('User updated successfully!');
+        setUsers((prev) =>
+          prev.map((u) => (u.id === updated.id ? { ...u, ...updated } : u))
+        );
+        alert("User updated successfully!");
       } else {
         // create
-        if (users.some((u) => u.email.toLowerCase() === formData.email.toLowerCase())) {
-          alert('A user with this email already exists.');
+        if (
+          users.some(
+            (u) => u.email.toLowerCase() === formData.email.toLowerCase()
+          )
+        ) {
+          alert("A user with this email already exists.");
           setSubmitting(false);
           return;
         }
+
         const payload = {
           email: formData.email,
           full_name: formData.full_name,
@@ -254,19 +285,26 @@ export default function UsersMaster() {
           is_active: formData.is_active,
           permissions: formData.permissions,
         };
+
         const created = await UsersApi.create(payload);
+
         // normalize and append
         setUsers((prev) =>
-          [...prev, { ...(created as any) }].sort((a, b) => (a.full_name || '').localeCompare(b.full_name || ''))
+          [...prev, { ...(created as any) }].sort((a, b) =>
+            (a.full_name || "").localeCompare(b.full_name || "")
+          )
         );
-        alert('User created successfully!');
+        alert("User created successfully!");
       }
 
       setShowModal(false);
       resetForm();
     } catch (err: any) {
-      console.error('submit error', err);
-      const message = err?.message || (err?.details && JSON.stringify(err.details)) || 'Operation failed';
+      console.error("submit error", err);
+      const message =
+        err?.message ||
+        (err?.details && JSON.stringify(err.details)) ||
+        "Operation failed";
       alert(message);
     } finally {
       setSubmitting(false);
@@ -279,43 +317,54 @@ export default function UsersMaster() {
     const rolePerms = rolePermissionsMap[user.role] ?? {};
     setFormData({
       email: user.email,
-      full_name: user.full_name || '',
-      phone: user.phone || '',
-      role: user.role || 'user',
-      department: user.department || '',
-      password: '',
+      full_name: user.full_name || "",
+      phone: user.phone || "",
+      role: user.role || "user",
+      department: user.department || "",
+      password: "",
       is_active: user.is_active !== false,
-      permissions: user.permissions && Object.keys(user.permissions).length > 0 ? user.permissions : rolePerms,
+      permissions:
+        user.permissions && Object.keys(user.permissions).length > 0
+          ? user.permissions
+          : rolePerms,
     });
     setShowModal(true);
   };
 
   const handleDelete = async (id: string) => {
-    if (!confirm('Are you sure you want to delete this user?')) return;
+    if (!confirm("Are you sure you want to delete this user?")) return;
     try {
       await UsersApi.remove(id);
       setUsers((prev) => prev.filter((u) => u.id !== id));
-      alert('User deleted successfully!');
+      alert("User deleted successfully!");
     } catch (err) {
-      console.error('delete error', err);
-      alert('Failed to delete user');
+      console.error("delete error", err);
+      alert("Failed to delete user");
     }
   };
 
   const toggleActive = async (id: string, currentStatus: boolean) => {
     try {
       const updated = await UsersApi.toggleActive(id);
-      setUsers((prev) => prev.map((u) => (u.id === updated.id ? { ...u, ...updated } : u)));
+      setUsers((prev) =>
+        prev.map((u) => (u.id === updated.id ? { ...u, ...updated } : u))
+      );
     } catch (err) {
-      console.error('toggle error', err);
-      alert('Failed to toggle status');
+      console.error("toggle error", err);
+      alert("Failed to toggle status");
     }
   };
 
   // When role selected in the form, apply that role's permissions and show only those keys
   const handleRoleChange = (role: string) => {
-    const perms = rolePermissionsMap[role] ?? {};
-    setFormData({ ...formData, role, permissions: { ...perms } });
+    // const perms = rolePermissionsMap[role] ?? {}; //commited by sachin paithane
+    const newPerms =
+      allRoles.find((item: any) => item.name === role)?.permissions ?? {};
+
+    const result = Object.fromEntries(
+      Object.entries(newPerms).filter(([_, value]) => value === true)
+    );
+    setFormData({ ...formData, role, permissions: { ...result } });
   };
 
   // Toggle a permission key that exists in the current formData.permissions
@@ -331,20 +380,20 @@ export default function UsersMaster() {
 
   const filteredUsers = users.filter(
     (user) =>
-      (user.full_name || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
-      (user.email || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
-      (user.department || '').toLowerCase().includes(searchTerm.toLowerCase())
+      (user.full_name || "").toLowerCase().includes(searchTerm.toLowerCase()) ||
+      (user.email || "").toLowerCase().includes(searchTerm.toLowerCase()) ||
+      (user.department || "").toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   const getRoleColor = (role: string) => {
     const colors: Record<string, string> = {
-      admin: 'bg-red-100 text-red-700',
-      manager: 'bg-blue-100 text-blue-700',
-      purchaser: 'bg-green-100 text-green-700',
-      store_keeper: 'bg-purple-100 text-purple-700',
-      user: 'bg-gray-100 text-gray-700',
+      admin: "bg-red-100 text-red-700",
+      manager: "bg-blue-100 text-blue-700",
+      purchaser: "bg-green-100 text-green-700",
+      store_keeper: "bg-purple-100 text-purple-700",
+      user: "bg-gray-100 text-gray-700",
     };
-    return colors[role] || 'bg-gray-100 text-gray-700';
+    return colors[role] || "bg-gray-100 text-gray-700";
   };
 
   if (loading) {
@@ -395,13 +444,27 @@ export default function UsersMaster() {
           <table className="w-full">
             <thead className="bg-gray-50 border-b border-gray-200">
               <tr>
-                <th className="text-left px-6 py-4 text-sm font-semibold text-gray-700">Name</th>
-                <th className="text-left px-6 py-4 text-sm font-semibold text-gray-700">Email</th>
-                <th className="text-left px-6 py-4 text-sm font-semibold text-gray-700">Role</th>
-                <th className="text-left px-6 py-4 text-sm font-semibold text-gray-700">Department</th>
-                <th className="text-left px-6 py-4 text-sm font-semibold text-gray-700">Phone</th>
-                <th className="text-left px-6 py-4 text-sm font-semibold text-gray-700">Status</th>
-                <th className="text-left px-6 py-4 text-sm font-semibold text-gray-700">Actions</th>
+                <th className="text-left px-6 py-4 text-sm font-semibold text-gray-700">
+                  Name
+                </th>
+                <th className="text-left px-6 py-4 text-sm font-semibold text-gray-700">
+                  Email
+                </th>
+                <th className="text-left px-6 py-4 text-sm font-semibold text-gray-700">
+                  Role
+                </th>
+                <th className="text-left px-6 py-4 text-sm font-semibold text-gray-700">
+                  Department
+                </th>
+                <th className="text-left px-6 py-4 text-sm font-semibold text-gray-700">
+                  Phone
+                </th>
+                <th className="text-left px-6 py-4 text-sm font-semibold text-gray-700">
+                  Status
+                </th>
+                <th className="text-left px-6 py-4 text-sm font-semibold text-gray-700">
+                  Actions
+                </th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-200">
@@ -410,31 +473,53 @@ export default function UsersMaster() {
                   <td className="px-6 py-4">
                     <div className="flex items-center gap-2">
                       <Users className="w-4 h-4 text-blue-600" />
-                      <span className="font-medium text-gray-800">{user.full_name || 'N/A'}</span>
+                      <span className="font-medium text-gray-800">
+                        {user.full_name || "N/A"}
+                      </span>
                     </div>
                   </td>
                   <td className="px-6 py-4 text-gray-700">{user.email}</td>
                   <td className="px-6 py-4">
-                    <span className={`px-3 py-1 rounded-full text-xs font-medium ${getRoleColor(user.role)}`}>
-                      {user.role?.toUpperCase() || 'USER'}
+                    <span
+                      className={`px-3 py-1 rounded-full text-xs font-medium ${getRoleColor(
+                        user.role
+                      )}`}
+                    >
+                      {user.role?.toUpperCase() || "USER"}
                     </span>
                   </td>
-                  <td className="px-6 py-4 text-gray-700">{user.department || '-'}</td>
-                  <td className="px-6 py-4 text-gray-700">{user.phone || '-'}</td>
+                  <td className="px-6 py-4 text-gray-700">
+                    {user.department || "-"}
+                  </td>
+                  <td className="px-6 py-4 text-gray-700">
+                    {user.phone || "-"}
+                  </td>
                   <td className="px-6 py-4">
                     <button
                       onClick={() => toggleActive(user.id, user.is_active)}
-                      className={`px-3 py-1 rounded-full text-xs font-medium ${user.is_active ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-700'}`}
+                      className={`px-3 py-1 rounded-full text-xs font-medium ${
+                        user.is_active
+                          ? "bg-green-100 text-green-700"
+                          : "bg-gray-100 text-gray-700"
+                      }`}
                     >
-                      {user.is_active ? 'ACTIVE' : 'INACTIVE'}
+                      {user.is_active ? "ACTIVE" : "INACTIVE"}
                     </button>
                   </td>
                   <td className="px-6 py-4">
                     <div className="flex gap-2">
-                      <button onClick={() => handleEdit(user)} className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition" title="Edit">
+                      <button
+                        onClick={() => handleEdit(user)}
+                        className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition"
+                        title="Edit"
+                      >
                         <Edit2 className="w-4 h-4" />
                       </button>
-                      <button onClick={() => handleDelete(user.id)} className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition" title="Delete">
+                      <button
+                        onClick={() => handleDelete(user.id)}
+                        className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition"
+                        title="Delete"
+                      >
                         <Trash2 className="w-4 h-4" />
                       </button>
                     </div>
@@ -448,8 +533,14 @@ export default function UsersMaster() {
         {filteredUsers.length === 0 && (
           <div className="text-center py-12">
             <Users className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-            <h3 className="text-lg font-semibold text-gray-800 mb-2">No users found</h3>
-            <p className="text-gray-600">{searchTerm ? 'Try a different search term' : 'Click "Add User" to create your first user'}</p>
+            <h3 className="text-lg font-semibold text-gray-800 mb-2">
+              No users found
+            </h3>
+            <p className="text-gray-600">
+              {searchTerm
+                ? "Try a different search term"
+                : 'Click "Add User" to create your first user'}
+            </p>
           </div>
         )}
       </div>
@@ -458,7 +549,9 @@ export default function UsersMaster() {
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4 overflow-y-auto">
           <div className="bg-white rounded-2xl shadow-2xl w-full max-w-4xl my-8">
             <div className="bg-gradient-to-r from-blue-600 to-blue-700 px-6 py-4 flex justify-between items-center sticky top-0 rounded-t-2xl">
-              <h2 className="text-2xl font-bold text-white">{editingId ? 'Edit User' : 'Add User'}</h2>
+              <h2 className="text-2xl font-bold text-white">
+                {editingId ? "Edit User" : "Add User"}
+              </h2>
               <button
                 onClick={() => {
                   setShowModal(false);
@@ -470,7 +563,10 @@ export default function UsersMaster() {
               </button>
             </div>
 
-            <form onSubmit={handleSubmit} className="p-6 max-h-[calc(100vh-200px)] overflow-y-auto">
+            <form
+              onSubmit={handleSubmit}
+              className="p-6 max-h-[calc(100vh-200px)] overflow-y-auto"
+            >
               <div className="mb-6">
                 <h3 className="text-lg font-semibold text-gray-800 mb-4 flex items-center gap-2">
                   <Users className="w-5 h-5" />
@@ -484,7 +580,9 @@ export default function UsersMaster() {
                     <input
                       type="text"
                       value={formData.full_name}
-                      onChange={(e) => setFormData({ ...formData, full_name: e.target.value })}
+                      onChange={(e) =>
+                        setFormData({ ...formData, full_name: e.target.value })
+                      }
                       className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                       placeholder="John Doe"
                       required
@@ -498,7 +596,9 @@ export default function UsersMaster() {
                     <input
                       type="email"
                       value={formData.email}
-                      onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                      onChange={(e) =>
+                        setFormData({ ...formData, email: e.target.value })
+                      }
                       className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                       placeholder="john@example.com"
                       required
@@ -507,22 +607,30 @@ export default function UsersMaster() {
                   </div>
 
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">Phone</label>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Phone
+                    </label>
                     <input
                       type="tel"
                       value={formData.phone}
-                      onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+                      onChange={(e) =>
+                        setFormData({ ...formData, phone: e.target.value })
+                      }
                       className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                       placeholder="+91 98765 43210"
                     />
                   </div>
 
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">Department</label>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Department
+                    </label>
                     <input
                       type="text"
                       value={formData.department}
-                      onChange={(e) => setFormData({ ...formData, department: e.target.value })}
+                      onChange={(e) =>
+                        setFormData({ ...formData, department: e.target.value })
+                      }
                       className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                       placeholder="Procurement"
                     />
@@ -535,9 +643,14 @@ export default function UsersMaster() {
                       </label>
                       <div className="relative">
                         <input
-                          type={showPassword ? 'text' : 'password'}
+                          type={showPassword ? "text" : "password"}
                           value={formData.password}
-                          onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+                          onChange={(e) =>
+                            setFormData({
+                              ...formData,
+                              password: e.target.value,
+                            })
+                          }
                           className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent pr-12"
                           placeholder="Min 6 characters"
                           required={!editingId}
@@ -548,7 +661,11 @@ export default function UsersMaster() {
                           onClick={() => setShowPassword(!showPassword)}
                           className="absolute right-3 top-3.5 text-gray-500 hover:text-gray-700"
                         >
-                          {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                          {showPassword ? (
+                            <EyeOff className="w-5 h-5" />
+                          ) : (
+                            <Eye className="w-5 h-5" />
+                          )}
                         </button>
                       </div>
                     </div>
@@ -556,12 +673,19 @@ export default function UsersMaster() {
 
                   {editingId && (
                     <div className="md:col-span-2">
-                      <label className="block text-sm font-medium text-gray-700 mb-2">Change Password (optional)</label>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Change Password (optional)
+                      </label>
                       <div className="relative">
                         <input
-                          type={showPassword ? 'text' : 'password'}
+                          type={showPassword ? "text" : "password"}
                           value={formData.password}
-                          onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+                          onChange={(e) =>
+                            setFormData({
+                              ...formData,
+                              password: e.target.value,
+                            })
+                          }
                           className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent pr-12"
                           placeholder="Leave blank to keep existing password"
                           minLength={0}
@@ -571,15 +695,22 @@ export default function UsersMaster() {
                           onClick={() => setShowPassword(!showPassword)}
                           className="absolute right-3 top-3.5 text-gray-500 hover:text-gray-700"
                         >
-                          {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                          {showPassword ? (
+                            <EyeOff className="w-5 h-5" />
+                          ) : (
+                            <Eye className="w-5 h-5" />
+                          )}
                         </button>
                       </div>
                     </div>
                   )}
 
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">Role <span className="text-red-500">*</span></label>
-                    <select
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Role <span className="text-red-500">*</span>
+                    </label>
+
+                    {/* <select
                       value={formData.role}
                       onChange={(e) => handleRoleChange(e.target.value)}
                       className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
@@ -590,7 +721,24 @@ export default function UsersMaster() {
                       <option value="purchaser">Purchaser</option>
                       <option value="manager">Manager</option>
                       <option value="admin">Admin</option>
-                    </select>
+                    </select> */}
+
+                    <input
+                      list="roles"
+                      id="role"
+                      name="role"
+                      value={formData.role}
+                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent pr-12"
+                      onChange={(e) => handleRoleChange(e.target.value)}
+                    />
+                    <datalist
+                      id="roles"
+                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent pr-12"
+                    >
+                      {allRoles.map((role: any) => (
+                        <option value={role?.name} />
+                      ))}
+                    </datalist>
                   </div>
 
                   <div className="flex items-center pt-8">
@@ -598,10 +746,18 @@ export default function UsersMaster() {
                       type="checkbox"
                       id="is_active"
                       checked={formData.is_active}
-                      onChange={(e) => setFormData({ ...formData, is_active: e.target.checked })}
+                      onChange={(e) =>
+                        setFormData({
+                          ...formData,
+                          is_active: e.target.checked,
+                        })
+                      }
                       className="w-4 h-4 text-blue-600 rounded focus:ring-2 focus:ring-blue-500"
                     />
-                    <label htmlFor="is_active" className="ml-2 text-sm font-medium text-gray-700">
+                    <label
+                      htmlFor="is_active"
+                      className="ml-2 text-sm font-medium text-gray-700"
+                    >
                       Active User
                     </label>
                   </div>
@@ -617,7 +773,9 @@ export default function UsersMaster() {
                 {/* Render only keys present in formData.permissions — that implements the "hide the rest" behavior */}
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
                   {Object.keys(formData.permissions || {}).length === 0 ? (
-                    <div className="text-sm text-gray-500 col-span-3">No permissions to configure for this role.</div>
+                    <div className="text-sm text-gray-500 col-span-3">
+                      No permissions to configure for this role.
+                    </div>
                   ) : (
                     Object.keys(formData.permissions || {}).map((key) => (
                       <label
@@ -627,11 +785,15 @@ export default function UsersMaster() {
                         <input
                           type="checkbox"
                           checked={!!(formData.permissions as any)[key]}
-                          onChange={() => togglePermission(key as keyof Permissions)}
+                          onChange={() =>
+                            togglePermission(key as keyof Permissions)
+                          }
                           className="w-4 h-4 text-blue-600 rounded focus:ring-2 focus:ring-blue-500"
                         />
                         <span className="text-sm text-gray-700">
-                          {key.replace(/_/g, ' ').replace(/\b\w/g, (l) => l.toUpperCase())}
+                          {key
+                            .replace(/_/g, " ")
+                            .replace(/\b\w/g, (l) => l.toUpperCase())}
                         </span>
                       </label>
                     ))
@@ -645,7 +807,11 @@ export default function UsersMaster() {
                   disabled={submitting}
                   className="flex-1 bg-blue-600 text-white py-3 px-6 rounded-lg hover:bg-blue-700 transition font-medium shadow-sm"
                 >
-                  {submitting ? 'Saving...' : editingId ? 'Update User' : 'Create User'}
+                  {submitting
+                    ? "Saving..."
+                    : editingId
+                    ? "Update User"
+                    : "Create User"}
                 </button>
                 <button
                   type="button"

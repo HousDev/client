@@ -100,12 +100,13 @@
 //   return ctx;
 // }
 // src/contexts/AuthContext.tsx
-import React, { createContext, useContext, useEffect, useState } from 'react';
-import { UsersApi, getToken as apiGetToken } from '../lib/Api';
+import React, { createContext, useContext, useEffect, useState } from "react";
+import { UsersApi, getToken as apiGetToken } from "../lib/Api";
 
 type User = any; // you can import UserProfile type
 
 interface AuthContextValue {
+  profile: User | null;
   user: User | null;
   token: string | null;
   loading: boolean;
@@ -116,10 +117,17 @@ interface AuthContextValue {
 
 const AuthContext = createContext<AuthContextValue | undefined>(undefined);
 
-export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
+  children,
+}) => {
   const [user, setUser] = useState<User | null>(null);
+  const [profile, setProfile] = useState<User | null>(null);
   const [token, setToken] = useState<string | null>(() => {
-    try { return localStorage.getItem('auth_token'); } catch { return null; }
+    try {
+      return localStorage.getItem("auth_token");
+    } catch {
+      return null;
+    }
   });
   const [loading, setLoading] = useState(true);
 
@@ -133,12 +141,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       try {
         const data = await UsersApi.me();
         setUser(data.user);
+        setProfile(data.user);
       } catch (err) {
-        console.error('Auth init failed', err);
+        console.error("Auth init failed", err);
         // invalid token -> clear
-        localStorage.removeItem('auth_token');
+        localStorage.removeItem("auth_token");
         setToken(null);
         setUser(null);
+        setProfile(null);
       } finally {
         setLoading(false);
       }
@@ -150,28 +160,33 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setLoading(true);
     try {
       const { token: tkn, user: u } = await UsersApi.login(email, password);
-      localStorage.setItem('auth_token', tkn);
+      localStorage.setItem("auth_token", tkn);
       setToken(tkn);
       setUser(u);
+      setProfile(u);
     } finally {
       setLoading(false);
     }
   };
 
   const signOut = () => {
-    localStorage.removeItem('auth_token');
+    localStorage.removeItem("auth_token");
     setToken(null);
     setUser(null);
+    setProfile(null);
   };
 
   const refreshUser = async () => {
     if (!apiGetToken()) return;
     const data = await UsersApi.me();
     setUser(data.user);
+    setProfile(data.user);
   };
 
   return (
-    <AuthContext.Provider value={{ user, token, loading, signIn, signOut, refreshUser }}>
+    <AuthContext.Provider
+      value={{ profile, user, token, loading, signIn, signOut, refreshUser }}
+    >
       {children}
     </AuthContext.Provider>
   );
@@ -179,6 +194,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
 export function useAuth() {
   const ctx = useContext(AuthContext);
-  if (!ctx) throw new Error('useAuth must be used inside AuthProvider');
+  if (!ctx) throw new Error("useAuth must be used inside AuthProvider");
   return ctx;
 }
