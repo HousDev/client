@@ -158,7 +158,6 @@ export async function loginAndStore(email: string, password: string) {
   return res;
 }
 
-
 // // src/lib/Api.ts
 // import axios, { AxiosInstance, AxiosError } from 'axios';
 
@@ -202,8 +201,6 @@ export async function loginAndStore(email: string, password: string) {
 //     (import.meta as any).env &&
 //     (import.meta as any).env.VITE_API_URL) ||
 //   'http://localhost:4000/api';
-  
-  
 
 // /* ----- token helpers ----- */
 // export function getToken(): string | null {

@@ -1,22 +1,24 @@
-import { useState } from 'react';
-import { AuthProvider, useAuth } from './contexts/AuthContext';
-import Layout from './components/Layout';
-import Login from './pages/Login';
-import Dashboard from './pages/Dashboard';
-import VendorsEnhanced from './pages/VendorsEnhanced';
-import PurchaseOrders from './pages/PurchaseOrders';
-import PurchaseOrdersPro from './pages/PurchaseOrdersPro';
-import ServiceOrders from './pages/ServiceOrders';
-import MaterialsEnhanced from './pages/MaterialsEnhanced';
-import PaymentsEnhanced from './pages/PaymentsEnhanced';
-import Notifications from './pages/Notifications';
-import Reports from './pages/Reports';
-import Masters from './pages/Masters';
-import Permissions from './pages/Permissions';
+import { useState } from "react";
+import { AuthProvider, useAuth } from "./contexts/AuthContext";
+import Layout from "./components/Layout";
+import Login from "./pages/Login";
+import Dashboard from "./pages/Dashboard";
+import VendorsEnhanced from "./pages/VendorsEnhanced";
+import PurchaseOrders from "./pages/PurchaseOrders";
+import PurchaseOrdersPro from "./pages/PurchaseOrdersPro";
+import ServiceOrders from "./pages/ServiceOrders";
+import MaterialsEnhanced from "./pages/MaterialsEnhanced";
+import PaymentsEnhanced from "./pages/PaymentsEnhanced";
+import Notifications from "./pages/Notifications";
+import Reports from "./pages/Reports";
+import Masters from "./pages/Masters";
+import Permissions from "./pages/Permissions";
+import StoreManagement from "./pages/StoreManagement";
+import { Buffer } from "buffer";
 
 function AppContent() {
   const { user, loading } = useAuth();
-  const [activeTab, setActiveTab] = useState('dashboard');
+  const [activeTab, setActiveTab] = useState("dashboard");
 
   if (loading) {
     return (
@@ -35,27 +37,29 @@ function AppContent() {
 
   const renderContent = () => {
     switch (activeTab) {
-      case 'dashboard':
+      case "store-management":
+        return <StoreManagement />;
+      case "dashboard":
         return <Dashboard />;
-      case 'vendors':
+      case "vendors":
         return <VendorsEnhanced />;
-      case 'purchase-orders':
+      case "purchase-orders":
         return <PurchaseOrders />;
-      case 'purchase-orders-pro':
+      case "purchase-orders-pro":
         return <PurchaseOrdersPro />;
-      case 'service-orders':
+      case "service-orders":
         return <ServiceOrders />;
-      case 'materials':
+      case "materials":
         return <MaterialsEnhanced />;
-      case 'payments':
+      case "payments":
         return <PaymentsEnhanced />;
-      case 'notifications':
+      case "notifications":
         return <Notifications />;
-      case 'reports':
+      case "reports":
         return <Reports />;
-      case 'masters':
+      case "masters":
         return <Masters />;
-      case 'permissions':
+      case "permissions":
         return <Permissions />;
       default:
         return <Dashboard />;
@@ -68,8 +72,16 @@ function AppContent() {
     </Layout>
   );
 }
+declare global {
+  interface Window {
+    Buffer: typeof Buffer;
+  }
+}
 
 function App() {
+  if (!window.Buffer) {
+    window.Buffer = Buffer;
+  }
   return (
     <AuthProvider>
       <AppContent />

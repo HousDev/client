@@ -255,7 +255,6 @@
 
 // export default poApi;
 
-
 // src/lib/poApi.ts
 import { api, unwrap } from "./Api"; // adjust import path if needed
 
@@ -265,7 +264,9 @@ async function getPOs() {
 }
 
 async function getVendors(active?: boolean) {
-  const res = await api.get("/vendors", { params: active ? { active: 1 } : undefined });
+  const res = await api.get("/vendors", {
+    params: active ? { active: 1 } : undefined,
+  });
   return unwrap(res);
 }
 
@@ -304,6 +305,11 @@ async function createPO(payload: any) {
   return unwrap(res);
 }
 
+async function updatePO(id: Number, payload: any) {
+  const res = await api.put(`/purchase-orders/${id}`, payload);
+  return unwrap(res);
+}
+
 async function createTracking(records: any[]) {
   const res = await api.post("/po-material-tracking", { records });
   return unwrap(res);
@@ -311,6 +317,39 @@ async function createTracking(records: any[]) {
 
 async function createPayment(payload: any) {
   const res = await api.post("/po-payments", payload);
+  return unwrap(res);
+}
+
+export async function updatePurchaseOrder(id: number | string, payload: any) {
+  const res = await api.put(`/purchase-orders/${id}`, payload);
+  return unwrap(res);
+}
+
+export async function deletePurchaseOrder(id: any) {
+  const res = await api.delete(`/purchase-orders/${id}`);
+  return unwrap(res);
+}
+export async function deletePurchaseOrderItem(
+  POItemId: any,
+  POMaterialTrackingId: any
+) {
+  const res = await api.delete(
+    `/purchase-orders/poItem/${POItemId}/${POMaterialTrackingId}`
+  );
+  return unwrap(res);
+}
+
+export async function getPOsItems() {
+  const res = await api.get(`/purchase-orders/purchaseOrderItems`);
+  return unwrap(res);
+}
+export async function updatePurchaseOrderStatus(
+  id: number | string,
+  status: any
+) {
+  const res = await api.put(`/purchase-orders/updatePOStatus/${id}`, {
+    status,
+  });
   return unwrap(res);
 }
 
@@ -324,8 +363,14 @@ const poApi = {
   getPaymentTerms,
   nextSequence,
   createPO,
+  updatePO,
   createTracking,
   createPayment,
+  updatePurchaseOrder,
+  deletePurchaseOrder,
+  deletePurchaseOrderItem,
+  getPOsItems,
+  updatePurchaseOrderStatus,
 };
 
 export default poApi;

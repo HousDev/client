@@ -268,50 +268,132 @@
 
 // src/pages/Permissions.tsx
 import React, { useEffect, useState } from "react";
-import { Shield, Users, Key, Save, CheckCircle, AlertCircle } from "lucide-react";
+import {
+  Shield,
+  Users,
+  Key,
+  Save,
+  CheckCircle,
+  AlertCircle,
+} from "lucide-react";
 import { useAuth } from "../contexts/AuthContext";
 import { api, unwrap, UsersApi } from "../lib/Api";
 
-type Role = { id: string; name: string; description?: string; permissions?: Record<string, boolean> };
-type User = { id: string; full_name?: string; email?: string; role?: string | number; permissions?: Record<string, boolean> };
+type Role = {
+  id: string;
+  name: string;
+  description?: string;
+  permissions?: Record<string, boolean>;
+};
+type User = {
+  id: string;
+  full_name?: string;
+  email?: string;
+  role?: string | number;
+  permissions?: Record<string, boolean>;
+};
 
 export default function Permissions() {
   const auth = useAuth() as any;
   const { profile: ctxProfile, loading: authLoading } = auth ?? {};
 
   const [effectiveProfile, setEffectiveProfile] = useState<any | null>(null);
-  const [activeTab, setActiveTab] = useState<"role-permissions" | "user-permissions">("role-permissions");
+  const [activeTab, setActiveTab] = useState<
+    "role-permissions" | "user-permissions"
+  >("role-permissions");
   const [roles, setRoles] = useState<Role[]>([]);
   const [users, setUsers] = useState<User[]>([]);
   const [selectedRole, setSelectedRole] = useState<string>("");
   const [selectedUser, setSelectedUser] = useState<string>("");
-  const [rolePermissions, setRolePermissions] = useState<Record<string, boolean>>({});
-  const [userPermissions, setUserPermissions] = useState<Record<string, boolean>>({});
+  const [rolePermissions, setRolePermissions] = useState<
+    Record<string, boolean>
+  >({});
+  const [userPermissions, setUserPermissions] = useState<
+    Record<string, boolean>
+  >({});
   const [loading, setLoading] = useState(true);
   const [savingRole, setSavingRole] = useState(false);
   const [savingUser, setSavingUser] = useState(false);
 
   const permissionsList = [
     { action: "view_dashboard", label: "View Dashboard", module: "Dashboard" },
+
     { action: "view_vendors", label: "View Vendors", module: "Vendors" },
     { action: "create_vendors", label: "Create Vendors", module: "Vendors" },
     { action: "edit_vendors", label: "Edit Vendors", module: "Vendors" },
     { action: "delete_vendors", label: "Delete Vendors", module: "Vendors" },
-    { action: "view_pos", label: "View Purchase Orders", module: "Purchase Orders" },
-    { action: "create_pos", label: "Create Purchase Orders", module: "Purchase Orders" },
-    { action: "edit_pos", label: "Edit Purchase Orders", module: "Purchase Orders" },
-    { action: "delete_pos", label: "Delete Purchase Orders", module: "Purchase Orders" },
-    { action: "approve_pos", label: "Approve Purchase Orders", module: "Purchase Orders" },
+
+    {
+      action: "view_notifications",
+      label: "View Notifications",
+      module: "Notifications",
+    },
+
+    {
+      action: "edit_service_orders",
+      label: "Edit Service Order",
+      module: "Service Order",
+    },
+    {
+      action: "create_service_orders",
+      label: "Create Service Order",
+      module: "Service Order",
+    },
+    {
+      action: "view_service_orders",
+      label: "View Service Order",
+      module: "Service Order",
+    },
+
+    {
+      action: "view_pos",
+      label: "View Purchase Orders",
+      module: "Purchase Orders",
+    },
+    {
+      action: "create_pos",
+      label: "Create Purchase Orders",
+      module: "Purchase Orders",
+    },
+    {
+      action: "edit_pos",
+      label: "Edit Purchase Orders",
+      module: "Purchase Orders",
+    },
+    {
+      action: "delete_pos",
+      label: "Delete Purchase Orders",
+      module: "Purchase Orders",
+    },
+    {
+      action: "approve_pos",
+      label: "Approve Purchase Orders",
+      module: "Purchase Orders",
+    },
+
     { action: "view_materials", label: "View Materials", module: "Materials" },
-    { action: "receive_materials", label: "Receive Materials", module: "Materials" },
+    {
+      action: "receive_materials",
+      label: "Receive Materials",
+      module: "Materials",
+    },
+
     { action: "view_payments", label: "View Payments", module: "Payments" },
     { action: "make_payments", label: "Make Payments", module: "Payments" },
     { action: "verify_payments", label: "Verify Payments", module: "Payments" },
+
     { action: "view_reports", label: "View Reports", module: "Reports" },
     { action: "export_reports", label: "Export Reports", module: "Reports" },
+
     { action: "manage_users", label: "Manage Users", module: "Users" },
+
     { action: "manage_roles", label: "Manage Roles", module: "Roles" },
-    { action: "manage_permissions", label: "Manage Permissions", module: "Permissions" },
+
+    {
+      action: "manage_permissions",
+      label: "Manage Permissions",
+      module: "Permissions",
+    },
   ];
 
   const groupedPermissions = permissionsList.reduce((acc: any, p) => {
@@ -325,7 +407,14 @@ export default function Permissions() {
     let mounted = true;
 
     const tryLocalStorage = (): any | null => {
-      const keys = ["user", "profile", "auth_user", "current_user", "users_master_data_v1", "mock_users_v1"];
+      const keys = [
+        "user",
+        "profile",
+        "auth_user",
+        "current_user",
+        "users_master_data_v1",
+        "mock_users_v1",
+      ];
       for (const k of keys) {
         try {
           const raw = localStorage.getItem(k);
@@ -365,7 +454,9 @@ export default function Permissions() {
     };
 
     ensureProfile();
-    return () => { mounted = false; };
+    return () => {
+      mounted = false;
+    };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [ctxProfile]);
 
@@ -387,13 +478,18 @@ export default function Permissions() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedUser]);
 
+  useEffect(() => {
+    console.log(roles, "data reponse");
+  }, [roles]);
+
   // robust loadData that handles many response shapes and normalizes roles/users
   async function loadData() {
     setLoading(true);
     try {
-      const [rolesRes, usersRes] = await Promise.allSettled([api.get("/roles"), UsersApi.list()]);
-
-      // --- roles handling & normalization ---
+      const [rolesRes, usersRes] = await Promise.allSettled([
+        api.get("/roles"),
+        UsersApi.list(),
+      ]);
       let rolesArray: any[] = [];
       if (rolesRes.status === "fulfilled") {
         const raw = rolesRes.value; // axios response
@@ -404,10 +500,12 @@ export default function Permissions() {
         else if (Array.isArray(raw?.data?.roles)) rolesArray = raw.data.roles;
         else if (Array.isArray(raw?.data?.data)) rolesArray = raw.data.data;
         else if (Array.isArray(raw)) rolesArray = raw;
-        else if (Array.isArray(raw?.roles)) rolesArray = raw.roles;
+        // else if (Array.isArray(raw?.roles)) rolesArray = raw.roles; //updated by sachin paithane commented this line
         else if (raw?.data && typeof raw.data === "object") {
           // find first array in data
-          const firstArr = Object.values(raw.data).find((v) => Array.isArray(v));
+          const firstArr = Object.values(raw.data).find((v) =>
+            Array.isArray(v)
+          );
           if (Array.isArray(firstArr)) rolesArray = firstArr as any[];
         }
       } else {
@@ -423,28 +521,40 @@ export default function Permissions() {
       }
 
       // Normalize roles -> ensure id & name exist
-      const normalizedRoles = (rolesArray || []).map((r: any) => {
-        const id = String(r?.id ?? r?.role_id ?? r?.id_str ?? r?.id ?? "");
-        const name = r?.name ?? r?.role_name ?? r?.title ?? r?.label ?? r?.display_name ?? "";
-        const desc = r?.description ?? r?.desc ?? "";
-        const perms = r?.permissions ?? {};
-        return { id, name, description: desc, permissions: perms } as Role;
-      }).filter(r => r.id !== "");
+      const normalizedRoles = (rolesArray || [])
+        .map((r: any) => {
+          const id = String(r?.id ?? r?.role_id ?? r?.id_str ?? r?.id ?? "");
+          const name =
+            r?.name ??
+            r?.role_name ??
+            r?.title ??
+            r?.label ??
+            r?.display_name ??
+            "";
+          const desc = r?.description ?? r?.desc ?? "";
+          const perms = r?.permissions ?? {};
+          return { id, name, description: desc, permissions: perms } as Role;
+        })
+        .filter((r) => r.id !== "");
 
-      const normalizedUsers = (usersArray || []).map((u: any) => {
-        const id = String(u?.id ?? u?.user_id ?? "");
-        const full_name = u?.full_name ?? u?.name ?? u?.username ?? u?.display_name ?? "";
-        const email = u?.email ?? u?.company_email ?? "";
-        const role = u?.role ?? u?.role_name ?? u?.role_id ?? undefined;
-        const perms = u?.permissions ?? {};
-        return { id, full_name, email, role, permissions: perms } as User;
-      }).filter(u => u.id !== "");
-
+      const normalizedUsers = (usersArray || [])
+        .map((u: any) => {
+          const id = String(u?.id ?? u?.user_id ?? "");
+          const full_name =
+            u?.full_name ?? u?.name ?? u?.username ?? u?.display_name ?? "";
+          const email = u?.email ?? u?.company_email ?? "";
+          const role = u?.role ?? u?.role_name ?? u?.role_id ?? undefined;
+          const perms = u?.permissions ?? {};
+          return { id, full_name, email, role, permissions: perms } as User;
+        })
+        .filter((u) => u.id !== "");
       setRoles(normalizedRoles);
       setUsers(normalizedUsers);
 
-      if (normalizedRoles.length > 0 && !selectedRole) setSelectedRole(String(normalizedRoles[0].id));
-      if (normalizedUsers.length > 0 && !selectedUser) setSelectedUser(String(normalizedUsers[0].id));
+      if (normalizedRoles.length > 0 && !selectedRole)
+        setSelectedRole(String(normalizedRoles[0].id));
+      if (normalizedUsers.length > 0 && !selectedUser)
+        setSelectedUser(String(normalizedUsers[0].id));
     } catch (err) {
       console.error("loadData exception:", err);
       setRoles([]);
@@ -457,10 +567,14 @@ export default function Permissions() {
   // load role permissions: prefer /roles/:id/permissions, else read from roles[] normalized
   async function loadRolePermissions(roleId: string) {
     try {
-      const res = await api.get(`/roles/${encodeURIComponent(roleId)}/permissions`).catch(() => null);
+      const res = await api
+        .get(`/roles/${encodeURIComponent(roleId)}/permissions`)
+        .catch(() => null);
       if (res && res.data && typeof res.data.permissions === "object") {
         const normalized: Record<string, boolean> = {};
-        Object.keys(res.data.permissions).forEach((k) => (normalized[k] = !!res.data.permissions[k]));
+        Object.keys(res.data.permissions).forEach(
+          (k) => (normalized[k] = !!res.data.permissions[k])
+        );
         setRolePermissions(normalized);
         return;
       }
@@ -468,7 +582,9 @@ export default function Permissions() {
       const r = roles.find((x) => String(x.id) === String(roleId));
       if (r && r.permissions && typeof r.permissions === "object") {
         const normalized: Record<string, boolean> = {};
-        Object.keys(r.permissions).forEach((k) => (normalized[k] = !!(r.permissions as any)[k]));
+        Object.keys(r.permissions).forEach(
+          (k) => (normalized[k] = !!(r.permissions as any)[k])
+        );
         setRolePermissions(normalized);
         return;
       }
@@ -485,8 +601,16 @@ export default function Permissions() {
     setRolePermissions((prev) => ({ ...prev, [action]: granted }));
     setSavingRole(true);
     try {
-      const payload = { permissions: { ...(rolePermissions || {}), [action]: granted } };
-      await unwrap(api.put(`/roles/${encodeURIComponent(selectedRole)}/permissions`, payload));
+      const payload = {
+        permissions: { ...(rolePermissions || {}), [action]: granted },
+      };
+      console.log(payload, "from handlechagne");
+      await unwrap(
+        api.put(
+          `/roles/${encodeURIComponent(selectedRole)}/permissions`,
+          payload
+        )
+      );
     } catch (err) {
       console.error("Failed saving role permission:", err);
       alert("Failed to save role permission — reloading server value.");
@@ -499,10 +623,14 @@ export default function Permissions() {
   // load user permissions (try /users/:id/permissions, fallback to users[].permissions, fallback to role)
   async function loadUserPermissions(userId: string) {
     try {
-      const res = await api.get(`/users/${encodeURIComponent(userId)}/permissions`).catch(() => null);
+      const res = await api
+        .get(`/users/${encodeURIComponent(userId)}/permissions`)
+        .catch(() => null);
       if (res && res.data && typeof res.data.permissions === "object") {
         const normalized: Record<string, boolean> = {};
-        Object.keys(res.data.permissions).forEach((k) => (normalized[k] = !!res.data.permissions[k]));
+        Object.keys(res.data.permissions).forEach(
+          (k) => (normalized[k] = !!res.data.permissions[k])
+        );
         setUserPermissions(normalized);
         return;
       }
@@ -510,16 +638,24 @@ export default function Permissions() {
       const u = users.find((x) => String(x.id) === String(userId));
       if (u && u.permissions && typeof u.permissions === "object") {
         const normalized: Record<string, boolean> = {};
-        Object.keys(u.permissions).forEach((k) => (normalized[k] = !!(u.permissions as any)[k]));
+        Object.keys(u.permissions).forEach(
+          (k) => (normalized[k] = !!(u.permissions as any)[k])
+        );
         setUserPermissions(normalized);
         return;
       }
 
       if (u && u.role) {
-        const roleObj = roles.find((r) => String(r.id) === String(u.role) || String(r.name).toLowerCase() === String(u.role).toLowerCase());
+        const roleObj = roles.find(
+          (r) =>
+            String(r.id) === String(u.role) ||
+            String(r.name).toLowerCase() === String(u.role).toLowerCase()
+        );
         if (roleObj && roleObj.permissions) {
           const normalized: Record<string, boolean> = {};
-          Object.keys(roleObj.permissions).forEach((k) => (normalized[k] = !!(roleObj.permissions as any)[k]));
+          Object.keys(roleObj.permissions).forEach(
+            (k) => (normalized[k] = !!(roleObj.permissions as any)[k])
+          );
           setUserPermissions(normalized);
           return;
         }
@@ -540,8 +676,19 @@ export default function Permissions() {
     setSavingUser(true);
     try {
       const payload = { permissions: userPermissions };
-      await unwrap(api.put(`/users/${encodeURIComponent(selectedUser)}/permissions`, payload));
-      setUsers((prev) => prev.map((u) => (String(u.id) === String(selectedUser) ? { ...u, permissions: userPermissions } : u)));
+      await unwrap(
+        api.put(
+          `/users/${encodeURIComponent(selectedUser)}/permissions`,
+          payload
+        )
+      );
+      setUsers((prev) =>
+        prev.map((u) =>
+          String(u.id) === String(selectedUser)
+            ? { ...u, permissions: userPermissions }
+            : u
+        )
+      );
       alert("User permissions saved successfully!");
     } catch (err) {
       console.error("saveUserPermissions error:", err);
@@ -568,16 +715,37 @@ export default function Permissions() {
       (p as any).roleIdString ??
       "";
 
-    const roleStr = String(rawRole ?? "").trim().toLowerCase();
-    if (roleStr === "admin" || roleStr === "administrator" || roleStr === "administrators") return true;
+    const roleStr = String(rawRole ?? "")
+      .trim()
+      .toLowerCase();
+    if (
+      roleStr === "admin" ||
+      roleStr === "administrator" ||
+      roleStr === "administrators"
+    )
+      return true;
     if (roleStr === "1") return true; // adjust if your admin id is different
 
-    const altRole = String((p as any).user?.role ?? (p as any).userRole ?? "").trim().toLowerCase();
+    const altRole = String((p as any).user?.role ?? (p as any).userRole ?? "")
+      .trim()
+      .toLowerCase();
     if (altRole === "admin" || altRole === "administrator") return true;
 
     const perms = (p as any).permissions ?? (p as any).permission ?? {};
-    if (perms && (perms.manage_permissions === true || perms.manage_users === true || perms.manage_roles === true)) return true;
-    if (perms && (perms.manage_permissions === 1 || perms.manage_users === 1 || perms.manage_roles === 1)) return true;
+    if (
+      perms &&
+      (perms.manage_permissions === true ||
+        perms.manage_users === true ||
+        perms.manage_roles === true)
+    )
+      return true;
+    if (
+      perms &&
+      (perms.manage_permissions === 1 ||
+        perms.manage_users === 1 ||
+        perms.manage_roles === 1)
+    )
+      return true;
 
     return false;
   })();
@@ -597,8 +765,13 @@ export default function Permissions() {
       <div className="flex items-center justify-center h-96">
         <div className="text-center">
           <AlertCircle className="w-16 h-16 text-yellow-500 mx-auto mb-4" />
-          <h2 className="text-2xl font-bold text-gray-800 mb-2">Profile not found</h2>
-          <p className="text-gray-600">We couldn't resolve your profile. Check console for "EFFECTIVE PROFILE" output.</p>
+          <h2 className="text-2xl font-bold text-gray-800 mb-2">
+            Profile not found
+          </h2>
+          <p className="text-gray-600">
+            We couldn't resolve your profile. Check console for "EFFECTIVE
+            PROFILE" output.
+          </p>
         </div>
       </div>
     );
@@ -609,8 +782,12 @@ export default function Permissions() {
       <div className="flex items-center justify-center h-96">
         <div className="text-center">
           <AlertCircle className="w-16 h-16 text-red-500 mx-auto mb-4" />
-          <h2 className="text-2xl font-bold text-gray-800 mb-2">Access Denied</h2>
-          <p className="text-gray-600">Only administrators can manage permissions.</p>
+          <h2 className="text-2xl font-bold text-gray-800 mb-2">
+            Access Denied
+          </h2>
+          <p className="text-gray-600">
+            Only administrators can manage permissions.
+          </p>
         </div>
       </div>
     );
@@ -631,15 +808,23 @@ export default function Permissions() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-3xl font-bold text-gray-800">Permissions Management</h1>
-        <p className="text-gray-600 mt-1">Manage role-based and user-specific permissions</p>
+        <h1 className="text-3xl font-bold text-gray-800">
+          Permissions Management
+        </h1>
+        <p className="text-gray-600 mt-1">
+          Manage role-based and user-specific permissions
+        </p>
       </div>
 
       <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
         <div className="flex border-b border-gray-200">
           <button
             onClick={() => setActiveTab("role-permissions")}
-            className={`flex-1 px-6 py-4 font-medium transition ${activeTab === "role-permissions" ? "text-blue-600 border-b-2 border-blue-600 bg-blue-50" : "text-gray-600 hover:text-gray-800 hover:bg-gray-50"}`}
+            className={`flex-1 px-6 py-4 font-medium transition ${
+              activeTab === "role-permissions"
+                ? "text-blue-600 border-b-2 border-blue-600 bg-blue-50"
+                : "text-gray-600 hover:text-gray-800 hover:bg-gray-50"
+            }`}
           >
             <div className="flex items-center justify-center gap-2">
               <Shield className="w-5 h-5" />
@@ -648,7 +833,11 @@ export default function Permissions() {
           </button>
           <button
             onClick={() => setActiveTab("user-permissions")}
-            className={`flex-1 px-6 py-4 font-medium transition ${activeTab === "user-permissions" ? "text-blue-600 border-b-2 border-blue-600 bg-blue-50" : "text-gray-600 hover:text-gray-800 hover:bg-gray-50"}`}
+            className={`flex-1 px-6 py-4 font-medium transition ${
+              activeTab === "user-permissions"
+                ? "text-blue-600 border-b-2 border-blue-600 bg-blue-50"
+                : "text-gray-600 hover:text-gray-800 hover:bg-gray-50"
+            }`}
           >
             <div className="flex items-center justify-center gap-2">
               <Users className="w-5 h-5" />
@@ -661,7 +850,9 @@ export default function Permissions() {
           {activeTab === "role-permissions" && (
             <div className="space-y-6">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Select Role</label>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Select Role
+                </label>
                 <select
                   value={selectedRole}
                   onChange={(e) => setSelectedRole(e.target.value)}
@@ -677,37 +868,58 @@ export default function Permissions() {
               </div>
 
               <div className="space-y-6">
-                {Object.entries(groupedPermissions).map(([module, perms]: [string, any]) => (
-                  <div key={module} className="border border-gray-200 rounded-lg p-4">
-                    <h3 className="text-lg font-semibold text-gray-800 mb-4 flex items-center gap-2">
-                      <Key className="w-5 h-5 text-blue-600" />
-                      {module}
-                    </h3>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                      {perms.map((perm: any) => (
-                        <label key={perm.action} className="flex items-center gap-3 p-3 rounded-lg hover:bg-gray-50 cursor-pointer transition">
-                          <input
-                            type="checkbox"
-                            checked={rolePermissions[perm.action] === true}
-                            onChange={(e) => handleRolePermissionChange(perm.action, e.target.checked)}
-                            className="w-5 h-5 text-blue-600 rounded focus:ring-2 focus:ring-blue-500"
-                          />
-                          <span className="text-sm font-medium text-gray-700">{perm.label}</span>
-                        </label>
-                      ))}
+                {Object.entries(groupedPermissions).map(
+                  ([module, perms]: [string, any]) => (
+                    <div
+                      key={module}
+                      className="border border-gray-200 rounded-lg p-4"
+                    >
+                      <h3 className="text-lg font-semibold text-gray-800 mb-4 flex items-center gap-2">
+                        <Key className="w-5 h-5 text-blue-600" />
+                        {module}
+                      </h3>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                        {perms.map((perm: any) => (
+                          <label
+                            key={perm.action}
+                            className="flex items-center gap-3 p-3 rounded-lg hover:bg-gray-50 cursor-pointer transition"
+                          >
+                            <input
+                              type="checkbox"
+                              checked={rolePermissions[perm.action] === true}
+                              onChange={(e) =>
+                                handleRolePermissionChange(
+                                  perm.action,
+                                  e.target.checked
+                                )
+                              }
+                              className="w-5 h-5 text-blue-600 rounded focus:ring-2 focus:ring-blue-500"
+                            />
+                            <span className="text-sm font-medium text-gray-700">
+                              {perm.label}
+                            </span>
+                          </label>
+                        ))}
+                      </div>
                     </div>
-                  </div>
-                ))}
+                  )
+                )}
               </div>
 
-              {savingRole && <div className="text-sm text-gray-500">Saving role changes...</div>}
+              {savingRole && (
+                <div className="text-sm text-gray-500">
+                  Saving role changes...
+                </div>
+              )}
             </div>
           )}
 
           {activeTab === "user-permissions" && (
             <div className="space-y-6">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Select User</label>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Select User
+                </label>
                 <select
                   value={selectedUser}
                   onChange={(e) => {
@@ -720,7 +932,8 @@ export default function Permissions() {
                   <option value="">Select a user</option>
                   {users.map((u) => (
                     <option key={u.id} value={u.id}>
-                      {u.full_name || u.email || u.id} {u.role ? `— ${u.role}` : ""}
+                      {u.full_name || u.email || u.id}{" "}
+                      {u.role ? `— ${u.role}` : ""}
                     </option>
                   ))}
                 </select>
@@ -730,32 +943,50 @@ export default function Permissions() {
                 <>
                   <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
                     <p className="text-sm text-blue-800">
-                      <strong>Note:</strong> User-specific permissions override role permissions.
+                      <strong>Note:</strong> User-specific permissions override
+                      role permissions.
                     </p>
                   </div>
 
                   <div className="space-y-6">
-                    {Object.entries(groupedPermissions).map(([module, perms]: [string, any]) => (
-                      <div key={module} className="border border-gray-200 rounded-lg p-4">
-                        <h3 className="text-lg font-semibold text-gray-800 mb-4 flex items-center gap-2">
-                          <Key className="w-5 h-5 text-blue-600" />
-                          {module}
-                        </h3>
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                          {perms.map((perm: any) => (
-                            <label key={perm.action} className="flex items-center gap-3 p-3 rounded-lg hover:bg-gray-50 cursor-pointer transition">
-                              <input
-                                type="checkbox"
-                                checked={userPermissions[perm.action] === true}
-                                onChange={(e) => setUserPermissions({ ...userPermissions, [perm.action]: e.target.checked })}
-                                className="w-5 h-5 text-blue-600 rounded focus:ring-2 focus:ring-blue-500"
-                              />
-                              <span className="text-sm font-medium text-gray-700">{perm.label}</span>
-                            </label>
-                          ))}
+                    {Object.entries(groupedPermissions).map(
+                      ([module, perms]: [string, any]) => (
+                        <div
+                          key={module}
+                          className="border border-gray-200 rounded-lg p-4"
+                        >
+                          <h3 className="text-lg font-semibold text-gray-800 mb-4 flex items-center gap-2">
+                            <Key className="w-5 h-5 text-blue-600" />
+                            {module}
+                          </h3>
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                            {perms.map((perm: any) => (
+                              <label
+                                key={perm.action}
+                                className="flex items-center gap-3 p-3 rounded-lg hover:bg-gray-50 cursor-pointer transition"
+                              >
+                                <input
+                                  type="checkbox"
+                                  checked={
+                                    userPermissions[perm.action] === true
+                                  }
+                                  onChange={(e) =>
+                                    setUserPermissions({
+                                      ...userPermissions,
+                                      [perm.action]: e.target.checked,
+                                    })
+                                  }
+                                  className="w-5 h-5 text-blue-600 rounded focus:ring-2 focus:ring-blue-500"
+                                />
+                                <span className="text-sm font-medium text-gray-700">
+                                  {perm.label}
+                                </span>
+                              </label>
+                            ))}
+                          </div>
                         </div>
-                      </div>
-                    ))}
+                      )
+                    )}
                   </div>
 
                   <div className="flex gap-3 pt-6 border-t">
@@ -777,9 +1008,12 @@ export default function Permissions() {
       <div className="bg-green-50 border border-green-200 rounded-lg p-4 flex items-start gap-3">
         <CheckCircle className="w-5 h-5 text-green-600 mt-0.5" />
         <div>
-          <h4 className="font-semibold text-green-800 mb-1">Permission System Active</h4>
+          <h4 className="font-semibold text-green-800 mb-1">
+            Permission System Active
+          </h4>
           <p className="text-sm text-green-700">
-            Role permissions apply to all users with that role. User permissions override role permissions for specific users.
+            Role permissions apply to all users with that role. User permissions
+            override role permissions for specific users.
           </p>
         </div>
       </div>
