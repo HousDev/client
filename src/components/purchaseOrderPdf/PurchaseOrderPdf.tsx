@@ -103,7 +103,7 @@ interface selectedPOType {
   po_terms_and_conditions: string[];
 }
 
-const PurchaseOrderPDF = ({ selectedPO }: { selectedPO: selectedPOType }) => (
+const PurchaseOrderPDF = ({ selectedPO }: { selectedPO: any }) => (
   <Document>
     <Page size="A4" style={styles.page}>
       {/* HEADER */}

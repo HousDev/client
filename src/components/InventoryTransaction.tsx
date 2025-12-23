@@ -266,8 +266,8 @@ export default function InventoryTransaction({
             required
           >
             <option value="">Select Transaction Type</option>
-            <option value="CREDIT">CREDIT</option>
-            <option value="DEBIT">DEBIT</option>
+            <option value="INWARD">INWARD</option>
+            <option value="OUTWARD">OUTWARD</option>
           </select>
 
           {/* Item Name */}
