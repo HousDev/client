@@ -1317,7 +1317,7 @@ export default function PurchaseOrders() {
                           className="p-2 text-black hover:bg-blue-50 rounded-lg transition hidden"
                           title="View"
                         >
-                          <PDFDownloadLink
+                          {/* <PDFDownloadLink
                             document={
                               <PurchaseOrderPDF selectedPO={selectedPO} />
                             }
@@ -1330,7 +1330,7 @@ export default function PurchaseOrders() {
                                 <FileDown className="w-4 h-4" />
                               )
                             }
-                          </PDFDownloadLink>
+                          </PDFDownloadLink> */}
                         </button>
                         <button
                           onClick={() => {
@@ -1562,7 +1562,20 @@ export default function PurchaseOrders() {
                 </div>
               ) : (
                 <PDFViewer width="100%" height="600" className="bg-white">
-                  <PurchaseOrderPDF selectedPO={selectedPO} />
+                  <PurchaseOrderPDF
+                    selectedPO={
+                      selectedPO ?? {
+                        po_number: 0,
+                        po_date: 0,
+                        vendor_name: "",
+                        vendor_address: ``,
+                        vendor_gstn: "",
+                        vendor_phone: "",
+                        po_items: "",
+                        po_terms_and_conditions: [],
+                      }
+                    }
+                  />
                 </PDFViewer>
               )}
             </div>

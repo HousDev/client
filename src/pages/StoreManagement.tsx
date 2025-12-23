@@ -431,9 +431,9 @@ export default function StoreManagement() {
                   <th className="text-left px-6 py-4 text-sm font-semibold text-gray-700">
                     Status
                   </th>
-                  <th className="text-left px-6 py-4 text-sm font-semibold text-gray-700">
+                  {/* <th className="text-left px-6 py-4 text-sm font-semibold text-gray-700">
                     Actions
-                  </th>
+                  </th> */}
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-200">
@@ -486,7 +486,7 @@ export default function StoreManagement() {
                         </div>
                       )}
                     </td>
-                    <td className="px-6 py-4">
+                    {/* <td className="px-6 py-4">
                       <div className="flex gap-2">
                         <button
                           onClick={() => handleEdit(item)}
@@ -505,7 +505,7 @@ export default function StoreManagement() {
                           </button>
                         )}
                       </div>
-                    </td>
+                    </td> */}
                   </tr>
                 ))}
               </tbody>
