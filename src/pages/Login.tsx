@@ -189,26 +189,31 @@
 // }
 
 // src/components/Login.tsx
-import { useState } from 'react';
-import { useAuth } from '../contexts/AuthContext';
-import Logo from '../assets/images/Nayash Logo.png';
+import { useState } from "react";
+import { useAuth } from "../contexts/AuthContext";
+import Logo from "../assets/images/Nayash Logo.png";
 
 export default function Login() {
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [error, setError] = useState('');
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const { signIn } = useAuth(); // only signIn now
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setError('');
+    setError("");
     setLoading(true);
 
     try {
       await signIn(email, password);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'An error occurred');
+    } catch (err: any) {
+      console.log(err);
+      if (err.status === 401) {
+        setError("Invalid Credentials.");
+      } else {
+        setError("Something went wrong.");
+      }
     } finally {
       setLoading(false);
     }
@@ -216,7 +221,10 @@ export default function Login() {
   return (
     <div className="min-h-screen bg-gradient-to-r from-[#d32f2f] to-[#b71c1c] flex items-center justify-center p-4">
       <div className="w-full max-w-md">
-        <div className="bg-white rounded-2xl shadow-2xl p-8 border-2 border-transparent" style={{ boxShadow: '0 10px 30px rgba(2,6,23,0.45)' }}>
+        <div
+          className="bg-white rounded-2xl shadow-2xl p-8 border-2 border-transparent"
+          style={{ boxShadow: "0 10px 30px rgba(2,6,23,0.45)" }}
+        >
           {/* Logo block */}
           <div className="flex items-center justify-center mb-4">
             <div className="rounded-xl p-2 bg-white shadow-sm">
@@ -224,7 +232,7 @@ export default function Login() {
                 src={Logo}
                 alt="Nayash Group"
                 className="h-20 sm:h-20 md:h-20 object-contain"
-                style={{ filter: 'drop-shadow(0 6px 18px rgba(0,0,0,0.12))' }}
+                style={{ filter: "drop-shadow(0 6px 18px rgba(0,0,0,0.12))" }}
               />
             </div>
           </div>
@@ -235,7 +243,10 @@ export default function Login() {
 
           <form onSubmit={handleSubmit} className="space-y-5">
             <div>
-              <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-2">
+              <label
+                htmlFor="email"
+                className="block text-sm font-medium text-gray-700 mb-2"
+              >
                 Email Address
               </label>
               <input
@@ -251,7 +262,10 @@ export default function Login() {
             </div>
 
             <div>
-              <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-2">
+              <label
+                htmlFor="password"
+                className="block text-sm font-medium text-gray-700 mb-2"
+              >
                 Password
               </label>
               <input
@@ -278,7 +292,7 @@ export default function Login() {
               className="w-full py-3 px-4 rounded-lg font-medium text-white shadow-md
                 bg-gradient-to-r from-[#d32f2f] to-[#b71c1c] hover:from-[#e03b3b] hover:to-[#9a1414] transition-transform transform active:scale-95 disabled:opacity-60 disabled:cursor-not-allowed"
             >
-              {loading ? 'Please wait...' : 'Sign In'}
+              {loading ? "Please wait..." : "Sign In"}
             </button>
           </form>
 
@@ -287,7 +301,7 @@ export default function Login() {
             <button
               type="button"
               className="text-xs font-medium text-[#b71c1c] hover:underline ml-1"
-              onClick={() => alert('Password reset flow')}
+              onClick={() => alert("Password reset flow")}
             >
               Reset
             </button>

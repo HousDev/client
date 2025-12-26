@@ -2,26 +2,19 @@
 import { useState, useEffect } from "react";
 import {
   Plus,
-  Eye,
   Edit2,
   Trash2,
   Search,
-  CheckCircle,
   XCircle,
   FileText,
   Package,
-  DollarSign,
   X,
   Save,
   FileCheck2,
-  ArrowLeft,
-  FileDown,
-  Loader2,
   Check,
   IndianRupee,
 } from "lucide-react";
 import { useAuth } from "../contexts/AuthContext";
-import PurchaseOrdersPro from "./PurchaseOrdersPro";
 import vendorApi from "../lib/vendorApi";
 import projectApi from "../lib/projectApi";
 import poTypeApi from "../lib/poTypeApi";
@@ -30,8 +23,10 @@ import po_trackingApi from "../lib/po_tracking";
 import CreatePurchaseOrderForm from "../components/CreatePurchaseOrderForm";
 import UpdatePurchaseOrderForm from "../components/updatePurchaseOrderForm";
 import ItemsApi from "../lib/itemsApi";
-import { pdf, PDFDownloadLink, PDFViewer } from "@react-pdf/renderer";
+import { PDFViewer } from "@react-pdf/renderer";
 import PurchaseOrderPDF from "../components/purchaseOrderPdf/PurchaseOrderPdf";
+import SearchableSelect from "../components/SearchableSelect";
+import { UsersApi } from "../lib/Api";
 
 type Vendor = {
   id: string;
@@ -91,6 +86,7 @@ type Tracking = {
 export default function PurchaseOrders() {
   const { user, profile } = useAuth();
   const [pos, setPOs] = useState<PO[]>([]);
+  const [showChallans, setShowChallans] = useState(false);
   const [trackingData, setTrackingData] = useState<Tracking[]>([]);
   const [vendors, setVendors] = useState<Vendor[]>([]);
   const [projects, setProjects] = useState<Project[]>([]);
@@ -106,9 +102,18 @@ export default function PurchaseOrders() {
   const [selectedPO, setSelectedPO] = useState<PO | null>(null);
   const [editingPO, setEditingPO] = useState<any>(null);
   const [paymentAmount, setPaymentAmount] = useState(0);
+  const [allStoreManagementEmployee, setAllStoreManagementEmployee] =
+    useState<any>([]);
+  const [from, setFrom] = useState("");
+  const [to, setTo] = useState("");
+
+  const [challanNumber, setChallanNumber] = useState("");
+  const [challanImage, setChallanImage] = useState<File | null>(null);
+
   const [showApprovalButtons, setShowApprovalButtons] = useState<number | null>(
     null
   );
+  const [allChallans, setAllChallans] = useState<string[]>([]);
   const [activeTab, setActiveTab] = useState<"tracking" | "management">(
     "management"
   );
@@ -240,6 +245,15 @@ export default function PurchaseOrders() {
       },
     },
   ];
+
+  const loadAllStoreManagementEmployee = async () => {
+    const res: any = await UsersApi.list();
+    console.log(res);
+    setAllStoreManagementEmployee(res ?? []);
+  };
+  useEffect(() => {
+    loadAllStoreManagementEmployee();
+  }, []);
 
   // --- Util: load from localStorage or defaults ---
 
@@ -411,26 +425,20 @@ export default function PurchaseOrders() {
 
   // --- Permissions: admin gets everything, others follow profile.permissions ---
   const can = (permission: string) => {
-    console.log(permission, "asdfjlasjdfklsjdfkaldl");
     // Try these fields for role - adapt if your backend uses different field names
     const role =
       (profile as any)?.role_name ??
       (profile as any)?.role ??
       (user as any)?.role ??
       null;
-    console.log(role);
 
     // If admin — grant all access
     if (role === "admin") return true;
-    console.log("after check");
 
     // fallback to permissions object if present on profile
     const perms: Record<string, boolean> | null =
       (profile as any)?.permissions ?? null;
-    console.log(
-      perms,
-      "this is perms from can functions......................................................"
-    );
+
     if (perms && typeof perms === "object") {
       return Boolean(perms[permission]);
     }
@@ -512,7 +520,7 @@ export default function PurchaseOrders() {
   const handleView = async (po: any) => {
     // const blob = await pdf(<PurchaseOrderPDF />).toBlob();
     // window.open(URL.createObjectURL(blob));
-    console.log(po, "from pdf preview");
+    // console.log(po, "from pdf preview");
     if (!po) return;
     if (!allPurchaseOrderItems) {
       alert("wait data is loading");
@@ -558,7 +566,7 @@ export default function PurchaseOrders() {
             .filter(Boolean)
         : [],
     };
-    console.log(data, "data values from preview");
+    // console.log(data, "data values from preview");
     setPdfLoading(true);
     setSelectedPO(data);
     setShowViewModal(true);
@@ -630,36 +638,75 @@ export default function PurchaseOrders() {
 
   const updateMaterialQuantity = async (e: React.FormEvent) => {
     e.preventDefault();
+
     const trackingMaterialData = filteredTracking.find(
       (item: any) => item.id === selectedTrackingMaterial
     );
-    console.log(trackingMaterialData, "sdfjhsdajfhsahfksafasfdhk");
+
     if (
       materialQuantity < 1 ||
       materialQuantity > Number(trackingMaterialData.quantity_pending) ||
-      !materialQuantity
+      !materialQuantity ||
+      !challanNumber
     ) {
-      alert("Invalid Material Quantity.");
+      alert("Invalid input.");
       return;
     }
 
-    // console.log(trackingMaterialData, "selected");
-    const payload = {
-      quantity_received: String(materialQuantity),
-      quantity_pending: String(
+    const formData = new FormData();
+    formData.append("quantity_received", String(materialQuantity));
+    formData.append(
+      "quantity_pending",
+      String(
         Number(trackingMaterialData.quantity_pending) - Number(materialQuantity)
-      ),
-    };
-    // console.log(payload, "payload for material quantity");
-    const response = await po_trackingApi.updateMaterialQty(
-      selectedTrackingMaterial,
-      payload
+      )
     );
+    formData.append("challan_number", challanNumber);
+    formData.append("from_person", from);
+    formData.append("to_person", to);
+
+    if (challanImage) {
+      formData.append("challan_image", challanImage);
+    }
+
+    await po_trackingApi.updateMaterialQty(selectedTrackingMaterial, formData);
+
     alert("Received Material Quantity Updated");
     setShowUpdateMaterialQuantity(false);
     loadAllData();
-    // console.log(materialQuantity, "update material quantity");
   };
+
+  // const updateMaterialQuantity = async (e: React.FormEvent) => {
+  //   e.preventDefault();
+  //   const trackingMaterialData = filteredTracking.find(
+  //     (item: any) => item.id === selectedTrackingMaterial
+  //   );
+  //   if (
+  //     materialQuantity < 1 ||
+  //     materialQuantity > Number(trackingMaterialData.quantity_pending) ||
+  //     !materialQuantity
+  //   ) {
+  //     alert("Invalid Material Quantity.");
+  //     return;
+  //   }
+
+  //   // console.log(trackingMaterialData, "selected");
+  //   const payload = {
+  //     quantity_received: String(materialQuantity),
+  //     quantity_pending: String(
+  //       Number(trackingMaterialData.quantity_pending) - Number(materialQuantity)
+  //     ),
+  //   };
+  //   // console.log(payload, "payload for material quantity");
+  //   const response = await po_trackingApi.updateMaterialQty(
+  //     selectedTrackingMaterial,
+  //     payload
+  //   );
+  //   alert("Received Material Quantity Updated");
+  //   setShowUpdateMaterialQuantity(false);
+  //   loadAllData();
+  //   // console.log(materialQuantity, "update material quantity");
+  // };
 
   const handleDelete = async (id: any) => {
     if (
@@ -1093,11 +1140,11 @@ export default function PurchaseOrders() {
                       <td className="px-6 py-4">
                         <div className="flex gap-2">
                           <button
-                            // onClick={() => handleView(po)}
+                            onClick={() => handleView(po)}
                             className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition"
                             title="View Details"
                           >
-                            <Eye className="w-4 h-4" />
+                            <FileText className="w-4 h-4" />
                           </button>
                         </div>
                       </td>
@@ -1139,6 +1186,9 @@ export default function PurchaseOrders() {
                     </th>
                     <th className="text-left px-6 py-4 text-sm font-semibold text-gray-700">
                       Status
+                    </th>
+                    <th className="text-left px-6 py-4 text-sm font-semibold text-gray-700">
+                      Challan
                     </th>
                     <th className="text-left px-6 py-4 text-sm font-semibold text-gray-700">
                       Actions
@@ -1205,6 +1255,26 @@ export default function PurchaseOrders() {
                           >
                             {track.status?.toUpperCase()}
                           </span>
+                        </td>
+                        <td className="px-6 py-4 text-blue-600 font-semibold cursor-pointer">
+                          <button
+                            onClick={() => {
+                              const data = track.challan_image.split(",");
+                              console.log(data, "show data");
+                              setAllChallans(
+                                typeof data === "string" ? [data] : data
+                              );
+                              setShowChallans(true);
+                            }}
+                            className={`${track.challan_image ? "" : "hidden"}`}
+                          >
+                            View
+                          </button>
+                          <button
+                            className={`${track.challan_image ? "hidden" : ""}`}
+                          >
+                            --
+                          </button>
                         </td>
                         <td className="px-6 py-4">
                           {track.quantity_pending > 0 && (
@@ -1339,7 +1409,7 @@ export default function PurchaseOrders() {
                           className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition"
                           title="View"
                         >
-                          <Eye className="w-4 h-4" />
+                          <FileText className="w-4 h-4" />
                         </button>
                         {can("edit_pos") && po.status === "draft" && (
                           <button
@@ -1591,10 +1661,36 @@ export default function PurchaseOrders() {
         />
       )}
 
+      {showChallans && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-4xl">
+            <div className="bg-gradient-to-r rounded-t-2xl from-blue-600 to-blue-700 px-6 py-4 flex justify-between items-center">
+              <h2 className="text-2xl font-bold text-white">View Challans</h2>
+              <button
+                onClick={() => setShowChallans(false)}
+                className="text-white hover:bg-white hover:bg-opacity-20 rounded-lg p-2 transition"
+              >
+                <X className="w-6 h-6" />
+              </button>
+            </div>
+            <div className="h-[600px] overflow-y-scroll">
+              {allChallans.map((d) => (
+                <div>
+                  <img
+                    src={import.meta.env.VITE_IMAGE_URL + d}
+                    className="mb-4"
+                  />
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
+
       {showUpdateMaterialQuantity && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-2xl">
-            <div className="bg-gradient-to-r from-yellow-600 to-yellow-700 px-6 py-4 flex justify-between items-center">
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg">
+            <div className="bg-gradient-to-r rounded-t-2xl from-blue-600 to-blue-700 px-6 py-4 flex justify-between items-center">
               <h2 className="text-2xl font-bold text-white">
                 Update Material Quantity
               </h2>
@@ -1606,6 +1702,44 @@ export default function PurchaseOrders() {
               </button>
             </div>
             <form onSubmit={updateMaterialQuantity} className="p-6">
+              <div className=" mb-6">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    From
+                  </label>
+                  <SearchableSelect
+                    options={vendors.map((v: any) => ({
+                      id: v.id,
+                      name: v.name || v.vendor_name || v.display || "",
+                    }))}
+                    value={from}
+                    onChange={(id) => {
+                      setFrom(id);
+                    }}
+                    placeholder="Select Vendor"
+                    required
+                  />
+                </div>
+              </div>
+              <div className=" mb-6">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    To
+                  </label>
+                  <SearchableSelect
+                    options={allStoreManagementEmployee.map((v: any) => ({
+                      id: v.id,
+                      name: v.full_name || v.vendor_name || v.display || "",
+                    }))}
+                    value={to}
+                    onChange={(id) => {
+                      setTo(id);
+                    }}
+                    placeholder="Select Vendor"
+                    required
+                  />
+                </div>
+              </div>
               <div className=" mb-6">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -1622,11 +1756,41 @@ export default function PurchaseOrders() {
                   />
                 </div>
               </div>
+
+              <div className="mb-4">
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Challan Number
+                </label>
+                <input
+                  type="text"
+                  value={challanNumber}
+                  onChange={(e) => setChallanNumber(e.target.value)}
+                  className="w-full border px-3 py-2 rounded"
+                  placeholder="Enter challan number"
+                />
+              </div>
+
+              <div className="mb-6">
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Upload Challan Photo
+                </label>
+                <input
+                  type="file"
+                  accept="image/*"
+                  onChange={(e) => {
+                    if (e.target.files?.[0]) {
+                      setChallanImage(e.target.files[0]);
+                    }
+                  }}
+                  className="w-full border file:px-3 file:py-2 rounded file:bg-blue-600 file:hover:bg-blue-700 file:border-none file:text-white"
+                />
+              </div>
+
               <div className="flex gap-3">
                 <button
                   type="submit"
                   disabled={materialQuantity <= 0}
-                  className="flex-1 bg-yellow-600 text-white py-3 px-6 rounded-lg hover:bg-yellow-700 transition"
+                  className="flex-1 bg-blue-600 text-white py-3 px-6 rounded-lg hover:bg-blue-700 disabled:bg-blue-400 transition"
                 >
                   <Save className="w-5 h-5 inline mr-2" />
                   Save Changes

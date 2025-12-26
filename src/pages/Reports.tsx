@@ -1,10 +1,10 @@
-import { useState, useEffect } from 'react';
-import { BarChart3, Download } from 'lucide-react';
+import { useState, useEffect } from "react";
+import { BarChart3, Download } from "lucide-react";
 
 type PO = {
   id: string;
   po_number: string;
-  status: 'completed' | 'pending_approval' | 'draft' | string;
+  status: "completed" | "pending_approval" | "draft" | string;
   grand_total: number;
   created_at: string;
 };
@@ -18,12 +18,12 @@ type Payment = {
 
 type PaymentTerm = {
   id: string;
-  status: 'due' | 'paid' | 'overdue' | string;
+  status: "due" | "paid" | "overdue" | string;
   amount: number;
   expected_date?: string;
 };
 
-const STORAGE_KEY = 'mock_reports_data_v1';
+const STORAGE_KEY = "mock_reports_data_v1";
 
 export default function Reports() {
   const [reportData, setReportData] = useState({
@@ -35,7 +35,11 @@ export default function Reports() {
     overduePayments: 0,
   });
   const [loading, setLoading] = useState(true);
-  const [raw, setRaw] = useState<{ pos: PO[]; payments: Payment[]; terms: PaymentTerm[] } | null>(null);
+  const [raw, setRaw] = useState<{
+    pos: PO[];
+    payments: Payment[];
+    terms: PaymentTerm[];
+  } | null>(null);
 
   useEffect(() => {
     loadReportData();
@@ -45,45 +49,65 @@ export default function Reports() {
   const seedData = () => {
     const pos: PO[] = [
       {
-        id: 'po1',
-        po_number: 'PO/2025/001',
-        status: 'completed',
+        id: "po1",
+        po_number: "PO/2025/001",
+        status: "completed",
         grand_total: 250000,
-        created_at: '2025-01-05',
+        created_at: "2025-01-05",
       },
       {
-        id: 'po2',
-        po_number: 'PO/2025/002',
-        status: 'pending_approval',
+        id: "po2",
+        po_number: "PO/2025/002",
+        status: "pending_approval",
         grand_total: 125000,
-        created_at: '2025-02-10',
+        created_at: "2025-02-10",
       },
       {
-        id: 'po3',
-        po_number: 'PO/2025/003',
-        status: 'completed',
+        id: "po3",
+        po_number: "PO/2025/003",
+        status: "completed",
         grand_total: 520000,
-        created_at: '2025-03-12',
+        created_at: "2025-03-12",
       },
       {
-        id: 'po4',
-        po_number: 'PO/2025/004',
-        status: 'draft',
+        id: "po4",
+        po_number: "PO/2025/004",
+        status: "draft",
         grand_total: 80000,
-        created_at: '2025-04-01',
+        created_at: "2025-04-01",
       },
     ];
 
     const payments: Payment[] = [
-      { id: 'pay1', payment_number: 'PAY/2025/001', amount: 150000, payment_date: '2025-02-01' },
-      { id: 'pay2', payment_number: 'PAY/2025/002', amount: 50000, payment_date: '2025-03-05' },
-      { id: 'pay3', payment_number: 'PAY/2025/003', amount: 20000, payment_date: '2025-06-01' },
+      {
+        id: "pay1",
+        payment_number: "PAY/2025/001",
+        amount: 150000,
+        payment_date: "2025-02-01",
+      },
+      {
+        id: "pay2",
+        payment_number: "PAY/2025/002",
+        amount: 50000,
+        payment_date: "2025-03-05",
+      },
+      {
+        id: "pay3",
+        payment_number: "PAY/2025/003",
+        amount: 20000,
+        payment_date: "2025-06-01",
+      },
     ];
 
     const terms: PaymentTerm[] = [
-      { id: 't1', status: 'paid', amount: 150000, expected_date: '2025-02-01' },
-      { id: 't2', status: 'due', amount: 50000, expected_date: '2025-06-20' },
-      { id: 't3', status: 'overdue', amount: 30000, expected_date: '2025-04-15' },
+      { id: "t1", status: "paid", amount: 150000, expected_date: "2025-02-01" },
+      { id: "t2", status: "due", amount: 50000, expected_date: "2025-06-20" },
+      {
+        id: "t3",
+        status: "overdue",
+        amount: 30000,
+        expected_date: "2025-04-15",
+      },
     ];
 
     const payload = { pos, payments, terms };
@@ -103,13 +127,22 @@ export default function Reports() {
       const termsRes: PaymentTerm[] = data.terms || [];
 
       const totalPOs = posRes.length;
-      const completedPOs = posRes.filter((p) => p.status === 'completed').length;
-      const pendingPOs = posRes.filter((p) => p.status === 'pending_approval').length;
-      const totalAmount = posRes.reduce((sum, p) => sum + (p.grand_total || 0), 0);
+      const completedPOs = posRes.filter(
+        (p) => p.status === "completed"
+      ).length;
+      const pendingPOs = posRes.filter(
+        (p) => p.status === "pending_approval"
+      ).length;
+      const totalAmount = posRes.reduce(
+        (sum, p) => sum + (p.grand_total || 0),
+        0
+      );
 
       const totalPayments = paymentsRes.length;
       const overduePayments =
-        termsRes.filter((t) => t.status === 'overdue').reduce((sum, t) => sum + (t.amount || 0), 0) || 0;
+        termsRes
+          .filter((t) => t.status === "overdue")
+          .reduce((sum, t) => sum + (t.amount || 0), 0) || 0;
 
       setReportData({
         totalPOs,
@@ -120,16 +153,16 @@ export default function Reports() {
         overduePayments,
       });
     } catch (error) {
-      console.error('Error loading report data (demo):', error);
+      console.error("Error loading report data (demo):", error);
     } finally {
       setLoading(false);
     }
   };
 
   const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat('en-IN', {
-      style: 'currency',
-      currency: 'INR',
+    return new Intl.NumberFormat("en-IN", {
+      style: "currency",
+      currency: "INR",
       maximumFractionDigits: 0,
     }).format(amount);
   };
@@ -137,27 +170,27 @@ export default function Reports() {
   // CSV & JSON downloads for demo
   const downloadCSV = (filename: string, rows: Record<string, any>[]) => {
     if (!rows || rows.length === 0) {
-      alert('No data to download');
+      alert("No data to download");
       return;
     }
     const keys = Object.keys(rows[0]);
-    const csv = [keys.join(',')]
+    const csv = [keys.join(",")]
       .concat(
         rows.map((r) =>
           keys
             .map((k) => {
-              const v = r[k] ?? '';
+              const v = r[k] ?? "";
               // escape quotes
               return `"${String(v).replace(/"/g, '""')}"`;
             })
-            .join(',')
+            .join(",")
         )
       )
-      .join('\n');
+      .join("\n");
 
-    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+    const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
     const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
+    const a = document.createElement("a");
     a.href = url;
     a.download = filename;
     a.click();
@@ -165,38 +198,40 @@ export default function Reports() {
   };
 
   const downloadJSON = (filename: string, data: any) => {
-    const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+    const blob = new Blob([JSON.stringify(data, null, 2)], {
+      type: "application/json",
+    });
     const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
+    const a = document.createElement("a");
     a.href = url;
     a.download = filename;
     a.click();
     URL.revokeObjectURL(url);
   };
 
-  const downloadReport = (format: 'pdf' | 'excel') => {
+  const downloadReport = (format: "pdf" | "excel") => {
     // Provide CSV/JSON for demo; keep PDF as placeholder
     if (!raw) {
-      alert('No report data available');
+      alert("No report data available");
       return;
     }
-    if (format === 'excel') {
+    if (format === "excel") {
       // export combined data as CSV for demo
       const rows = [
-        { metric: 'Total POs', value: reportData.totalPOs },
-        { metric: 'Total PO Value', value: reportData.totalAmount },
-        { metric: 'Completed POs', value: reportData.completedPOs },
-        { metric: 'Pending POs', value: reportData.pendingPOs },
-        { metric: 'Total Payments', value: reportData.totalPayments },
-        { metric: 'Overdue Payment Value', value: reportData.overduePayments },
+        { metric: "Total POs", value: reportData.totalPOs },
+        { metric: "Total PO Value", value: reportData.totalAmount },
+        { metric: "Completed POs", value: reportData.completedPOs },
+        { metric: "Pending POs", value: reportData.pendingPOs },
+        { metric: "Total Payments", value: reportData.totalPayments },
+        { metric: "Overdue Payment Value", value: reportData.overduePayments },
       ];
-      downloadCSV('report_summary.csv', rows);
+      downloadCSV("report_summary.csv", rows);
       return;
     }
-    if (format === 'pdf') {
+    if (format === "pdf") {
       // placeholder: produce JSON and notify user
-      downloadJSON('report_data.json', raw);
-      alert('PDF export not available in demo — exported JSON instead.');
+      downloadJSON("report_data.json", raw);
+      alert("PDF export not available in demo — exported JSON instead.");
       return;
     }
   };
@@ -218,22 +253,24 @@ export default function Reports() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 p-6">
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-bold text-gray-800">Reports & MIS</h1>
-          <p className="text-gray-600 mt-1">View business metrics and insights</p>
+          <p className="text-gray-600 mt-1">
+            View business metrics and insights
+          </p>
         </div>
         <div className="flex gap-3">
           <button
-            onClick={() => downloadReport('pdf')}
+            onClick={() => downloadReport("pdf")}
             className="flex items-center gap-2 bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700 transition"
           >
             <Download className="w-4 h-4" />
             PDF
           </button>
           <button
-            onClick={() => downloadReport('excel')}
+            onClick={() => downloadReport("excel")}
             className="flex items-center gap-2 bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition"
           >
             <Download className="w-4 h-4" />
@@ -256,8 +293,12 @@ export default function Reports() {
               <BarChart3 className="w-6 h-6 text-blue-600" />
             </div>
           </div>
-          <p className="text-gray-600 text-sm font-medium mb-1">Total Purchase Orders</p>
-          <p className="text-3xl font-bold text-blue-600">{reportData.totalPOs}</p>
+          <p className="text-gray-600 text-sm font-medium mb-1">
+            Total Purchase Orders
+          </p>
+          <p className="text-3xl font-bold text-blue-600">
+            {reportData.totalPOs}
+          </p>
         </div>
 
         <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
@@ -266,8 +307,12 @@ export default function Reports() {
               <BarChart3 className="w-6 h-6 text-green-600" />
             </div>
           </div>
-          <p className="text-gray-600 text-sm font-medium mb-1">Total PO Value</p>
-          <p className="text-2xl font-bold text-green-600">{formatCurrency(reportData.totalAmount)}</p>
+          <p className="text-gray-600 text-sm font-medium mb-1">
+            Total PO Value
+          </p>
+          <p className="text-2xl font-bold text-green-600">
+            {formatCurrency(reportData.totalAmount)}
+          </p>
         </div>
 
         <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
@@ -276,8 +321,12 @@ export default function Reports() {
               <BarChart3 className="w-6 h-6 text-purple-600" />
             </div>
           </div>
-          <p className="text-gray-600 text-sm font-medium mb-1">Completed POs</p>
-          <p className="text-3xl font-bold text-purple-600">{reportData.completedPOs}</p>
+          <p className="text-gray-600 text-sm font-medium mb-1">
+            Completed POs
+          </p>
+          <p className="text-3xl font-bold text-purple-600">
+            {reportData.completedPOs}
+          </p>
         </div>
 
         <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
@@ -287,7 +336,9 @@ export default function Reports() {
             </div>
           </div>
           <p className="text-gray-600 text-sm font-medium mb-1">Pending POs</p>
-          <p className="text-3xl font-bold text-orange-600">{reportData.pendingPOs}</p>
+          <p className="text-3xl font-bold text-orange-600">
+            {reportData.pendingPOs}
+          </p>
         </div>
 
         <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
@@ -296,8 +347,12 @@ export default function Reports() {
               <BarChart3 className="w-6 h-6 text-teal-600" />
             </div>
           </div>
-          <p className="text-gray-600 text-sm font-medium mb-1">Total Payments</p>
-          <p className="text-3xl font-bold text-teal-600">{reportData.totalPayments}</p>
+          <p className="text-gray-600 text-sm font-medium mb-1">
+            Total Payments
+          </p>
+          <p className="text-3xl font-bold text-teal-600">
+            {reportData.totalPayments}
+          </p>
         </div>
 
         <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
@@ -306,8 +361,12 @@ export default function Reports() {
               <BarChart3 className="w-6 h-6 text-red-600" />
             </div>
           </div>
-          <p className="text-gray-600 text-sm font-medium mb-1">Overdue Payment Value</p>
-          <p className="text-2xl font-bold text-red-600">{formatCurrency(reportData.overduePayments)}</p>
+          <p className="text-gray-600 text-sm font-medium mb-1">
+            Overdue Payment Value
+          </p>
+          <p className="text-2xl font-bold text-red-600">
+            {formatCurrency(reportData.overduePayments)}
+          </p>
         </div>
       </div>
 
@@ -315,7 +374,9 @@ export default function Reports() {
         <h2 className="text-xl font-bold text-gray-800 mb-4">Report Summary</h2>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <div>
-            <h3 className="font-semibold text-gray-800 mb-3">Purchase Order Status</h3>
+            <h3 className="font-semibold text-gray-800 mb-3">
+              Purchase Order Status
+            </h3>
             <div className="space-y-2">
               <div className="flex justify-between items-center">
                 <span className="text-gray-600">Completed</span>
@@ -323,12 +384,22 @@ export default function Reports() {
                   <div
                     className="bg-green-600 h-2 rounded-full"
                     style={{
-                      width: `${reportData.totalPOs > 0 ? (reportData.completedPOs / reportData.totalPOs) * 100 : 0}%`,
+                      width: `${
+                        reportData.totalPOs > 0
+                          ? (reportData.completedPOs / reportData.totalPOs) *
+                            100
+                          : 0
+                      }%`,
                     }}
                   ></div>
                 </div>
                 <span className="font-medium text-gray-800 w-12 text-right">
-                  {reportData.totalPOs > 0 ? Math.round((reportData.completedPOs / reportData.totalPOs) * 100) : 0}%
+                  {reportData.totalPOs > 0
+                    ? Math.round(
+                        (reportData.completedPOs / reportData.totalPOs) * 100
+                      )
+                    : 0}
+                  %
                 </span>
               </div>
               <div className="flex justify-between items-center">
@@ -337,26 +408,41 @@ export default function Reports() {
                   <div
                     className="bg-orange-600 h-2 rounded-full"
                     style={{
-                      width: `${reportData.totalPOs > 0 ? (reportData.pendingPOs / reportData.totalPOs) * 100 : 0}%`,
+                      width: `${
+                        reportData.totalPOs > 0
+                          ? (reportData.pendingPOs / reportData.totalPOs) * 100
+                          : 0
+                      }%`,
                     }}
                   ></div>
                 </div>
                 <span className="font-medium text-gray-800 w-12 text-right">
-                  {reportData.totalPOs > 0 ? Math.round((reportData.pendingPOs / reportData.totalPOs) * 100) : 0}%
+                  {reportData.totalPOs > 0
+                    ? Math.round(
+                        (reportData.pendingPOs / reportData.totalPOs) * 100
+                      )
+                    : 0}
+                  %
                 </span>
               </div>
             </div>
           </div>
           <div>
-            <h3 className="font-semibold text-gray-800 mb-3">Financial Summary</h3>
+            <h3 className="font-semibold text-gray-800 mb-3">
+              Financial Summary
+            </h3>
             <div className="space-y-3 text-sm">
               <div className="flex justify-between p-2 bg-gray-50 rounded">
                 <span className="text-gray-600">Total PO Amount</span>
-                <span className="font-medium">{formatCurrency(reportData.totalAmount)}</span>
+                <span className="font-medium">
+                  {formatCurrency(reportData.totalAmount)}
+                </span>
               </div>
               <div className="flex justify-between p-2 bg-red-50 rounded">
                 <span className="text-gray-600">Overdue Payments</span>
-                <span className="font-medium text-red-600">{formatCurrency(reportData.overduePayments)}</span>
+                <span className="font-medium text-red-600">
+                  {formatCurrency(reportData.overduePayments)}
+                </span>
               </div>
             </div>
           </div>

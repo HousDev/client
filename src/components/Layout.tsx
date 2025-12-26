@@ -304,7 +304,7 @@ export default function Layout({
 
       {/* Sidebar */}
       <aside
-        className={`fixed top-0 left-0 h-full w-64 bg-white border-r border-gray-200 z-50 transform transition-transform duration-300 ${
+        className={`fixed top-0 left-0 h-full w-52 bg-white border-r border-gray-200 z-50 transform transition-transform duration-300 ${
           sidebarOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0"
         }`}
         aria-label="Sidebar"
@@ -399,8 +399,8 @@ export default function Layout({
       </aside>
 
       {/* main content */}
-      <main className="lg:ml-64 pt-16 lg:pt-16">
-        <div className="p-6">{children}</div>
+      <main className="lg:ml-52 pt-16 lg:pt-16">
+        <div>{children}</div>
       </main>
 
       {/* ---------------- Notifications panel: TOP aligned (drop-down style) ---------------- */}

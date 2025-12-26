@@ -1,15 +1,18 @@
 import React, { SetStateAction, useState } from "react";
-import { X, Save, Package } from "lucide-react";
+import { X, Save, Package, AlertTriangle } from "lucide-react";
 import inventoryApi from "../lib/inventoryApi";
 
 interface InventoryFormData {
   id: number;
+  item_id: number;
   name: string;
-  description: string;
-  category: string;
   unit: string;
+  rate: string;
   quantity: number;
   reorder_qty: number;
+  location: string;
+  status: string;
+  total_value: number;
 }
 
 export default function UpdateInventoryForm({
@@ -23,15 +26,28 @@ export default function UpdateInventoryForm({
 }) {
   const [formData, setFormData] = useState<InventoryFormData>({
     id: selectedItem.id,
+    item_id: selectedItem.item_id,
     name: selectedItem.name || "",
-    description: selectedItem.description || "",
-    category: selectedItem.category || "",
     unit: selectedItem.unit || "",
+    rate: selectedItem.rate || "",
     quantity: selectedItem.quantity ?? 0,
     reorder_qty: selectedItem.reorder_qty ?? 0,
+    location: selectedItem.location ?? "",
+    status: selectedItem.status ?? "",
+    total_value: selectedItem.total_value ?? "",
   });
 
   const [loading, setLoading] = useState(false);
+
+  // --- Helper Functions ---
+  const getStatusColor = (status: string) => {
+    const colors: Record<string, string> = {
+      "IN STOCK": "bg-green-100 text-green-700",
+      "LOW STOCK": "bg-yellow-100 text-yellow-700",
+      "OUT OF STOCK": "bg-red-100 text-red-700",
+    };
+    return colors[status] || "bg-gray-100 text-gray-700";
+  };
 
   /* ------------------ submit ------------------ */
   const handleSubmit = async (e: React.FormEvent) => {
@@ -42,17 +58,19 @@ export default function UpdateInventoryForm({
       return;
     }
 
-    if (!formData.category.trim()) {
-      alert("Category is required");
-      return;
-    }
-
     if (!formData.unit.trim()) {
       alert("Unit is required");
       return;
     }
-
-    if (formData.reorder_qty < 0) {
+    if (!formData.location.trim()) {
+      alert("Location is required");
+      return;
+    }
+    if (Number(formData.reorder_qty) < 0) {
+      alert("Reorder quantity cannot be negative");
+      return;
+    }
+    if (Number(formData.rate) < 0) {
       alert("Reorder quantity cannot be negative");
       return;
     }
@@ -60,14 +78,7 @@ export default function UpdateInventoryForm({
     try {
       setLoading(true);
 
-      await inventoryApi.updateInventory(formData.id, {
-        name: formData.name,
-        description: formData.description,
-        category: formData.category,
-        unit: formData.unit,
-        quantity: formData.quantity,
-        reorder_qty: formData.reorder_qty,
-      });
+      await inventoryApi.updateInventory(formData.id, formData);
 
       alert("Inventory item updated successfully");
       setShowEditModal(false);
@@ -99,54 +110,38 @@ export default function UpdateInventoryForm({
 
         {/* Form */}
         <form onSubmit={handleSubmit} className="p-6 space-y-4">
-          {/* Item Name */}
-          <div>
-            <label className="block text-sm font-medium mb-1">
-              Item Name <span className="text-red-500">*</span>
-            </label>
-            <input
-              type="text"
-              value={formData.name}
-              onChange={(e) =>
-                setFormData({ ...formData, name: e.target.value })
-              }
-              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              placeholder="Cement OPC 53"
-              required
-            />
-          </div>
-
-          {/* Category */}
-          <div>
-            <label className="block text-sm font-medium mb-1">
-              Category <span className="text-red-500">*</span>
-            </label>
-            <input
-              type="text"
-              value={formData.category}
-              onChange={(e) =>
-                setFormData({ ...formData, category: e.target.value })
-              }
-              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              placeholder="Material / Electrical / Hardware"
-              required
-            />
-          </div>
-
-          {/* Description */}
-          <div>
-            <label className="block text-sm font-medium mb-1">
-              Description
-            </label>
-            <textarea
-              value={formData.description}
-              onChange={(e) =>
-                setFormData({ ...formData, description: e.target.value })
-              }
-              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              rows={3}
-              placeholder="Optional description"
-            />
+          {/* Item Name & Location */}
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm font-medium mb-1">
+                Item Name <span className="text-red-500">*</span>
+              </label>
+              <input
+                type="text"
+                value={formData.name}
+                onChange={(e) =>
+                  setFormData({ ...formData, name: e.target.value })
+                }
+                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                placeholder="Cement OPC 53"
+                required
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium mb-1">
+                Location <span className="text-red-500">*</span>
+              </label>
+              <input
+                type="text"
+                value={formData.location}
+                onChange={(e) =>
+                  setFormData({ ...formData, location: e.target.value })
+                }
+                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                placeholder="Bag / Kg / Nos"
+                required
+              />
+            </div>
           </div>
 
           {/* Quantity & Reorder Qty */}
@@ -159,22 +154,17 @@ export default function UpdateInventoryForm({
                 type="number"
                 min={0}
                 value={formData.quantity}
-                onChange={(e) =>
-                  setFormData({
-                    ...formData,
-                    quantity: Number(e.target.value),
-                  })
-                }
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                disabled
+                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent "
               />
             </div>
 
             <div>
               <label className="block text-sm font-medium mb-1">
-                Reorder Quantity
+                Minimum Quantity
               </label>
               <input
-                type="number"
+                type="text"
                 min={0}
                 value={formData.reorder_qty}
                 onChange={(e) =>
@@ -187,22 +177,78 @@ export default function UpdateInventoryForm({
               />
             </div>
           </div>
-
-          {/* Unit */}
-          <div>
-            <label className="block text-sm font-medium mb-1">
-              Unit <span className="text-red-500">*</span>
-            </label>
-            <input
-              type="text"
-              value={formData.unit}
-              onChange={(e) =>
-                setFormData({ ...formData, unit: e.target.value })
-              }
-              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              placeholder="Bag / Kg / Nos"
-              required
-            />
+          {/* Unit & Status */}
+          <div className="grid grid-cols-2 gap-4">
+            {/* Unit */}
+            <div>
+              <label className="block text-sm font-medium mb-1">
+                Unit <span className="text-red-500">*</span>
+              </label>
+              <input
+                type="text"
+                value={formData.unit}
+                onChange={(e) =>
+                  setFormData({ ...formData, unit: e.target.value })
+                }
+                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                placeholder="Bag / Kg / Nos"
+                required
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium mb-1">Status</label>
+              <span
+                className={`px-3 py-1 rounded-full text-xs font-medium ${getStatusColor(
+                  formData.status
+                )}`}
+              >
+                {formData.status}
+              </span>
+              {formData.status === "LOW STOCK" && (
+                <div className="mt-1 flex items-center gap-1 text-xs text-yellow-600">
+                  <AlertTriangle className="w-3 h-3" />
+                  Reorder needed
+                </div>
+              )}
+              {formData.status === "OUT OF STOCK" && (
+                <div className="mt-1 flex items-center gap-1 text-xs text-red-600">
+                  <AlertTriangle className="w-3 h-3" />
+                  Out of stock
+                </div>
+              )}
+            </div>
+          </div>
+          {/* Unit Rate & Total Rate */}
+          <div className="grid grid-cols-2 gap-4">
+            {/* Unit */}
+            <div>
+              <label className="block text-sm font-medium mb-1">
+                Unit Rate <span className="text-red-500">*</span>
+              </label>
+              <input
+                type="text"
+                value={formData.rate}
+                onChange={(e) =>
+                  setFormData({ ...formData, rate: e.target.value })
+                }
+                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                placeholder="Bag / Kg / Nos"
+                required
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium mb-1">
+                Total Value
+              </label>
+              <input
+                type="text"
+                value={formData.total_value}
+                disabled
+                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled"
+                placeholder="Bag / Kg / Nos"
+                required
+              />
+            </div>
           </div>
 
           {/* Footer */}

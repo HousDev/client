@@ -1096,7 +1096,7 @@ export default function UpdatePurchaseOrderForm({
                   type="button"
                   className="ml-2 text-sm font-medium text-blue-700"
                 >
-                  Add Terms & Conditions (IGST)
+                  Add Terms & Conditions
                 </button>
               </div>
             </div>
