@@ -157,15 +157,16 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
   }, [token]);
 
   const signIn = async (email: string, password: string) => {
-    setLoading(true);
     try {
       const { token: tkn, user: u } = await UsersApi.login(email, password);
+      setLoading(true);
       localStorage.setItem("auth_token", tkn);
       setToken(tkn);
       setUser(u);
       setProfile(u);
-    } finally {
       setLoading(false);
+    } catch (err) {
+      throw err;
     }
   };
 

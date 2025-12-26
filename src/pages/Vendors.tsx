@@ -1,5 +1,5 @@
-import { useState, useEffect } from 'react';
-import { Plus, Search, Phone, Mail, MapPin, X } from 'lucide-react';
+import { useState, useEffect } from "react";
+import { Plus, Search, Phone, Mail, MapPin, X } from "lucide-react";
 
 const VENDORS_KEY = "vendors_local_v1";
 const CATEGORIES_KEY = "vendor_categories_local_v1";
@@ -126,7 +126,9 @@ export default function Vendors() {
       {/* HEADER */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-bold text-gray-800">Vendor Management</h1>
+          <h1 className="text-3xl font-bold text-gray-800">
+            Vendor Management
+          </h1>
           <p className="text-gray-600 mt-1">Manage all your vendors locally</p>
         </div>
         <button
@@ -159,7 +161,9 @@ export default function Vendors() {
             key={vendor.id}
             className="bg-white rounded-xl shadow-sm border border-gray-100 p-6 hover:shadow-md transition"
           >
-            <h3 className="font-bold text-gray-800 text-lg mb-1">{vendor.name}</h3>
+            <h3 className="font-bold text-gray-800 text-lg mb-1">
+              {vendor.name}
+            </h3>
             <p className="text-sm text-gray-600 mb-4">
               {vendor.vendor_categories?.name || "N/A"}
             </p>
@@ -195,7 +199,9 @@ export default function Vendors() {
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-xl shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
             <div className="sticky top-0 bg-white border-b border-gray-200 px-6 py-4 flex items-center justify-between">
-              <h2 className="text-2xl font-bold text-gray-800">Add New Vendor</h2>
+              <h2 className="text-2xl font-bold text-gray-800">
+                Add New Vendor
+              </h2>
               <button
                 onClick={() => setShowModal(false)}
                 className="p-2 hover:bg-gray-100 rounded-lg transition"

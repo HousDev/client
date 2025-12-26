@@ -540,7 +540,7 @@ export default function CreatePurchaseOrderForm({
   // server-side sequence with fallback
   const generatePONumber = async () => {
     try {
-      const res = await poApi.nextSequence();
+      const res: any = await poApi.nextSequence();
       if (res && res.po_number) {
         console.log(res.po.number, "from api");
         return res.po_number;
@@ -602,10 +602,9 @@ export default function CreatePurchaseOrderForm({
         created_by: user?.id,
       };
 
-      const created = await poApi.createPO(payload);
+      const created: any = await poApi.createPO(payload);
 
       if (created && created.id && formData.items.length) {
-        loadAllData();
         const trackingRecords = formData.items.map((item) => ({
           po_id: created.id,
           item_id: item.item_id,
@@ -640,7 +639,7 @@ export default function CreatePurchaseOrderForm({
       alert("Purchase Order created successfully!");
       setShowCreatePro(false);
       resetForm();
-      loadPOs();
+      loadAllData();
     } catch (err) {
       console.error("Error creating PO:", err);
       alert("Error creating purchase order");
@@ -853,7 +852,7 @@ export default function CreatePurchaseOrderForm({
                     type="button"
                     className="ml-2 text-sm font-medium text-blue-700"
                   >
-                    Add Terms & Conditions (IGST)
+                    Add Terms & Conditions
                   </button>
                 </div>
               </div>
