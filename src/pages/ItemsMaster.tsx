@@ -2,6 +2,8 @@
 import React, { useState, useEffect } from "react";
 import { Plus, Edit2, Trash2, Package, X, Search } from "lucide-react";
 import ItemsApi from "../lib/itemsApi";
+import { toast } from "sonner";
+import MySwal from "../utils/swal";
 
 interface ItemFormData {
   item_code: string;
@@ -152,7 +154,7 @@ export default function ItemsMaster(): JSX.Element {
               : Boolean(created.is_active),
         };
         setItems((prev) => [...prev, normalized]);
-        alert("Item created successfully!");
+        toast.success("Item created successfully!");
       }
 
       setShowModal(false);
@@ -160,7 +162,7 @@ export default function ItemsMaster(): JSX.Element {
       loadItems();
     } catch (err) {
       console.error("Error saving item:", err);
-      alert("Failed to save item. See console for details.");
+      toast.error("Failed to save item. See console for details.");
     }
   };
 
@@ -183,14 +185,20 @@ export default function ItemsMaster(): JSX.Element {
   };
 
   const handleDelete = async (id: string) => {
-    if (!confirm("Are you sure you want to delete this item?")) return;
+    const result: any = await MySwal.fire({
+      title: "Delete Item?",
+      text: "This action cannot be undone",
+      icon: "warning",
+      showCancelButton: true,
+    });
+    if (!result.isConfirmed) return;
     try {
       await ItemsApi.deleteItem(Number(id));
       setItems((prev) => prev.filter((it) => it.id !== id));
-      alert("Item deleted successfully!");
+      toast.success("Item deleted successfully!");
     } catch (err) {
       console.error("Delete failed:", err);
-      alert("Failed to delete item.");
+      toast.error("Failed to delete item.");
     }
   };
 

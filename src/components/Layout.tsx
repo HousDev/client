@@ -20,11 +20,20 @@ import {
   X,
   Shield,
 } from "lucide-react";
+import NotificationsApi from "../lib/notificationApi";
 
 interface LayoutProps {
   children: ReactNode;
   activeTab: string;
   onTabChange: (tab: string) => void;
+}
+interface NotificationType {
+  id: number;
+  title: string;
+  description: string;
+  type: string;
+  seen: boolean;
+  created_at: string;
 }
 
 export default function Layout({
@@ -38,6 +47,8 @@ export default function Layout({
   const [notifOpen, setNotifOpen] = useState(false);
   const [userPermissions, setUserPermissions] = useState();
   const [userMenus, setUserMenus] = useState<string[] | []>([]);
+  const [notifications, setNotifications] = useState<NotificationType[]>([]);
+  const [unreadCount, setUnreadCount] = useState(0);
 
   const menuItems = [
     {
@@ -181,13 +192,50 @@ export default function Layout({
 
   const avatarUrl = (profile && (profile as any).avatar) || null;
 
+  const fetchNotifications = async () => {
+    try {
+      const res: any = await NotificationsApi.getNotifications();
+      console.log(res.data);
+      setNotifications(res.data);
+    } catch (error) {
+      console.error("Failed to load notifications", error);
+    }
+  };
   // demo notifications; replace with real data later
-  const notifications = [
-    { id: 1, title: "New vendor added", time: "2m ago", unread: true },
-    { id: 2, title: "PO #123 approved", time: "1h ago", unread: true },
-    { id: 3, title: "Payment overdue", time: "2d ago", unread: false },
-  ];
-  const unreadCount = notifications.filter((n) => n.unread).length;
+  useEffect(() => {
+    // function to fetch notifications
+
+    // initial load
+    fetchNotifications();
+
+    // refresh every 1 minute
+    const intervalId = setInterval(() => {
+      fetchNotifications();
+    }, 60 * 1000); // 1 minute
+
+    // cleanup on unmount
+    return () => {
+      clearInterval(intervalId);
+    };
+  }, []);
+
+  const markAllRead = async () => {
+    try {
+      const result = await NotificationsApi.markAllAsSeen();
+      if (result.success) {
+        fetchNotifications();
+      } else {
+        alert("Failed mark all notifications as seen.");
+      }
+    } catch (err) {
+      console.error("Error marking all as read (demo):", err);
+    }
+  };
+
+  useEffect(() => {
+    const count = notifications.filter((n: any) => !n.seen).length;
+    setUnreadCount(count);
+  }, [notifications]);
 
   // helper classes for animation (used in the panel)
   const panelEnter = "opacity-100 translate-y-0 scale-100";
@@ -198,8 +246,7 @@ export default function Layout({
       {/* Mobile top bar */}
       <div className="lg:hidden fixed top-0 left-0 right-0 bg-white/95 backdrop-blur-sm border-b border-gray-200 z-50 px-4 py-3 flex items-center justify-between">
         <div className="flex items-center gap-2">
-          <Building2 className="w-6 h-6 text-blue-600" />
-          <span className="font-bold text-gray-800">Nayash Group</span>
+          <img src={Logo} className="w-26 h-10 text-blue-600" />
         </div>
 
         <div className="flex items-center gap-2">
@@ -351,50 +398,52 @@ export default function Layout({
             </div>
           </div>
         </div>
-
-        {/* navigation */}
-        <nav
-          className="p-4 space-y-1 flex-1 overflow-y-auto"
-          aria-label="Main navigation"
-        >
-          {menuItems.map((item) => {
-            const Icon = item.icon;
-            const isActive = activeTab === item.id;
-
-            return (
-              <button
-                key={item.id}
-                onClick={() => {
-                  onTabChange(item.id);
-                  setSidebarOpen(false);
-                }}
-                className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition text-left ${
-                  isActive
-                    ? "bg-blue-50 text-blue-600"
-                    : "text-gray-700 hover:bg-gray-50"
-                } ${
-                  item.value.some((d) => (userMenus as string[]).includes(d)) ||
-                  (userMenus as string[]).includes("full_access")
-                    ? "block"
-                    : "hidden"
-                }`}
-              >
-                <Icon className="w-5 h-5" />
-                <span className="font-medium text-sm">{item.label}</span>
-              </button>
-            );
-          })}
-        </nav>
-
-        {/* mobile sign out */}
-        <div className="p-4 border-t border-gray-200 lg:hidden">
-          <button
-            onClick={handleSignOut}
-            className="w-full flex items-center gap-3 px-4 py-3 text-gray-700 hover:bg-red-50 hover:text-red-600 rounded-lg transition"
+        <div className="h-[68vh] lg:h-full overflow-y-scroll lg:overflow-hidden">
+          {/* navigation */}
+          <nav
+            className="p-4 space-y-1 flex-1 overflow-y-auto"
+            aria-label="Main navigation"
           >
-            <LogOut className="w-5 h-5" />
-            <span className="font-medium text-sm">Sign Out</span>
-          </button>
+            {menuItems.map((item) => {
+              const Icon = item.icon;
+              const isActive = activeTab === item.id;
+
+              return (
+                <button
+                  key={item.id}
+                  onClick={() => {
+                    onTabChange(item.id);
+                    setSidebarOpen(false);
+                  }}
+                  className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition text-left ${
+                    isActive
+                      ? "bg-blue-50 text-blue-600"
+                      : "text-gray-700 hover:bg-gray-50"
+                  } ${
+                    item.value.some((d) =>
+                      (userMenus as string[]).includes(d)
+                    ) || (userMenus as string[]).includes("full_access")
+                      ? "block"
+                      : "hidden"
+                  }`}
+                >
+                  <Icon className="w-5 h-5" />
+                  <span className="font-medium text-sm">{item.label}</span>
+                </button>
+              );
+            })}
+          </nav>
+
+          {/* mobile sign out */}
+          <div className="p-4 border-t border-gray-200 lg:hidden">
+            <button
+              onClick={handleSignOut}
+              className="w-full flex items-center gap-3 px-4 py-3 text-gray-700 hover:bg-red-50 hover:text-red-600 rounded-lg transition"
+            >
+              <LogOut className="w-5 h-5" />
+              <span className="font-medium text-sm">Sign Out</span>
+            </button>
+          </div>
         </div>
       </aside>
 
@@ -453,10 +502,10 @@ export default function Layout({
                 notifications.map((n) => (
                   <div
                     key={n.id}
-                    className={`flex items-start gap-3 p-3 rounded-lg ${
-                      n.unread
-                        ? "bg-blue-50/60 border border-blue-100"
-                        : "bg-white"
+                    className={`flex items-center gap-3 p-3 rounded-lg ${
+                      n.seen
+                        ? "bg-white"
+                        : "bg-blue-50/60 border border-blue-100"
                     }`}
                   >
                     <div className="w-10 h-10 rounded-full bg-gradient-to-br from-white to-gray-50 border flex items-center justify-center text-sm text-blue-600 font-semibold shadow-sm">
@@ -467,11 +516,12 @@ export default function Layout({
                         <p className="text-sm font-medium text-gray-800">
                           {n.title}
                         </p>
-                        <span className="text-xs text-gray-400">{n.time}</span>
                       </div>
                       <p className="text-xs text-gray-500 mt-1">
-                        Short description or details here. Add more info to show
-                        context.
+                        {n.description}
+                      </p>
+                      <p className="text-xs text-gray-400 mt-2">
+                        {new Date(n.created_at).toLocaleString()}
                       </p>
                     </div>
                   </div>
@@ -483,7 +533,7 @@ export default function Layout({
               <button
                 className="text-sm text-blue-600 hover:underline"
                 onClick={() => {
-                  // TODO: implement "mark all read"
+                  markAllRead();
                   console.log("Mark all as read (implement)");
                   setNotifOpen(false);
                 }}

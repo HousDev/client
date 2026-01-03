@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { useAuth } from "../contexts/AuthContext";
 import { Bell, CheckCircle, AlertCircle, Clock } from "lucide-react";
+import NotificationsApi from "../lib/notificationApi";
 
 interface Notification {
   id: string;
@@ -12,73 +13,31 @@ interface Notification {
   created_at: string;
 }
 
+interface NotificationType {
+  id: number;
+  title: string;
+  description: string;
+  type: string; // info | warning | success | error (example)
+  seen: boolean;
+  created_at: string;
+}
+
 export default function Notifications() {
   const { user } = useAuth();
-  const [notifications, setNotifications] = useState<Notification[]>([]);
+  const [notifications, setNotifications] = useState<NotificationType[]>([]);
   const [loading, setLoading] = useState(true);
-
-  const STORAGE_KEY = "mock_notifications_v1";
-
-  // sample notifications for demo/first-run
-  const sampleNotifications: Notification[] = [
-    {
-      id: "n_1",
-      user_id: user?.id,
-      type: "po_delivery_due",
-      title: "PO Delivery Due Today",
-      message: "Materials for PO-1001 are due for delivery today.",
-      is_read: false,
-      created_at: new Date().toISOString(),
-    },
-    {
-      id: "n_2",
-      user_id: user?.id,
-      type: "payment_due",
-      title: "Payment Due in 3 days",
-      message: "Payment for PO-1002 is due in 3 days. Please schedule payment.",
-      is_read: false,
-      created_at: new Date(Date.now() - 1000 * 60 * 60 * 24).toISOString(),
-    },
-    {
-      id: "n_3",
-      user_id: user?.id,
-      type: "payment_overdue",
-      title: "Overdue Payment",
-      message: "Payment for PO-0999 is overdue. Follow up with vendor.",
-      is_read: true,
-      created_at: new Date(Date.now() - 1000 * 60 * 60 * 24 * 5).toISOString(),
-    },
-  ];
 
   useEffect(() => {
     loadNotifications();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user?.id]);
 
-  const loadNotifications = () => {
+  const loadNotifications = async () => {
     setLoading(true);
     try {
-      const raw = localStorage.getItem(STORAGE_KEY);
-      let parsed: Notification[] = raw ? JSON.parse(raw) : [];
-
-      // If none present, seed sample notifications (scoped to user if available)
-      if (!raw || !Array.isArray(parsed) || parsed.length === 0) {
-        const seeded = sampleNotifications.map((n, i) => ({
-          ...n,
-          id: `n_seed_${i + 1}`,
-          user_id: user?.id ?? n.user_id,
-        }));
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(seeded));
-        parsed = seeded;
-      }
-
-      // If user is present, filter to that user; otherwise show all (demo mode)
-      const result = user?.id
-        ? parsed.filter((n) => !n.user_id || n.user_id === user.id)
-        : parsed;
-      // sort newest first
-      result.sort((a, b) => b.created_at.localeCompare(a.created_at));
-      setNotifications(result);
+      const result: any = await NotificationsApi.getNotifications();
+      console.log("from notification component", result);
+      setNotifications(result.data);
     } catch (err) {
       console.error("Error loading notifications (demo):", err);
       setNotifications([]);
@@ -87,58 +46,41 @@ export default function Notifications() {
     }
   };
 
-  const persistAll = (next: Notification[]) => {
+  const markAsRead = async (id: number) => {
     try {
-      // Merge with existing storage while preserving other users' notifications
-      const raw = localStorage.getItem(STORAGE_KEY);
-      const existing: Notification[] = raw ? JSON.parse(raw) : [];
-      // build map of ids to replace/create only those for current user (or all if no user)
-      const nextMap = new Map(next.map((n) => [n.id, n]));
-      const merged = existing.map((e) =>
-        nextMap.has(e.id) ? nextMap.get(e.id)! : e
-      );
-      // add any new ids from next that didn't exist
-      next.forEach((n) => {
-        if (!merged.find((m) => m.id === n.id)) merged.push(n);
-      });
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(merged));
-      // update current view
-      setNotifications(
-        next.sort((a, b) => b.created_at.localeCompare(a.created_at))
-      );
-    } catch (err) {
-      console.error("Error persisting notifications:", err);
-    }
-  };
-
-  const markAsRead = (id: string) => {
-    try {
-      const next = notifications.map((n) =>
-        n.id === id ? { ...n, is_read: true } : n
-      );
-      persistAll(next);
+      const marked = await NotificationsApi.markAsSeen(id);
+      console.log(marked);
+      if (marked.success) {
+        loadNotifications();
+      } else {
+        alert("Failed to mark as seen.");
+      }
     } catch (err) {
       console.error("Error marking notification as read (demo):", err);
     }
   };
 
-  const markAllRead = () => {
+  const markAllRead = async () => {
     try {
-      const next = notifications.map((n) => ({ ...n, is_read: true }));
-      persistAll(next);
+      const result = await NotificationsApi.markAllAsSeen();
+      if (result.success) {
+        loadNotifications();
+      } else {
+        alert("Failed mark all notifications as seen.");
+      }
     } catch (err) {
       console.error("Error marking all as read (demo):", err);
     }
   };
 
-  const dismiss = (id: string) => {
-    if (!confirm("Dismiss this notification?")) return;
+  const dismiss = async (id: number) => {
     try {
-      const raw = localStorage.getItem(STORAGE_KEY);
-      const existing: Notification[] = raw ? JSON.parse(raw) : [];
-      const filtered = existing.filter((n) => n.id !== id);
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(filtered));
-      setNotifications((cur) => cur.filter((n) => n.id !== id));
+      const result = await NotificationsApi.deleteNotification(id);
+      if (result.success) {
+        loadNotifications();
+      } else {
+        alert("Failed to delete notification.");
+      }
     } catch (err) {
       console.error("Error dismissing notification (demo):", err);
     }
@@ -229,14 +171,16 @@ export default function Notifications() {
             <div
               key={notif.id}
               className={`border rounded-xl p-4 ${getTypeColor(notif.type)} ${
-                notif.is_read ? "opacity-75" : ""
+                notif.seen ? "opacity-75" : ""
               }`}
             >
               <div className="flex items-start gap-4">
                 <div className="mt-1">{getTypeIcon(notif.type)}</div>
                 <div className="flex-1">
                   <h3 className="font-semibold text-gray-800">{notif.title}</h3>
-                  <p className="text-gray-700 text-sm mt-1">{notif.message}</p>
+                  <p className="text-gray-700 text-sm mt-1">
+                    {notif.description}
+                  </p>
                   <p className="text-xs text-gray-500 mt-2">
                     {new Date(notif.created_at).toLocaleDateString("en-IN", {
                       day: "2-digit",
@@ -249,7 +193,7 @@ export default function Notifications() {
                 </div>
 
                 <div className="flex flex-col gap-2 items-end">
-                  {!notif.is_read && (
+                  {!notif.seen && (
                     <button
                       onClick={() => markAsRead(notif.id)}
                       className="flex-shrink-0 p-2 hover:bg-gray-200 rounded-lg transition"

@@ -710,19 +710,6 @@ export default function UsersMaster() {
                       Role <span className="text-red-500">*</span>
                     </label>
 
-                    {/* <select
-                      value={formData.role}
-                      onChange={(e) => handleRoleChange(e.target.value)}
-                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                      required
-                    >
-                      <option value="user">User</option>
-                      <option value="store_keeper">Store Keeper</option>
-                      <option value="purchaser">Purchaser</option>
-                      <option value="manager">Manager</option>
-                      <option value="admin">Admin</option>
-                    </select> */}
-
                     <input
                       list="roles"
                       id="role"

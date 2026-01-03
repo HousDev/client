@@ -5,6 +5,7 @@ import { useAuth } from "../contexts/AuthContext";
 import poApi from "../lib/poApi";
 import poTypeApi from "../lib/poTypeApi";
 import TermsConditionsApi from "../lib/termsConditionsApi";
+import { toast } from "sonner";
 
 /* --- types (same as yours) --- */
 interface POItem {
@@ -123,7 +124,7 @@ function SearchableSelect({
   return (
     <div ref={containerRef} className="relative">
       <div
-        className={`w-full flex items-center gap-2 px-3 py-3 border rounded-lg bg-white cursor-pointer ${
+        className={`w-full flex items-center gap-2 px-3 py-2 border rounded-lg bg-white cursor-pointer ${
           disabled ? "opacity-50 cursor-not-allowed" : "hover:shadow-sm"
         }`}
         onClick={() => !disabled && setOpen((s) => !s)}
@@ -292,8 +293,8 @@ export default function UpdatePurchaseOrderForm({
 
   const loadProjects = async () => {
     try {
-      const data = await poApi.getProjects();
-      setProjects(Array.isArray(data) ? data : []);
+      const data: any = await poApi.getProjects();
+      setProjects(Array.isArray(data.data) ? data.data : []);
     } catch (err) {
       console.warn("loadProjects failed, fallback to empty", err);
       setProjects([]);
@@ -439,9 +440,9 @@ export default function UpdatePurchaseOrderForm({
       await loadAllData();
       console.log("response after delete po item", response);
       if (response.status === "Completed") {
-        alert(response.message);
+        toast.success(response.message);
       } else {
-        alert(response.message);
+        toast.error(response.message);
       }
     } catch (error) {
       console.log(error);
@@ -562,36 +563,6 @@ export default function UpdatePurchaseOrderForm({
     }));
   };
 
-  // server-side sequence with fallback
-  const generatePONumber = async () => {
-    try {
-      const res = await poApi.nextSequence();
-      if (res && res.po_number) {
-        console.log(res.po.number, "from api");
-        return res.po_number;
-      }
-    } catch (err) {
-      console.warn(
-        "generatePONumber remote failed, falling back to client seq",
-        err
-      );
-    }
-    const now = new Date();
-    const year = now.getFullYear();
-    const month = now.getMonth() + 1;
-    const seq = Math.floor(Math.random() * 9000) + 1;
-    console.log(
-      `PO/${year}/${String(month).padStart(2, "0")}/${String(seq).padStart(
-        4,
-        "0"
-      )} from frontend`
-    );
-    return `PO/${year}/${String(month).padStart(2, "0")}/${String(seq).padStart(
-      4,
-      "0"
-    )}`;
-  };
-
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     console.log("form data after submiting form", formData);
@@ -627,52 +598,17 @@ export default function UpdatePurchaseOrderForm({
         created_by: user?.id,
       };
       const response = await poApi.updatePO(formData?.poId, payload);
-      alert("PO Updated Successfully.");
+      toast.success("PO Updated Successfully.");
       await loadAllData();
 
       console.log(response);
-
-      // const created = await poApi.createPO(payload);
-
-      // if (created && created.id && formData.items.length) {
-      //   loadAllData();
-      //   const trackingRecords = formData.items.map((item) => ({
-      //     po_id: created.id,
-      //     item_id: item.item_id,
-      //     item_description: item.item_name,
-      //     quantity_ordered: item.quantity,
-      //     quantity_received: 0,
-      //     quantity_pending: item.quantity,
-      //     status: "pending",
-      //   }));
-      //   try {
-      //     await poApi.createTracking(trackingRecords);
-      //   } catch (err) {
-      //     console.warn("tracking creation failed", err);
-      //   }
-
-      //   if (formData.advance_amount > 0) {
-      //     try {
-      //       await poApi.createPayment({
-      //         po_id: created.id,
-      //         payment_type: "advance",
-      //         amount: formData.advance_amount,
-      //         due_date: formData.po_date,
-      //         status: "pending",
-      //         created_by: user?.id,
-      //       });
-      //     } catch (err) {
-      //       console.warn("advance payment creation failed", err);
-      //     }
-      //   }
-      // }
 
       setShowEditModal(false);
       resetForm();
       loadPOs();
     } catch (err) {
       console.error("Error creating PO:", err);
-      alert("Error creating purchase order");
+      toast.error("Error creating purchase order");
     }
   };
 
@@ -834,7 +770,7 @@ export default function UpdatePurchaseOrderForm({
                       console.log(e.target.value, "date from PO Date");
                       setFormData({ ...formData, po_date: e.target.value });
                     }}
-                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    className="w-full px-4 py-1 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                     required
                   />
                 </div>
@@ -852,7 +788,7 @@ export default function UpdatePurchaseOrderForm({
                         delivery_date: e.target.value,
                       })
                     }
-                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    className="w-full px-4 py-1 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                   />
                 </div>
 
@@ -924,15 +860,20 @@ export default function UpdatePurchaseOrderForm({
                         <div className="col-span-2">
                           <label className="text-xs text-gray-600">Qty</label>
                           <input
-                            type="number"
+                            type="text"
                             value={item.quantity}
-                            onChange={(e) =>
+                            onChange={(e) => {
+                              if (
+                                !/^\d*\.?\d*$/.test(e.target.value) ||
+                                Number(e.target.value) < 0
+                              )
+                                return;
                               handleItemChange(
                                 index,
                                 "quantity",
                                 parseFloat(e.target.value) || 0
-                              )
-                            }
+                              );
+                            }}
                             className="w-full px-2 py-1 border border-gray-300 rounded text-sm"
                             min="0"
                             step="0.01"
@@ -945,15 +886,20 @@ export default function UpdatePurchaseOrderForm({
                         <div className="col-span-2">
                           <label className="text-xs text-gray-600">Rate</label>
                           <input
-                            type="number"
+                            type="text"
                             value={item.rate}
-                            onChange={(e) =>
+                            onChange={(e) => {
+                              if (
+                                !/^\d*\.?\d*$/.test(e.target.value) ||
+                                Number(e.target.value) < 0
+                              )
+                                return;
                               handleItemChange(
                                 index,
                                 "rate",
                                 parseFloat(e.target.value) || 0
-                              )
-                            }
+                              );
+                            }}
                             className="w-full px-2 py-1 border border-gray-300 rounded text-sm"
                             min="0"
                             step="0.01"
@@ -1105,7 +1051,7 @@ export default function UpdatePurchaseOrderForm({
               <button
                 onClick={handleSubmit}
                 disabled={formData.items.length === 0}
-                className="flex-1 bg-blue-600 text-white py-3 px-6 rounded-lg hover:bg-blue-700 transition font-medium shadow-sm disabled:opacity-50 disabled:cursor-not-allowed"
+                className="flex-1 bg-blue-600 text-white py-2 px-6 rounded-lg hover:bg-blue-700 transition font-medium shadow-sm disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 Update Purchase Order
               </button>
@@ -1115,7 +1061,7 @@ export default function UpdatePurchaseOrderForm({
                   setShowEditModal(false);
                   resetForm();
                 }}
-                className="px-6 py-3 border border-gray-300 rounded-lg hover:bg-gray-50 transition font-medium"
+                className="px-6 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition font-medium"
               >
                 Cancel
               </button>

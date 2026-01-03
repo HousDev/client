@@ -15,10 +15,13 @@ import vendorApi from "../../lib/vendorApi";
 import po_trackingApi from "../../lib/po_tracking";
 import axios from "axios";
 import { api } from "../../lib/Api";
+import { toast } from "sonner";
+import projectApi from "../../lib/projectApi";
 
 interface MaterialInFormProps {
   setActiveFormTab: (show: string) => void;
   loadAllData: () => void;
+  setLoadTableData: any;
 }
 
 interface MaterialInFormData {
@@ -38,12 +41,14 @@ interface MaterialInFormData {
 export default function MaterialInForm({
   setActiveFormTab,
   loadAllData,
+  setLoadTableData,
 }: MaterialInFormProps) {
   const [loading, setLoading] = useState(false);
   const [vendors, setVendors] = useState<any>([]);
   const [allPOItems, setAllPOItems] = useState<any>([]);
   const [purchaseOrders, setPurchaseOrder] = useState<any>([]);
   const [poMaterialTracking, setPoMaterialTracking] = useState<any>([]);
+  const [allProjects, setAllProjects] = useState<any>([]);
 
   const [formData, setFormData] = useState<MaterialInFormData>({
     po_id: "",
@@ -59,14 +64,43 @@ export default function MaterialInForm({
     items: [],
   });
 
+  const loadProjects = async () => {
+    setLoading(true);
+    try {
+      const data: any = await projectApi.getProjects();
+      if (data.success) {
+        setAllProjects(data.data);
+        setLoading(false);
+        return;
+      }
+      setAllProjects([]);
+    } catch (err) {
+      console.warn("loadProjects failed, using fallback demo data", err);
+      setAllProjects([]);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const loadPO = async () => {
-    const poRes = await poApi.getPOs();
-    setPurchaseOrder(Array.isArray(poRes) ? poRes : []);
+    const vendorsData = await loadVendor();
+    const poRes: any = await poApi.getPOs();
+
+    const poItemsData: any = poRes.map((d: any) => {
+      const temp: any = vendorsData.find((v: any) => v.id === d.vendor_id);
+      return {
+        ...d,
+        vendor: temp.name,
+      };
+    });
+    const data = poItemsData.filter((d: any) => d.status === "authorize");
+    setPurchaseOrder(Array.isArray(data) ? data : []);
   };
 
   const loadVendor = async () => {
     const vendorRes = await vendorApi.getVendors();
     setVendors(Array.isArray(vendorRes) ? vendorRes : []);
+    return vendorRes;
   };
 
   const loadPOItems = async () => {
@@ -83,9 +117,10 @@ export default function MaterialInForm({
   };
 
   useEffect(() => {
-    loadPO();
-    loadVendor();
+    loadProjects();
     loadPOItems();
+    loadVendor();
+    loadPO();
     loadPOMaterialTracking();
   }, []);
 
@@ -120,32 +155,31 @@ export default function MaterialInForm({
       if (
         !formData.po_id ||
         !formData.vendor_id ||
-        !formData.challanNumber ||
         !formData.receivingDate ||
         !formData.receiverName ||
         !formData.receiverPhone ||
         !formData.deliveryLocation
       ) {
-        alert("All fields are required.");
+        toast.error("All fields are required.");
         return;
       }
       if (!(formData.receiverPhone.length === 10)) {
-        alert("Receiver Mobile Number Must be 10 digits.");
+        toast.error("Receiver Mobile Number Must be 10 digits.");
         return;
       }
       if (formData.receiverName.length < 3) {
-        alert("Enter valid receiver name.");
+        toast.error("Enter valid receiver name.");
         return;
       }
 
       if (!formData.items || formData.items.length === 0) {
-        alert("At least one item is required.");
+        toast.error("At least one item is required.");
         return;
       }
 
       for (const item of formData.items) {
-        if (!item.quantity_received || item.quantity_received <= 0) {
-          alert("Received quantity must be greater than 0.");
+        if (item.quantity_received < 0) {
+          toast.error("Received quantity must be greater than 0.");
           return;
         }
       }
@@ -183,16 +217,17 @@ export default function MaterialInForm({
       setLoading(false);
 
       if (response.status === 201) {
-        alert("Transaction created successfully.");
+        toast.success("Transaction created successfully.");
         resetForm();
         loadAllData();
+        setLoadTableData(response);
         setActiveFormTab("");
       } else {
-        alert("Failed to create transaction.");
+        toast.error("Failed to create transaction.");
       }
     } catch (error: any) {
       console.error("Create transaction error:", error);
-      alert(error?.response?.data?.message || "Something went wrong");
+      toast.error(error?.response?.data?.message || "Something went wrong");
     }
   };
 
@@ -219,7 +254,7 @@ export default function MaterialInForm({
         <div className="bg-gradient-to-r from-blue-600 to-blue-700 px-6 py-4 flex justify-between items-center rounded-t-2xl sticky top-0 z-10">
           <h2 className="text-xl font-bold text-white flex items-center gap-2">
             <Truck className="w-5 h-5" />
-            Material In - Receive Materials
+            Material In
           </h2>
           <button
             onClick={() => {
@@ -243,7 +278,7 @@ export default function MaterialInForm({
                 </label>
                 <div className="relative">
                   <select
-                    value={formData.po_number}
+                    value={`${formData.po_number}`}
                     onChange={(e) => {
                       const purchaseOrdersData = purchaseOrders.find(
                         (po: any) => po.po_number === e.target.value
@@ -290,7 +325,9 @@ export default function MaterialInForm({
                     <option value="">Select PO Number</option>
                     {purchaseOrders.map((po: any) => (
                       <option key={po.id} value={po.po_number}>
+                        {po.vendor}-{"("}
                         {po.po_number}
+                        {")"}
                       </option>
                     ))}
                   </select>
@@ -314,7 +351,7 @@ export default function MaterialInForm({
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Vendor
+                  Vendor <span className="text-red-500">*</span>
                 </label>
                 <div className="flex items-center gap-2 px-4 py-2 border border-gray-300 rounded-lg bg-gray-50">
                   <Truck className="w-4 h-4 text-gray-500" />
@@ -326,7 +363,7 @@ export default function MaterialInForm({
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Challan Number <span className="text-red-500">*</span>
+                  Challan Number
                 </label>
                 <input
                   type="text"
@@ -336,7 +373,6 @@ export default function MaterialInForm({
                   }
                   className="w-full outline-none px-4 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                   placeholder="Enter challan number"
-                  required
                 />
               </div>
             </div>
@@ -345,7 +381,7 @@ export default function MaterialInForm({
             <div className="grid grid-cols-3 gap-3">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Receiving Date
+                  Receiving Date <span className="text-red-500">*</span>
                 </label>
                 <div className="relative">
                   <Calendar className="absolute left-3 top-3.5 w-3 h-3 text-gray-400" />
@@ -369,9 +405,13 @@ export default function MaterialInForm({
                   <input
                     type="text"
                     value={formData.receiverName}
-                    onChange={(e) =>
-                      handleInputChange("receiverName", e.target.value)
-                    }
+                    onChange={(e) => {
+                      if (!/^[A-Za-z\s]*$/.test(e.target.value)) {
+                        toast.warning("Only alphabet allowed.");
+                        return;
+                      }
+                      handleInputChange("receiverName", e.target.value);
+                    }}
                     className="w-full outline-none pl-10 pr-4 py-2 text-sm  border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                     placeholder="Receiver Name"
                     required
@@ -381,16 +421,24 @@ export default function MaterialInForm({
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Receiver Phone
+                  Receiver Phone <span className="text-red-500">*</span>
                 </label>
                 <div className="relative">
                   <Phone className="absolute left-3 top-3.5 w-3 h-3 text-gray-400" />
                   <input
                     type="tel"
                     value={formData.receiverPhone}
-                    onChange={(e) =>
-                      handleInputChange("receiverPhone", e.target.value)
-                    }
+                    onChange={(e) => {
+                      if (!/^\d*$/.test(e.target.value)) {
+                        toast.warning("Enter Valid Phone Number.");
+                        return;
+                      }
+                      if (Number(e.target.value.length) <= 10) {
+                        handleInputChange("receiverPhone", e.target.value);
+                      } else {
+                        toast.warning("Only 10 digit mobile number allowed.");
+                      }
+                    }}
                     className="w-full outline-none pl-10 pr-4 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                     placeholder="Enter phone number"
                   />
@@ -406,17 +454,23 @@ export default function MaterialInForm({
                 </label>
 
                 <div className="relative">
-                  <MapPin className="absolute left-3 top-3.5 w-3 h-3 text-gray-400" />
-                  <input
-                    type="text"
-                    value={formData.deliveryLocation}
+                  <select
+                    value={`${formData.deliveryLocation}`}
                     onChange={(e) =>
                       handleInputChange("deliveryLocation", e.target.value)
                     }
-                    className="outline-none w-full pl-10 pr-4 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                    placeholder="Location"
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent appearance-none bg-white text-sm outline-none"
                     required
-                  />
+                  >
+                    <option value="">Delivery Location</option>
+                    {allProjects.map((project: any) => (
+                      <option key={project.id} value={project.loaction}>
+                        {project.name}-{"("}
+                        {project.location}
+                        {")"}
+                      </option>
+                    ))}
+                  </select>
                 </div>
               </div>
               {/* File Upload */}
@@ -485,17 +539,22 @@ export default function MaterialInForm({
                             </td>
                             <td className="px-4 py-3">
                               <input
-                                type="number"
+                                type="text"
                                 min="0"
                                 max={Number(item?.quantity)}
                                 value={item.quantity_received}
                                 onChange={(e) => {
+                                  if (
+                                    !/^\d*\.?\d*$/.test(e.target.value) ||
+                                    Number(e.target.value) < 0
+                                  )
+                                    return;
                                   const t =
                                     Number(item.quantity) -
                                     Number(item.issued_quantity);
 
                                   if (t < Number(e.target.value)) {
-                                    alert(
+                                    toast.error(
                                       "Received Qty. is greater than pending Qty."
                                     );
                                     return;
@@ -526,7 +585,7 @@ export default function MaterialInForm({
                 className="flex-1 bg-blue-600 text-white py-2 px-6 rounded-lg hover:bg-blue-700 transition font-medium shadow-sm disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
               >
                 <Save className="w-4 h-4 mr-2" />
-                {loading ? "Processing..." : "Receive Material"}
+                {loading ? "Processing..." : "Material In"}
               </button>
               <button
                 type="button"

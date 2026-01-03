@@ -15,6 +15,7 @@ import Masters from "./pages/Masters";
 import Permissions from "./pages/Permissions";
 import StoreManagement from "./pages/StoreManagement";
 import { Buffer } from "buffer";
+import { Toaster } from "sonner";
 
 function AppContent() {
   const { user, loading } = useAuth();
@@ -84,6 +85,7 @@ function App() {
   }
   return (
     <AuthProvider>
+      <Toaster position="top-right" richColors closeButton />
       <AppContent />
     </AuthProvider>
   );
