@@ -27,6 +27,8 @@ import { PDFViewer } from "@react-pdf/renderer";
 import PurchaseOrderPDF from "../components/purchaseOrderPdf/PurchaseOrderPdf";
 import SearchableSelect from "../components/SearchableSelect";
 import { UsersApi } from "../lib/Api";
+import { toast } from "sonner";
+import MySwal from "../utils/swal";
 
 type Vendor = {
   id: string;
@@ -268,9 +270,9 @@ export default function PurchaseOrders() {
   };
   const loadProjects = async () => {
     try {
-      const response = await projectApi.getProjects();
+      const response: any = await projectApi.getProjects();
       console.log("Projects", response);
-      return response;
+      return response.data;
     } catch (error) {
       console.log(error);
     }
@@ -523,7 +525,7 @@ export default function PurchaseOrders() {
     // console.log(po, "from pdf preview");
     if (!po) return;
     if (!allPurchaseOrderItems) {
-      alert("wait data is loading");
+      toast.success("wait data is loading");
       return;
     }
 
@@ -577,65 +579,6 @@ export default function PurchaseOrders() {
     }, 100);
   };
 
-  const handleSaveEdit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    const payload = {
-      vendor_id: editingPO?.vendor_id,
-      project_id: editingPO?.project_id,
-    };
-    const response: any = await poApi.updatePurchaseOrder(
-      editingPO?.id,
-      payload
-    );
-    if (response.status) {
-      const updatedData = pos.map((item) =>
-        item.id === editingPO?.id
-          ? {
-              ...item,
-              vendor_id: editingPO?.vendor_id,
-              project_id: editingPO?.project_id,
-              vendors: vendors.find((item) => item.id == editingPO?.vendor_id),
-              projects: projects.find(
-                (item) => item.id == editingPO?.project_id
-              ),
-            }
-          : item
-      );
-      // console.log("updated data of pos", updatedData);
-      setPOs(updatedData);
-      alert("PO updated successfully!");
-      setShowEditModal(false);
-      setEditingPO(null);
-    }
-    // console.log(editingPO, "from edit form");
-    // if (!editingPO) return;
-
-    // const updatedPOs = pos.map((p) =>
-    //   p.id === editingPO.id
-    //     ? {
-    //         ...p,
-    //         ...editingPO,
-    //         vendors:
-    //           vendors.find((v) => v.id === editingPO.vendor_id) ?? p.vendors,
-    //         projects:
-    //           projects.find((pr) => pr.id === editingPO.project_id) ??
-    //           p.projects,
-    //         po_types:
-    //           poTypes.find((t) => t.id === editingPO.po_type_id) ?? p.po_types,
-    //       }
-    //     : p
-    // );
-
-    // persistPOs(updatedPOs);
-
-    // setTimeout(() => {
-    //   alert("PO updated successfully!");
-    //   setShowEditModal(false);
-    //   setEditingPO(null);
-    //   loadPOs();
-    // }, 250);
-  };
-
   const updateMaterialQuantity = async (e: React.FormEvent) => {
     e.preventDefault();
 
@@ -649,7 +592,7 @@ export default function PurchaseOrders() {
       !materialQuantity ||
       !challanNumber
     ) {
-      alert("Invalid input.");
+      toast.error("Invalid input.");
       return;
     }
 
@@ -671,51 +614,20 @@ export default function PurchaseOrders() {
 
     await po_trackingApi.updateMaterialQty(selectedTrackingMaterial, formData);
 
-    alert("Received Material Quantity Updated");
+    toast.success("Received Material Quantity Updated");
     setShowUpdateMaterialQuantity(false);
     loadAllData();
   };
 
-  // const updateMaterialQuantity = async (e: React.FormEvent) => {
-  //   e.preventDefault();
-  //   const trackingMaterialData = filteredTracking.find(
-  //     (item: any) => item.id === selectedTrackingMaterial
-  //   );
-  //   if (
-  //     materialQuantity < 1 ||
-  //     materialQuantity > Number(trackingMaterialData.quantity_pending) ||
-  //     !materialQuantity
-  //   ) {
-  //     alert("Invalid Material Quantity.");
-  //     return;
-  //   }
-
-  //   // console.log(trackingMaterialData, "selected");
-  //   const payload = {
-  //     quantity_received: String(materialQuantity),
-  //     quantity_pending: String(
-  //       Number(trackingMaterialData.quantity_pending) - Number(materialQuantity)
-  //     ),
-  //   };
-  //   // console.log(payload, "payload for material quantity");
-  //   const response = await po_trackingApi.updateMaterialQty(
-  //     selectedTrackingMaterial,
-  //     payload
-  //   );
-  //   alert("Received Material Quantity Updated");
-  //   setShowUpdateMaterialQuantity(false);
-  //   loadAllData();
-  //   // console.log(materialQuantity, "update material quantity");
-  // };
-
   const handleDelete = async (id: any) => {
-    if (
-      !confirm(
-        "Are you sure you want to delete this PO? This action cannot be undone."
-      )
-    ) {
-      return;
-    }
+    const result: any = await MySwal.fire({
+      title: "Delete Item?",
+      text: "This action cannot be undone",
+      icon: "warning",
+      showCancelButton: true,
+    });
+
+    if (!result.isConfirmed) return;
     await poApi.deletePurchaseOrder(id);
     const filterdData = filteredPOs.filter((item: any) => item.id != id);
     const filterdTrackingData = filteredTracking.filter(
@@ -725,47 +637,26 @@ export default function PurchaseOrders() {
     setFilteredTracking(filterdTrackingData);
     // const updated = pos.filter((p) => p.id !== id);
     // setPOs(updated);
-    alert("PO deleted successfully!");
+    toast.success("PO deleted successfully!");
   };
 
   const updatePurchaseOrderStatus = async (id: string, status: string) => {
     try {
       const approveRes: any = await poApi.updatePurchaseOrderStatus(id, status);
       if (approveRes.status) {
-        alert(
+        toast.success(
           "Purchase order status updated to " + status.toLocaleUpperCase() + "."
         );
         setShowApprovalButtons(null);
         loadAllData();
       } else {
-        alert(
+        toast.error(
           "Failed to update purchase order status." + status.toLocaleUpperCase()
         );
       }
     } catch (error) {
       console.log(error);
     }
-  };
-
-  const handleReject = async (id: string) => {
-    const reason = prompt("Enter rejection reason:");
-    if (!reason) return;
-    const updated = pos.map((p) =>
-      p.id === id
-        ? {
-            ...p,
-            status: "rejected",
-            rejected_by: user?.id,
-            rejected_at: new Date().toISOString(),
-            rejection_reason: reason,
-          }
-        : p
-    );
-    persistPOs(updated);
-    setTimeout(() => {
-      alert("PO rejected!");
-      loadPOs();
-    }, 200);
   };
 
   const handlePayment = async (e: React.FormEvent) => {
@@ -790,83 +681,12 @@ export default function PurchaseOrders() {
 
     persistPOs(updated);
     setTimeout(() => {
-      alert("Payment recorded successfully!");
+      toast.success("Payment recorded successfully!");
       setShowPaymentModal(false);
       setPaymentAmount(0);
       setSelectedPO(null);
       loadPOs();
     }, 300);
-  };
-
-  const handleReceiveMaterial = async (trackingId: string) => {
-    const tracking = trackingData.find((t) => t.id === trackingId);
-    if (!tracking) return;
-
-    const qtyStr = prompt(
-      `Receive quantity (Max: ${tracking.quantity_pending}):`,
-      "0"
-    );
-    if (!qtyStr) return;
-    const qty = parseInt(qtyStr, 10);
-    if (isNaN(qty) || qty <= 0 || qty > tracking.quantity_pending) {
-      alert("Invalid quantity");
-      return;
-    }
-
-    const newTracking = trackingData.map((t) => {
-      if (t.id !== trackingId) return t;
-      const newReceived = t.quantity_received + qty;
-      const newPending = t.quantity_ordered - newReceived;
-      return {
-        ...t,
-        quantity_received: newReceived,
-        quantity_pending: newPending,
-        received_date: new Date().toISOString(),
-        status:
-          newPending === 0
-            ? "completed"
-            : newPending < t.quantity_ordered
-            ? "partial"
-            : "pending",
-      } as Tracking;
-    });
-
-    persistTracking(newTracking);
-
-    // recompute per-PO status/percentage
-    const poIds = Array.from(new Set(newTracking.map((t) => t.po_id)));
-    const updatedPOs = [...pos];
-    poIds.forEach((poId) => {
-      const items = newTracking.filter((t) => t.po_id === poId);
-      const allCompleted = items.every((it) => it.status === "completed");
-      const anyPartial = items.some((it) => it.status === "partial");
-      const percent = items.length
-        ? (items.filter((it) => it.status === "completed").length /
-            items.length) *
-          100
-        : 0;
-      for (let i = 0; i < updatedPOs.length; i++) {
-        if (updatedPOs[i].id === poId) {
-          updatedPOs[i] = {
-            ...updatedPOs[i],
-            material_status: allCompleted
-              ? "completed"
-              : anyPartial
-              ? "partial"
-              : "pending",
-            material_received_percentage: percent,
-          };
-        }
-      }
-    });
-
-    persistPOs(updatedPOs);
-
-    setTimeout(() => {
-      alert("Material received successfully!");
-      loadTrackingData();
-      loadPOs();
-    }, 250);
   };
 
   // --- Filtering helpers ---
@@ -1154,162 +974,6 @@ export default function PurchaseOrders() {
               </table>
             </div>
           </div>
-
-          {/* Material Tracking */}
-          <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
-            <div className="px-6 py-4 bg-gray-50 border-b border-gray-200">
-              <h2 className="text-lg font-semibold text-gray-800">
-                Material Tracking
-              </h2>
-            </div>
-            <div className="overflow-x-auto">
-              <table className="w-full">
-                <thead className="bg-gray-50 border-b border-gray-200">
-                  <tr>
-                    <th className="text-left px-6 py-4 text-sm font-semibold text-gray-700">
-                      PO Number
-                    </th>
-                    <th className="text-left px-6 py-4 text-sm font-semibold text-gray-700">
-                      Item Description
-                    </th>
-                    <th className="text-left px-6 py-4 text-sm font-semibold text-gray-700">
-                      Ordered
-                    </th>
-                    <th className="text-left px-6 py-4 text-sm font-semibold text-gray-700">
-                      Received
-                    </th>
-                    <th className="text-left px-6 py-4 text-sm font-semibold text-gray-700">
-                      Pending
-                    </th>
-                    <th className="text-left px-6 py-4 text-sm font-semibold text-gray-700">
-                      Progress
-                    </th>
-                    <th className="text-left px-6 py-4 text-sm font-semibold text-gray-700">
-                      Status
-                    </th>
-                    <th className="text-left px-6 py-4 text-sm font-semibold text-gray-700">
-                      Challan
-                    </th>
-                    <th className="text-left px-6 py-4 text-sm font-semibold text-gray-700">
-                      Actions
-                    </th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-gray-200">
-                  {filteredTracking.map((track: any) => {
-                    const progress =
-                      (track.quantity_received / track.quantity_ordered) * 100;
-                    return (
-                      <tr
-                        key={track.id}
-                        className="hover:bg-gray-50 transition"
-                      >
-                        <td className="px-6 py-4">
-                          <span className="font-medium text-blue-600">
-                            {track.purchase_orders?.po_number}
-                          </span>
-                        </td>
-                        <td className="px-6 py-4">
-                          <p className="font-medium text-gray-800">
-                            {track.item_description}
-                          </p>
-                          <p className="text-xs text-gray-500">
-                            {track.item_id}
-                          </p>
-                        </td>
-                        <td className="px-6 py-4 text-gray-700">
-                          {track.quantity_ordered}
-                        </td>
-                        <td className="px-6 py-4 text-green-600 font-medium">
-                          {track.quantity_received}
-                        </td>
-                        <td className="px-6 py-4 text-orange-600 font-medium">
-                          {track.quantity_pending}
-                        </td>
-                        <td className="px-6 py-4">
-                          <div className="w-full bg-gray-200 rounded-full h-2">
-                            <div
-                              className={`h-2 rounded-full ${
-                                progress === 100
-                                  ? "bg-green-600"
-                                  : progress > 0
-                                  ? "bg-yellow-600"
-                                  : "bg-red-600"
-                              }`}
-                              style={{ width: `${progress}%` }}
-                            />
-                          </div>
-                          <p className="text-xs text-gray-600 mt-1">
-                            {progress.toFixed(0)}%
-                          </p>
-                        </td>
-                        <td className="px-6 py-4">
-                          <span
-                            className={`px-3 py-1 rounded-full text-xs font-medium ${
-                              track.status === "completed"
-                                ? "bg-green-100 text-green-700"
-                                : track.status === "partial"
-                                ? "bg-yellow-100 text-yellow-700"
-                                : "bg-red-100 text-red-700"
-                            }`}
-                          >
-                            {track.status?.toUpperCase()}
-                          </span>
-                        </td>
-                        <td className="px-6 py-4 text-blue-600 font-semibold cursor-pointer">
-                          <button
-                            onClick={() => {
-                              const data = track.challan_image.split(",");
-                              console.log(data, "show data");
-                              setAllChallans(
-                                typeof data === "string" ? [data] : data
-                              );
-                              setShowChallans(true);
-                            }}
-                            className={`${track.challan_image ? "" : "hidden"}`}
-                          >
-                            View
-                          </button>
-                          <button
-                            className={`${track.challan_image ? "hidden" : ""}`}
-                          >
-                            --
-                          </button>
-                        </td>
-                        <td className="px-6 py-4">
-                          {track.quantity_pending > 0 && (
-                            <button
-                              onClick={() => {
-                                setSelectedTrackingMaterial(track.id);
-                                setMaterialQuantity(track.quantity_received);
-                                setShowUpdateMaterialQuantity(true);
-                              }}
-                              // onClick={() => handleReceiveMaterial(track.id)}
-                              className="px-3 py-1 bg-green-600 text-white rounded-lg hover:bg-green-700 transition text-sm"
-                            >
-                              Receive
-                            </button>
-                          )}
-                        </td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
-            </div>
-
-            {filteredTracking.length === 0 && (
-              <div className="text-center py-12">
-                <Package className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-                <h3 className="text-lg font-semibold text-gray-800 mb-2">
-                  No tracking data
-                </h3>
-                <p className="text-gray-600">
-                  Material tracking will appear here once POs are created
-                </p>
-              </div>
-            )}
-          </div>
         </div>
       )}
 
@@ -1416,7 +1080,7 @@ export default function PurchaseOrders() {
                             onClick={() => {
                               // console.log("this is po data : ", po);
                               if (!allPurchaseOrderItems) {
-                                alert("wait data is loading");
+                                toast.success("wait data is loading");
                                 return;
                               }
                               const itemsList = allPurchaseOrderItems.filter(
@@ -1677,7 +1341,7 @@ export default function PurchaseOrders() {
               {allChallans.map((d) => (
                 <div>
                   <img
-                    src={import.meta.env.VITE_IMAGE_URL + d}
+                    src={import.meta.env.VITE_API_URL + d}
                     className="mb-4"
                   />
                 </div>

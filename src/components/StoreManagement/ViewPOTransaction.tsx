@@ -391,13 +391,13 @@ export default function ViewPOTransaction({
             <div className="h-[600px] overflow-y-scroll">
               <img
                 src={
-                  import.meta.env.VITE_IMAGE_URL +
+                  import.meta.env.VITE_API_URL +
                   "/uploads/" +
                   poTransaction.challan_image
                 }
                 className="mb-4"
               />
-              {import.meta.env.VITE_IMAGE_URL +
+              {import.meta.env.VITE_API_URL +
                 "/uploads/" +
                 poTransaction.challan_image}
             </div>

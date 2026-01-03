@@ -9,6 +9,11 @@ async function getTransactions() {
   return unwrap(res);
 }
 
+async function getIssueMaterialTransactions() {
+  const res = await api.get("/inventory-transaction/issueMaterialTransaction");
+  return unwrap(res);
+}
+
 /**
  * Get transaction by ID
  */
@@ -22,6 +27,15 @@ async function getTransactionById(id: number | string) {
  */
 async function createTransaction(payload: any) {
   const res = await api.post("/inventory-transaction", payload);
+  return unwrap(res);
+}
+async function createTransactionOut(payload: any) {
+  const res = await api.post("/inventory-transaction/materialOut", payload);
+  return unwrap(res);
+}
+
+async function createTransactionIssueMaterial(payload: any) {
+  const res = await api.post("/inventory-transaction/issueMaterial", payload);
   return unwrap(res);
 }
 
@@ -56,6 +70,9 @@ const inventoryTransactionApi = {
   updateTransaction,
   deleteTransaction,
   getTransactionsByItemId,
+  createTransactionOut,
+  createTransactionIssueMaterial,
+  getIssueMaterialTransactions,
 };
 
 export default inventoryTransactionApi;

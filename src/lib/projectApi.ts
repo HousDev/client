@@ -43,7 +43,7 @@ export async function getProjectById(id: string | number): Promise<Project> {
 }
 
 /** Create project */
-export async function createProject(payload: ProjectFormData): Promise<Project> {
+export async function createProject(payload: any): Promise<Project> {
   const res = await api.post("/projects", payload);
   return unwrap(res);
 }
@@ -51,14 +51,16 @@ export async function createProject(payload: ProjectFormData): Promise<Project> 
 /** Update project */
 export async function updateProject(
   id: string | number,
-  payload: ProjectFormData
+  payload: any
 ): Promise<Project> {
   const res = await api.put(`/projects/${id}`, payload);
   return unwrap(res);
 }
 
 /** Delete project */
-export async function deleteProject(id: string | number): Promise<{ message: string }> {
+export async function deleteProject(
+  id: string | number
+): Promise<{ message: string }> {
   const res = await api.delete(`/projects/${id}`);
   return unwrap(res);
 }

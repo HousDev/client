@@ -1,22 +1,25 @@
 // src/components/MaterialOutForm.tsx
-import React, { useState, useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import {
   X,
-  Save,
   Package,
   User,
   Calendar,
   Phone,
-  MapPin,
   AlertCircle,
-  Users,
   Plus,
   Trash2,
-  Truck,
+  Building,
+  FileText,
+  Layers,
+  Home,
+  DoorOpen,
+  MapPin,
 } from "lucide-react";
-import inventoryTransactionApi from "../../lib/inventoryTransactionApi";
 import projectApi from "../../lib/projectApi";
+import inventoryTransactionApi from "../../lib/inventoryTransactionApi";
 import { toast } from "sonner";
+import vendorApi from "../../lib/vendorApi";
 
 interface MaterialOutFormProps {
   setActiveFormTab: (show: string) => void;
@@ -42,32 +45,17 @@ interface MaterialItem {
   reorder_qty: number;
 }
 
-interface MaterialOutFormData {
-  receiver_name: string;
-  receiver_phone: string;
-  delivery_location: string;
-  receiving_date: string;
-  remark: string;
-  vendorId: number;
-  vendorName: string;
-  issuedTo: string;
-  phoneNumber: string;
-  deliveryLocation: string;
-  issueDate: string;
-  purpose: string;
-  materials: MaterialItem[];
-}
-
-export default function MaterialOutForm({
+export default function IssueMaterial({
   setActiveFormTab,
   allInventory,
   loadAllData,
   setLoadTableData,
 }: MaterialOutFormProps) {
-  console.log("allInventory from material out", allInventory);
   const [loading, setLoading] = useState(false);
   const [showMaterialSelector, setShowMaterialSelector] = useState(false);
   const [materialSearch, setMaterialSearch] = useState("");
+  const [allProjects, setAllProjects] = useState<any[]>([]);
+  const [allServiceVendors, setAllServiceVendors] = useState<any>([]);
 
   // Vendors list with dropdown
   const [vendors] = useState<Vendor[]>([
@@ -93,71 +81,200 @@ export default function MaterialOutForm({
     },
     { id: 6, name: "Maintenance Team", phone: "9876543215", type: "OTHER" },
   ]);
-  const [allProjects, setAllProjects] = useState<any>([]);
 
-  const [formData, setFormData] = useState<MaterialOutFormData>({
-    receiver_name: "",
-    receiver_phone: "",
-    delivery_location: "",
-    receiving_date: "",
-    remark: "",
-    vendorId: 0,
-    vendorName: "",
-    issuedTo: "",
-    phoneNumber: "",
-    deliveryLocation: "",
+  const [formData, setFormData] = useState<any>({
+    projectId: null,
+    buildingId: null,
+    floorId: null,
+    flatId: null,
+    commonAreaId: null,
+    vendorId: null,
+    receiverName: "",
+    receiverNumber: "",
     issueDate: new Date().toISOString().split("T")[0],
     purpose: "",
     materials: [],
   });
+
+  const [selectedProject, setSelectedProject] = useState<any>(null);
+  const [selectedBuilding, setSelectedBuilding] = useState<any>(null);
+  const [selectedFloor, setSelectedFloor] = useState<any>(null);
+  const [selectedFlat, setSelectedFlat] = useState<any>(null);
+  const [selectedCommonArea, setSelectedCommonArea] = useState<any>(null);
+
+  const selectedVendor = vendors.find(
+    (vendor) => vendor.id === formData.vendorId
+  );
 
   const loadProjects = async () => {
     setLoading(true);
     try {
       const data: any = await projectApi.getProjects();
       if (data.success) {
-        setAllProjects(data.data);
-        setLoading(false);
-        return;
+        const tempProjects = data.data.filter(
+          (project: any) => project.status !== "completed"
+        );
+        setAllProjects(tempProjects);
+      } else {
+        setAllProjects([]);
       }
-      setAllProjects([]);
     } catch (err) {
-      console.warn("loadProjects failed, using fallback demo data", err);
+      console.warn("loadProjects failed", err);
       setAllProjects([]);
     } finally {
       setLoading(false);
     }
   };
+
+  const loadAllServiceVendors = async () => {
+    try {
+      const vendorsRes = await vendorApi.getVendors();
+      const filterVenders = vendorsRes.filter(
+        (vendor) => vendor.category_name === "Service"
+      );
+      console.log(filterVenders);
+      setAllServiceVendors(Array.isArray(filterVenders) ? filterVenders : []);
+    } catch (err) {
+      toast.error("Something went wrong.");
+    }
+  };
+
   useEffect(() => {
     loadProjects();
+    loadAllServiceVendors();
   }, []);
 
-  const handleInputChange = (
-    field: keyof MaterialOutFormData,
-    value: string | number
-  ) => {
-    setFormData((prev) => ({ ...prev, [field]: value }));
+  // Load project details when project is selected
+  const loadProjectDetails = async (projectId: number) => {
+    try {
+      const projectDetailsRes: any = await projectApi.getProjectById(projectId);
+      if (projectDetailsRes.success) {
+        const project = projectDetailsRes.data;
+        setSelectedProject(project);
+
+        // Reset all child selections
+        setSelectedBuilding(null);
+        setSelectedFloor(null);
+        setSelectedFlat(null);
+        setSelectedCommonArea(null);
+
+        setFormData((prev: any) => ({
+          ...prev,
+          projectId,
+          buildingId: null,
+          floorId: null,
+          flatId: null,
+          commonAreaId: null,
+        }));
+      } else {
+        toast.error("Failed to load project details.");
+        setSelectedProject(null);
+      }
+    } catch (error) {
+      toast.error("Something went wrong.");
+      setSelectedProject(null);
+    }
+  };
+
+  // Handle building selection
+  const handleBuildingChange = (buildingId: number) => {
+    const building = selectedProject?.buildings?.find(
+      (b: any) => b.id === buildingId
+    );
+    if (building) {
+      setSelectedBuilding(building);
+      setSelectedFloor(null);
+      setSelectedFlat(null);
+      setSelectedCommonArea(null);
+
+      setFormData((prev: any) => ({
+        ...prev,
+        buildingId,
+        floorId: null,
+        flatId: null,
+        commonAreaId: null,
+      }));
+    }
+  };
+
+  // Handle floor selection
+  const handleFloorChange = (floorId: number) => {
+    const floor = selectedBuilding?.floors?.find((f: any) => f.id === floorId);
+    if (floor) {
+      setSelectedFloor(floor);
+      setSelectedFlat(null);
+      setSelectedCommonArea(null);
+
+      setFormData((prev: any) => ({
+        ...prev,
+        floorId,
+        flatId: null,
+        commonAreaId: null,
+      }));
+    }
+  };
+
+  // Handle flat selection
+  const handleFlatChange = (flatId: number) => {
+    const flat = selectedFloor?.flats?.find((f: any) => f.id === flatId);
+    if (flat) {
+      setSelectedFlat(flat);
+      setSelectedCommonArea(null);
+
+      setFormData((prev: any) => ({
+        ...prev,
+        flatId,
+        commonAreaId: null,
+      }));
+    }
+  };
+
+  // Handle common area selection
+  const handleCommonAreaChange = (commonAreaId: number) => {
+    const commonArea = selectedFloor?.common_areas?.find(
+      (ca: any) => ca.id === commonAreaId
+    );
+    if (commonArea) {
+      setSelectedCommonArea(commonArea);
+      setSelectedFlat(null);
+
+      setFormData((prev: any) => ({
+        ...prev,
+        commonAreaId,
+        flatId: null,
+      }));
+    }
+  };
+
+  // Handle vendor selection
+  const handleVendorChange = (vendorId: number) => {
+    setFormData((prev: any) => ({
+      ...prev,
+      vendorId,
+    }));
+  };
+
+  // Handle input change
+  const handleInputChange = (field: string, value: any) => {
+    setFormData((prev: any) => ({ ...prev, [field]: value }));
   };
 
   // Add material to the list
   const addMaterial = (inventoryItem: any) => {
-    // Check if material already exists in the list
     const existingIndex = formData.materials.findIndex(
-      (item) => item.materialId === inventoryItem.id
+      (item: any) => item.materialId === inventoryItem.id
     );
 
     if (existingIndex !== -1) {
-      // If exists, update quantity
       const updatedMaterials = [...formData.materials];
       const currentQty =
         parseFloat(updatedMaterials[existingIndex].quantity) || 0;
       updatedMaterials[existingIndex].quantity = (currentQty + 1).toString();
-      setFormData((prev) => ({ ...prev, materials: updatedMaterials }));
+      setFormData((prev: any) => ({ ...prev, materials: updatedMaterials }));
     } else {
-      // Add new material
       const newMaterial: MaterialItem = {
-        id: Date.now() + Math.random(), // Temporary ID
-        materialId: inventoryItem.item_id,
+        id: Date.now() + Math.random(),
+        materialId: inventoryItem.id,
         materialName: inventoryItem.item_name || inventoryItem.name,
         quantity: "1",
         unit: inventoryItem.unit,
@@ -165,7 +282,7 @@ export default function MaterialOutForm({
         reorder_qty: inventoryItem.reorder_qty,
       };
 
-      setFormData((prev) => ({
+      setFormData((prev: any) => ({
         ...prev,
         materials: [...prev.materials, newMaterial],
       }));
@@ -177,18 +294,18 @@ export default function MaterialOutForm({
 
   // Update material quantity
   const updateMaterialQuantity = (id: number, quantity: string) => {
-    const updatedMaterials = formData.materials.map((item) =>
+    const updatedMaterials = formData.materials.map((item: any) =>
       item.id === id ? { ...item, quantity } : item
     );
-    setFormData((prev) => ({ ...prev, materials: updatedMaterials }));
+    setFormData((prev: any) => ({ ...prev, materials: updatedMaterials }));
   };
 
   // Remove material from list
   const removeMaterial = (id: number) => {
     const updatedMaterials = formData.materials.filter(
-      (item) => item.id !== id
+      (item: any) => item.id !== id
     );
-    setFormData((prev) => ({ ...prev, materials: updatedMaterials }));
+    setFormData((prev: any) => ({ ...prev, materials: updatedMaterials }));
   };
 
   // Filter inventory items for selection
@@ -200,13 +317,11 @@ export default function MaterialOutForm({
     );
   });
 
-  // Check if all materials have valid quantities
+  // Validate materials
   const validateMaterials = () => {
     for (const material of formData.materials) {
       if (!material.quantity || parseFloat(material.quantity) <= 0) {
-        toast.error(
-          `Please enter a valid quantity for ${material.materialName}`
-        );
+        alert(`Please enter a valid quantity for ${material.materialName}`);
         return false;
       }
 
@@ -214,7 +329,7 @@ export default function MaterialOutForm({
         (item) => item.id === material.materialId
       );
       if (stockItem && parseFloat(material.quantity) > stockItem.quantity) {
-        toast.error(
+        alert(
           `Insufficient stock for ${material.materialName}! Available: ${stockItem.quantity} ${stockItem.unit}`
         );
         return false;
@@ -223,28 +338,49 @@ export default function MaterialOutForm({
     return true;
   };
 
+  // Validate form
+  const validateForm = () => {
+    if (!formData.projectId) {
+      toast.error("Please select a project");
+      return false;
+    }
+
+    if (!formData.buildingId) {
+      toast.error("Please select a building");
+      return false;
+    }
+
+    if (!formData.floorId) {
+      toast.error("Please select a floor");
+      return false;
+    }
+
+    if (!formData.receiverName.trim()) {
+      toast.error("Please enter receiver name");
+      return false;
+    }
+
+    if (!formData.receiverNumber.trim()) {
+      toast.error("Please enter receiver phone number");
+      return false;
+    }
+
+    if (formData.materials.length === 0) {
+      toast.error("Please add at least one material");
+      return false;
+    }
+
+    if (!validateMaterials()) {
+      return false;
+    }
+
+    return true;
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!formData.receiver_name || formData.receiver_name.length < 3) {
-      toast.error("Please enter valid receiver name");
+    if (!validateForm()) {
       return;
-    }
-
-    if (formData.receiver_phone.length !== 10) {
-      toast.error("Please enter valid mobile number.");
-      return;
-    }
-
-    if (!formData.delivery_location || formData.delivery_location.length < 3) {
-      toast.error("Please enter valid delivery location");
-      return;
-    }
-    if (!formData.receiving_date || formData.receiving_date.length === 0) {
-      toast.error("Please select valid receiving date.");
-      return;
-    }
-    if (formData.materials.length === 0) {
-      toast.error("Add Material");
     }
 
     try {
@@ -252,12 +388,17 @@ export default function MaterialOutForm({
 
       // Prepare data for API call
       const submissionData = {
-        receiver_name: formData.receiver_name,
-        receiver_phone: formData.receiver_phone,
-        receiving_date: formData.receiving_date,
-        delivery_location: formData.delivery_location,
-        remark: formData.remark,
-        materials: formData.materials.map((material) => ({
+        projectId: formData.projectId,
+        buildingId: formData.buildingId,
+        floorId: formData.floorId,
+        flatId: formData.flatId,
+        commonAreaId: formData.commonAreaId,
+        vendorId: formData.vendorId,
+        receiver_name: formData.receiverName,
+        receiver_number: formData.receiverNumber,
+        issue_date: formData.issueDate,
+        purpose: formData.purpose,
+        materials: formData.materials.map((material: any) => ({
           materialId: material.materialId,
           materialName: material.materialName,
           quantity: parseFloat(material.quantity),
@@ -265,12 +406,22 @@ export default function MaterialOutForm({
         })),
       };
 
-      const result =
-        inventoryTransactionApi.createTransactionOut(submissionData);
-      setLoadTableData(result);
-      loadAllData();
-      toast.success("Materials issued successfully!");
-      setActiveFormTab("");
+      console.log("Material Out:", submissionData);
+
+      const response: any =
+        await inventoryTransactionApi.createTransactionIssueMaterial(
+          submissionData
+        );
+
+      if (response.success) {
+        setLoadTableData(response);
+        toast.success("Materials issued successfully!");
+        resetForm();
+        setActiveFormTab("");
+        loadAllData();
+      } else {
+        toast.error(response.message || "Failed to issue materials");
+      }
     } catch (error) {
       console.error("Error issuing materials:", error);
       toast.error("Failed to issue materials");
@@ -281,30 +432,32 @@ export default function MaterialOutForm({
 
   const resetForm = () => {
     setFormData({
-      receiver_name: "",
-      receiver_phone: "",
-      delivery_location: "",
-      receiving_date: "",
-      remark: "",
-      vendorId: 0,
-      vendorName: "",
-      issuedTo: "",
-      phoneNumber: "",
-      deliveryLocation: "",
+      projectId: null,
+      buildingId: null,
+      floorId: null,
+      flatId: null,
+      commonAreaId: null,
+      vendorId: null,
+      receiverName: "",
+      receiverNumber: "",
       issueDate: new Date().toISOString().split("T")[0],
       purpose: "",
       materials: [],
     });
+    setSelectedProject(null);
+    setSelectedBuilding(null);
+    setSelectedFloor(null);
+    setSelectedFlat(null);
+    setSelectedCommonArea(null);
     setMaterialSearch("");
   };
 
   // Calculate total materials count
   const totalItems = formData.materials.length;
   const totalQuantity = formData.materials.reduce(
-    (sum, item) => sum + (parseFloat(item.quantity) || 0),
+    (sum: number, item: any) => sum + (parseFloat(item.quantity) || 0),
     0
   );
-
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4 overflow-y-auto">
       <div className="bg-white rounded-2xl shadow-2xl w-full max-w-3xl my-8">
@@ -312,7 +465,12 @@ export default function MaterialOutForm({
         <div className="bg-gradient-to-r from-blue-600 to-blue-700 px-6 py-4 flex justify-between items-center rounded-t-2xl sticky top-0 z-10">
           <h2 className="text-xl font-bold text-white flex items-center gap-2">
             <Package className="w-5 h-5" />
-            Material Out
+            Issue Material to Flat/Area
+            {totalItems > 0 && (
+              <span className="ml-2 bg-white text-blue-600 text-xs font-semibold px-2 py-1 rounded-full">
+                {totalItems} item{totalItems !== 1 ? "s" : ""}
+              </span>
+            )}
           </h2>
           <button
             onClick={() => {
@@ -326,76 +484,77 @@ export default function MaterialOutForm({
         </div>
 
         {/* Content */}
-        <div className="my-3 px-6 py-3 min-h-300 max-h-[530px] overflow-y-scroll rounded-b-lg">
+        <div className="my-3 px-6 py-3 h-[530px] overflow-y-scroll rounded-b-lg">
           <form onSubmit={handleSubmit} className="space-y-3">
-            {/* Vendor Selection */}
+            {/* Project Selection */}
             <div className="grid grid-cols-3 gap-6">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Contact Person <span className="text-red-500">*</span>
+                  Project <span className="text-red-500">*</span>
                 </label>
                 <div className="relative">
-                  <User className="absolute left-3 top-3.5 w-4 h-4 text-gray-400" />
-                  <input
-                    type="text"
-                    value={formData.receiver_name}
-                    onChange={(e) => {
-                      if (!/^[A-Za-z\s]*$/.test(e.target.value)) {
-                        toast.warning("Only alphabet allowed.");
-                        return;
-                      }
-                      handleInputChange("receiver_name", e.target.value);
-                    }}
-                    className="w-full pl-10 pr-4 py-2 text-sm outline-none border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                    placeholder="Contact person name"
-                  />
-                </div>
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Phone Number <span className="text-red-500">*</span>
-                </label>
-                <div className="relative">
-                  <Phone className="absolute left-3 top-3.5 w-4 h-4 text-gray-400" />
-                  <input
-                    type="tel"
-                    value={formData.receiver_phone}
-                    onChange={(e) => {
-                      if (!/^\d*$/.test(e.target.value)) {
-                        toast.warning("Enter Valid Phone Number.");
-                        return;
-                      }
-                      if (Number(e.target.value.length) <= 10) {
-                        handleInputChange("receiver_phone", e.target.value);
-                      } else {
-                        toast.warning("Only 10 digit mobile number allowed.");
-                      }
-                    }}
-                    className="w-full pl-10 pr-4 py-2 text-sm outline-none border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                    placeholder="Enter phone number"
-                  />
-                </div>
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Delivery Location <span className="text-red-500">*</span>
-                </label>
-
-                <div className="relative">
+                  <FileText className="absolute left-3 top-3 w-4 h-4 text-gray-400" />
                   <select
-                    value={`${formData.delivery_location}`}
-                    onChange={(e) =>
-                      handleInputChange("delivery_location", e.target.value)
+                    value={formData.projectId || ""}
+                    onChange={(e: any) =>
+                      loadProjectDetails(Number(e.target.value))
                     }
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent appearance-none bg-white text-sm outline-none"
+                    className="w-full pl-10 pr-4 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent appearance-none bg-white outline-none"
                     required
                   >
-                    <option value="">Delivery Location</option>
+                    <option value="">Select Project</option>
                     {allProjects.map((project: any) => (
-                      <option key={project.id} value={project.loaction}>
-                        {project.name}-{"("}
-                        {project.location}
-                        {")"}
+                      <option key={project.id} value={project.id}>
+                        {project.name}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Building <span className="text-red-500">*</span>
+                </label>
+                <div className="relative">
+                  <Building className="absolute left-3 top-3 w-4 h-4 text-gray-400" />
+                  <select
+                    value={formData.buildingId || ""}
+                    onChange={(e: any) =>
+                      handleBuildingChange(Number(e.target.value))
+                    }
+                    disabled={!selectedProject}
+                    className="w-full pl-10 pr-4 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent appearance-none bg-white outline-none disabled:bg-gray-100 disabled:cursor-not-allowed"
+                    required
+                  >
+                    <option value="">Select Building</option>
+                    {selectedProject?.buildings?.map((building: any) => (
+                      <option key={building.id} value={building.id}>
+                        {building.building_name}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Floor <span className="text-red-500">*</span>
+                </label>
+                <div className="relative">
+                  <Layers className="absolute left-3 top-3 w-4 h-4 text-gray-400" />
+                  <select
+                    value={formData.floorId || ""}
+                    onChange={(e: any) =>
+                      handleFloorChange(Number(e.target.value))
+                    }
+                    disabled={!selectedBuilding}
+                    className="w-full pl-10 pr-4 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent appearance-none bg-white outline-none disabled:bg-gray-100 disabled:cursor-not-allowed"
+                    required
+                  >
+                    <option value="">Select Floor</option>
+                    {selectedBuilding?.floors?.map((floor: any) => (
+                      <option key={floor.id} value={floor.id}>
+                        {floor.floor_name}
                       </option>
                     ))}
                   </select>
@@ -403,32 +562,156 @@ export default function MaterialOutForm({
               </div>
             </div>
 
-            {/* Phone & Purpose */}
+            {/* Flat and Common Area Selection */}
             <div className="grid grid-cols-3 gap-6">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Issue Date <span className="text-red-500">*</span>
+                  Flat
                 </label>
                 <div className="relative">
-                  <Calendar className="absolute left-3 top-3.5 w-4 h-4 text-gray-400" />
-                  <input
-                    type="date"
-                    value={formData.receiving_date}
-                    onChange={(e) =>
-                      handleInputChange("receiving_date", e.target.value)
+                  <Home className="absolute left-3 top-3 w-4 h-4 text-gray-400" />
+                  <select
+                    value={formData.flatId || ""}
+                    onChange={(e: any) =>
+                      handleFlatChange(Number(e.target.value))
                     }
+                    disabled={!selectedFloor || formData.commonAreaId}
+                    className="w-full pl-10 pr-4 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent appearance-none bg-white outline-none disabled:bg-gray-100 disabled:cursor-not-allowed"
+                  >
+                    <option value="">Select Flat</option>
+                    {selectedFloor?.flats?.map((flat: any) => (
+                      <option key={flat.id} value={flat.id}>
+                        {flat.flat_name}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Common Area
+                </label>
+                <div className="relative">
+                  <DoorOpen className="absolute left-3 top-3 w-4 h-4 text-gray-400" />
+                  <select
+                    value={formData.commonAreaId || ""}
+                    onChange={(e: any) =>
+                      handleCommonAreaChange(Number(e.target.value))
+                    }
+                    disabled={!selectedFloor || formData.flatId}
+                    className="w-full pl-10 pr-4 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent appearance-none bg-white outline-none disabled:bg-gray-100 disabled:cursor-not-allowed"
+                  >
+                    <option value="">Select Common Area</option>
+                    {selectedFloor?.common_areas?.map((commonArea: any) => (
+                      <option key={commonArea.id} value={commonArea.id}>
+                        {commonArea.common_area_name}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Vendor
+                </label>
+                <div className="relative">
+                  <User className="absolute left-3 top-3 w-4 h-4 text-gray-400" />
+                  <select
+                    value={formData.vendorId || ""}
+                    onChange={(e: any) =>
+                      handleVendorChange(Number(e.target.value))
+                    }
+                    className="w-full pl-10 pr-4 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent appearance-none bg-white outline-none"
+                  >
+                    <option value="">Select Vendor</option>
+                    {allServiceVendors.map((vendor: any) => (
+                      <option key={vendor.id} value={vendor.id}>
+                        {vendor.name}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+            </div>
+
+            {/* Receiver Information */}
+            <div className="grid grid-cols-3 gap-6">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Receiver Name <span className="text-red-500">*</span>
+                </label>
+                <div className="relative">
+                  <User className="absolute left-3 top-3 w-4 h-4 text-gray-400" />
+                  <input
+                    type="text"
+                    value={formData.receiverName}
+                    onChange={(e) => {
+                      if (!/^[A-Za-z\s]*$/.test(e.target.value)) {
+                        toast.warning("Only alphabet allowed.");
+                        return;
+                      }
+                      handleInputChange("receiverName", e.target.value);
+                    }}
                     className="w-full pl-10 pr-4 py-2 text-sm outline-none border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    placeholder="Enter Receiver Name"
+                    required
                   />
                 </div>
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Receiver Phone Number <span className="text-red-500">*</span>
+                </label>
+                <div className="relative">
+                  <Phone className="absolute left-3 top-3 w-4 h-4 text-gray-400" />
+                  <input
+                    type="tel"
+                    value={formData.receiverNumber}
+                    onChange={(e) => {
+                      if (!/^\d*$/.test(e.target.value)) {
+                        toast.warning("Enter Valid Phone Number.");
+                        return;
+                      }
+                      if (e.target.value.length > 10) {
+                        toast.warning("Mobile number must be 10 digit.");
+                        return;
+                      }
+                      handleInputChange("receiverNumber", e.target.value);
+                    }}
+                    className="w-full pl-10 pr-4 py-2 text-sm outline-none border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    placeholder="Enter Phone Number"
+                    required
+                  />
+                </div>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Issue Date
+                </label>
+                <div className="relative">
+                  <Calendar className="absolute left-3 top-3 w-4 h-4 text-gray-400" />
+                  <input
+                    type="date"
+                    value={formData.issueDate}
+                    onChange={(e) =>
+                      handleInputChange("issueDate", e.target.value)
+                    }
+                    className="w-full pl-10 pr-4 py-2 text-sm outline-none border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  />
+                </div>
+              </div>
+            </div>
+
+            {/* Date and Purpose */}
+            <div className="grid grid-cols-3 gap-6">
+              <div className="col-span-2">
+                <label className="block text-sm font-medium text-gray-700 mb-2">
                   Purpose
                 </label>
                 <input
                   type="text"
-                  value={formData.remark}
-                  onChange={(e) => handleInputChange("remark", e.target.value)}
+                  value={formData.purpose}
+                  onChange={(e) => handleInputChange("purpose", e.target.value)}
                   className="w-full px-4 py-2 text-sm outline-none border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                   placeholder="Purpose of issue"
                 />
@@ -440,6 +723,11 @@ export default function MaterialOutForm({
               <div className="flex justify-between items-center mb-4">
                 <h3 className="text-lg font-semibold text-gray-800">
                   Materials
+                  {totalItems > 0 && (
+                    <span className="ml-2 text-sm font-normal text-gray-600">
+                      ({totalItems} items, {totalQuantity} total units)
+                    </span>
+                  )}
                 </h3>
                 <button
                   type="button"
@@ -460,7 +748,7 @@ export default function MaterialOutForm({
                 </div>
               ) : (
                 <div className="space-y-3">
-                  {formData.materials.map((material) => (
+                  {formData.materials.map((material: any) => (
                     <div
                       key={material.id}
                       className="bg-gray-50 p-4 rounded-lg border border-gray-200"
@@ -485,32 +773,6 @@ export default function MaterialOutForm({
                             )}
                           </div>
                         </div>
-                        <div className="col-span-3">
-                          <label className="text-xs text-gray-600 mb-1 block">
-                            Total Quantity{" "}
-                            <span className="text-red-500">*</span>
-                          </label>
-                          <div className="flex items-center gap-2">
-                            <input
-                              type="number"
-                              value={material.currentStock}
-                              disabled
-                              className="w-24 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                              min="0.01"
-                              step="0.01"
-                              required
-                            />
-                            <span className="text-sm text-gray-600">
-                              {material.unit}
-                            </span>
-                          </div>
-                          {parseFloat(material.quantity) >
-                            material.currentStock && (
-                            <p className="text-xs text-red-600 mt-1">
-                              Exceeds available stock!
-                            </p>
-                          )}
-                        </div>
 
                         <div className="col-span-3">
                           <label className="text-xs text-gray-600 mb-1 block">
@@ -526,12 +788,9 @@ export default function MaterialOutForm({
                                   Number(e.target.value) < 0
                                 )
                                   return;
-                                if (
-                                  Number(e.target.value) >
-                                  Number(material.currentStock)
-                                ) {
+                                if (material.currentStock < e.target.value) {
                                   toast.warning(
-                                    "Entered Quantity is larger than stock quantity."
+                                    "Entered quantity is exceeding stock quantity."
                                   );
                                   return;
                                 }
@@ -555,6 +814,17 @@ export default function MaterialOutForm({
                               Exceeds available stock!
                             </p>
                           )}
+                        </div>
+
+                        <div className="col-span-3">
+                          <label className="text-xs text-gray-600 mb-1 block">
+                            After Issue
+                          </label>
+                          <p className="text-sm text-gray-700 font-medium">
+                            {material.currentStock -
+                              parseFloat(material.quantity || "0")}{" "}
+                            {material.unit}
+                          </p>
                         </div>
 
                         <div className="col-span-2 flex justify-end">
@@ -581,8 +851,7 @@ export default function MaterialOutForm({
                 disabled={loading || formData.materials.length === 0}
                 className="flex-1 bg-blue-600 text-white py-2 px-6 rounded-lg hover:bg-blue-700 transition font-medium shadow-sm disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
               >
-                <Truck className="w-5 h-5" />
-                {loading ? "Processing..." : "Material Out"}
+                {loading ? "Processing..." : "Issue Material"}
               </button>
               <button
                 type="button"
@@ -637,16 +906,14 @@ export default function MaterialOutForm({
                 ) : (
                   filteredInventory.map((item) => {
                     const existingMaterial = formData.materials.find(
-                      (m) => m.materialId === item.id
+                      (m: any) => m.materialId === item.id
                     );
-                    const isLowStock =
-                      item.quantity <= item.reorder_qty && item.quantity > 0;
-                    const outOfStock = item.quantity === 0;
+                    const isLowStock = item.quantity <= item.reorder_qty;
+
                     return (
                       <button
-                        type="button"
-                        disabled={item.quantity === 0}
                         key={item.id}
+                        disabled={item.quantity === 0}
                         onClick={() => addMaterial(item)}
                         className={`p-4 border rounded-lg cursor-pointer transition ${
                           existingMaterial
@@ -670,12 +937,6 @@ export default function MaterialOutForm({
                                 <span className="text-xs px-2 py-1 bg-yellow-100 text-yellow-700 rounded flex items-center gap-1">
                                   <AlertCircle className="w-3 h-3" />
                                   Low Stock
-                                </span>
-                              )}
-                              {outOfStock && (
-                                <span className="text-xs px-2 py-1 bg-red-100 text-red-700 rounded flex items-center gap-1">
-                                  <AlertCircle className="w-3 h-3" />
-                                  Out Of Stock
                                 </span>
                               )}
                             </div>

@@ -13,6 +13,13 @@ import {
   AlertTriangle,
   CheckCircle,
   IndianRupee,
+  Bell,
+  PackagePlus,
+  PackageMinus,
+  UserCheck,
+  HandCoins,
+  Download,
+  Truck,
 } from "lucide-react";
 import { useAuth } from "../contexts/AuthContext";
 import InventoryTransaction from "../components/InventoryTransaction";
@@ -25,6 +32,11 @@ import MaterialOutForm from "../components/StoreManagement/MaterialOutForm";
 import poApi from "../lib/poApi";
 import vendorApi from "../lib/vendorApi";
 import ViewPOTransaction from "../components/StoreManagement/ViewPOTransaction";
+import NotificationsApi from "../lib/notificationApi";
+import IssueMaterial from "../components/StoreManagement/IssueMaterial";
+import MaterialInTransactions from "../components/materialTransactions/MaterialInTransactions";
+import MaterialOutTransactions from "../components/materialTransactions/MaterialOutTransactions";
+import MaterialIssueTransactions from "../components/materialTransactions/MaterialIssueTransactions";
 
 type InventoryItem = {
   id: number;
@@ -98,6 +110,7 @@ export default function StoreManagement() {
   const { user, profile } = useAuth();
   const [inventory, setInventory] = useState<InventoryItem[]>([]);
   const [transactions, setTransactions] = useState<InventoryTransaction[]>([]);
+  const [loadTableData, setLoadTableData] = useState<any>();
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
   const [activeFormTab, setActiveFormTab] = useState<string>("");
@@ -120,6 +133,8 @@ export default function StoreManagement() {
   const [itemsLoading, setItemsLoading] = useState(true);
   const [inventoryLoading, setInventoryLoading] = useState(true);
   const [transactionsLoading, setTransactionsLoading] = useState(true);
+  const [subTabs, setSubTabs] = useState("MaterialIn");
+  const [dataUpdated, setDataUpdated] = useState("");
 
   // --- Permissions ---
   const can = (permission: string) => {
@@ -390,16 +405,23 @@ export default function StoreManagement() {
   };
 
   // Calculate after quantity safely
-  const calculateAfterQuantity = (
-    transaction: InventoryTransaction
-  ): number => {
-    const previous = transaction.previous_qty || 0;
-    const transQty = transaction.transaction_qty || 0;
-
-    if (transaction.trasaction_type === "INWARD") {
-      return previous + transQty;
-    } else {
-      return Math.max(0, previous - transQty); // Prevent negative values
+  const reminder = async (item: any) => {
+    try {
+      const payload = {
+        title: `Inventory Reminder (${item.item_name})`,
+        description: `Inventory Reminder: In Stock ${
+          item.quantity + " " + item.unit
+        } of ${item.item_name}(${item.item_code}) status: ${item.status}`,
+        type: "reminder",
+      };
+      const result: any = await NotificationsApi.createNotification(payload);
+      if (result.success) {
+        alert("Reminder send successfully.");
+      } else {
+        alert("Failed to send reminder.");
+      }
+    } catch (error) {
+      alert("Something went wrong.");
     }
   };
 
@@ -435,7 +457,7 @@ export default function StoreManagement() {
                       : "text-gray-600 hover:text-gray-800 hover:bg-gray-50"
                   }`}
                 >
-                  <CheckCircle className="w-4 h-4" />
+                  <PackagePlus className="w-5 h-5" />
                   Material In
                 </button>
                 <button
@@ -446,8 +468,19 @@ export default function StoreManagement() {
                       : "text-gray-600 hover:text-gray-800 hover:bg-gray-50"
                   }`}
                 >
-                  <Package className="w-4 h-4" />
+                  <PackageMinus className="w-5 h-5" />
                   Material Out
+                </button>
+                <button
+                  onClick={() => setActiveFormTab("issue")}
+                  className={`flex items-center gap-2 px-4 py-3 font-medium rounded-t-lg transition-all ${
+                    activeFormTab === "issue"
+                      ? "text-blue-600 border-b-2 border-blue-600 bg-blue-50"
+                      : "text-gray-600 hover:text-gray-800 hover:bg-gray-50"
+                  }`}
+                >
+                  <UserCheck className="w-5 h-5" />
+                  Issue Material
                 </button>
               </div>
             </div>
@@ -455,12 +488,22 @@ export default function StoreManagement() {
         </div>
         {activeFormTab === "in" && (
           <MaterialInForm
+            setLoadTableData={setLoadTableData}
             setActiveFormTab={setActiveFormTab}
             loadAllData={loadAllData}
           />
         )}
         {activeFormTab === "out" && (
           <MaterialOutForm
+            setLoadTableData={setLoadTableData}
+            setActiveFormTab={setActiveFormTab}
+            allInventory={filteredInventory}
+            loadAllData={loadAllData}
+          />
+        )}
+        {activeFormTab === "issue" && (
+          <IssueMaterial
+            setLoadTableData={setLoadTableData}
             setActiveFormTab={setActiveFormTab}
             allInventory={filteredInventory}
             loadAllData={loadAllData}
@@ -469,7 +512,7 @@ export default function StoreManagement() {
       </div>
 
       {/* Tabs */}
-      <div className="bg-white rounded-xl shadow-sm border border-gray-200 mb-6 overflow-hidden">
+      <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
         <div className="flex border-b border-gray-200">
           <button
             onClick={() => setActiveTab("tracking")}
@@ -500,6 +543,53 @@ export default function StoreManagement() {
         </div>
       </div>
 
+      {/* Sub Tabs */}
+      {activeTab === "tracking" && (
+        <div className="bg-white rounded-xl shadow-sm border border-gray-200 mt-2 mb-6 overflow-hidden">
+          <div className="flex border-b border-gray-200">
+            <button
+              onClick={() => setSubTabs("MaterialIn")}
+              className={`flex-1 px-6 py-2 font-medium transition ${
+                subTabs === "MaterialIn"
+                  ? "text-blue-600 border-b-2 border-blue-600 bg-blue-50"
+                  : "text-gray-600 hover:text-gray-800 hover:bg-gray-50"
+              }`}
+            >
+              <div className="flex items-center justify-center gap-2">
+                <Download className="w-5 h-5" />
+                <span>Material In Transactions</span>
+              </div>
+            </button>
+            <button
+              onClick={() => setSubTabs("MaterialOut")}
+              className={`flex-1 px-6 py-2 font-medium transition ${
+                subTabs === "MaterialOut"
+                  ? "text-blue-600 border-b-2 border-blue-600 bg-blue-50"
+                  : "text-gray-600 hover:text-gray-800 hover:bg-gray-50"
+              } border-r border-l border-slate-200`}
+            >
+              <div className="flex items-center justify-center gap-2">
+                <Truck className="w-5 h-5" />
+                <span>Material Out Transactions</span>
+              </div>
+            </button>
+            <button
+              onClick={() => setSubTabs("MaterialIssue")}
+              className={`flex-1 px-6 py-2 font-medium transition ${
+                subTabs === "MaterialIssue"
+                  ? "text-blue-600 border-b-2 border-blue-600 bg-blue-50"
+                  : "text-gray-600 hover:text-gray-800 hover:bg-gray-50"
+              }`}
+            >
+              <div className="flex items-center justify-center gap-2">
+                <HandCoins className="w-5 h-5" />
+                <span>Material Issue Transactions</span>
+              </div>
+            </button>
+          </div>
+        </div>
+      )}
+
       {/* Search */}
       <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-4 mb-6">
         <div className="relative">
@@ -527,115 +617,16 @@ export default function StoreManagement() {
       </div>
 
       {/* Content based on active tab */}
-      {activeTab === "tracking" && (
-        <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
-          <div className="overflow-x-auto">
-            <table className="w-full">
-              <thead className="bg-gray-100 border-b border-gray-200">
-                <tr>
-                  <th className="text-left px-6 py-4 text-sm font-semibold text-gray-700">
-                    PO Number
-                  </th>
-                  <th className="text-left px-6 py-4 text-sm font-semibold text-gray-700">
-                    Vendor
-                  </th>
-                  <th className="text-left px-6 py-4 text-sm font-semibold text-gray-700">
-                    Challan No.
-                  </th>
-                  <th className="text-left px-6 py-4 text-sm font-semibold text-gray-700">
-                    Receiving Date
-                  </th>
-                  <th className="text-left px-6 py-4 text-sm font-semibold text-gray-700">
-                    Receiver Name
-                  </th>
-                  <th className="text-left px-6 py-4 text-sm font-semibold text-gray-700">
-                    Trans. Type
-                  </th>
-                  <th className="text-left px-6 py-4 text-sm font-semibold text-gray-700">
-                    View Challan
-                  </th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-200">
-                {filteredTransactions.map((transaction) => {
-                  return (
-                    <tr
-                      key={transaction.id}
-                      className="hover:bg-gray-50 transition"
-                    >
-                      <td className="px-6 py-4">
-                        <button
-                          onClick={() => {
-                            setSelectedPOTransaction(transaction);
-                            setActiveFormTab("view");
-                          }}
-                          className="font-bold hover:underline cursor-pointer text-blue-600"
-                        >
-                          {transaction.po_number || "N/A"}
-                        </button>
-                      </td>
-                      <td className="px-6 py-4">
-                        <div className=" text-gray-800">
-                          {transaction.vendor || "N/A"}
-                        </div>
-                      </td>
-                      <td className="px-6 py-4">
-                        <div className="">
-                          {transaction.challan_number || "N/A"}
-                        </div>
-                      </td>
-                      <td className="px-6 py-4">
-                        <div className=" text-gray-800">
-                          {transaction.receiving_date ?? "N/A"}
-                        </div>
-                      </td>
-                      <td className="px-6 py-4">
-                        <div className=" text-gray-800">
-                          {transaction.receiver_name ?? "N/A"}
-                        </div>
-                      </td>
-                      <td className="px-6 py-4">
-                        <span
-                          className={`px-3 py-1 rounded-full text-xs font-medium ${getTransactionTypeColor(
-                            transaction.trasaction_type
-                          )}`}
-                        >
-                          {transaction.trasaction_type}
-                        </span>
-                      </td>
-                      <td className="px-6 py-4">
-                        <button
-                          onClick={() => {
-                            setSelectedPOTransaction(transaction);
-                            setActiveFormTab("view");
-                          }}
-                          className="text-sm max-w-xs truncate font-bold cursor-pointer text-blue-600 hover:scale-102"
-                          title={transaction.remark}
-                        >
-                          View
-                        </button>
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
+      {activeTab === "tracking" && subTabs === "MaterialIn" && (
+        <MaterialInTransactions loadTableData={loadTableData} />
+      )}
+      {/* Content based on active tab */}
+      {activeTab === "tracking" && subTabs === "MaterialOut" && (
+        <MaterialOutTransactions loadTableData={loadTableData} />
+      )}
 
-            {filteredTransactions.length === 0 && (
-              <div className="text-center py-12">
-                <Package className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-                <h3 className="text-lg font-semibold text-gray-800 mb-2">
-                  No Transactions Found
-                </h3>
-                <p className="text-gray-600">
-                  {searchTerm
-                    ? "Try a different search term"
-                    : "No inventory transactions available"}
-                </p>
-              </div>
-            )}
-          </div>
-        </div>
+      {activeTab === "tracking" && subTabs === "MaterialIssue" && (
+        <MaterialIssueTransactions loadTableData={loadTableData} />
       )}
       {activeFormTab === "view" && (
         <ViewPOTransaction
@@ -736,6 +727,13 @@ export default function StoreManagement() {
                       </td>
                       <td className="px-6 py-4">
                         <div className="flex gap-2">
+                          <button
+                            onClick={() => reminder(item)}
+                            className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition cursor-pointer"
+                            title="Reminder"
+                          >
+                            <Bell className="w-4 h-4" />
+                          </button>
                           <button
                             onClick={() => handleEdit(item)}
                             className="p-2 text-yellow-600 hover:bg-yellow-50 rounded-lg transition"

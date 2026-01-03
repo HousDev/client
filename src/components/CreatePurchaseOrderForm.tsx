@@ -5,6 +5,7 @@ import { useAuth } from "../contexts/AuthContext";
 import poApi from "../lib/poApi";
 import poTypeApi from "../lib/poTypeApi";
 import TermsConditionsApi from "../lib/termsConditionsApi";
+import { toast } from "sonner";
 
 /* --- types (same as yours) --- */
 interface POItem {
@@ -122,7 +123,7 @@ function SearchableSelect({
   return (
     <div ref={containerRef} className="relative">
       <div
-        className={`w-full flex items-center gap-2 px-3 py-3 border rounded-lg bg-white cursor-pointer ${
+        className={`w-full flex items-center gap-2 px-3 py-2 border rounded-lg bg-white cursor-pointer ${
           disabled ? "opacity-50 cursor-not-allowed" : "hover:shadow-sm"
         }`}
         onClick={() => !disabled && setOpen((s) => !s)}
@@ -310,10 +311,10 @@ export default function CreatePurchaseOrderForm({
 
   const loadProjects = async () => {
     try {
-      const data = await poApi.getProjects();
-      setProjects(Array.isArray(data) ? data : []);
-    } catch (err) {
-      console.warn("loadProjects failed, fallback to empty", err);
+      const data: any = await poApi.getProjects();
+      setProjects(Array.isArray(data.data) ? data.data : []);
+    } catch (err: any) {
+      toast.error("loadProjects failed, fallback to empty", err);
       setProjects([]);
     }
   };
@@ -636,13 +637,13 @@ export default function CreatePurchaseOrderForm({
         }
       }
 
-      alert("Purchase Order created successfully!");
+      toast.success("Purchase Order created successfully!");
       setShowCreatePro(false);
       resetForm();
       loadAllData();
     } catch (err) {
       console.error("Error creating PO:", err);
-      alert("Error creating purchase order");
+      toast.error("Error creating purchase order");
     }
   };
 
@@ -806,7 +807,7 @@ export default function CreatePurchaseOrderForm({
                     onChange={(e) =>
                       setFormData({ ...formData, po_date: e.target.value })
                     }
-                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    className="w-full px-4 py-1 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                     required
                   />
                 </div>
@@ -824,7 +825,7 @@ export default function CreatePurchaseOrderForm({
                         delivery_date: e.target.value,
                       })
                     }
-                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    className="w-full px-4 py-1 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                   />
                 </div>
 
@@ -842,18 +843,6 @@ export default function CreatePurchaseOrderForm({
                   >
                     Interstate Supply (IGST)
                   </label>
-                </div>
-                <div className="flex items-center pt-6">
-                  <button
-                    onClick={() => {
-                      if (formData.vendor_id) setShowTermsConditions(true);
-                      else alert("Select Vendor.");
-                    }}
-                    type="button"
-                    className="ml-2 text-sm font-medium text-blue-700"
-                  >
-                    Add Terms & Conditions
-                  </button>
                 </div>
               </div>
             </div>
@@ -908,15 +897,20 @@ export default function CreatePurchaseOrderForm({
                         <div className="col-span-2">
                           <label className="text-xs text-gray-600">Qty</label>
                           <input
-                            type="number"
+                            type="text"
                             value={item.quantity}
-                            onChange={(e) =>
+                            onChange={(e) => {
+                              if (
+                                !/^\d*\.?\d*$/.test(e.target.value) ||
+                                Number(e.target.value) < 0
+                              )
+                                return;
                               handleItemChange(
                                 index,
                                 "quantity",
                                 parseFloat(e.target.value) || 0
-                              )
-                            }
+                              );
+                            }}
                             className="w-full px-2 py-1 border border-gray-300 rounded text-sm"
                             min="0"
                             step="0.01"
@@ -929,15 +923,20 @@ export default function CreatePurchaseOrderForm({
                         <div className="col-span-2">
                           <label className="text-xs text-gray-600">Rate</label>
                           <input
-                            type="number"
+                            type="text"
                             value={item.rate}
-                            onChange={(e) =>
+                            onChange={(e) => {
+                              if (
+                                !/^\d*\.?\d*$/.test(e.target.value) ||
+                                Number(e.target.value) < 0
+                              )
+                                return;
                               handleItemChange(
                                 index,
                                 "rate",
                                 parseFloat(e.target.value) || 0
-                              )
-                            }
+                              );
+                            }}
                             className="w-full px-2 py-1 border border-gray-300 rounded text-sm"
                             min="0"
                             step="0.01"
@@ -996,12 +995,90 @@ export default function CreatePurchaseOrderForm({
                 </div>
               </div>
             </div>
+            <div className="pb-6">
+              {formData.terms_and_conditions.length !== 0 && (
+                <div>
+                  <h1 className="font-semibold">Terms & Conditions</h1>
+                  <div className="py-3">
+                    <ul className="px-6">
+                      {terms.map((d) => (
+                        <li className="mb-3">
+                          <div
+                            onClick={() => {
+                              if (
+                                formData.terms_and_conditions.includes(
+                                  d.content
+                                )
+                              ) {
+                                if (
+                                  formData.terms_and_conditions.includes(
+                                    d.content + ","
+                                  )
+                                ) {
+                                  setFormData((prev) => ({
+                                    ...prev,
+                                    terms_and_conditions:
+                                      prev.terms_and_conditions.replace(
+                                        d.content + ",",
+                                        ""
+                                      ),
+                                  }));
+                                } else {
+                                  setFormData((prev) => ({
+                                    ...prev,
+                                    terms_and_conditions:
+                                      prev.terms_and_conditions.replace(
+                                        d.content,
+                                        ""
+                                      ),
+                                  }));
+                                }
+                              } else {
+                                setFormData((prev) => ({
+                                  ...prev,
+                                  terms_and_conditions:
+                                    prev.terms_and_conditions
+                                      ? `${prev.terms_and_conditions}, ${d.content}`
+                                      : d.content,
+                                }));
+                              }
+                            }}
+                            className="flex items-center cursor-pointer"
+                          >
+                            <input
+                              type="checkbox"
+                              checked={formData.terms_and_conditions.includes(
+                                d.content
+                              )}
+                              className="w-4 h-4 text-blue-600 rounded focus:ring-2 focus:ring-blue-500 mr-3 cursor-pointer"
+                            />
+                            <span className="text-justify">{d.content}</span>
+                          </div>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                </div>
+              )}
+              <div className="flex items-center pt-6">
+                <button
+                  onClick={() => {
+                    if (formData.vendor_id) setShowTermsConditions(true);
+                    else toast.warning("Select Vendor.");
+                  }}
+                  type="button"
+                  className="ml-2 text-sm font-medium text-blue-700 pb-6"
+                >
+                  Add Terms & Conditions
+                </button>
+              </div>
+            </div>
 
             <div className="flex gap-3 pt-6 border-t sticky bottom-0 bg-white">
               <button
                 type="submit"
                 disabled={formData.items.length === 0}
-                className="flex-1 bg-blue-600 text-white py-3 px-6 rounded-lg hover:bg-blue-700 transition font-medium shadow-sm disabled:opacity-50 disabled:cursor-not-allowed"
+                className="flex-1 bg-blue-600 text-white py-2 px-6 rounded-lg hover:bg-blue-700 transition font-medium shadow-sm disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 Create Purchase Order
               </button>
@@ -1011,7 +1088,7 @@ export default function CreatePurchaseOrderForm({
                   setShowCreatePro(false);
                   resetForm();
                 }}
-                className="px-6 py-3 border border-gray-300 rounded-lg hover:bg-gray-50 transition font-medium"
+                className="px-6 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition font-medium"
               >
                 Cancel
               </button>
