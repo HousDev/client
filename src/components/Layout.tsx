@@ -19,8 +19,11 @@ import {
   Menu,
   X,
   Shield,
+  HandHelping,
 } from "lucide-react";
 import NotificationsApi from "../lib/notificationApi";
+import { toast } from "sonner";
+import RequestMaterial from "./materialRequest/RequestMaterial";
 
 interface LayoutProps {
   children: ReactNode;
@@ -49,6 +52,8 @@ export default function Layout({
   const [userMenus, setUserMenus] = useState<string[] | []>([]);
   const [notifications, setNotifications] = useState<NotificationType[]>([]);
   const [unreadCount, setUnreadCount] = useState(0);
+  const [showRequestMaterial, setShowRequestMaterial] =
+    useState<boolean>(false);
 
   const menuItems = [
     {
@@ -106,6 +111,12 @@ export default function Layout({
       label: "Material Tracking",
       icon: Package,
       value: ["view_materials", "receive_materials"],
+    },
+    {
+      id: "material-requests",
+      label: "Material Requests",
+      icon: HandHelping,
+      value: ["view_materials_requests", "update_materials_requests"],
     },
     {
       id: "payments",
@@ -166,7 +177,6 @@ export default function Layout({
       )
     );
     const data = Object.keys(result) ?? [];
-    console.log(data, "user permissions menus");
     setUserMenus(data);
     setUserPermissions(contextAuth.user.permissions);
   }, []);
@@ -195,8 +205,8 @@ export default function Layout({
   const fetchNotifications = async () => {
     try {
       const res: any = await NotificationsApi.getNotifications();
-      console.log(res.data);
-      setNotifications(res.data);
+      const filteredNotifications = res.data.filter((n: any) => n.seen === 0);
+      setNotifications(filteredNotifications);
     } catch (error) {
       console.error("Failed to load notifications", error);
     }
@@ -225,7 +235,7 @@ export default function Layout({
       if (result.success) {
         fetchNotifications();
       } else {
-        alert("Failed mark all notifications as seen.");
+        toast.error("Failed mark all notifications as seen.");
       }
     } catch (err) {
       console.error("Error marking all as read (demo):", err);
@@ -250,6 +260,16 @@ export default function Layout({
         </div>
 
         <div className="flex items-center gap-2">
+          <div className="relative">
+            <button
+              onClick={() => setShowRequestMaterial(true)}
+              className="text-xs flex items-center px-3 py-1 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition"
+              aria-label="Open notifications"
+            >
+              Request
+            </button>
+          </div>
+
           <button
             onClick={() => setNotifOpen(true)}
             className="p-2 rounded-lg hover:bg-gray-100 relative"
@@ -286,6 +306,17 @@ export default function Layout({
         </div>
 
         <div className="flex items-center gap-4">
+          {/* Request Material Button */}
+          <div className="relative">
+            <button
+              onClick={() => setShowRequestMaterial(true)}
+              className="flex items-center px-4 py-1 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition"
+              aria-label="Open notifications"
+            >
+              Request
+            </button>
+          </div>
+
           {/* Notification bell */}
           <div className="relative">
             <button
@@ -398,7 +429,7 @@ export default function Layout({
             </div>
           </div>
         </div>
-        <div className="h-[68vh] lg:h-full overflow-y-scroll lg:overflow-hidden">
+        <div className="h-[68vh] lg:h-[80vh] overflow-y-scroll scrollbar-thin ">
           {/* navigation */}
           <nav
             className="p-4 space-y-1 flex-1 overflow-y-auto"
@@ -534,7 +565,6 @@ export default function Layout({
                 className="text-sm text-blue-600 hover:underline"
                 onClick={() => {
                   markAllRead();
-                  console.log("Mark all as read (implement)");
                   setNotifOpen(false);
                 }}
               >
@@ -600,7 +630,6 @@ export default function Layout({
               <div className="mt-4 grid gap-2">
                 <button
                   onClick={() => {
-                    console.log("Go to settings");
                     setProfileOpen(false);
                   }}
                   className="w-full text-left px-3 py-2 rounded-md hover:bg-gray-50 text-sm text-gray-700 flex items-center gap-2"
@@ -629,6 +658,9 @@ export default function Layout({
             </div>
           </div>
         </>
+      )}
+      {showRequestMaterial && (
+        <RequestMaterial setShowRequestMaterial={setShowRequestMaterial} />
       )}
     </div>
   );

@@ -463,7 +463,7 @@ export default function IssueMaterial({
       <div className="bg-white rounded-2xl shadow-2xl w-full max-w-3xl my-8">
         {/* Header */}
         <div className="bg-gradient-to-r from-blue-600 to-blue-700 px-6 py-4 flex justify-between items-center rounded-t-2xl sticky top-0 z-10">
-          <h2 className="text-xl font-bold text-white flex items-center gap-2">
+          <h2 className="text-[0.9rem] md:text-xl font-bold text-white flex items-center gap-2 ">
             <Package className="w-5 h-5" />
             Issue Material to Flat/Area
             {totalItems > 0 && (
@@ -487,7 +487,7 @@ export default function IssueMaterial({
         <div className="my-3 px-6 py-3 h-[530px] overflow-y-scroll rounded-b-lg">
           <form onSubmit={handleSubmit} className="space-y-3">
             {/* Project Selection */}
-            <div className="grid grid-cols-3 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-3 md:gap-6">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
                   Project <span className="text-red-500">*</span>
@@ -563,7 +563,7 @@ export default function IssueMaterial({
             </div>
 
             {/* Flat and Common Area Selection */}
-            <div className="grid grid-cols-3 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-3 md:gap-6">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
                   Flat
@@ -575,7 +575,11 @@ export default function IssueMaterial({
                     onChange={(e: any) =>
                       handleFlatChange(Number(e.target.value))
                     }
-                    disabled={!selectedFloor || formData.commonAreaId}
+                    disabled={
+                      !selectedFloor ||
+                      formData.commonAreaId ||
+                      selectedFloor?.flats?.length === 0
+                    }
                     className="w-full pl-10 pr-4 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent appearance-none bg-white outline-none disabled:bg-gray-100 disabled:cursor-not-allowed"
                   >
                     <option value="">Select Flat</option>
@@ -598,7 +602,11 @@ export default function IssueMaterial({
                     onChange={(e: any) =>
                       handleCommonAreaChange(Number(e.target.value))
                     }
-                    disabled={!selectedFloor || formData.flatId}
+                    disabled={
+                      !selectedFloor ||
+                      formData.flatId ||
+                      selectedFloor?.common_areas?.length === 0
+                    }
                     className="w-full pl-10 pr-4 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent appearance-none bg-white outline-none disabled:bg-gray-100 disabled:cursor-not-allowed"
                   >
                     <option value="">Select Common Area</option>
@@ -635,7 +643,7 @@ export default function IssueMaterial({
             </div>
 
             {/* Receiver Information */}
-            <div className="grid grid-cols-3 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-3 md:gap-6">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
                   Receiver Name <span className="text-red-500">*</span>
@@ -723,11 +731,6 @@ export default function IssueMaterial({
               <div className="flex justify-between items-center mb-4">
                 <h3 className="text-lg font-semibold text-gray-800">
                   Materials
-                  {totalItems > 0 && (
-                    <span className="ml-2 text-sm font-normal text-gray-600">
-                      ({totalItems} items, {totalQuantity} total units)
-                    </span>
-                  )}
                 </h3>
                 <button
                   type="button"
@@ -747,11 +750,11 @@ export default function IssueMaterial({
                   </p>
                 </div>
               ) : (
-                <div className="space-y-3">
+                <div className="space-y-3 overflow-x-auto md:overflow-hidden">
                   {formData.materials.map((material: any) => (
                     <div
                       key={material.id}
-                      className="bg-gray-50 p-4 rounded-lg border border-gray-200"
+                      className="bg-gray-50 p-4 rounded-lg border border-gray-200 w-[600px] md:w-full"
                     >
                       <div className="grid grid-cols-12 gap-3 items-center">
                         <div className="col-span-4">
@@ -818,12 +821,10 @@ export default function IssueMaterial({
 
                         <div className="col-span-3">
                           <label className="text-xs text-gray-600 mb-1 block">
-                            After Issue
+                            In Stock
                           </label>
                           <p className="text-sm text-gray-700 font-medium">
-                            {material.currentStock -
-                              parseFloat(material.quantity || "0")}{" "}
-                            {material.unit}
+                            {material.currentStock || "0"} {material.unit}
                           </p>
                         </div>
 

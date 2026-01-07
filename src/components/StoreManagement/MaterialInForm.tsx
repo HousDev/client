@@ -93,7 +93,9 @@ export default function MaterialInForm({
         vendor: temp.name,
       };
     });
-    const data = poItemsData.filter((d: any) => d.status === "authorize");
+    const data = poItemsData.filter(
+      (d: any) => d.status === "authorize" && d.material_status !== "completed"
+    );
     setPurchaseOrder(Array.isArray(data) ? data : []);
   };
 
@@ -252,7 +254,7 @@ export default function MaterialInForm({
       <div className="bg-white rounded-2xl shadow-2xl w-full max-w-3xl my-8">
         {/* Header */}
         <div className="bg-gradient-to-r from-blue-600 to-blue-700 px-6 py-4 flex justify-between items-center rounded-t-2xl sticky top-0 z-10">
-          <h2 className="text-xl font-bold text-white flex items-center gap-2">
+          <h2 className="text-[0.9rem] md:text-xl font-bold text-white flex items-center gap-2">
             <Truck className="w-5 h-5" />
             Material In
           </h2>
@@ -271,7 +273,7 @@ export default function MaterialInForm({
         <div className="my-3 px-6 py-3 min-h-[300px] max-h-[530px] overflow-y-scroll rounded-b-lg">
           <form onSubmit={handleSubmit} className="space-y-3">
             {/* PO Number & Vendor */}
-            <div className="grid grid-cols-3 gap-3">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
                   PO Number <span className="text-red-500">*</span>
@@ -378,7 +380,7 @@ export default function MaterialInForm({
             </div>
 
             {/* Receiving Date, Receiver Name & Phone */}
-            <div className="grid grid-cols-3 gap-3">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
                   Receiving Date <span className="text-red-500">*</span>
@@ -447,7 +449,7 @@ export default function MaterialInForm({
             </div>
 
             {/* Delivery Location */}
-            <div className="grid grid-cols-3 gap-3">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
                   Delivery Location <span className="text-red-500">*</span>
@@ -517,6 +519,7 @@ export default function MaterialInForm({
                     </thead>
                     <tbody className="divide-y divide-gray-200">
                       {formData.items.map((item: any) => {
+                        console.log(item.quantity, item.issued_quantity);
                         return (
                           <tr
                             key={item.materialId}
@@ -541,19 +544,27 @@ export default function MaterialInForm({
                               <input
                                 type="text"
                                 min="0"
-                                max={Number(item?.quantity)}
-                                value={item.quantity_received}
+                                disabled={
+                                  parseFloat(item.quantity) ===
+                                  parseFloat(item.issued_quantity)
+                                }
+                                max={parseFloat(item?.quantity)}
+                                value={
+                                  item.quantity_received === 0
+                                    ? ""
+                                    : item.quantity_received
+                                }
                                 onChange={(e) => {
                                   if (
                                     !/^\d*\.?\d*$/.test(e.target.value) ||
-                                    Number(e.target.value) < 0
+                                    parseFloat(e.target.value) < 0
                                   )
                                     return;
                                   const t =
-                                    Number(item.quantity) -
-                                    Number(item.issued_quantity);
+                                    parseFloat(item.quantity) -
+                                    parseFloat(item.issued_quantity);
 
-                                  if (t < Number(e.target.value)) {
+                                  if (t < parseFloat(e.target.value)) {
                                     toast.error(
                                       "Received Qty. is greater than pending Qty."
                                     );

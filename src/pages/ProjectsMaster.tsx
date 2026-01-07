@@ -254,33 +254,35 @@ export default function ProjectsMaster() {
   }
 
   return (
-    <div className="p-6">
-      <div className="bg-white rounded-xl shadow-sm border border-gray-200 mb-6 overflow-hidden">
-        <div className="flex border-b border-gray-200">
+    <div className="p-1 sm:p-4 md:p-6">
+      <div className="bg-white rounded-xl shadow-sm border border-gray-200 mb-4 sm:mb-6 overflow-hidden">
+        <div className="flex flex-col sm:flex-row border-b border-gray-200">
           <button
             onClick={() => setActiveTab("project")}
-            className={`flex-1 px-6 py-4 font-medium transition ${
+            className={`flex-1 px-4 sm:px-6 py-3 sm:py-4 font-medium transition ${
               activeTab === "project"
-                ? "text-blue-600 border-b-2 border-blue-600 bg-blue-50"
+                ? "text-blue-600 border-b-2 sm:border-b-2 border-blue-600 bg-blue-50"
                 : "text-gray-600 hover:text-gray-800 hover:bg-gray-50"
             }`}
           >
             <div className="flex items-center justify-center gap-2">
-              <Building className="w-5 h-5" />
-              <span>Projects Master</span>
+              <Building className="w-4 h-4 sm:w-5 sm:h-5" />
+              <span className="text-sm sm:text-base">Projects Master</span>
             </div>
           </button>
           <button
             onClick={() => setActiveTab("projectDetails")}
-            className={`flex-1 px-6 py-4 font-medium transition ${
+            className={`flex-1 px-4 sm:px-6 py-3 sm:py-4 font-medium transition ${
               activeTab === "projectDetails"
-                ? "text-blue-600 border-b-2 border-blue-600 bg-blue-50"
+                ? "text-blue-600 border-b-2 sm:border-b-2 border-blue-600 bg-blue-50"
                 : "text-gray-600 hover:text-gray-800 hover:bg-gray-50"
             }`}
           >
             <div className="flex items-center justify-center gap-2">
-              <FileText className="w-5 h-5" />
-              <span>Project Details Master</span>
+              <FileText className="w-4 h-4 sm:w-5 sm:h-5" />
+              <span className="text-sm sm:text-base">
+                Project Details Master
+              </span>
             </div>
           </button>
         </div>
@@ -288,59 +290,61 @@ export default function ProjectsMaster() {
 
       {activeTab === "project" && (
         <div>
-          <div className="flex justify-between items-center mb-6">
+          <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center mb-4 sm:mb-6 gap-3 sm:gap-0">
             <div>
-              <h1 className="text-3xl font-bold text-gray-800">
+              <h1 className="text-xl sm:text-2xl md:text-3xl font-bold text-gray-800">
                 Projects Master
               </h1>
-              <p className="text-gray-600 mt-1">Manage all projects</p>
+              <p className="text-gray-600 mt-1 text-sm sm:text-base">
+                Manage all projects
+              </p>
             </div>
             <button
               onClick={() => {
                 resetForm();
                 setShowModal(true);
               }}
-              className="bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition flex items-center gap-2 shadow-sm"
+              className="bg-blue-600 text-white px-4 sm:px-6 py-2 sm:py-3 rounded-lg hover:bg-blue-700 transition flex items-center justify-center gap-2 shadow-sm w-full sm:w-auto"
             >
-              <Plus className="w-5 h-5" />
-              Add Project
+              <Plus className="w-4 h-4 sm:w-5 sm:h-5" />
+              <span className="text-sm sm:text-base">Add Project</span>
             </button>
           </div>
 
-          <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-4 mb-6">
+          <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-3 sm:p-4 mb-4 sm:mb-6">
             <div className="relative">
-              <Search className="absolute left-4 top-3.5 text-gray-400 w-5 h-5" />
+              <Search className="absolute left-3 sm:left-4 top-2.5 sm:top-3.5 text-gray-400 w-4 h-4 sm:w-5 sm:h-5" />
               <input
                 type="text"
                 placeholder="Search by name, location or description..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full pl-12 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                className="w-full pl-9 sm:pl-12 pr-3 sm:pr-4 py-2 sm:py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm sm:text-base"
               />
             </div>
           </div>
 
-          <div className="">
+          <div className="overflow-hidden">
             <div className="overflow-x-auto rounded-xl border border-gray-200 bg-white">
               <table className="min-w-full border-collapse">
                 <thead className="bg-gray-50">
                   <tr>
-                    <th className="px-6 py-4 text-left text-sm font-semibold text-gray-700 border-b">
+                    <th className="px-3 sm:px-4 md:px-6 py-3 text-left text-xs sm:text-sm font-semibold text-gray-700 border-b">
                       Name
                     </th>
-                    <th className="px-6 py-4 text-left text-sm font-semibold text-gray-700 border-b">
-                      Project Location
+                    <th className="px-3 sm:px-4 md:px-6 py-3 text-left text-xs sm:text-sm font-semibold text-gray-700 border-b">
+                      Location
                     </th>
-                    <th className="px-6 py-4 text-left text-sm font-semibold text-gray-700 border-b">
+                    <th className="px-3 sm:px-4 md:px-6 py-3 text-left text-xs sm:text-sm font-semibold text-gray-700 border-b">
                       Start Date
                     </th>
-                    <th className="px-6 py-4 text-left text-sm font-semibold text-gray-700 border-b">
+                    <th className="px-3 sm:px-4 md:px-6 py-3 text-left text-xs sm:text-sm font-semibold text-gray-700 border-b">
                       End Date
                     </th>
-                    <th className="px-6 py-4 text-left text-sm font-semibold text-gray-700 border-b">
+                    <th className="px-3 sm:px-4 md:px-6 py-3 text-left text-xs sm:text-sm font-semibold text-gray-700 border-b">
                       Status
                     </th>
-                    <th className="px-6 py-4 text-left text-sm font-semibold text-gray-700 border-b">
+                    <th className="px-3 sm:px-4 md:px-6 py-3 text-left text-xs sm:text-sm font-semibold text-gray-700 border-b">
                       Action
                     </th>
                   </tr>
@@ -349,30 +353,30 @@ export default function ProjectsMaster() {
                 <tbody className="divide-y divide-gray-200">
                   {filteredProjects.map((project: any) => (
                     <tr key={project.id} className="hover:bg-gray-50">
-                      <td className="px-6 py-4 text-sm text-blue-700  font-medium">
+                      <td className="px-3 sm:px-4 md:px-6 py-3 sm:py-4 text-xs sm:text-sm text-blue-700 font-medium">
                         <button
                           onClick={() => {
                             loadProjectDetails(project.id);
                           }}
-                          className="hover:underline"
+                          className="hover:underline text-left truncate max-w-[120px] sm:max-w-none"
                         >
                           {project.name}
                         </button>
                       </td>
 
-                      <td className="px-6 py-4 text-sm  text-gray-800">
+                      <td className="px-3 sm:px-4 md:px-6 py-3 sm:py-4 text-xs sm:text-sm text-gray-800 truncate max-w-[100px] sm:max-w-none">
                         {project.location}
                       </td>
 
-                      <td className="px-6 py-4 text-sm text-gray-600 max-w-sm truncate">
+                      <td className="px-3 sm:px-4 md:px-6 py-3 sm:py-4 text-xs sm:text-sm text-gray-600 truncate">
                         {new Date(project.start_date).toLocaleDateString()}
                       </td>
-                      <td className="px-6 py-4 text-sm text-gray-600 max-w-sm truncate">
+                      <td className="px-3 sm:px-4 md:px-6 py-3 sm:py-4 text-xs sm:text-sm text-gray-600 truncate">
                         {new Date(project.end_date).toLocaleDateString()}
                       </td>
-                      <td className="px-6 py-4">
+                      <td className="px-3 sm:px-4 md:px-6 py-3 sm:py-4">
                         <span
-                          className={`px-3 py-1 rounded-full text-xs font-medium ${getStatusColor(
+                          className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(
                             project.status
                           )}`}
                         >
@@ -380,31 +384,33 @@ export default function ProjectsMaster() {
                         </span>
                       </td>
 
-                      <td className="px-6 py-4">
-                        <button
-                          onClick={() => {
-                            loadProjectDetails(project.id);
-                          }}
-                          className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition"
-                          title="Edit"
-                        >
-                          <Eye className="w-4 h-4" />
-                        </button>
-                        <button
-                          onClick={() => loadProjectDetails(project.id, true)}
-                          className="p-2 text-green-600 hover:bg-green-50 rounded-lg transition"
-                          title="Edit"
-                        >
-                          <Edit2 className="w-4 h-4" />
-                        </button>
+                      <td className="px-3 sm:px-4 md:px-6 py-3 sm:py-4">
+                        <div className="flex items-center space-x-1 sm:space-x-2">
+                          <button
+                            onClick={() => {
+                              loadProjectDetails(project.id);
+                            }}
+                            className="p-1.5 sm:p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition"
+                            title="Edit"
+                          >
+                            <Eye className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+                          </button>
+                          <button
+                            onClick={() => loadProjectDetails(project.id, true)}
+                            className="p-1.5 sm:p-2 text-green-600 hover:bg-green-50 rounded-lg transition"
+                            title="Edit"
+                          >
+                            <Edit2 className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+                          </button>
 
-                        <button
-                          onClick={() => handleDelete(project.id)}
-                          className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition"
-                          title="Delete"
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </button>
+                          <button
+                            onClick={() => handleDelete(project.id)}
+                            className="p-1.5 sm:p-2 text-red-600 hover:bg-red-50 rounded-lg transition"
+                            title="Delete"
+                          >
+                            <Trash2 className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+                          </button>
+                        </div>
                       </td>
                     </tr>
                   ))}
@@ -414,12 +420,12 @@ export default function ProjectsMaster() {
           </div>
 
           {filteredProjects.length === 0 && (
-            <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-12 text-center mt-6">
-              <Building2 className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-              <h3 className="text-lg font-semibold text-gray-800 mb-2">
+            <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 sm:p-8 md:p-12 text-center mt-4 sm:mt-6">
+              <Building2 className="w-8 h-8 sm:w-10 sm:h-10 md:w-12 md:h-12 text-gray-400 mx-auto mb-3 sm:mb-4" />
+              <h3 className="text-base sm:text-lg font-semibold text-gray-800 mb-2">
                 No projects found
               </h3>
-              <p className="text-gray-600">
+              <p className="text-gray-600 text-sm sm:text-base">
                 {searchTerm
                   ? "Try a different search term"
                   : "Click 'Add Project' to create your first project"}
@@ -457,70 +463,72 @@ export default function ProjectsMaster() {
 
       {activeTab === "projectDetails" && (
         <div>
-          <div className="flex justify-between items-center mb-6">
+          <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center mb-4 sm:mb-6 gap-3 sm:gap-0">
             <div>
-              <h1 className="text-3xl font-bold text-gray-800">
+              <h1 className="text-xl sm:text-2xl md:text-3xl font-bold text-gray-800">
                 Project Details Master
               </h1>
-              <p className="text-gray-600 mt-1">Manage Project Details</p>
+              <p className="text-gray-600 mt-1 text-sm sm:text-base">
+                Manage Project Details
+              </p>
             </div>
             <button
               onClick={() => {
                 setShowProjectDetailsForm(true);
               }}
-              className="bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition flex items-center gap-2 shadow-sm"
+              className="bg-blue-600 text-white px-4 sm:px-6 py-2 sm:py-3 rounded-lg hover:bg-blue-700 transition flex items-center justify-center gap-2 shadow-sm w-full sm:w-auto"
             >
-              <Plus className="w-5 h-5" />
-              Add Project Details
+              <Plus className="w-4 h-4 sm:w-5 sm:h-5" />
+              <span className="text-sm sm:text-base">Add Project Details</span>
             </button>
           </div>
 
-          <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-4 mb-6">
+          <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-3 sm:p-4 mb-4 sm:mb-6">
             <div className="relative">
-              <Search className="absolute left-4 top-3.5 text-gray-400 w-5 h-5" />
+              <Search className="absolute left-3 sm:left-4 top-2.5 sm:top-3.5 text-gray-400 w-4 h-4 sm:w-5 sm:h-5" />
               <input
                 type="text"
                 placeholder="Search by name, location or description..."
                 value={searchTermForProjectDetails}
                 onChange={(e) => setSearchTermForProjectDetails(e.target.value)}
-                className="w-full pl-12 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                className="w-full pl-9 sm:pl-12 pr-3 sm:pr-4 py-2 sm:py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm sm:text-base"
               />
             </div>
           </div>
 
-          <div className=" grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
+          <div className="grid grid-cols-1 xs:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
             {filteredProjectsDetails.map((project: any) => (
               <div
                 key={project.id}
-                className="hover:bg-gray-50 border border-slate-300 shadow-xl rounded-xl"
+                className="hover:bg-gray-50 border border-slate-300 shadow-lg rounded-xl"
               >
                 <div className="flex justify-between items-center">
-                  <h1 className="px-6 py-4 text-sm font-semibold ">
+                  <h1 className="px-4 sm:px-6 py-3 sm:py-4 text-sm font-semibold truncate">
                     {project.name}
                   </h1>
-                  <div className="px-6 py-3">
+                  <div className="px-4 sm:px-6 py-2 sm:py-3">
                     <button
                       onClick={() => {
                         setSelectedProjectDetails(project);
                         setUpdateProjectDetails(true);
                         setShowProjectDetailsForm(true);
                       }}
-                      className="p-2 text-green-600 hover:bg-green-50 rounded-lg transition"
+                      className="p-1.5 sm:p-2 text-green-600 hover:bg-green-50 rounded-lg transition"
                       title="Edit"
                     >
-                      <Edit2 className="w-4 h-4" />
+                      <Edit2 className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
                     </button>
 
                     <button
                       onClick={() => deleteProjectDetails(project.id)}
-                      className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition"
+                      className="p-1.5 sm:p-2 text-red-600 hover:bg-red-50 rounded-lg transition"
                       title="Delete"
                     >
-                      <Trash2 className="w-4 h-4" />
+                      <Trash2 className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
                     </button>
                   </div>
                 </div>
-                <div className="px-6 py-3 text-sm  text-gray-800 flex items-center">
+                <div className="px-4 sm:px-6 py-2 sm:py-3 text-sm text-gray-800 flex items-center">
                   <div
                     className={`mr-2 ${
                       project.category === "floor"
@@ -529,12 +537,12 @@ export default function ProjectsMaster() {
                     } p-1 rounded-lg`}
                   >
                     {project.category === "floor" ? (
-                      <Layers className="w-4 h-4 text-green-700" />
+                      <Layers className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-green-700" />
                     ) : (
-                      <DoorOpen className="w-4 h-4 text-blue-700" />
+                      <DoorOpen className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-blue-700" />
                     )}
                   </div>
-                  <span className="text-sm">
+                  <span className="text-xs sm:text-sm">
                     {" "}
                     {(project.category || "").toUpperCase()}
                   </span>
@@ -544,12 +552,12 @@ export default function ProjectsMaster() {
           </div>
 
           {filteredProjects.length === 0 && (
-            <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-12 text-center mt-6">
-              <Building2 className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-              <h3 className="text-lg font-semibold text-gray-800 mb-2">
+            <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 sm:p-8 md:p-12 text-center mt-4 sm:mt-6">
+              <Building2 className="w-8 h-8 sm:w-10 sm:h-10 md:w-12 md:h-12 text-gray-400 mx-auto mb-3 sm:mb-4" />
+              <h3 className="text-base sm:text-lg font-semibold text-gray-800 mb-2">
                 No projects found
               </h3>
-              <p className="text-gray-600">
+              <p className="text-gray-600 text-sm sm:text-base">
                 {searchTerm
                   ? "Try a different search term"
                   : "Click 'Add Project' to create your first project"}

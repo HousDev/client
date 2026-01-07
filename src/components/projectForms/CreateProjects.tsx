@@ -670,33 +670,34 @@ export default function ConstructionProjectWizardForm({
     };
     setFormData((prev) => ({ ...prev, buildings: updatedBuildings }));
   };
+
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4 overflow-y-auto">
-      <div className="bg-white rounded-xl shadow-xl w-full max-w-4xl my-8 border border-gray-200">
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-2 sm:p-4 overflow-y-auto">
+      <div className="bg-white rounded-xl shadow-xl w-full max-w-4xl my-4 sm:my-8 border border-gray-200 mx-2 sm:mx-4">
         {/* Header */}
-        <div className="bg-gradient-to-r from-blue-600 to-blue-700 px-6 py-4 flex justify-between items-center rounded-t-xl">
-          <div className="flex items-center gap-3">
+        <div className="bg-gradient-to-r from-blue-600 to-blue-700 px-4 sm:px-6 py-3 sm:py-4 flex justify-between items-center rounded-t-xl">
+          <div className="flex items-center gap-2 sm:gap-3">
             <div className="p-2 bg-white/10 rounded-lg">
-              <Building2 className="w-6 h-6 text-white" />
+              <Building2 className="w-5 h-5 sm:w-6 sm:h-6 text-white" />
             </div>
             <div>
-              <h2 className="text-xl font-bold text-white">
+              <h2 className="text-sm sm:text-base md:text-xl font-bold text-white">
                 New Construction Project
               </h2>
-              <p className="text-sm text-blue-100">Create project</p>
+              <p className="text-xs sm:text-sm text-blue-100">Create project</p>
             </div>
           </div>
           <button
             onClick={() => setShowModel(false)}
-            className="text-white hover:bg-white/10 rounded-lg p-2 transition"
+            className="text-white hover:bg-white/10 rounded-lg p-1 sm:p-2 transition"
           >
-            <X className="w-5 h-5" />
+            <X className="w-4 h-4 sm:w-5 sm:h-5" />
           </button>
         </div>
 
         {/* Progress Steps */}
-        <div className="px-6 py-4 border-b border-gray-200 bg-gray-50">
-          <div className="flex justify-between">
+        <div className="px-3 sm:px-6 py-3 sm:py-4 border-b border-gray-200 bg-gray-50">
+          <div className="flex flex-wrap justify-center sm:justify-between gap-2 sm:gap-0">
             {steps.map((step, index) => (
               <button
                 onClick={() => {
@@ -714,7 +715,7 @@ export default function ConstructionProjectWizardForm({
                 <div className="flex flex-col items-center">
                   <div
                     className={`
-                    w-10 h-10 rounded-full flex items-center justify-center border-2 transition-all duration-300
+                    w-8 h-8 sm:w-10 sm:h-10 rounded-full flex items-center justify-center border-2 transition-all duration-300
                     ${
                       currentStep > step.number
                         ? "bg-green-500 border-green-500 text-white"
@@ -725,14 +726,14 @@ export default function ConstructionProjectWizardForm({
                   `}
                   >
                     {currentStep > step.number ? (
-                      <Check className="w-5 h-5" />
+                      <Check className="w-4 h-4 sm:w-5 sm:h-5" />
                     ) : (
-                      step.icon
+                      <span className="scale-90 sm:scale-100">{step.icon}</span>
                     )}
                   </div>
                   <span
                     className={`
-                    text-xs font-medium mt-2 whitespace-nowrap
+                    text-xs font-medium mt-1 sm:mt-2 whitespace-nowrap
                     ${
                       currentStep >= step.number
                         ? "text-gray-800"
@@ -746,7 +747,7 @@ export default function ConstructionProjectWizardForm({
                 {index < steps.length - 1 && (
                   <div
                     className={`
-                    w-16 h-0.5 mx-2 mt-5
+                    hidden sm:block w-8 md:w-16 h-0.5 mx-1 md:mx-2 mt-5
                     ${
                       currentStep > step.number ? "bg-green-500" : "bg-gray-300"
                     }
@@ -759,25 +760,25 @@ export default function ConstructionProjectWizardForm({
         </div>
 
         {/* Form Content */}
-        <div className="min-h-300 max-h-[400px] overflow-y-auto">
+        <div className="min-h-300 max-h-[60vh] sm:max-h-[400px] overflow-y-auto p-2 sm:p-0">
           {/* Step 1: Project Details */}
           {currentStep === 1 && (
-            <div className="space-y-6 animate-fadeIn">
-              <div className="flex justify-between items-center px-6 py-2 bg-blue-300">
-                <div className="flex items-center justify-center">
-                  <div className="w-10 h-10 bg-gradient-to-r from-blue-100 to-blue-50 rounded-full flex items-center justify-center border-4 border-white shadow-sm mr-3">
-                    <Home className="w-5 h-5 text-blue-600" />
+            <div className="space-y-4 sm:space-y-6 animate-fadeIn">
+              <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center px-3 sm:px-6 py-2 bg-blue-300 gap-3">
+                <div className="flex items-center">
+                  <div className="w-8 h-8 sm:w-10 sm:h-10 bg-gradient-to-r from-blue-100 to-blue-50 rounded-full flex items-center justify-center border-4 border-white shadow-sm mr-2 sm:mr-3">
+                    <Home className="w-4 h-4 sm:w-5 sm:h-5 text-blue-600" />
                   </div>
-                  <div className=" flex items-center w-fits">
-                    <h3 className="text-lg font-semibold text-gray-800">
+                  <div className="flex items-center">
+                    <h3 className="text-sm sm:text-base md:text-lg font-semibold text-gray-800">
                       Project Information
                     </h3>
                   </div>
                 </div>
-                <div className="flex items-center">
+                <div className="flex items-center gap-2 w-full sm:w-auto">
                   <button
                     onClick={handleImportClick}
-                    className="bg-gradient-to-r from-green-700 to-green-600 hover:from-green-600 hover:to-green-500 px-6 py-1 text-white font-semibold rounded-lg"
+                    className="bg-gradient-to-r from-green-700 to-green-600 hover:from-green-600 hover:to-green-500 px-3 py-1.5 text-white font-semibold rounded-lg text-xs sm:text-sm md:text-base flex-1 sm:flex-none"
                   >
                     Import Excel
                   </button>
@@ -793,16 +794,16 @@ export default function ConstructionProjectWizardForm({
                       import.meta.env.VITE_API_URL
                     }/templates/project-import`}
                     title="Download Template Data"
-                    className="p-2 rounded-lg bg-slate-200 mx-2"
+                    className="p-2 rounded-lg bg-slate-200"
                   >
                     <Download className="w-4 h-4" />
                   </a>
                 </div>
               </div>
 
-              <div className="grid grid-cols-2 gap-6 p-6">
-                <div className="">
-                  <label className=" text-sm font-medium text-gray-700 mb-2 flex items-center gap-2">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6 p-3 sm:p-6">
+                <div className="space-y-2">
+                  <label className="text-sm font-medium text-gray-700 mb-1 flex items-center gap-2">
                     <FileText className="w-4 h-4" />
                     Project Name <span className="text-red-500">*</span>
                   </label>
@@ -810,20 +811,21 @@ export default function ConstructionProjectWizardForm({
                     type="text"
                     value={formData.name}
                     onChange={(e) => handleInputChange("name", e.target.value)}
-                    className={`w-full px-4 py-3 text-sm border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition ${
+                    className={`w-full px-3 sm:px-4 py-2.5 sm:py-3 text-sm border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition ${
                       errors.name ? "border-red-300" : "border-gray-300"
                     }`}
-                    placeholder="e.g., Sunshine Residency, Green Valley Project"
+                    placeholder="e.g., Sunshine Residency"
                   />
                   {errors.name && (
-                    <p className="text-sm text-red-600 mt-1 flex items-center gap-1">
-                      <AlertCircle className="w-4 h-4" /> {errors.name}
+                    <p className="text-xs sm:text-sm text-red-600 mt-1 flex items-center gap-1">
+                      <AlertCircle className="w-3 h-3 sm:w-4 sm:h-4" />{" "}
+                      {errors.name}
                     </p>
                   )}
                 </div>
 
-                <div>
-                  <label className=" text-sm font-medium text-gray-700 mb-2 flex items-center gap-2">
+                <div className="space-y-2">
+                  <label className="text-sm font-medium text-gray-700 mb-1 flex items-center gap-2">
                     <MapPin className="w-4 h-4" />
                     Location <span className="text-red-500">*</span>
                   </label>
@@ -833,63 +835,64 @@ export default function ConstructionProjectWizardForm({
                     onChange={(e) =>
                       handleInputChange("location", e.target.value)
                     }
-                    className={`w-full px-4 py-3 text-sm border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
+                    className={`w-full px-3 sm:px-4 py-2.5 sm:py-3 text-sm border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
                       errors.location ? "border-red-300" : "border-gray-300"
                     }`}
                     placeholder="e.g., Sector 15, Gurgaon"
                   />
                   {errors.location && (
-                    <p className="text-sm text-red-600 mt-1 flex items-center gap-1">
-                      <AlertCircle className="w-4 h-4" /> {errors.location}
+                    <p className="text-xs sm:text-sm text-red-600 mt-1 flex items-center gap-1">
+                      <AlertCircle className="w-3 h-3 sm:w-4 sm:h-4" />{" "}
+                      {errors.location}
                     </p>
                   )}
                 </div>
 
-                <div className="col-span-2 grid grid-cols-2 gap-6">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2 flex items-center gap-2">
-                      <Calendar className="w-4 h-4" />
-                      Start Date <span className="text-red-500">*</span>
-                    </label>
-                    <input
-                      type="date"
-                      value={formData.start_date}
-                      onChange={(e) =>
-                        handleInputChange("start_date", e.target.value)
-                      }
-                      className={`w-full px-4 py-3 text-sm border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
-                        errors.start_date ? "border-red-300" : "border-gray-300"
-                      }`}
-                    />
-                    {errors.start_date && (
-                      <p className="text-sm text-red-600 mt-1 flex items-center gap-1">
-                        <AlertCircle className="w-4 h-4" /> {errors.start_date}
-                      </p>
-                    )}
-                  </div>
+                <div className="space-y-2">
+                  <label className="block text-sm font-medium text-gray-700 mb-1 flex items-center gap-2">
+                    <Calendar className="w-4 h-4" />
+                    Start Date <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    type="date"
+                    value={formData.start_date}
+                    onChange={(e) =>
+                      handleInputChange("start_date", e.target.value)
+                    }
+                    className={`w-full px-3 sm:px-4 py-2.5 sm:py-3 text-sm border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
+                      errors.start_date ? "border-red-300" : "border-gray-300"
+                    }`}
+                  />
+                  {errors.start_date && (
+                    <p className="text-xs sm:text-sm text-red-600 mt-1 flex items-center gap-1">
+                      <AlertCircle className="w-3 h-3 sm:w-4 sm:h-4" />{" "}
+                      {errors.start_date}
+                    </p>
+                  )}
+                </div>
 
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2 flex items-center gap-2">
-                      <Calendar className="w-4 h-4" />
-                      End Date <span className="text-red-500">*</span>
-                    </label>
-                    <input
-                      type="date"
-                      value={formData.end_date}
-                      onChange={(e) =>
-                        handleInputChange("end_date", e.target.value)
-                      }
-                      className={`w-full px-4 py-3 text-sm border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
-                        errors.end_date ? "border-red-300" : "border-gray-300"
-                      }`}
-                      min={formData.start_date}
-                    />
-                    {errors.end_date && (
-                      <p className="text-sm text-red-600 mt-1 flex items-center gap-1">
-                        <AlertCircle className="w-4 h-4" /> {errors.end_date}
-                      </p>
-                    )}
-                  </div>
+                <div className="space-y-2">
+                  <label className="block text-sm font-medium text-gray-700 mb-1 flex items-center gap-2">
+                    <Calendar className="w-4 h-4" />
+                    End Date <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    type="date"
+                    value={formData.end_date}
+                    onChange={(e) =>
+                      handleInputChange("end_date", e.target.value)
+                    }
+                    className={`w-full px-3 sm:px-4 py-2.5 sm:py-3 text-sm border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
+                      errors.end_date ? "border-red-300" : "border-gray-300"
+                    }`}
+                    min={formData.start_date}
+                  />
+                  {errors.end_date && (
+                    <p className="text-xs sm:text-sm text-red-600 mt-1 flex items-center gap-1">
+                      <AlertCircle className="w-3 h-3 sm:w-4 sm:h-4" />{" "}
+                      {errors.end_date}
+                    </p>
+                  )}
                 </div>
               </div>
             </div>
@@ -897,50 +900,51 @@ export default function ConstructionProjectWizardForm({
 
           {/* Step 2: Buildings */}
           {currentStep === 2 && (
-            <div className="space-y-6 animate-fadeIn ">
-              <div className="flex justify-between items-center mb-8 bg-gradient-to-r from-green-100 to-green-50 py-2 px-6">
+            <div className="space-y-4 sm:space-y-6 animate-fadeIn">
+              <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-4 sm:mb-8 bg-gradient-to-r from-green-100 to-green-50 py-2 px-3 sm:px-6 gap-3">
                 <div className="flex items-center">
-                  <div className="w-10 h-10  rounded-full flex items-center justify-center border-4 border-white shadow-sm mr-3">
-                    <Building2 className="w-5 h-5 text-green-600 " />
+                  <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-full flex items-center justify-center border-4 border-white shadow-sm mr-2 sm:mr-3">
+                    <Building2 className="w-4 h-4 sm:w-5 sm:h-5 text-green-600" />
                   </div>
-                  <h3 className="text-lg font-semibold text-gray-800 ">
+                  <h3 className="text-sm sm:text-base md:text-lg font-semibold text-gray-800">
                     Add Buildings
                   </h3>
                 </div>
                 <button
                   onClick={addBuilding}
-                  className="bg-green-600 hover:bg-green-700 text-white px-6 py-2 font-semibold rounded-lg"
+                  className="bg-green-600 hover:bg-green-700 text-white px-3 sm:px-6 py-2 font-semibold rounded-lg text-xs sm:text-sm md:text-base w-full sm:w-auto"
                 >
                   Add New Building
                 </button>
               </div>
 
               {errors.buildings && (
-                <div className="bg-red-50 border border-red-200 rounded-lg p-4">
-                  <p className="text-sm text-red-600 flex items-center gap-2">
-                    <AlertCircle className="w-4 h-4" /> {errors.buildings}
+                <div className="bg-red-50 border border-red-200 rounded-lg p-3 sm:p-4 mx-3 sm:mx-6">
+                  <p className="text-xs sm:text-sm text-red-600 flex items-center gap-2">
+                    <AlertCircle className="w-3 h-3 sm:w-4 sm:h-4" />{" "}
+                    {errors.buildings}
                   </p>
                 </div>
               )}
 
               {formData.buildings.length !== 0 ? (
-                <div className="grid grid-cols-3">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4 p-3 sm:p-0">
                   {formData.buildings.map((building, buildingIndex) => (
                     <div
                       key={buildingIndex}
-                      className="bg-white border border-gray-200 rounded-xl p-5 shadow-sm m-3"
+                      className="bg-white border border-gray-200 rounded-xl p-4 sm:p-5 shadow-sm"
                     >
-                      <div className="flex justify-between items-center mb-4">
-                        <div className="flex items-center gap-3 flex-1">
-                          <div className="p-2 bg-green-100 rounded-lg">
-                            <Building className="w-5 h-5 text-green-600" />
+                      <div className="flex justify-between items-center mb-3 sm:mb-4">
+                        <div className="flex items-center gap-2 sm:gap-3 flex-1">
+                          <div className="p-1.5 sm:p-2 bg-green-100 rounded-lg">
+                            <Building className="w-4 h-4 sm:w-5 sm:h-5 text-green-600" />
                           </div>
                           <div className="flex-1">
                             <input
                               type="text"
                               value={building.building_name}
                               disabled
-                              className={`w-full text-lg font-semibold bg-transparent border-b-2 focus:outline-none focus:border-blue-500 px-1 py-2 ${
+                              className={`w-full text-sm sm:text-base md:text-lg font-semibold bg-transparent border-b-2 focus:outline-none focus:border-blue-500 px-1 py-1 sm:py-2 ${
                                 errors[`building_${buildingIndex}_name`]
                                   ? "border-red-300"
                                   : "border-gray-300"
@@ -948,44 +952,46 @@ export default function ConstructionProjectWizardForm({
                               placeholder="Enter building name"
                             />
                             {errors[`building_${buildingIndex}_name`] && (
-                              <p className="text-sm text-red-600 mt-1">
+                              <p className="text-xs sm:text-sm text-red-600 mt-1">
                                 {errors[`building_${buildingIndex}_name`]}
                               </p>
                             )}
                           </div>
                         </div>
-                        {formData.buildings.length >= 1 && (
-                          <button
-                            type="button"
-                            onClick={() => {
-                              setSelectedItem({
-                                name: building.building_name,
-                                count: buildingFloorCounts[buildingIndex],
-                                buildingId: buildingIndex,
-                                floorId: "",
-                                flatId: "",
-                                commonAreaId: "",
-                              });
-                              setShowModalForItem("building");
-                            }}
-                            className="p-2  text-green-600 hover:bg-green-50 rounded-lg transition"
-                          >
-                            <Edit2 className="w-5 h-5" />
-                          </button>
-                        )}
-                        {formData.buildings.length >= 1 && (
-                          <button
-                            type="button"
-                            onClick={() => removeBuilding(buildingIndex)}
-                            className="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition"
-                          >
-                            <X className="w-5 h-5" />
-                          </button>
-                        )}
+                        <div className="flex items-center gap-1">
+                          {formData.buildings.length >= 1 && (
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setSelectedItem({
+                                  name: building.building_name,
+                                  count: buildingFloorCounts[buildingIndex],
+                                  buildingId: buildingIndex,
+                                  floorId: "",
+                                  flatId: "",
+                                  commonAreaId: "",
+                                });
+                                setShowModalForItem("building");
+                              }}
+                              className="p-1 sm:p-2 text-green-600 hover:bg-green-50 rounded-lg transition"
+                            >
+                              <Edit2 className="w-4 h-4 sm:w-5 sm:h-5" />
+                            </button>
+                          )}
+                          {formData.buildings.length >= 1 && (
+                            <button
+                              type="button"
+                              onClick={() => removeBuilding(buildingIndex)}
+                              className="p-1 sm:p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition"
+                            >
+                              <X className="w-4 h-4 sm:w-5 sm:h-5" />
+                            </button>
+                          )}
+                        </div>
                       </div>
-                      <div className="ml-12">
-                        <p className="text-sm text-gray-600 flex items-center gap-2">
-                          <Layers className="w-4 h-4" />
+                      <div className="ml-10 sm:ml-12">
+                        <p className="text-xs sm:text-sm text-gray-600 flex items-center gap-2">
+                          <Layers className="w-3 h-3 sm:w-4 sm:h-4" />
                           Floors:{" "}
                           <span className="font-semibold">
                             {building.floors.length}
@@ -996,11 +1002,11 @@ export default function ConstructionProjectWizardForm({
                   ))}
                 </div>
               ) : (
-                <div className="flex flex-col justify-center items-center py-6">
-                  <div className="p-2 bg-green-100 rounded-lg mb-6">
-                    <Building className="w-10 h-10 text-green-600" />
+                <div className="flex flex-col justify-center items-center py-6 px-3">
+                  <div className="p-2 bg-green-100 rounded-lg mb-4 sm:mb-6">
+                    <Building className="w-8 h-8 sm:w-10 sm:h-10 text-green-600" />
                   </div>
-                  <h1 className="text-gray-500">
+                  <h1 className="text-sm sm:text-base text-gray-500 text-center">
                     Add Buildings to this project
                   </h1>
                 </div>
@@ -1010,43 +1016,45 @@ export default function ConstructionProjectWizardForm({
 
           {/* Step 3: Floors */}
           {currentStep === 3 && (
-            <div className="space-y-6 animate-fadeIn">
-              <div className="flex items-center bg-gradient-to-r from-purple-100 to-purple-50 px-6 py-2">
-                <div className="w-10 h-10  rounded-full flex items-center justify-center border-4 border-white shadow-sm mr-3">
-                  <DoorOpen className="w-5 h-5 text-purple-600" />
+            <div className="space-y-4 sm:space-y-6 animate-fadeIn p-2 sm:p-0">
+              <div className="flex items-center bg-gradient-to-r from-purple-100 to-purple-50 px-3 sm:px-6 py-2">
+                <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-full flex items-center justify-center border-4 border-white shadow-sm mr-2 sm:mr-3">
+                  <DoorOpen className="w-4 h-4 sm:w-5 sm:h-5 text-purple-600" />
                 </div>
-                <h3 className="text-lg font-semibold text-gray-800">
+                <h3 className="text-sm sm:text-base md:text-lg font-semibold text-gray-800">
                   Configure Floors
                 </h3>
               </div>
 
               {formData.buildings.map((building, buildingIndex) => (
-                <div key={buildingIndex} className="mb-8">
-                  <div className="flex items-center gap-3 mb-4 p-3 bg-gray-50 rounded-lg">
-                    <Building className="w-5 h-5 text-gray-600" />
-                    <h4 className="font-semibold text-gray-800">
-                      {building.building_name}
-                    </h4>
-                    <span className="text-sm text-gray-500">
-                      ({building.floors.length} floors)
-                    </span>
+                <div key={buildingIndex} className="mb-6 sm:mb-8 px-2 sm:px-0">
+                  <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3 mb-3 sm:mb-4 p-3 bg-gray-50 rounded-lg">
+                    <div className="flex items-center gap-2">
+                      <Building className="w-4 h-4 sm:w-5 sm:h-5 text-gray-600" />
+                      <h4 className="font-semibold text-gray-800 text-sm sm:text-base">
+                        {building.building_name}
+                      </h4>
+                      <span className="text-xs sm:text-sm text-gray-500">
+                        ({building.floors.length} floors)
+                      </span>
+                    </div>
                     {errors[`building_${buildingIndex}_floors`] && (
-                      <span className="text-sm text-red-600 ml-auto">
+                      <span className="text-xs sm:text-sm text-red-600 sm:ml-auto">
                         {errors[`building_${buildingIndex}_floors`]}
                       </span>
                     )}
                   </div>
 
-                  <div className="ml-6 grid grid-cols-3">
+                  <div className="ml-2 sm:ml-6 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
                     {building.floors.map((floor, floorIndex) => (
                       <div
                         key={floorIndex}
-                        className="bg-white border border-gray-200 rounded-lg p-4 m-3"
+                        className="bg-white border border-gray-200 rounded-lg p-3 sm:p-4"
                       >
-                        <div className="flex justify-between items-center mb-3">
-                          <div className="flex items-center gap-3 flex-1">
-                            <div className="p-2 bg-purple-100 rounded-lg">
-                              <Layers className="w-4 h-4 text-purple-600" />
+                        <div className="flex justify-between items-center mb-2 sm:mb-3">
+                          <div className="flex items-center gap-2 sm:gap-3 flex-1">
+                            <div className="p-1.5 sm:p-2 bg-purple-100 rounded-lg">
+                              <Layers className="w-3 h-3 sm:w-4 sm:h-4 text-purple-600" />
                             </div>
                             <input
                               type="text"
@@ -1060,7 +1068,7 @@ export default function ConstructionProjectWizardForm({
                                 )
                               }
                               disabled
-                              className={`w-4 flex-1 bg-transparent border-b focus:outline-none focus:border-blue-500 px-1 py-1 ${
+                              className={`w-full flex-1 bg-transparent border-b focus:outline-none focus:border-blue-500 px-1 py-1 text-sm ${
                                 errors[
                                   `building_${buildingIndex}_floor_${floorIndex}_name`
                                 ]
@@ -1070,42 +1078,44 @@ export default function ConstructionProjectWizardForm({
                               placeholder="Enter floor name"
                             />
                           </div>
-                          {formData.buildings.length >= 1 && (
+                          <div className="flex items-center gap-1">
+                            {formData.buildings.length >= 1 && (
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  setSelectedItem({
+                                    name: floor.floor_name,
+                                    count:
+                                      floorFlatCounts[
+                                        `${buildingIndex}_${floorIndex}`
+                                      ],
+                                    buildingId: buildingIndex,
+                                    floorId: floorIndex,
+                                    flatId: "",
+                                    commonAreaId: "",
+                                  });
+                                  setShowModalForItem("floor");
+                                }}
+                                className="p-1 text-green-600 hover:bg-green-50 rounded-lg transition"
+                              >
+                                <Edit2 className="w-3 h-3 sm:w-4 sm:h-4" />
+                              </button>
+                            )}
                             <button
                               type="button"
-                              onClick={() => {
-                                setSelectedItem({
-                                  name: floor.floor_name,
-                                  count:
-                                    floorFlatCounts[
-                                      `${buildingIndex}_${floorIndex}`
-                                    ],
-                                  buildingId: buildingIndex,
-                                  floorId: floorIndex,
-                                  flatId: "",
-                                  commonAreaId: "",
-                                });
-                                setShowModalForItem("floor");
-                              }}
-                              className="p-2  text-green-600 hover:bg-green-50 rounded-lg transition"
+                              onClick={() =>
+                                removeFloor(buildingIndex, floorIndex)
+                              }
+                              className="p-1 text-gray-400 hover:text-red-600 rounded"
                             >
-                              <Edit2 className="w-5 h-5" />
+                              <X className="w-3 h-3 sm:w-4 sm:h-4" />
                             </button>
-                          )}
-                          <button
-                            type="button"
-                            onClick={() =>
-                              removeFloor(buildingIndex, floorIndex)
-                            }
-                            className="p-1 text-gray-400 hover:text-red-600 rounded"
-                          >
-                            <X className="w-4 h-4" />
-                          </button>
+                          </div>
                         </div>
                         {errors[
                           `building_${buildingIndex}_floor_${floorIndex}_name`
                         ] && (
-                          <p className="text-sm text-red-600 mt-1 ml-10">
+                          <p className="text-xs text-red-600 mt-1 ml-8 sm:ml-10">
                             {
                               errors[
                                 `building_${buildingIndex}_floor_${floorIndex}_name`
@@ -1114,8 +1124,8 @@ export default function ConstructionProjectWizardForm({
                           </p>
                         )}
 
-                        <div className="ml-10 text-sm text-gray-600">
-                          <div className="flex gap-4">
+                        <div className="ml-8 sm:ml-10 text-xs sm:text-sm text-gray-600">
+                          <div className="flex flex-col sm:flex-row sm:gap-4 gap-1">
                             <span className="flex items-center gap-1">
                               <DoorOpen className="w-3 h-3" />{" "}
                               {floor.flats.length} flats
@@ -1133,10 +1143,10 @@ export default function ConstructionProjectWizardForm({
                   <button
                     type="button"
                     onClick={() => addFloor(buildingIndex)}
-                    className="ml-6 mt-4 flex items-center gap-2 text-blue-600 hover:text-blue-700 font-medium"
+                    className="ml-2 sm:ml-6 mt-3 sm:mt-4 flex items-center gap-2 text-blue-600 hover:text-blue-700 font-medium text-sm sm:text-base"
                   >
                     <div className="p-1 bg-blue-100 rounded">
-                      <Plus className="w-4 h-4" />
+                      <Plus className="w-3 h-3 sm:w-4 sm:h-4" />
                     </div>
                     Add Single Floor to {building.building_name}
                   </button>
@@ -1147,36 +1157,38 @@ export default function ConstructionProjectWizardForm({
 
           {/* Step 4: Units (Flats & Common Areas) */}
           {currentStep === 4 && (
-            <div className="space-y-6 animate-fadeIn">
-              <div className="flex items-center bg-gradient-to-r from-amber-100 to-amber-50 py-2 px-6 ">
-                <div className="w-10 h-10 rounded-full flex items-center justify-center border-4 border-white shadow-sm mr-3">
-                  <LayoutGrid className="w-5 h-5 text-amber-600 " />
+            <div className="space-y-4 sm:space-y-6 animate-fadeIn p-2 sm:p-0">
+              <div className="flex items-center bg-gradient-to-r from-amber-100 to-amber-50 py-2 px-3 sm:px-6">
+                <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-full flex items-center justify-center border-4 border-white shadow-sm mr-2 sm:mr-3">
+                  <LayoutGrid className="w-4 h-4 sm:w-5 sm:h-5 text-amber-600" />
                 </div>
-                <h3 className="text-xl font-semibold text-gray-800">
+                <h3 className="text-sm sm:text-base md:text-lg font-semibold text-gray-800">
                   Add Flat Or Common Area
                 </h3>
               </div>
 
               {formData.buildings.map((building, buildingIndex) => (
-                <div key={buildingIndex} className="mb-8">
-                  <div className="flex items-center gap-3 mb-4 p-3 bg-gray-50 rounded-lg">
-                    <Building className="w-5 h-5 text-gray-600" />
-                    <span className="font-semibold text-gray-800">
+                <div key={buildingIndex} className="mb-6 sm:mb-8 px-2 sm:px-0">
+                  <div className="flex items-center gap-2 sm:gap-3 mb-3 sm:mb-4 p-3 bg-gray-50 rounded-lg">
+                    <Building className="w-4 h-4 sm:w-5 sm:h-5 text-gray-600" />
+                    <span className="font-semibold text-gray-800 text-sm sm:text-base">
                       {building.building_name}
                     </span>
                   </div>
 
                   {building.floors.map((floor, floorIndex) => (
-                    <div key={floorIndex} className="ml-6 mb-6">
-                      <div className="flex items-center gap-3 mb-3">
-                        <Layers className="w-4 h-4 text-gray-500" />
-                        <span className="font-medium text-gray-700">
-                          {floor.floor_name}
-                        </span>
+                    <div key={floorIndex} className="ml-2 sm:ml-6 mb-4 sm:mb-6">
+                      <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3 mb-2 sm:mb-3">
+                        <div className="flex items-center gap-2">
+                          <Layers className="w-3 h-3 sm:w-4 sm:h-4 text-gray-500" />
+                          <span className="font-medium text-gray-700 text-sm sm:text-base">
+                            {floor.floor_name}
+                          </span>
+                        </div>
                         {errors[
                           `building_${buildingIndex}_floor_${floorIndex}_units`
                         ] && (
-                          <span className="text-sm text-red-600 ml-auto">
+                          <span className="text-xs sm:text-sm text-red-600 sm:ml-auto">
                             {
                               errors[
                                 `building_${buildingIndex}_floor_${floorIndex}_units`
@@ -1186,15 +1198,15 @@ export default function ConstructionProjectWizardForm({
                         )}
                       </div>
 
-                      <div className="ml-6 grid grid-cols-2 gap-6">
+                      <div className="ml-2 sm:ml-6 grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
                         {/* Flats Section */}
-                        <div className="bg-gray-50 rounded-lg p-4">
-                          <div className="flex justify-between items-center mb-4">
-                            <h5 className="font-medium text-gray-700 flex items-center gap-2">
-                              <DoorOpen className="w-4 h-4" />
+                        <div className="bg-gray-50 rounded-lg p-3 sm:p-4">
+                          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-3 sm:mb-4 gap-2">
+                            <h5 className="font-medium text-gray-700 flex items-center gap-2 text-sm sm:text-base">
+                              <DoorOpen className="w-3 h-3 sm:w-4 sm:h-4" />
                               Flats ({floor.flats.length})
                             </h5>
-                            <div className="flex items-center gap-2">
+                            <div className="flex items-center gap-2 w-full sm:w-auto">
                               <input
                                 type="text"
                                 value={
@@ -1209,7 +1221,7 @@ export default function ConstructionProjectWizardForm({
                                     parseInt(e.target.value) || 0
                                   )
                                 }
-                                className="w-16 px-2 py-1 text-xs border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                className="w-full sm:w-16 px-2 py-1.5 text-xs border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                                 placeholder="Count"
                               />
                               <button
@@ -1223,7 +1235,7 @@ export default function ConstructionProjectWizardForm({
                                     ] || 0
                                   )
                                 }
-                                className="text-xs bg-blue-50 text-blue-600 px-3 py-1.5 rounded-lg hover:bg-blue-100 transition flex items-center gap-1"
+                                className="text-xs bg-blue-50 text-blue-600 px-3 py-1.5 rounded-lg hover:bg-blue-100 transition flex items-center gap-1 flex-1 sm:flex-none justify-center"
                               >
                                 <Plus className="w-3 h-3" /> Add Flats
                               </button>
@@ -1232,29 +1244,29 @@ export default function ConstructionProjectWizardForm({
                                 onClick={() =>
                                   addFlat(buildingIndex, floorIndex)
                                 }
-                                className="text-xs bg-blue-600 text-white px-3 py-1.5 rounded-lg hover:bg-blue-700 transition flex items-center gap-1"
+                                className="text-xs bg-blue-600 text-white px-3 py-1.5 rounded-lg hover:bg-blue-700 transition hidden sm:flex items-center gap-1"
                               >
                                 <Plus className="w-3 h-3" /> Single
                               </button>
                             </div>
                           </div>
 
-                          <div className="grid grid-cols-2 gap-1">
+                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                             {floor.flats.map((flat, flatIndex) => (
                               <div
                                 key={flatIndex}
-                                className="bg-white rounded-lg p-3 border border-gray-200"
+                                className="bg-white rounded-lg p-2.5 sm:p-3 border border-gray-200"
                               >
                                 <div className="flex justify-between items-center mb-2">
-                                  <div className="flex flex-1">
-                                    <div className="bg-blue-50 hover:bg-blue-100 rounded-lg text-blue-600 mr-1 w-fit p-1">
-                                      <Home className="w-4 h-4   " />
+                                  <div className="flex flex-1 items-center">
+                                    <div className="bg-blue-50 hover:bg-blue-100 rounded-lg text-blue-600 mr-1 sm:mr-2 w-fit p-1">
+                                      <Home className="w-3 h-3 sm:w-4 sm:h-4" />
                                     </div>
                                     <input
                                       type="text"
                                       value={flat.flat_name}
                                       disabled
-                                      className={`w-full bg-transparent border-b focus:outline-none focus:border-blue-500 px-1 py-1 text-sm ${
+                                      className={`w-full bg-transparent border-b focus:outline-none focus:border-blue-500 px-1 py-1 text-xs sm:text-sm ${
                                         errors[
                                           `building_${buildingIndex}_floor_${floorIndex}_flat_${flatIndex}_name`
                                         ]
@@ -1264,38 +1276,40 @@ export default function ConstructionProjectWizardForm({
                                       placeholder="Flat name/number"
                                     />
                                   </div>
-                                  {formData.buildings.length >= 1 && (
+                                  <div className="flex items-center gap-1">
+                                    {formData.buildings.length >= 1 && (
+                                      <button
+                                        type="button"
+                                        onClick={() => {
+                                          setSelectedItem({
+                                            name: flat.flat_name,
+                                            count: "",
+                                            buildingId: buildingIndex,
+                                            floorId: floorIndex,
+                                            flatId: flatIndex,
+                                            commonAreaId: "",
+                                          });
+                                          setShowModalForItem("flat");
+                                        }}
+                                        className="p-1 text-green-600 hover:bg-green-50 rounded-lg transition"
+                                      >
+                                        <Edit2 className="w-3 h-3 sm:w-4 sm:h-4" />
+                                      </button>
+                                    )}
                                     <button
                                       type="button"
-                                      onClick={() => {
-                                        setSelectedItem({
-                                          name: flat.flat_name,
-                                          count: "",
-                                          buildingId: buildingIndex,
-                                          floorId: floorIndex,
-                                          flatId: flatIndex,
-                                          commonAreaId: "",
-                                        });
-                                        setShowModalForItem("flat");
-                                      }}
-                                      className="p-1  text-green-600 hover:bg-green-50 rounded-lg transition"
+                                      onClick={() =>
+                                        removeFlat(
+                                          buildingIndex,
+                                          floorIndex,
+                                          flatIndex
+                                        )
+                                      }
+                                      className="ml-1 p-1 text-gray-400 hover:text-red-600 rounded"
                                     >
-                                      <Edit2 className="w-4 h-4" />
+                                      <X className="w-3 h-3 sm:w-4 sm:h-4" />
                                     </button>
-                                  )}
-                                  <button
-                                    type="button"
-                                    onClick={() =>
-                                      removeFlat(
-                                        buildingIndex,
-                                        floorIndex,
-                                        flatIndex
-                                      )
-                                    }
-                                    className="ml-2 p-1 text-gray-400 hover:text-red-600 rounded"
-                                  >
-                                    <X className="w-3 h-3" />
-                                  </button>
+                                  </div>
                                 </div>
                                 {errors[
                                   `building_${buildingIndex}_floor_${floorIndex}_flat_${flatIndex}_name`
@@ -1311,7 +1325,7 @@ export default function ConstructionProjectWizardForm({
                               </div>
                             ))}
                             {floor.flats.length === 0 && (
-                              <p className="text-sm text-gray-400 text-center py-4 col-span-3">
+                              <p className="text-xs sm:text-sm text-gray-400 text-center py-4 col-span-2">
                                 No flats added yet
                               </p>
                             )}
@@ -1319,10 +1333,10 @@ export default function ConstructionProjectWizardForm({
                         </div>
 
                         {/* Common Areas Section */}
-                        <div className="bg-gray-50 rounded-lg p-4">
-                          <div className="flex justify-between items-center mb-4">
-                            <h5 className="font-medium text-gray-700 flex items-center gap-2">
-                              <Users className="w-4 h-4" />
+                        <div className="bg-gray-50 rounded-lg p-3 sm:p-4">
+                          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-3 sm:mb-4 gap-2">
+                            <h5 className="font-medium text-gray-700 flex items-center gap-2 text-sm sm:text-base">
+                              <Users className="w-3 h-3 sm:w-4 sm:h-4" />
                               Common Areas ({floor.common_areas.length})
                             </h5>
                             <button
@@ -1330,28 +1344,28 @@ export default function ConstructionProjectWizardForm({
                               onClick={() =>
                                 addCommonArea(buildingIndex, floorIndex)
                               }
-                              className="text-xs bg-green-50 text-green-600 px-3 py-1.5 rounded-lg hover:bg-green-100 transition flex items-center gap-1"
+                              className="text-xs bg-green-50 text-green-600 px-3 py-1.5 rounded-lg hover:bg-green-100 transition flex items-center gap-1 w-full sm:w-auto justify-center"
                             >
                               <Plus className="w-3 h-3" /> Add Area
                             </button>
                           </div>
 
-                          <div className="grid grid-cols-2 gap-2">
+                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                             {floor.common_areas.map((commonArea, caIndex) => (
                               <div
                                 key={caIndex}
-                                className="bg-white rounded-lg p-3 border border-gray-200"
+                                className="bg-white rounded-lg p-2.5 sm:p-3 border border-gray-200"
                               >
-                                <div className="flex justify-between items-center mb-3">
-                                  <div className="flex flex-1 ">
-                                    <div className="bg-green-50 hover:bg-green-100 rounded-lg text-green-600 mr-1 w-fit p-1">
-                                      <DoorOpen className="w-5 h-5   " />
+                                <div className="flex justify-between items-center mb-2">
+                                  <div className="flex flex-1 items-center">
+                                    <div className="bg-green-50 hover:bg-green-100 rounded-lg text-green-600 mr-1 sm:mr-2 w-fit p-1">
+                                      <DoorOpen className="w-3 h-3 sm:w-4 sm:h-4" />
                                     </div>
                                     <input
                                       type="text"
                                       value={commonArea.common_area_name}
                                       disabled
-                                      className={`w-full bg-transparent border-b focus:outline-none focus:border-blue-500 px-1 py-1 text-sm ${
+                                      className={`w-full bg-transparent border-b focus:outline-none focus:border-blue-500 px-1 py-1 text-xs sm:text-sm ${
                                         errors[
                                           `building_${buildingIndex}_floor_${floorIndex}_common_${caIndex}_name`
                                         ]
@@ -1361,38 +1375,40 @@ export default function ConstructionProjectWizardForm({
                                       placeholder="Common area name"
                                     />
                                   </div>
-                                  {formData.buildings.length >= 1 && (
+                                  <div className="flex items-center gap-1">
+                                    {formData.buildings.length >= 1 && (
+                                      <button
+                                        type="button"
+                                        onClick={() => {
+                                          setSelectedItem({
+                                            name: commonArea.common_area_name,
+                                            count: "",
+                                            buildingId: buildingIndex,
+                                            floorId: floorIndex,
+                                            flatId: "",
+                                            commonAreaId: caIndex,
+                                          });
+                                          setShowModalForItem("common_area");
+                                        }}
+                                        className="p-1 text-green-600 hover:bg-green-50 rounded-lg transition"
+                                      >
+                                        <Edit2 className="w-3 h-3 sm:w-4 sm:h-4" />
+                                      </button>
+                                    )}
                                     <button
                                       type="button"
-                                      onClick={() => {
-                                        setSelectedItem({
-                                          name: commonArea.common_area_name,
-                                          count: "",
-                                          buildingId: buildingIndex,
-                                          floorId: floorIndex,
-                                          flatId: "",
-                                          commonAreaId: caIndex,
-                                        });
-                                        setShowModalForItem("common_area");
-                                      }}
-                                      className="p-1  text-green-600 hover:bg-green-50 rounded-lg transition"
+                                      onClick={() =>
+                                        removeCommonArea(
+                                          buildingIndex,
+                                          floorIndex,
+                                          caIndex
+                                        )
+                                      }
+                                      className="ml-1 p-1 text-gray-400 hover:text-red-600 rounded"
                                     >
-                                      <Edit2 className="w-4 h-4" />
+                                      <X className="w-3 h-3 sm:w-4 sm:h-4" />
                                     </button>
-                                  )}
-                                  <button
-                                    type="button"
-                                    onClick={() =>
-                                      removeCommonArea(
-                                        buildingIndex,
-                                        floorIndex,
-                                        caIndex
-                                      )
-                                    }
-                                    className="ml-2 p-1 text-gray-400 hover:text-red-600 rounded"
-                                  >
-                                    <X className="w-3 h-3" />
-                                  </button>
+                                  </div>
                                 </div>
                                 {errors[
                                   `building_${buildingIndex}_floor_${floorIndex}_common_${caIndex}_name`
@@ -1408,7 +1424,7 @@ export default function ConstructionProjectWizardForm({
                               </div>
                             ))}
                             {floor.common_areas.length === 0 && (
-                              <p className="text-sm text-gray-400 text-center py-4 col-span-3">
+                              <p className="text-xs sm:text-sm text-gray-400 text-center py-4 col-span-2">
                                 No common areas added yet
                               </p>
                             )}
@@ -1420,20 +1436,20 @@ export default function ConstructionProjectWizardForm({
                 </div>
               ))}
 
-              <div className="bg-gradient-to-r from-amber-50 to-amber-100 p-4 rounded-lg border border-amber-200">
-                <h4 className="font-medium text-gray-800 mb-3 flex items-center gap-2">
-                  <Info className="w-4 h-4" />
+              <div className="bg-gradient-to-r from-amber-50 to-amber-100 p-3 sm:p-4 rounded-lg border border-amber-200 mx-2 sm:mx-6">
+                <h4 className="font-medium text-gray-800 mb-2 sm:mb-3 flex items-center gap-2 text-sm sm:text-base">
+                  <Info className="w-3 h-3 sm:w-4 sm:h-4" />
                   Quick Summary
                 </h4>
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="text-center bg-white rounded-lg p-3">
-                    <div className="text-2xl font-bold text-blue-600">
+                <div className="grid grid-cols-2 gap-3 sm:gap-4">
+                  <div className="text-center bg-white rounded-lg p-2.5 sm:p-3">
+                    <div className="text-lg sm:text-xl md:text-2xl font-bold text-blue-600">
                       {calculateSummary().totalFlats}
                     </div>
                     <p className="text-xs text-gray-600">Total Flats</p>
                   </div>
-                  <div className="text-center bg-white rounded-lg p-3">
-                    <div className="text-2xl font-bold text-green-600">
+                  <div className="text-center bg-white rounded-lg p-2.5 sm:p-3">
+                    <div className="text-lg sm:text-xl md:text-2xl font-bold text-green-600">
                       {calculateSummary().totalCommonAreas}
                     </div>
                     <p className="text-xs text-gray-600">Common Areas</p>
@@ -1445,132 +1461,145 @@ export default function ConstructionProjectWizardForm({
 
           {/* Step 5: Review */}
           {currentStep === 5 && (
-            <div className="space-y-6 animate-fadeIn">
-              <div className="flex items-center px-6 py-2 bg-gradient-to-r from-emerald-100 to-emerald-50  ">
-                <div className="w-10 h-10 rounded-full flex items-center justify-center  border-4 border-white shadow-sm mr-3">
-                  <Check className="w-5 h-5 text-emerald-600" />
+            <div className="space-y-4 sm:space-y-6 animate-fadeIn p-2 sm:p-0">
+              <div className="flex items-center px-3 sm:px-6 py-2 bg-gradient-to-r from-emerald-100 to-emerald-50">
+                <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-full flex items-center justify-center border-4 border-white shadow-sm mr-2 sm:mr-3">
+                  <Check className="w-4 h-4 sm:w-5 sm:h-5 text-emerald-600" />
                 </div>
-                <h3 className="text-lg font-semibold text-gray-800">
+                <h3 className="text-sm sm:text-base md:text-lg font-semibold text-gray-800">
                   Review Project
                 </h3>
               </div>
-              <div className="px-3">
-                <h4 className="font-semibold text-gray-800 mb-4 pb-2 border-b border-gray-300 flex items-center gap-2">
-                  <Building2 className="w-4 h-4" />
+              <div className="px-2 sm:px-3">
+                <h4 className="font-semibold text-gray-800 mb-3 sm:mb-4 pb-2 border-b border-gray-300 flex items-center gap-2 text-sm sm:text-base">
+                  <Building2 className="w-3 h-3 sm:w-4 sm:h-4" />
                   Structure Summary
                 </h4>
-                <div className="grid grid-cols-4 gap-4 mb-6">
-                  <div className="text-center bg-blue-50 rounded-lg p-4">
-                    <div className="text-2xl font-bold text-blue-600 flex items-center justify-center">
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4 mb-4 sm:mb-6">
+                  <div className="text-center bg-blue-50 rounded-lg p-3 sm:p-4">
+                    <div className="text-lg sm:text-xl md:text-2xl font-bold text-blue-600 flex items-center justify-center">
                       {calculateSummary().totalBuildings}{" "}
-                      <Building className="w-5 h-5 ml-1" />
+                      <Building className="w-4 h-4 sm:w-5 sm:h-5 ml-1" />
                     </div>
-                    <p className="text-sm text-gray-600">Buildings</p>
+                    <p className="text-xs sm:text-sm text-gray-600">
+                      Buildings
+                    </p>
                   </div>
-                  <div className="text-center bg-purple-50 rounded-lg p-4">
-                    <div className="text-2xl font-bold text-purple-600 flex items-center justify-center">
+                  <div className="text-center bg-purple-50 rounded-lg p-3 sm:p-4">
+                    <div className="text-lg sm:text-xl md:text-2xl font-bold text-purple-600 flex items-center justify-center">
                       {calculateSummary().totalFloors}{" "}
-                      <Layers className="w-5 h-5 ml-1" />
+                      <Layers className="w-4 h-4 sm:w-5 sm:h-5 ml-1" />
                     </div>
-                    <p className="text-sm text-gray-600">Floors</p>
+                    <p className="text-xs sm:text-sm text-gray-600">Floors</p>
                   </div>
-                  <div className="text-center bg-amber-50 rounded-lg p-4">
-                    <div className="text-2xl font-bold text-amber-600 flex items-center justify-center">
+                  <div className="text-center bg-amber-50 rounded-lg p-3 sm:p-4">
+                    <div className="text-lg sm:text-xl md:text-2xl font-bold text-amber-600 flex items-center justify-center">
                       {calculateSummary().totalFlats}{" "}
-                      <Home className="w-5 h-5 ml-1" />
+                      <Home className="w-4 h-4 sm:w-5 sm:h-5 ml-1" />
                     </div>
-                    <p className="text-sm text-gray-600">Flats</p>
+                    <p className="text-xs sm:text-sm text-gray-600">Flats</p>
                   </div>
-                  <div className="text-center bg-green-50 rounded-lg p-4">
-                    <div className="text-2xl font-bold text-green-600 flex items-center justify-center">
+                  <div className="text-center bg-green-50 rounded-lg p-3 sm:p-4">
+                    <div className="text-lg sm:text-xl md:text-2xl font-bold text-green-600 flex items-center justify-center">
                       {calculateSummary().totalCommonAreas}{" "}
-                      <DoorOpen className="w-5 h-5 ml-1" />
+                      <DoorOpen className="w-4 h-4 sm:w-5 sm:h-5 ml-1" />
                     </div>
-                    <p className="text-sm text-gray-600">Common Areas</p>
+                    <p className="text-xs sm:text-sm text-gray-600">
+                      Common Areas
+                    </p>
                   </div>
                 </div>
               </div>
-              <div className="bg-gradient-to-br from-gray-50 to-white border border-gray-200 rounded-xl p-6 mx-3">
-                <div className="space-y-8">
+              <div className="bg-gradient-to-br from-gray-50 to-white border border-gray-200 rounded-xl p-3 sm:p-6 mx-2 sm:mx-3">
+                <div className="space-y-6 sm:space-y-8">
                   {/* Project Overview */}
-                  <div className="">
-                    <h4 className="font-semibold text-gray-800 mb-4 pb-2 border-b border-gray-300 flex items-center gap-2">
-                      <FileText className="w-4 h-4" />
+                  <div>
+                    <h4 className="font-semibold text-gray-800 mb-3 sm:mb-4 pb-2 border-b border-gray-300 flex items-center gap-2 text-sm sm:text-base">
+                      <FileText className="w-3 h-3 sm:w-4 sm:h-4" />
                       Project Overview
                     </h4>
-                    <div className="grid grid-cols-2 gap-4">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
                       <div>
-                        <p className="text-sm text-gray-600">Project Name</p>
-                        <p className="font-medium text-gray-800">
+                        <p className="text-xs sm:text-sm text-gray-600">
+                          Project Name
+                        </p>
+                        <p className="font-medium text-gray-800 text-sm sm:text-base">
                           {formData.name || "Not set"}
                         </p>
                       </div>
                       <div>
-                        <p className="text-sm text-gray-600">Location</p>
-                        <p className="font-medium text-gray-800">
+                        <p className="text-xs sm:text-sm text-gray-600">
+                          Location
+                        </p>
+                        <p className="font-medium text-gray-800 text-sm sm:text-base">
                           {formData.location || "Not set"}
                         </p>
                       </div>
                       <div>
-                        <p className="text-sm text-gray-600">Start Date</p>
-                        <p className="font-medium text-gray-800">
+                        <p className="text-xs sm:text-sm text-gray-600">
+                          Start Date
+                        </p>
+                        <p className="font-medium text-gray-800 text-sm sm:text-base">
                           {formData.start_date || "Not set"}
                         </p>
                       </div>
                       <div>
-                        <p className="text-sm text-gray-600">End Date</p>
-                        <p className="font-medium text-gray-800">
+                        <p className="text-xs sm:text-sm text-gray-600">
+                          End Date
+                        </p>
+                        <p className="font-medium text-gray-800 text-sm sm:text-base">
                           {formData.end_date || "Not set"}
                         </p>
                       </div>
                     </div>
                   </div>
 
-                  {/* Structure Summary */}
-                  <div>
-                    {/* Detailed Structure */}
+                  {/* Detailed Structure */}
+                  <div className="space-y-3 sm:space-y-4">
                     {formData.buildings.map((building, buildingIndex) => (
                       <div
                         key={buildingIndex}
-                        className="bg-white border border-gray-200 rounded-lg p-4 mb-4"
+                        className="bg-white border border-gray-200 rounded-lg p-3 sm:p-4"
                       >
-                        <div className="flex items-center gap-3 mb-3">
-                          <Building className="w-5 h-5 text-gray-500" />
+                        <div className="flex items-center gap-2 sm:gap-3 mb-2 sm:mb-3">
+                          <Building className="w-4 h-4 sm:w-5 sm:h-5 text-gray-500" />
                           <div>
-                            <h5 className="font-medium text-gray-800">
+                            <h5 className="font-medium text-gray-800 text-sm sm:text-base">
                               {building.building_name}
                             </h5>
-                            <p className="text-sm text-gray-500">
+                            <p className="text-xs sm:text-sm text-gray-500">
                               {building.floors.length} floors
                             </p>
                           </div>
                         </div>
 
-                        <div className="ml-8 space-y-3">
+                        <div className="ml-6 sm:ml-8 space-y-2 sm:space-y-3">
                           {building.floors.map((floor, floorIndex) => (
                             <div
                               key={floorIndex}
-                              className="border-l-2 border-blue-200 pl-4 pt-2 pb-2"
+                              className="border-l-2 border-blue-200 pl-3 sm:pl-4 pt-1 pb-1 sm:pt-2 sm:pb-2"
                             >
-                              <div className="flex items-center gap-2 mb-2">
-                                <Layers className="w-4 h-4 text-gray-400" />
-                                <span className="font-medium text-gray-700">
-                                  {floor.floor_name}
-                                </span>
-                                <span className="text-sm text-gray-500">
+                              <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-2 mb-1 sm:mb-2">
+                                <div className="flex items-center gap-2">
+                                  <Layers className="w-3 h-3 sm:w-4 sm:h-4 text-gray-400" />
+                                  <span className="font-medium text-gray-700 text-sm sm:text-base">
+                                    {floor.floor_name}
+                                  </span>
+                                </div>
+                                <span className="text-xs sm:text-sm text-gray-500 ml-5 sm:ml-0">
                                   ({floor.flats.length} flats,{" "}
                                   {floor.common_areas.length} common areas)
                                 </span>
                               </div>
-                              <div className="flex flex-wrap gap-2">
+                              <div className="flex flex-wrap gap-1 sm:gap-2 ml-5 sm:ml-0">
                                 {floor.flats.map((flat, flatIndex) => (
                                   <div
                                     key={flatIndex}
-                                    className="px-3 py-1 bg-blue-50 rounded-lg text-sm border border-blue-100"
+                                    className="px-2 sm:px-3 py-1 bg-blue-50 rounded-lg text-xs border border-blue-100"
                                   >
-                                    <span className="font-medium text-blue-700 flex ">
+                                    <span className="font-medium text-blue-700 flex items-center">
                                       {flat.flat_name}{" "}
-                                      <Home className="w-5 h-5 ml-1" />
+                                      <Home className="w-3 h-3 sm:w-4 sm:h-4 ml-1" />
                                     </span>
                                   </div>
                                 ))}
@@ -1578,11 +1607,11 @@ export default function ConstructionProjectWizardForm({
                                   (commonArea, caIndex) => (
                                     <div
                                       key={caIndex}
-                                      className="px-3 py-1 bg-green-50 rounded-lg text-sm border border-green-100"
+                                      className="px-2 sm:px-3 py-1 bg-green-50 rounded-lg text-xs border border-green-100"
                                     >
-                                      <span className="font-medium text-green-700 flex">
+                                      <span className="font-medium text-green-700 flex items-center">
                                         {commonArea.common_area_name}{" "}
-                                        <DoorOpen className="w-5 h-5 ml-1" />
+                                        <DoorOpen className="w-3 h-3 sm:w-4 sm:h-4 ml-1" />
                                       </span>
                                     </div>
                                   )
@@ -1601,82 +1630,86 @@ export default function ConstructionProjectWizardForm({
         </div>
 
         {/* Navigation Buttons */}
-        <div className="px-6 py-4 border-t border-gray-200 bg-gray-50 rounded-b-xl">
-          <div className="flex justify-between items-center">
+        <div className="px-3 sm:px-6 py-3 sm:py-4 border-t border-gray-200 bg-gray-50 rounded-b-xl w-full">
+          <div className="flex justify-between items-center gap-3 sm:gap-0 w-full">
             <div>
               {currentStep > 1 && (
                 <button
                   type="button"
                   onClick={prevStep}
-                  className="px-6 py-2.5 border border-gray-300 rounded-lg hover:bg-gray-100 transition font-medium flex items-center gap-2 text-gray-700"
+                  className="px-4 sm:px-6 py-2 border border-gray-300 rounded-lg hover:bg-gray-100 transition font-medium flex items-center gap-2 text-gray-700 text-sm sm:text-base w-full sm:w-auto justify-center"
                 >
-                  <ArrowLeft className="w-4 h-4" />
+                  <ArrowLeft className="w-3 h-3 sm:w-4 sm:h-4" />
                   Previous
                 </button>
               )}
             </div>
 
-            <div className="text-sm text-gray-600">
+            <div className="text-xs sm:text-sm text-gray-600 hidden sm:block">
               <span className="font-medium">Step {currentStep}</span> of{" "}
               {steps.length}
             </div>
 
-            <div>
+            <div className="">
               {currentStep < steps.length ? (
                 <button
                   type="button"
                   onClick={nextStep}
-                  className="px-6 py-2.5 bg-gradient-to-r from-blue-600 to-blue-700 text-white rounded-lg hover:from-blue-700 hover:to-blue-800 transition font-medium flex items-center gap-2 shadow-sm"
+                  className="px-4 sm:px-6 py-2 bg-gradient-to-r from-blue-600 to-blue-700 text-white rounded-lg hover:from-blue-700 hover:to-blue-800 transition font-medium flex items-center gap-2 shadow-sm text-sm sm:text-base w-fit sm:w-auto justify-center"
                 >
                   Continue
-                  <ArrowRight className="w-4 h-4" />
+                  <ArrowRight className="w-3 h-3 sm:w-4 sm:h-4" />
                 </button>
               ) : (
                 <button
                   type="button"
                   onClick={handleSubmit}
-                  className="px-8 py-2.5 bg-gradient-to-r from-emerald-600 to-emerald-700 text-white rounded-lg hover:from-emerald-700 hover:to-emerald-800 transition font-medium flex items-center gap-2 shadow-sm"
+                  className="px-4 sm:px-8 py-2 bg-gradient-to-r from-emerald-600 to-emerald-700 text-white rounded-lg hover:from-emerald-700 hover:to-emerald-800 transition font-medium flex items-center gap-2 shadow-sm text-sm sm:text-base w-full sm:w-auto justify-center"
                 >
-                  <Check className="w-4 h-4" />
+                  <Check className="w-3 h-3 sm:w-4 sm:h-4" />
                   Create Project
                 </button>
               )}
             </div>
           </div>
+          <div className="text-xs sm:text-sm text-gray-600 text-center sm:hidden mt-2">
+            <span className="font-medium">Step {currentStep}</span> of{" "}
+            {steps.length}
+          </div>
         </div>
       </div>
 
       {showUpdateModalForItem && selectedItem && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4 overflow-y-auto">
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-2 sm:p-4 overflow-y-auto">
           <div
             className={`bg-white rounded-xl shadow-xl ${
               showUpdateModalForItem === "flat" ||
               showUpdateModalForItem === "common_area"
-                ? "w-[400px]"
-                : "w-full"
-            }  max-w-xl my-8 border border-gray-200`}
+                ? "w-full max-w-[400px]"
+                : "w-full max-w-xl"
+            } my-4 sm:my-8 border border-gray-200 mx-2 sm:mx-4`}
           >
             {/* Header */}
-            <div className="bg-gradient-to-r from-blue-600 to-blue-700 px-6 py-4 flex justify-between items-center rounded-t-xl">
-              <div className="flex items-center gap-3">
-                <div className="p-2 bg-white/10 rounded-lg">
+            <div className="bg-gradient-to-r from-blue-600 to-blue-700 px-4 sm:px-6 py-3 sm:py-4 flex justify-between items-center rounded-t-xl">
+              <div className="flex items-center gap-2 sm:gap-3">
+                <div className="p-1.5 sm:p-2 bg-white/10 rounded-lg">
                   {showUpdateModalForItem === "building" && (
-                    <Building2 className="w-6 h-6 text-white" />
+                    <Building2 className="w-5 h-5 sm:w-6 sm:h-6 text-white" />
                   )}
                   {showUpdateModalForItem === "floor" && (
-                    <Layers className="w-6 h-6 text-white" />
+                    <Layers className="w-5 h-5 sm:w-6 sm:h-6 text-white" />
                   )}
                   {showUpdateModalForItem === "flat" && (
-                    <Home className="w-6 h-6 text-white" />
+                    <Home className="w-5 h-5 sm:w-6 sm:h-6 text-white" />
                   )}
                 </div>
                 <div>
-                  <h2 className="text-xl font-bold text-white">
+                  <h2 className="text-base sm:text-lg md:text-xl font-bold text-white">
                     Update {showUpdateModalForItem === "building" && "Building"}
                     {showUpdateModalForItem === "floor" && "Floor"}
                     {showUpdateModalForItem === "flat" && "Flat"}
                   </h2>
-                  <p className="text-sm text-blue-100">
+                  <p className="text-xs sm:text-sm text-blue-100">
                     Update {showUpdateModalForItem === "building" && "Building"}
                     {showUpdateModalForItem === "floor" && "Floor"}
                     {showUpdateModalForItem === "flat" && "Flat"} Details
@@ -1687,16 +1720,16 @@ export default function ConstructionProjectWizardForm({
                 onClick={() => {
                   setShowModalForItem(null);
                 }}
-                className="text-white hover:bg-white/10 rounded-lg p-2 transition"
+                className="text-white hover:bg-white/10 rounded-lg p-1 sm:p-2 transition"
               >
-                <X className="w-5 h-5" />
+                <X className="w-4 h-4 sm:w-5 sm:h-5" />
               </button>
             </div>
-            <div className="px-6 py-3">
+            <div className="px-4 sm:px-6 py-3">
               {showUpdateModalForItem === "building" && (
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
-                  <div>
-                    <label className=" text-sm font-medium text-gray-700 mb-2 flex items-center gap-2">
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium text-gray-700 mb-1 flex items-center gap-2">
                       <Layers className="w-4 h-4" />
                       Building Name <span className="text-red-500">*</span>
                     </label>
@@ -1709,14 +1742,14 @@ export default function ConstructionProjectWizardForm({
                           name: e.target.value,
                         }));
                       }}
-                      className={`w-full px-4 py-2 text-sm border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
+                      className={`w-full px-3 sm:px-4 py-2 text-sm border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
                         errors.location ? "border-red-300" : "border-gray-300"
                       }`}
                       placeholder="Wing - A"
                     />
                   </div>
-                  <div>
-                    <label className=" text-sm font-medium text-gray-700 mb-2 flex items-center gap-2">
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium text-gray-700 mb-1 flex items-center gap-2">
                       <Layers className="w-4 h-4" />
                       Number of Floors <span className="text-red-500">*</span>
                     </label>
@@ -1729,7 +1762,7 @@ export default function ConstructionProjectWizardForm({
                           count: e.target.value,
                         }));
                       }}
-                      className={`w-full px-4 py-2 text-sm border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
+                      className={`w-full px-3 sm:px-4 py-2 text-sm border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
                         errors.location ? "border-red-300" : "border-gray-300"
                       }`}
                       placeholder="Enter Number of Floors"
@@ -1739,8 +1772,8 @@ export default function ConstructionProjectWizardForm({
               )}
               {showUpdateModalForItem === "floor" && (
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
-                  <div>
-                    <label className=" text-sm font-medium text-gray-700 mb-2 flex items-center gap-2">
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium text-gray-700 mb-1 flex items-center gap-2">
                       <Layers className="w-4 h-4" />
                       Select Floor Name <span className="text-red-500">*</span>
                     </label>
@@ -1774,12 +1807,11 @@ export default function ConstructionProjectWizardForm({
                     </select>
                   </div>
                   {showInputFeild && (
-                    <div>
-                      <label className=" text-sm font-medium text-gray-700 mb-2 flex items-center gap-2">
+                    <div className="space-y-2">
+                      <label className="text-sm font-medium text-gray-700 mb-1 flex items-center gap-2">
                         <Layers className="w-4 h-4" />
                         Floor Name <span className="text-red-500">*</span>
                       </label>
-
                       <input
                         type="text"
                         value={selectedItem.name}
@@ -1789,19 +1821,18 @@ export default function ConstructionProjectWizardForm({
                             name: e.target.value,
                           }));
                         }}
-                        className={`w-full px-4 py-2 text-sm border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
+                        className={`w-full px-3 sm:px-4 py-2 text-sm border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
                           errors.location ? "border-red-300" : "border-gray-300"
                         }`}
                         placeholder="Floor - 1"
                       />
                     </div>
                   )}
-                  <div>
-                    <label className=" text-sm font-medium text-gray-700 mb-2 flex items-center gap-2">
+                  <div className="space-y-2 lg:col-span-2">
+                    <label className="text-sm font-medium text-gray-700 mb-1 flex items-center gap-2">
                       <Home className="w-4 h-4" />
                       Number of Flats <span className="text-red-500">*</span>
                     </label>
-
                     <input
                       type="text"
                       value={selectedItem.count}
@@ -1811,7 +1842,7 @@ export default function ConstructionProjectWizardForm({
                           count: e.target.value,
                         }));
                       }}
-                      className={`w-full px-4 py-2 text-sm border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
+                      className={`w-full px-3 sm:px-4 py-2 text-sm border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
                         errors.location ? "border-red-300" : "border-gray-300"
                       }`}
                       placeholder="Enter Number of Flats"
@@ -1822,8 +1853,8 @@ export default function ConstructionProjectWizardForm({
               {(showUpdateModalForItem === "flat" ||
                 showUpdateModalForItem === "common_area") && (
                 <div className="grid grid-cols-1 gap-3">
-                  <div>
-                    <label className="text-sm font-medium text-gray-700 mb-2 flex items-center gap-2">
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium text-gray-700 mb-1 flex items-center gap-2">
                       {showUpdateModalForItem === "flat" ? (
                         <Home className="w-4 h-4" />
                       ) : (
@@ -1868,13 +1899,13 @@ export default function ConstructionProjectWizardForm({
                       <div
                         className={`${
                           showUpdateModalForItem === "common_area" && "mt-3"
-                        }`}
+                        } space-y-2`}
                       >
                         {showInputFeild &&
                           showUpdateModalForItem === "common_area" && (
                             <label
                               htmlFor=""
-                              className="text-sm font-medium text-gray-700 mb-2 flex items-center gap-2"
+                              className="text-sm font-medium text-gray-700 mb-1 flex items-center gap-2"
                             >
                               Enter Common Area Name
                             </label>
@@ -1888,7 +1919,7 @@ export default function ConstructionProjectWizardForm({
                               name: e.target.value,
                             }));
                           }}
-                          className={` w-full px-4 py-2 text-sm border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none ${
+                          className={`w-full px-3 sm:px-4 py-2 text-sm border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none ${
                             errors.location
                               ? "border-red-300"
                               : "border-gray-300"
@@ -1900,7 +1931,7 @@ export default function ConstructionProjectWizardForm({
                   </div>
                 </div>
               )}
-              <div className="grid grid-cols-10 mt-6 gap-3">
+              <div className="grid grid-cols-10 mt-4 sm:mt-6 gap-2 sm:gap-3">
                 <button
                   onClick={() => {
                     if (showUpdateModalForItem === "building") {
@@ -1949,18 +1980,18 @@ export default function ConstructionProjectWizardForm({
                     });
                     setShowModalForItem(null);
                   }}
-                  className="col-span-7 text-center px-8 py-2 bg-gradient-to-r from-blue-600 to-blue-700 text-white rounded-lg hover:from-blue-700 hover:to-blue-800 transition font-medium flex items-center justify-center gap-2 shadow-sm"
+                  className="col-span-7 text-center px-4 sm:px-8 py-2 bg-gradient-to-r from-blue-600 to-blue-700 text-white rounded-lg hover:from-blue-700 hover:to-blue-800 transition font-medium flex items-center justify-center gap-2 shadow-sm text-sm sm:text-base"
                 >
-                  <Save className="w-5 h-5" />
+                  <Save className="w-4 h-4 sm:w-5 sm:h-5" />
                   Save
                 </button>
                 <button
                   onClick={() => {
                     setShowModalForItem(null);
                   }}
-                  className="col-span-3  px-8 py-2 bg-gradient-to-r from-red-600 to-red-700 text-white rounded-lg hover:from-red-700 hover:to-red-800 transition font-medium flex items-center justify-center gap-2 shadow-sm"
+                  className="col-span-3 px-4 sm:px-8 py-2 bg-gradient-to-r from-red-600 to-red-700 text-white rounded-lg hover:from-red-700 hover:to-red-800 transition font-medium flex items-center justify-center gap-2 shadow-sm text-sm sm:text-base"
                 >
-                  <X className="w-5 h-5" /> Cancel
+                  <X className="w-4 h-4 sm:w-5 sm:h-5" /> Cancel
                 </button>
               </div>
             </div>

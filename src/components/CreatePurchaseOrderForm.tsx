@@ -7,7 +7,7 @@ import poTypeApi from "../lib/poTypeApi";
 import TermsConditionsApi from "../lib/termsConditionsApi";
 import { toast } from "sonner";
 
-/* --- types (same as yours) --- */
+/* --- types (updated to include individual GST rates) --- */
 interface POItem {
   id: string;
   item_id: string;
@@ -19,8 +19,10 @@ interface POItem {
   unit: string;
   rate: number;
   amount: number;
-  gst_rate: number;
-  gst_amount: number;
+  igst_rate: number; // Individual IGST rate
+  cgst_rate: number; // Individual CGST rate
+  sgst_rate: number; // Individual SGST rate
+  gst_amount: number; // Total GST amount for the item
 }
 
 interface POFormData {
@@ -302,7 +304,12 @@ export default function CreatePurchaseOrderForm({
   const loadVendors = async () => {
     try {
       const data = await poApi.getVendors(true);
-      setVendors(Array.isArray(data) ? data : []);
+      console.log(data);
+      setVendors(
+        Array.isArray(data)
+          ? data.filter((d: any) => d.category_name === "Material")
+          : []
+      );
     } catch (err) {
       console.warn("loadVendors failed, fallback to empty", err);
       setVendors([]);
@@ -340,7 +347,11 @@ export default function CreatePurchaseOrderForm({
   const loadItems = async () => {
     try {
       const data = await poApi.getItems();
-      setItems(Array.isArray(data) ? data : []);
+      setItems(
+        Array.isArray(data)
+          ? data.filter((d: any) => d.category === "material")
+          : []
+      );
     } catch (err) {
       console.warn("loadItems failed, fallback to empty", err);
       setItems([]);
@@ -350,7 +361,6 @@ export default function CreatePurchaseOrderForm({
   const loadTerms = async (id: any) => {
     try {
       const data = await TermsConditionsApi.getByIdVendorTC(id);
-      console.log(data, "from create po from terms data");
       setTerms(Array.isArray(data) ? data : []);
     } catch (err) {
       console.warn("loadTerms failed, fallback to empty", err);
@@ -368,32 +378,77 @@ export default function CreatePurchaseOrderForm({
     }
   };
 
-  // --- Items helpers (keep existing functions) ---
+  // --- Items helpers (updated for individual GST rates) ---
   const addItemFromMaster = (item: any) => {
-    const newItem: POItem = {
-      id: (crypto as any).randomUUID
-        ? (crypto as any).randomUUID()
-        : Math.random().toString(36).slice(2, 9),
-      item_id: item.id,
-      item_code: item.item_code || "",
-      item_name: item.item_name || "",
-      description: item.description || "",
-      hsn_code: item.hsn_code || "",
-      quantity: 1,
-      unit: item.unit || "",
-      rate: item.standard_rate || 0,
-      amount: item.standard_rate || 0,
-      gst_rate: item.gst_rate || 0,
-      gst_amount: 0,
-    };
+    const existingIndex = formData.items.findIndex(
+      (i) => i.item_id === item.id
+    );
 
-    const newItems = [...formData.items, newItem];
-    setFormData({ ...formData, items: newItems });
+    let updatedItems: POItem[];
+
+    if (existingIndex !== -1) {
+      // 🔁 Item already exists → increase quantity
+      updatedItems = formData.items.map((i, index) => {
+        if (index === existingIndex) {
+          const newQty = i.quantity + 1;
+          const amount = newQty * i.rate;
+
+          // Calculate GST based on interstate status
+          let gstAmount = 0;
+          if (formData.is_interstate) {
+            gstAmount = (amount * (item.igst_rate || 0)) / 100;
+          } else {
+            gstAmount =
+              (amount * ((item.cgst_rate || 0) + (item.sgst_rate || 0))) / 100;
+          }
+
+          return {
+            ...i,
+            quantity: newQty,
+            amount,
+            gst_amount: gstAmount,
+          };
+        }
+        return i;
+      });
+    } else {
+      // ➕ New item
+      const newItem: POItem = {
+        id: crypto.randomUUID
+          ? crypto.randomUUID()
+          : Math.random().toString(36).slice(2, 9),
+
+        item_id: item.id,
+        item_code: item.item_code || "",
+        item_name: item.item_name || "",
+        description: item.description || "",
+        hsn_code: item.hsn_code || "",
+        quantity: 1,
+        unit: item.unit || "",
+        rate: item.standard_rate || 0,
+        amount: item.standard_rate || 0,
+        igst_rate: item.igst_rate || 0,
+        cgst_rate: item.cgst_rate || 0,
+        sgst_rate: item.sgst_rate || 0,
+        // Calculate initial GST amount based on interstate status
+        gst_amount: formData.is_interstate
+          ? ((item.standard_rate || 0) * (item.igst_rate || 0)) / 100
+          : ((item.standard_rate || 0) *
+              ((item.cgst_rate || 0) + (item.sgst_rate || 0))) /
+            100,
+      };
+
+      updatedItems = [...formData.items, newItem];
+    }
+
+    setFormData({ ...formData, items: updatedItems });
+
     calculateTotals(
-      newItems,
+      updatedItems,
       formData.discount_percentage,
       formData.is_interstate
     );
+
     setShowItemSelector(false);
     setItemSelectorSearch("");
   };
@@ -403,7 +458,24 @@ export default function CreatePurchaseOrderForm({
     newItems[index] = { ...newItems[index], [field]: value };
 
     if (field === "quantity" || field === "rate") {
-      newItems[index].amount = newItems[index].quantity * newItems[index].rate;
+      const item = newItems[index];
+      const amount = item.quantity * item.rate;
+
+      // Recalculate GST amount when quantity or rate changes
+      let gstAmount = 0;
+      if (formData.is_interstate) {
+        gstAmount = (amount * (parseFloat(String(item.igst_rate)) || 0)) / 100;
+      } else {
+        gstAmount =
+          (amount *
+            ((parseFloat(String(item.cgst_rate)) || 0) +
+              (parseFloat(String(item.sgst_rate)) || 0))) /
+          100;
+      }
+      console.log("gstAmout .........", gstAmount);
+
+      newItems[index].amount = amount;
+      newItems[index].gst_amount = gstAmount;
     }
 
     setFormData({ ...formData, items: newItems });
@@ -433,6 +505,7 @@ export default function CreatePurchaseOrderForm({
       (sum, item) => sum + (Number(item.amount) || 0),
       0
     );
+
     const discountAmount = (subtotal * (discountPercentage || 0)) / 100;
     const taxableAmount = subtotal - discountAmount;
 
@@ -440,18 +513,25 @@ export default function CreatePurchaseOrderForm({
     let sgstAmount = 0;
     let igstAmount = 0;
 
-    const newItems = itemsList.map((item) => {
-      const itemTaxable =
-        item.amount - (item.amount * (discountPercentage || 0)) / 100;
-      const itemGst = (itemTaxable * (item.gst_rate || 0)) / 100;
-      const gstAmount = itemGst;
+    // Calculate GST amounts for each item
+    itemsList.forEach((item) => {
+      // Apply discount proportionally to item amount
+      const itemTaxableRatio = discountAmount > 0 ? item.amount / subtotal : 1;
+      const itemDiscount = discountAmount * itemTaxableRatio;
+      const itemTaxableAmount = item.amount - itemDiscount;
+
       if (isInterstate) {
-        igstAmount += gstAmount;
+        const itemIgstAmount =
+          (itemTaxableAmount * (item.igst_rate || 0)) / 100;
+        igstAmount += itemIgstAmount;
       } else {
-        cgstAmount += gstAmount / 2;
-        sgstAmount += gstAmount / 2;
+        const itemCgstAmount =
+          (itemTaxableAmount * (item.cgst_rate || 0)) / 100;
+        const itemSgstAmount =
+          (itemTaxableAmount * (item.sgst_rate || 0)) / 100;
+        cgstAmount += itemCgstAmount;
+        sgstAmount += itemSgstAmount;
       }
-      return { ...item, gst_amount: gstAmount };
     });
 
     const totalGstAmount = cgstAmount + sgstAmount + igstAmount;
@@ -459,7 +539,6 @@ export default function CreatePurchaseOrderForm({
 
     setFormData((prev) => ({
       ...prev,
-      items: newItems,
       subtotal,
       discount_amount: discountAmount,
       taxable_amount: taxableAmount,
@@ -477,8 +556,24 @@ export default function CreatePurchaseOrderForm({
   };
 
   const handleInterstateChange = (isInterstate: boolean) => {
-    setFormData({ ...formData, is_interstate: isInterstate });
-    calculateTotals(formData.items, formData.discount_percentage, isInterstate);
+    // When interstate status changes, we need to recalculate GST for all items
+    const updatedItems = formData.items.map((item) => {
+      let gstAmount = 0;
+      if (isInterstate) {
+        gstAmount = (item.amount * (item.igst_rate || 0)) / 100;
+      } else {
+        gstAmount =
+          (item.amount * ((item.cgst_rate || 0) + (item.sgst_rate || 0))) / 100;
+      }
+      return { ...item, gst_amount: gstAmount };
+    });
+
+    setFormData({
+      ...formData,
+      is_interstate: isInterstate,
+      items: updatedItems,
+    });
+    calculateTotals(updatedItems, formData.discount_percentage, isInterstate);
   };
 
   const toggleTerm = (termId: string) => {
@@ -573,6 +668,21 @@ export default function CreatePurchaseOrderForm({
     try {
       const poNumber = await generatePONumber();
 
+      if (
+        formData.vendor_id === "" ||
+        formData.project_id === "" ||
+        formData.po_type_id === "" ||
+        formData.po_date === "" ||
+        formData.delivery_date === ""
+      ) {
+        toast.error("Fill all required fields.");
+        return;
+      }
+      if (formData.items.length === 0) {
+        toast.error("Add Items.");
+        return;
+      }
+
       const payload = {
         po_number: poNumber,
         vendor_id: formData.vendor_id,
@@ -585,6 +695,7 @@ export default function CreatePurchaseOrderForm({
         subtotal: formData.subtotal,
         discount_percentage: formData.discount_percentage,
         discount_amount: formData.discount_amount,
+        taxable_amount: formData.taxable_amount,
         cgst_amount: formData.cgst_amount,
         sgst_amount: formData.sgst_amount,
         igst_amount: formData.igst_amount,
@@ -748,7 +859,14 @@ export default function CreatePurchaseOrderForm({
                     value={formData.vendor_id}
                     onChange={(id) => {
                       loadTerms(id);
-                      setFormData({ ...formData, vendor_id: id });
+                      const interState =
+                        vendors.find((d) => d.id === id).office_state !==
+                        "Maharashtra";
+                      setFormData({
+                        ...formData,
+                        vendor_id: id,
+                        is_interstate: interState,
+                      });
                     }}
                     placeholder="Select Vendor"
                     required
@@ -829,7 +947,7 @@ export default function CreatePurchaseOrderForm({
                   />
                 </div>
 
-                <div className="flex items-center pt-8">
+                {/* <div className="flex items-center pt-8">
                   <input
                     type="checkbox"
                     id="interstate"
@@ -843,7 +961,7 @@ export default function CreatePurchaseOrderForm({
                   >
                     Interstate Supply (IGST)
                   </label>
-                </div>
+                </div> */}
               </div>
             </div>
 
@@ -854,6 +972,10 @@ export default function CreatePurchaseOrderForm({
                 <button
                   type="button"
                   onClick={() => {
+                    if (formData.vendor_id === "") {
+                      toast.warning("Select Vendor First.");
+                      return;
+                    }
                     setShowItemSelector(true);
                     setItemSelectorSearch("");
                   }}
@@ -950,7 +1072,14 @@ export default function CreatePurchaseOrderForm({
                             {formatCurrency(item.amount)}
                           </p>
                           <p className="text-xs text-gray-500">
-                            GST: {item.gst_rate}%
+                            {formData.is_interstate ? (
+                              <>IGST: {item.igst_rate}%</>
+                            ) : (
+                              <>
+                                CGST: {item.cgst_rate}% | SGST: {item.sgst_rate}
+                                %
+                              </>
+                            )}
                           </p>
                         </div>
                         <div className="col-span-1 flex justify-end pt-5">
@@ -1178,9 +1307,18 @@ export default function CreatePurchaseOrderForm({
                           <p className="text-xs text-gray-600">
                             per {item.unit}
                           </p>
-                          <p className="text-xs text-gray-500">
-                            GST: {item.gst_rate ?? 0}%
-                          </p>
+                          <div className="text-xs text-gray-500">
+                            {formData.is_interstate ? (
+                              <p className="text-xs text-gray-500">
+                                IGST: {item.igst_rate ?? 0}%
+                              </p>
+                            ) : (
+                              <p className="text-xs text-gray-500">
+                                CGST: {item.cgst_rate ?? 0}% SGST:{" "}
+                                {item.sgst_rate ?? 0}%
+                              </p>
+                            )}
+                          </div>
                         </div>
                       </div>
                       <span

@@ -131,6 +131,7 @@ export default function PurchaseOrders() {
   const [pdfLoading, setPdfLoading] = useState(false);
 
   const [items, setItems] = useState<any>([]);
+
   // localStorage keys
   const KEY_VENDORS = "mock_vendors_v1";
   const KEY_PROJECTS = "mock_projects_v1";
@@ -329,20 +330,6 @@ export default function PurchaseOrders() {
     });
     setLoading(true);
     const t = setTimeout(() => {
-      // const sv = localStorage.getItem(KEY_VENDORS);
-      // const sp = localStorage.getItem(KEY_PROJECTS);
-      // const st = localStorage.getItem(KEY_PO_TYPES);
-      // const spo = localStorage.getItem(KEY_POS);
-      // const strack = localStorage.getItem(KEY_TRACKING);
-
-      // const vs: Vendor[] = sv ? JSON.parse(sv) : defaultVendors;
-      // const ps: Project[] = sp ? JSON.parse(sp) : defaultProjects;
-      // const ts: POType[] = st ? JSON.parse(st) : defaultPOTypes;
-      // const poList: PO[] = spo ? JSON.parse(spo) : defaultPOs;
-      // const trackingList: Tracking[] = strack
-      //   ? JSON.parse(strack)
-      //   : defaultTracking;
-
       const vs: Vendor[] = sv ? sv : defaultVendors;
       const ps: Project[] = sp ? sp : defaultProjects;
       const ts: POType[] = st ? st : defaultPOTypes;
@@ -642,6 +629,21 @@ export default function PurchaseOrders() {
 
   const updatePurchaseOrderStatus = async (id: string, status: string) => {
     try {
+      const result: any = await MySwal.fire({
+        title: status.charAt(0).toUpperCase() + status.slice(1),
+        text: `Are you sure you want to ${
+          status === "authorize"
+            ? status
+            : status === "approved"
+            ? "approve"
+            : "reject"
+        } this purchase order`,
+        icon: "warning",
+        showCancelButton: true,
+      });
+
+      if (!result.isConfirmed) return;
+
       const approveRes: any = await poApi.updatePurchaseOrderStatus(id, status);
       if (approveRes.status) {
         toast.success(
@@ -1078,7 +1080,7 @@ export default function PurchaseOrders() {
                         {can("edit_pos") && po.status === "draft" && (
                           <button
                             onClick={() => {
-                              // console.log("this is po data : ", po);
+                              console.log("this is po data : ", po);
                               if (!allPurchaseOrderItems) {
                                 toast.success("wait data is loading");
                                 return;
@@ -1086,6 +1088,7 @@ export default function PurchaseOrders() {
                               const itemsList = allPurchaseOrderItems.filter(
                                 (d: any) => d.po_id === po.id
                               );
+                              console.log(itemsList, "form update button");
                               const result = itemsList.map((item: any) => {
                                 let materialTrackingId = null;
 

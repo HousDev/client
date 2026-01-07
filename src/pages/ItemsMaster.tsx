@@ -12,7 +12,9 @@ interface ItemFormData {
   description: string;
   unit: string;
   hsn_code: string;
-  gst_rate: number;
+  igst_rate: string;
+  cgst_rate: string;
+  sgst_rate: string;
   standard_rate: number;
   is_active?: boolean;
   location: string;
@@ -34,7 +36,9 @@ export default function ItemsMaster(): JSX.Element {
     description: "",
     unit: "nos",
     hsn_code: "",
-    gst_rate: 18,
+    igst_rate: "18",
+    cgst_rate: "9",
+    sgst_rate: "9",
     standard_rate: 0,
     is_active: true,
     location: "",
@@ -60,7 +64,9 @@ export default function ItemsMaster(): JSX.Element {
           description: it.description ?? "",
           unit: it.unit ?? "nos",
           hsn_code: it.hsn_code ?? "",
-          gst_rate: Number(it.gst_rate) || 0,
+          igst_rate: it.igst_rate || "0",
+          cgst_rate: it.cgst_rate || "0",
+          sgst_rate: it.sgst_rate || "0",
           standard_rate: Number(it.standard_rate) || 0,
           is_active: it.is_active === undefined ? true : Boolean(it.is_active),
           location: it.location || "",
@@ -69,7 +75,7 @@ export default function ItemsMaster(): JSX.Element {
       setItems(normalized);
     } catch (err) {
       console.error("Failed to load items from API:", err);
-      alert("Could not load items from server. Please check backend.");
+      toast.error("Could not load items from server. Please check backend.");
       setItems([]); // explicitly empty list if backend fails
     } finally {
       setLoading(false);
@@ -84,7 +90,9 @@ export default function ItemsMaster(): JSX.Element {
       description: "",
       unit: "nos",
       hsn_code: "",
-      gst_rate: 18,
+      igst_rate: "18",
+      cgst_rate: "9",
+      sgst_rate: "9",
       standard_rate: 0,
       is_active: true,
       location: "",
@@ -96,18 +104,20 @@ export default function ItemsMaster(): JSX.Element {
     e.preventDefault();
 
     if (!formData.item_code.trim() || !formData.item_name.trim()) {
-      alert("Please fill required fields (Item Code & Item Name).");
+      toast.error("Please fill required fields (Item Code & Item Name).");
       return;
     }
 
-    const payload = {
+    const payload: any = {
       item_code: formData.item_code.trim().toUpperCase(),
       item_name: formData.item_name.trim(),
       category: formData.category,
       description: formData.description,
       unit: formData.unit,
       hsn_code: formData.hsn_code,
-      gst_rate: Number(formData.gst_rate) || 0,
+      igst_rate: Number(formData.igst_rate) || 0,
+      cgst_rate: Number(formData.cgst_rate) || 0,
+      sgst_rate: Number(formData.sgst_rate) || 0,
       standard_rate: Number(formData.standard_rate) || 0,
       is_active: formData.is_active ? 1 : 0,
       location: formData.location || "",
@@ -116,7 +126,7 @@ export default function ItemsMaster(): JSX.Element {
     try {
       if (editingId) {
         const numericId = Number(editingId);
-        const updated = await ItemsApi.updateItem(numericId, payload);
+        const updated: any = await ItemsApi.updateItem(numericId, payload);
         const normalized: Item = {
           id: String(updated.id ?? numericId),
           item_code: updated.item_code ?? payload.item_code,
@@ -125,19 +135,22 @@ export default function ItemsMaster(): JSX.Element {
           description: updated.description ?? payload.description,
           unit: updated.unit ?? payload.unit,
           hsn_code: updated.hsn_code ?? payload.hsn_code,
-          gst_rate: Number(updated.gst_rate) || payload.gst_rate,
+          igst_rate: Number(updated.igst_rate) || payload.igst_rate,
+          cgst_rate: Number(updated.cgst_rate) || payload.cgst_rate,
+          sgst_rate: Number(updated.sgst_rate) || payload.sgst_rate,
           standard_rate: Number(updated.standard_rate) || payload.standard_rate,
           is_active:
             updated.is_active === undefined
               ? Boolean(payload.is_active)
               : Boolean(updated.is_active),
+          location: updated?.location || "",
         };
         setItems((prev) =>
           prev.map((it) => (it.id === editingId ? normalized : it))
         );
-        alert("Item updated successfully!");
+        toast.success("Item updated successfully!");
       } else {
-        const created = await ItemsApi.createItem(payload);
+        const created: any = await ItemsApi.createItem(payload);
         const normalized: Item = {
           id: String(created.id ?? `itm_${Date.now().toString(36)}`),
           item_code: created.item_code ?? payload.item_code,
@@ -146,12 +159,15 @@ export default function ItemsMaster(): JSX.Element {
           description: created.description ?? payload.description,
           unit: created.unit ?? payload.unit,
           hsn_code: created.hsn_code ?? payload.hsn_code,
-          gst_rate: Number(created.gst_rate) || payload.gst_rate,
+          igst_rate: Number(created.igst_rate) || payload.igst_rate,
+          cgst_rate: Number(created.cgst_rate) || payload.cgst_rate,
+          sgst_rate: Number(created.sgst_rate) || payload.sgst_rate,
           standard_rate: Number(created.standard_rate) || payload.standard_rate,
           is_active:
             created.is_active === undefined
               ? Boolean(payload.is_active)
               : Boolean(created.is_active),
+          location: created.location || "",
         };
         setItems((prev) => [...prev, normalized]);
         toast.success("Item created successfully!");
@@ -176,7 +192,9 @@ export default function ItemsMaster(): JSX.Element {
       description: item.description || "",
       unit: item.unit || "nos",
       hsn_code: item.hsn_code || "",
-      gst_rate: item.gst_rate || 0,
+      igst_rate: item.igst_rate || "0",
+      cgst_rate: item.cgst_rate || "0",
+      sgst_rate: item.sgst_rate || "0",
       standard_rate: item.standard_rate || 0,
       is_active: item.is_active ?? true,
       location: item.location ?? "",
@@ -212,7 +230,7 @@ export default function ItemsMaster(): JSX.Element {
       );
     } catch (err) {
       console.error("Toggle failed:", err);
-      alert("Failed to toggle status.");
+      toast.error("Failed to toggle status.");
     }
   };
 
@@ -299,7 +317,13 @@ export default function ItemsMaster(): JSX.Element {
                   Unit
                 </th>
                 <th className="text-left px-6 py-4 text-sm font-semibold text-gray-700">
-                  GST Rate
+                  IGST(%)
+                </th>
+                <th className="text-left px-6 py-4 text-sm font-semibold text-gray-700">
+                  CGST(%)
+                </th>
+                <th className="text-left px-6 py-4 text-sm font-semibold text-gray-700">
+                  SGST(%)
                 </th>
                 <th className="text-left px-6 py-4 text-sm font-semibold text-gray-700">
                   Standard Rate
@@ -347,7 +371,9 @@ export default function ItemsMaster(): JSX.Element {
                     {item.hsn_code || "-"}
                   </td>
                   <td className="px-6 py-4 text-gray-700">{item.unit}</td>
-                  <td className="px-6 py-4 text-gray-700">{item.gst_rate}%</td>
+                  <td className="px-6 py-4 text-gray-700">{item.igst_rate}%</td>
+                  <td className="px-6 py-4 text-gray-700">{item.cgst_rate}%</td>
+                  <td className="px-6 py-4 text-gray-700">{item.sgst_rate}%</td>
                   <td className="px-6 py-4 font-medium text-gray-800">
                     {formatCurrency(item.standard_rate)}
                   </td>
@@ -404,7 +430,7 @@ export default function ItemsMaster(): JSX.Element {
 
       {showModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-hidden">
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-3xl max-h-[90vh] overflow-hidden">
             <div className="bg-gradient-to-r from-blue-600 to-blue-700 px-6 py-4 flex justify-between items-center">
               <h2 className="text-2xl font-bold text-white">
                 {editingId ? "Edit Item" : "Add Item"}
@@ -420,11 +446,8 @@ export default function ItemsMaster(): JSX.Element {
               </button>
             </div>
 
-            <form
-              onSubmit={handleSubmit}
-              className="p-6 overflow-y-auto max-h-[calc(90vh-80px)]"
-            >
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+            <form onSubmit={handleSubmit} className=" max-h-[calc(90vh-80px)]">
+              <div className="p-6 overflow-y-auto h-[60vh] grid grid-cols-1 md:grid-cols-3 gap-3  mb-6">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
                     Item Code <span className="text-red-500">*</span>
@@ -438,7 +461,7 @@ export default function ItemsMaster(): JSX.Element {
                         item_code: e.target.value.toUpperCase(),
                       })
                     }
-                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    className="w-full px-4 py-2 outline-none border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                     placeholder="MAT001"
                     required
                     disabled={!!editingId}
@@ -455,7 +478,7 @@ export default function ItemsMaster(): JSX.Element {
                     onChange={(e) =>
                       setFormData({ ...formData, item_name: e.target.value })
                     }
-                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    className="w-full px-4 py-2 outline-none border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                     placeholder="Cement Grade 43"
                     required
                   />
@@ -470,7 +493,7 @@ export default function ItemsMaster(): JSX.Element {
                     onChange={(e) =>
                       setFormData({ ...formData, category: e.target.value })
                     }
-                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                    className="w-full px-4 py-2 outline-none border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
                   >
                     <option value="material">Material</option>
                     <option value="service">Service</option>
@@ -486,7 +509,7 @@ export default function ItemsMaster(): JSX.Element {
                     onChange={(e) =>
                       setFormData({ ...formData, unit: e.target.value })
                     }
-                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                    className="w-full px-4 py-2 outline-none border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
                   >
                     <option value="nos">Nos</option>
                     <option value="kg">Kg</option>
@@ -510,29 +533,8 @@ export default function ItemsMaster(): JSX.Element {
                     onChange={(e) =>
                       setFormData({ ...formData, hsn_code: e.target.value })
                     }
-                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                    className="w-full px-4 py-2 outline-none border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
                     placeholder="2523"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    GST Rate (%) <span className="text-red-500">*</span>
-                  </label>
-                  <input
-                    type="text"
-                    value={formData.gst_rate}
-                    onChange={(e) =>
-                      setFormData({
-                        ...formData,
-                        gst_rate: parseFloat(e.target.value) || 0,
-                      })
-                    }
-                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-                    min="0"
-                    max="100"
-                    step="0.01"
-                    required
                   />
                 </div>
 
@@ -549,12 +551,73 @@ export default function ItemsMaster(): JSX.Element {
                         standard_rate: parseFloat(e.target.value) || 0,
                       })
                     }
-                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                    className="outline-none w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
                     min="0"
                     step="0.01"
                     required
                   />
                 </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    IGST Rate (%) <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    type="text"
+                    value={formData.igst_rate}
+                    onChange={(e) =>
+                      setFormData({
+                        ...formData,
+                        igst_rate: e.target.value,
+                      })
+                    }
+                    className="w-full px-4 py-2 outline-none border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                    required
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    CGST Rate (%) <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    type="text"
+                    value={formData.cgst_rate}
+                    onChange={(e) =>
+                      setFormData({
+                        ...formData,
+                        cgst_rate: e.target.value,
+                      })
+                    }
+                    className="w-full px-4 py-2 outline-none border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                    min="0"
+                    max="100"
+                    step="0.01"
+                    required
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    SGST Rate (%) <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    type="text"
+                    value={formData.sgst_rate}
+                    onChange={(e) =>
+                      setFormData({
+                        ...formData,
+                        sgst_rate: e.target.value,
+                      })
+                    }
+                    className="w-full px-4 py-2 outline-none border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                    min="0"
+                    max="100"
+                    step="0.01"
+                    required
+                  />
+                </div>
+
                 {formData.category === "material" && (
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -570,13 +633,13 @@ export default function ItemsMaster(): JSX.Element {
                           location: e.target.value,
                         })
                       }
-                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                      className="outline-none w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
                       required
                     />
                   </div>
                 )}
 
-                <div className="md:col-span-2">
+                <div className="md:col-span-3">
                   <label className="block text-sm font-medium text-gray-700 mb-2">
                     Description
                   </label>
@@ -585,16 +648,16 @@ export default function ItemsMaster(): JSX.Element {
                     onChange={(e) =>
                       setFormData({ ...formData, description: e.target.value })
                     }
-                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-                    rows={3}
+                    className="outline-none w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                    rows={2}
                   />
                 </div>
               </div>
 
-              <div className="flex gap-3 pt-6 border-t">
+              <div className="flex gap-3 p-6 border-t">
                 <button
                   type="submit"
-                  className="flex-1 bg-blue-600 text-white py-3 px-6 rounded-lg hover:bg-blue-700 transition font-medium shadow-sm"
+                  className="flex-1 bg-blue-600 text-white py-2 px-6 rounded-lg hover:bg-blue-700 transition font-medium shadow-sm"
                 >
                   {editingId ? "Update Item" : "Add Item"}
                 </button>
@@ -604,7 +667,7 @@ export default function ItemsMaster(): JSX.Element {
                     setShowModal(false);
                     resetForm();
                   }}
-                  className="px-6 py-3 border border-gray-300 rounded-lg hover:bg-gray-50 transition font-medium"
+                  className="px-6 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition font-medium"
                 >
                   Cancel
                 </button>
