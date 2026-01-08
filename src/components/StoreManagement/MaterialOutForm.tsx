@@ -310,7 +310,7 @@ export default function MaterialOutForm({
       <div className="bg-white rounded-2xl shadow-2xl w-full max-w-3xl my-8">
         {/* Header */}
         <div className="bg-gradient-to-r from-blue-600 to-blue-700 px-6 py-4 flex justify-between items-center rounded-t-2xl sticky top-0 z-10">
-          <h2 className="text-xl font-bold text-white flex items-center gap-2">
+          <h2 className="text-[0.9rem] md:text-xl font-bold text-white flex items-center gap-2">
             <Package className="w-5 h-5" />
             Material Out
           </h2>
@@ -329,7 +329,7 @@ export default function MaterialOutForm({
         <div className="my-3 px-6 py-3 min-h-300 max-h-[530px] overflow-y-scroll rounded-b-lg">
           <form onSubmit={handleSubmit} className="space-y-3">
             {/* Vendor Selection */}
-            <div className="grid grid-cols-3 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
                   Contact Person <span className="text-red-500">*</span>
@@ -404,7 +404,7 @@ export default function MaterialOutForm({
             </div>
 
             {/* Phone & Purpose */}
-            <div className="grid grid-cols-3 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
                   Issue Date <span className="text-red-500">*</span>
@@ -459,11 +459,11 @@ export default function MaterialOutForm({
                   </p>
                 </div>
               ) : (
-                <div className="space-y-3">
+                <div className="space-y-3 overflow-x-auto md:overflow-hidden">
                   {formData.materials.map((material) => (
                     <div
                       key={material.id}
-                      className="bg-gray-50 p-4 rounded-lg border border-gray-200"
+                      className="bg-gray-50 p-4 rounded-lg border border-gray-200 w-[600px] md:w-full"
                     >
                       <div className="grid grid-cols-12 gap-3 items-center">
                         <div className="col-span-4">
@@ -487,8 +487,7 @@ export default function MaterialOutForm({
                         </div>
                         <div className="col-span-3">
                           <label className="text-xs text-gray-600 mb-1 block">
-                            Total Quantity{" "}
-                            <span className="text-red-500">*</span>
+                            In Stock <span className="text-red-500">*</span>
                           </label>
                           <div className="flex items-center gap-2">
                             <input

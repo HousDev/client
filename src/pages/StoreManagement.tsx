@@ -440,15 +440,19 @@ export default function StoreManagement() {
   // --- Render Main UI ---
   return (
     <div className="p-6">
-      <div className="flex justify-between items-center mb-6">
+      <div className="flex flex-col md:flex-row justify-between items-center mb-6">
         <div>
-          <h1 className="text-3xl font-bold text-gray-800">Store Management</h1>
-          <p className="text-gray-600 mt-1">Manage and track inventory</p>
+          <h1 className="text-[1.2rem] md:text-3xl font-bold text-gray-800 ">
+            Store Management
+          </h1>
+          <p className="text-gray-600 mt-1 text-[0.8rem] md:text-[1rem]">
+            Manage and track inventory
+          </p>
         </div>
         <div className="flex items-center gap-3">
           {can("create_inventory") && (
             <div className="border-b border-gray-200 px-6 ">
-              <div className="flex space-x-4">
+              <div className="flex space-x-4 text-[0.8rem] md:text-[1rem]">
                 <button
                   onClick={() => setActiveFormTab("in")}
                   className={`flex items-center gap-2 px-4 py-3 font-medium rounded-t-lg transition-all ${
@@ -513,10 +517,10 @@ export default function StoreManagement() {
 
       {/* Tabs */}
       <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
-        <div className="flex border-b border-gray-200">
+        <div className="flex border-b border-gray-200 text-[0.8rem] md:text-[1rem]">
           <button
             onClick={() => setActiveTab("tracking")}
-            className={`flex-1 px-6 py-4 font-medium transition ${
+            className={`flex-1 px-6 py-2 md:py-4 font-medium transition ${
               activeTab === "tracking"
                 ? "text-blue-600 border-b-2 border-blue-600 bg-blue-50"
                 : "text-gray-600 hover:text-gray-800 hover:bg-gray-50"
@@ -529,7 +533,7 @@ export default function StoreManagement() {
           </button>
           <button
             onClick={() => setActiveTab("management")}
-            className={`flex-1 px-6 py-4 font-medium transition ${
+            className={`flex-1 px-6 py-2 md:py-4 font-medium transition ${
               activeTab === "management"
                 ? "text-blue-600 border-b-2 border-blue-600 bg-blue-50"
                 : "text-gray-600 hover:text-gray-800 hover:bg-gray-50"
@@ -546,7 +550,7 @@ export default function StoreManagement() {
       {/* Sub Tabs */}
       {activeTab === "tracking" && (
         <div className="bg-white rounded-xl shadow-sm border border-gray-200 mt-2 mb-6 overflow-hidden">
-          <div className="flex border-b border-gray-200">
+          <div className="flex border-b border-gray-200 text-[0.8rem] md:text-[1rem] flex-col md:flex-row">
             <button
               onClick={() => setSubTabs("MaterialIn")}
               className={`flex-1 px-6 py-2 font-medium transition ${

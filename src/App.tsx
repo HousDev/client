@@ -16,6 +16,7 @@ import Permissions from "./pages/Permissions";
 import StoreManagement from "./pages/StoreManagement";
 import { Buffer } from "buffer";
 import { Toaster } from "sonner";
+import MaterialRequests from "./pages/MaterialRequests";
 
 function AppContent() {
   const { user, loading } = useAuth();
@@ -52,6 +53,8 @@ function AppContent() {
         return <ServiceOrders />;
       case "materials":
         return <MaterialsEnhanced />;
+      case "material-requests":
+        return <MaterialRequests />;
       case "payments":
         return <PaymentsEnhanced />;
       case "notifications":
@@ -62,6 +65,7 @@ function AppContent() {
         return <Masters />;
       case "permissions":
         return <Permissions />;
+
       default:
         return <Dashboard />;
     }

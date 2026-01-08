@@ -92,17 +92,6 @@ const styles = StyleSheet.create({
   },
 });
 
-interface selectedPOType {
-  po_number: string;
-  po_date: string;
-  vendor_name: string;
-  vendor_address: string;
-  vendor_gstn: string;
-  vendor_phone: string;
-  po_items: [];
-  po_terms_and_conditions: string[];
-}
-
 const PurchaseOrderPDF = ({ selectedPO }: { selectedPO: any }) => (
   <Document>
     <Page size="A4" style={styles.page}>

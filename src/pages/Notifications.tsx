@@ -132,24 +132,24 @@ export default function Notifications() {
 
   return (
     <div className="space-y-6 p-6">
-      <div className="flex items-center justify-between">
+      <div className="grid grid-cols-1 sm:grid-cols-2 w-full">
         <div>
           <h1 className="text-3xl font-bold text-gray-800">Notifications</h1>
           <p className="text-gray-600 mt-1">
             Stay updated with important alerts
           </p>
         </div>
-        <div className="flex gap-2">
+        <div className="flex justify-start sm:justify-end gap-2 mt-3 sm:mt-0 w-full">
           <button
             onClick={loadNotifications}
-            className="px-3 py-2 bg-white border rounded-lg shadow-sm hover:bg-gray-50"
+            className="px-3 py-2 bg-white border rounded-lg shadow-sm hover:bg-gray-50 h-fit"
             title="Refresh"
           >
             Refresh
           </button>
           <button
             onClick={markAllRead}
-            className="px-3 py-2 bg-blue-600 text-white rounded-lg shadow-sm hover:bg-blue-700"
+            className="px-3 py-2 bg-blue-600 text-white rounded-lg shadow-sm hover:bg-blue-700 h-fit"
             title="Mark all read"
           >
             Mark all read
@@ -167,65 +167,69 @@ export default function Notifications() {
             <p className="text-gray-600">You're all caught up!</p>
           </div>
         ) : (
-          notifications.map((notif) => (
-            <div
-              key={notif.id}
-              className={`border rounded-xl p-4 ${getTypeColor(notif.type)} ${
-                notif.seen ? "opacity-75" : ""
-              }`}
-            >
-              <div className="flex items-start gap-4">
-                <div className="mt-1">{getTypeIcon(notif.type)}</div>
-                <div className="flex-1">
-                  <h3 className="font-semibold text-gray-800">{notif.title}</h3>
-                  <p className="text-gray-700 text-sm mt-1">
-                    {notif.description}
-                  </p>
-                  <p className="text-xs text-gray-500 mt-2">
-                    {new Date(notif.created_at).toLocaleDateString("en-IN", {
-                      day: "2-digit",
-                      month: "short",
-                      year: "numeric",
-                      hour: "2-digit",
-                      minute: "2-digit",
-                    })}
-                  </p>
-                </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-1 sm:gap-3">
+            {notifications.map((notif) => (
+              <div
+                key={notif.id}
+                className={`border rounded-xl p-4 ${getTypeColor(notif.type)} ${
+                  notif.seen ? "opacity-75" : ""
+                }`}
+              >
+                <div className="flex items-start gap-4">
+                  <div className="mt-1">{getTypeIcon(notif.type)}</div>
+                  <div className="flex-1">
+                    <h3 className="font-semibold text-gray-800">
+                      {notif.title}
+                    </h3>
+                    <p className="text-gray-700 text-sm mt-1">
+                      {notif.description}
+                    </p>
+                    <p className="text-xs text-gray-500 mt-2">
+                      {new Date(notif.created_at).toLocaleDateString("en-IN", {
+                        day: "2-digit",
+                        month: "short",
+                        year: "numeric",
+                        hour: "2-digit",
+                        minute: "2-digit",
+                      })}
+                    </p>
+                  </div>
 
-                <div className="flex flex-col gap-2 items-end">
-                  {!notif.seen && (
+                  <div className="flex flex-col gap-2 items-end">
+                    {!notif.seen && (
+                      <button
+                        onClick={() => markAsRead(notif.id)}
+                        className="flex-shrink-0 p-2 hover:bg-gray-200 rounded-lg transition"
+                        title="Mark as read"
+                      >
+                        <CheckCircle className="w-5 h-5 text-gray-600" />
+                      </button>
+                    )}
                     <button
-                      onClick={() => markAsRead(notif.id)}
+                      onClick={() => dismiss(notif.id)}
                       className="flex-shrink-0 p-2 hover:bg-gray-200 rounded-lg transition"
-                      title="Mark as read"
+                      title="Dismiss"
                     >
-                      <CheckCircle className="w-5 h-5 text-gray-600" />
+                      <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        className="w-5 h-5 text-gray-600"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth="2"
+                          d="M6 18L18 6M6 6l12 12"
+                        />
+                      </svg>
                     </button>
-                  )}
-                  <button
-                    onClick={() => dismiss(notif.id)}
-                    className="flex-shrink-0 p-2 hover:bg-gray-200 rounded-lg transition"
-                    title="Dismiss"
-                  >
-                    <svg
-                      xmlns="http://www.w3.org/2000/svg"
-                      className="w-5 h-5 text-gray-600"
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      stroke="currentColor"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth="2"
-                        d="M6 18L18 6M6 6l12 12"
-                      />
-                    </svg>
-                  </button>
+                  </div>
                 </div>
               </div>
-            </div>
-          ))
+            ))}
+          </div>
         )}
       </div>
     </div>

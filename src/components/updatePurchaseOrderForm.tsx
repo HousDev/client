@@ -6,6 +6,7 @@ import poApi from "../lib/poApi";
 import poTypeApi from "../lib/poTypeApi";
 import TermsConditionsApi from "../lib/termsConditionsApi";
 import { toast } from "sonner";
+import MySwal from "../utils/swal";
 
 /* --- types (same as yours) --- */
 interface POItem {
@@ -19,8 +20,14 @@ interface POItem {
   unit: string;
   rate: number;
   amount: number;
-  gst_rate: number;
-  gst_amount: number;
+
+  cgst_rate: number;
+  sgst_rate: number;
+  igst_rate: number;
+
+  cgst_amount: number;
+  sgst_amount: number;
+  igst_amount: number;
 }
 
 interface POFormData {
@@ -218,7 +225,7 @@ export default function UpdatePurchaseOrderForm({
   loadAllData: () => void;
   selectedPO: any;
 }): JSX.Element {
-  console.log("this is selected po data in update form", selectedPO);
+  console.log(selectedPO, "from update po");
   const { user } = useAuth();
   const [pos, setPOs] = useState<any[]>([]);
   const [vendors, setVendors] = useState<any[]>([]);
@@ -284,7 +291,12 @@ export default function UpdatePurchaseOrderForm({
   const loadVendors = async () => {
     try {
       const data = await poApi.getVendors(true);
-      setVendors(Array.isArray(data) ? data : []);
+      console.log(data, "update venders");
+      setVendors(
+        Array.isArray(data)
+          ? data.filter((d: any) => d.category_name === "Material")
+          : []
+      );
     } catch (err) {
       console.warn("loadVendors failed, fallback to empty", err);
       setVendors([]);
@@ -328,7 +340,10 @@ export default function UpdatePurchaseOrderForm({
           id: String(item.id),
         }));
         console.log(updatedData, "from items api");
-        setItems(updatedData);
+        const onlyMaterial = updatedData.filter(
+          (d: any) => d.category === "material"
+        );
+        setItems(onlyMaterial);
       } else {
         setItems([]);
       }
@@ -375,43 +390,74 @@ export default function UpdatePurchaseOrderForm({
 
   // --- Items helpers (keep existing functions) ---
   const addItemFromMaster = (item: any) => {
-    const newItem: POItem = {
-      id: (crypto as any).randomUUID
-        ? (crypto as any).randomUUID()
-        : Math.random().toString(36).slice(2, 9),
-      item_id: item.id,
-      item_code: item.item_code || "",
-      item_name: item.item_name || "",
-      description: item.description || "",
-      hsn_code: item.hsn_code || "",
-      quantity: 1,
-      unit: item.unit || "",
-      rate: item.standard_rate || 0,
-      amount: item.standard_rate || 0,
-      gst_rate: item.gst_rate || 0,
-      gst_amount: 0,
-    };
+    const existingIndex = formData.items.findIndex(
+      (i) => Number(i.item_id) === item.id
+    );
 
-    const newItems = [...formData.items, newItem];
-    setFormData({ ...formData, items: newItems });
+    let updatedItems: POItem[];
+
+    if (existingIndex !== -1) {
+      updatedItems = formData.items.map((i, index) => {
+        if (index === existingIndex) {
+          const newQty = Number(i.quantity || 0) + 1;
+          const rate = Number(i.rate || 0);
+          const amount = newQty * rate;
+
+          return {
+            ...i,
+            quantity: newQty,
+            amount,
+          };
+        }
+        return i;
+      });
+    } else {
+      const newItem: POItem = {
+        id: crypto.randomUUID(),
+        item_id: item.id,
+        item_code: item.item_code || "",
+        item_name: item.item_name || "",
+        description: item.description || "",
+        hsn_code: item.hsn_code || "",
+        quantity: 1,
+        unit: item.unit || "nos",
+        rate: Number(item.standard_rate || 0),
+        amount: Number(item.standard_rate || 0),
+
+        cgst_rate: Number(item.cgst_rate) || 0,
+        sgst_rate: Number(item.sgst_rate) || 0,
+        igst_rate: Number(item.igst_rate) || 0,
+
+        cgst_amount: 0,
+        sgst_amount: 0,
+        igst_amount: 0,
+      };
+
+      updatedItems = [...formData.items, newItem];
+    }
+
+    setFormData({ ...formData, items: updatedItems });
+
     calculateTotals(
-      newItems,
+      updatedItems,
       formData.discount_percentage,
       formData.is_interstate
     );
-    setShowItemSelector(false);
-    setItemSelectorSearch("");
-  };
 
+    setShowItemSelector(false);
+  };
   const handleItemChange = (index: number, field: keyof POItem, value: any) => {
     const newItems = [...formData.items];
     newItems[index] = { ...newItems[index], [field]: value };
 
     if (field === "quantity" || field === "rate") {
-      newItems[index].amount = newItems[index].quantity * newItems[index].rate;
+      const qty = Number(newItems[index].quantity || 0);
+      const rate = Number(newItems[index].rate || 0);
+      newItems[index].amount = qty * rate;
     }
 
     setFormData({ ...formData, items: newItems });
+
     calculateTotals(
       newItems,
       formData.discount_percentage,
@@ -448,49 +494,63 @@ export default function UpdatePurchaseOrderForm({
       console.log(error);
     }
   };
-
   const calculateTotals = (
     itemsList: POItem[],
     discountPercentage: number,
     isInterstate: boolean
   ) => {
-    const subtotal = itemsList.reduce(
-      (sum, item) => sum + (Number(item.amount) || 0),
-      0
-    );
-    const discountAmount = (subtotal * (discountPercentage || 0)) / 100;
-    const taxableAmount = subtotal - discountAmount;
+    let subtotal = 0;
+    let discountAmount = 0;
+    let taxableAmount = 0;
 
-    let cgstAmount = 0;
-    let sgstAmount = 0;
-    let igstAmount = 0;
+    let totalCGST = 0;
+    let totalSGST = 0;
+    let totalIGST = 0;
 
-    const newItems = itemsList.map((item) => {
-      const itemTaxable =
-        item.amount - (item.amount * (discountPercentage || 0)) / 100;
-      const itemGst = (itemTaxable * (item.gst_rate || 0)) / 100;
-      const gstAmount = itemGst;
+    const updatedItems = itemsList.map((item) => {
+      const amount = Number(item.amount || 0);
+      subtotal += amount;
+
+      const itemDiscount = (amount * (discountPercentage || 0)) / 100;
+      const itemTaxable = amount - itemDiscount;
+
+      let cgstAmount = 0;
+      let sgstAmount = 0;
+      let igstAmount = 0;
+
       if (isInterstate) {
-        igstAmount += gstAmount;
+        igstAmount = (itemTaxable * item.igst_rate) / 100;
+        totalIGST += igstAmount;
       } else {
-        cgstAmount += gstAmount / 2;
-        sgstAmount += gstAmount / 2;
+        cgstAmount = (itemTaxable * item.cgst_rate) / 100;
+        sgstAmount = (itemTaxable * item.sgst_rate) / 100;
+        totalCGST += cgstAmount;
+        totalSGST += sgstAmount;
       }
-      return { ...item, gst_amount: gstAmount };
+
+      return {
+        ...item,
+        cgst_amount: cgstAmount,
+        sgst_amount: sgstAmount,
+        igst_amount: igstAmount,
+      };
     });
 
-    const totalGstAmount = cgstAmount + sgstAmount + igstAmount;
+    discountAmount = (subtotal * (discountPercentage || 0)) / 100;
+    taxableAmount = subtotal - discountAmount;
+
+    const totalGstAmount = totalCGST + totalSGST + totalIGST;
     const grandTotal = taxableAmount + totalGstAmount;
 
     setFormData((prev) => ({
       ...prev,
-      items: newItems,
+      items: updatedItems,
       subtotal,
       discount_amount: discountAmount,
       taxable_amount: taxableAmount,
-      cgst_amount: cgstAmount,
-      sgst_amount: sgstAmount,
-      igst_amount: igstAmount,
+      cgst_amount: totalCGST,
+      sgst_amount: totalSGST,
+      igst_amount: totalIGST,
       total_gst_amount: totalGstAmount,
       grand_total: grandTotal,
     }));
@@ -568,6 +628,20 @@ export default function UpdatePurchaseOrderForm({
     console.log("form data after submiting form", formData);
 
     try {
+      if (
+        formData.vendor_id === "" ||
+        formData.project_id === "" ||
+        formData.po_type_id === "" ||
+        formData.po_date === "" ||
+        formData.delivery_date === ""
+      ) {
+        toast.error("Fill all required fields.");
+        return;
+      }
+      if (formData.items.length === 0) {
+        toast.error("Add Items.");
+        return;
+      }
       const payload = {
         po_number: formData.po_number,
         vendor_id: formData.vendor_id,
@@ -580,6 +654,7 @@ export default function UpdatePurchaseOrderForm({
         subtotal: formData.subtotal,
         discount_percentage: formData.discount_percentage,
         discount_amount: formData.discount_amount,
+        taxable_amount: formData.taxable_amount,
         cgst_amount: formData.cgst_amount,
         sgst_amount: formData.sgst_amount,
         igst_amount: formData.igst_amount,
@@ -608,7 +683,7 @@ export default function UpdatePurchaseOrderForm({
       loadPOs();
     } catch (err) {
       console.error("Error creating PO:", err);
-      toast.error("Error creating purchase order");
+      toast.error("Error update purchase order");
     }
   };
 
@@ -709,9 +784,16 @@ export default function UpdatePurchaseOrderForm({
                       name: v.name || v.vendor_name || v.display || "",
                     }))}
                     value={formData.vendor_id}
-                    onChange={(id) =>
-                      setFormData({ ...formData, vendor_id: id })
-                    }
+                    onChange={(id) => {
+                      const interState =
+                        vendors.find((d) => d.id === id).office_state !==
+                        "Maharashtra";
+                      setFormData({
+                        ...formData,
+                        vendor_id: id,
+                        is_interstate: interState,
+                      });
+                    }}
                     placeholder="Select Vendor"
                     required
                   />
@@ -792,7 +874,7 @@ export default function UpdatePurchaseOrderForm({
                   />
                 </div>
 
-                <div className="flex items-center pt-8">
+                {/* <div className="flex items-center pt-8">
                   <input
                     type="checkbox"
                     id="interstate"
@@ -806,7 +888,7 @@ export default function UpdatePurchaseOrderForm({
                   >
                     Interstate Supply (IGST)
                   </label>
-                </div>
+                </div> */}
               </div>
             </div>
 
@@ -865,7 +947,7 @@ export default function UpdatePurchaseOrderForm({
                             onChange={(e) => {
                               if (
                                 !/^\d*\.?\d*$/.test(e.target.value) ||
-                                Number(e.target.value) < 0
+                                parseFloat(e.target.value) < 0
                               )
                                 return;
                               handleItemChange(
@@ -913,28 +995,46 @@ export default function UpdatePurchaseOrderForm({
                             {formatCurrency(item.amount)}
                           </p>
                           <p className="text-xs text-gray-500">
-                            GST: {item.gst_rate}%
+                            {formData.is_interstate
+                              ? `IGST: ${item.igst_rate}%`
+                              : `CGST: ${item.cgst_rate}% + SGST: ${item.sgst_rate}%`}
                           </p>
                         </div>
                         <div className="col-span-1 flex justify-end pt-5">
                           <button
                             type="button"
-                            onClick={() => {
-                              const confirmDelete = window.confirm(
-                                "Are you sure you want to delete this PO?"
-                              );
-                              if (confirmDelete && item.materialTrackingId) {
+                            onClick={async () => {
+                              const result: any = await MySwal.fire({
+                                title: "Delete Item?",
+                                text: "This action cannot be undone",
+                                icon: "warning",
+                                showCancelButton: true,
+                              });
+
+                              if (!result.isConfirmed) return;
+                              if (
+                                result.isConfirmed &&
+                                item.materialTrackingId
+                              ) {
                                 deletePOItems(item.id, item.materialTrackingId);
-                                const d = formData.items.filter(
+                                const items = formData.items.filter(
                                   (i: any) => i.id !== item.id
                                 );
-                                setFormData({ ...formData, items: d });
+                                calculateTotals(
+                                  items,
+                                  formData.discount_percentage,
+                                  formData.is_interstate
+                                );
                               } else {
-                                if (confirmDelete) {
-                                  const d = formData.items.filter(
+                                if (result.isConfirmed) {
+                                  const items = formData.items.filter(
                                     (i: any) => i.id !== item.id
                                   );
-                                  setFormData({ ...formData, items: d });
+                                  calculateTotals(
+                                    items,
+                                    formData.discount_percentage,
+                                    formData.is_interstate
+                                  );
                                 }
                               }
                             }}
@@ -1151,9 +1251,16 @@ export default function UpdatePurchaseOrderForm({
                           <p className="text-xs text-gray-600">
                             per {item.unit}
                           </p>
-                          <p className="text-xs text-gray-500">
-                            GST: {item.gst_rate ?? 0}%
-                          </p>
+                          {formData.is_interstate ? (
+                            <p className="text-xs text-gray-500">
+                              IGST: {item.igst_rate ?? 0}%
+                            </p>
+                          ) : (
+                            <p className="text-xs text-gray-500">
+                              CGST: {item.cgst_rate ?? 0}% SGST:{" "}
+                              {item.sgst_rate ?? 0}%
+                            </p>
+                          )}
                         </div>
                       </div>
                       <span
