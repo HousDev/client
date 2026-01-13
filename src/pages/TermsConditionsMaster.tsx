@@ -9,12 +9,15 @@ import {
   Star,
   Filter,
   ChevronDown,
+  Package,
+  ReceiptText,
+  CheckSquare,
 } from "lucide-react";
 import TermsConditionsApi from "../lib/termsConditionsApi";
 import { TermsCondition } from "../lib/termsConditionsApi";
 import vendorApi from "../lib/vendorApi";
+import SearchableSelect from "../components/SearchableSelect";
 
-const STORAGE_KEY = "mock_terms_conditions_v1";
 const CATEGORY_OPTIONS = [
   {
     name: "Category",
@@ -38,161 +41,6 @@ const CATEGORY_OPTIONS = [
   },
 ];
 
-function SearchableSelect({
-  options,
-  value,
-  onChange,
-  placeholder = "Select...",
-  required = false,
-  disabled = false,
-  id,
-}: {
-  options: [];
-  value: Number;
-  onChange: (id: string) => void;
-  placeholder?: string;
-  required?: boolean;
-  disabled?: boolean;
-  id?: string;
-}) {
-  const [open, setOpen] = useState(false);
-  const [filter, setFilter] = useState("");
-  const [highlight, setHighlight] = useState(0);
-  const containerRef = useRef<HTMLDivElement | null>(null);
-
-  // Normalize options to {id,name}
-  const normalized = options.map((opt) =>
-    typeof opt === "string" ? { id: opt, name: opt } : opt
-  );
-
-  const selected = normalized.find((o) => Number(o.id) === value) || null;
-
-  const filtered = normalized.filter((o: any) =>
-    o.name.toLowerCase().includes(filter.toLowerCase())
-  );
-
-  useEffect(() => {
-    if (!open) setFilter("");
-    setHighlight(0);
-  }, [open]);
-
-  // close on outside click
-  useEffect(() => {
-    function onDocClick(e: MouseEvent) {
-      if (!containerRef.current) return;
-      if (!containerRef.current.contains(e.target as Node)) {
-        setOpen(false);
-      }
-    }
-    document.addEventListener("mousedown", onDocClick);
-    return () => document.removeEventListener("mousedown", onDocClick);
-  }, []);
-
-  const onKeyDown: React.KeyboardEventHandler<HTMLInputElement> = (e) => {
-    if (e.key === "ArrowDown") {
-      e.preventDefault();
-      setHighlight((h) => Math.min(h + 1, filtered.length - 1));
-    } else if (e.key === "ArrowUp") {
-      e.preventDefault();
-      setHighlight((h) => Math.max(h - 1, 0));
-    } else if (e.key === "Enter") {
-      e.preventDefault();
-      const opt = filtered[highlight];
-      if (opt) {
-        onChange(opt.id);
-        setOpen(false);
-      }
-    } else if (e.key === "Escape") {
-      setOpen(false);
-    }
-  };
-
-  return (
-    <div ref={containerRef} className="relative">
-      <div
-        className={`w-full flex items-center gap-2 px-3 py-3 border rounded-lg bg-white cursor-pointer ${
-          disabled ? "opacity-50 cursor-not-allowed" : "hover:shadow-sm"
-        }`}
-        onClick={() => !disabled && setOpen((s) => !s)}
-        role="button"
-        aria-haspopup="listbox"
-        aria-expanded={open}
-        id={id}
-      >
-        <div className="flex-1 text-left">
-          {selected ? (
-            <div className="text-sm text-gray-800">{selected.name}</div>
-          ) : (
-            <div className="text-sm text-gray-400">{placeholder}</div>
-          )}
-        </div>
-        <div>
-          <svg
-            className={`w-4 h-4 transform transition ${
-              open ? "rotate-180" : ""
-            }`}
-            viewBox="0 0 20 20"
-            fill="currentColor"
-          >
-            <path d="M5.23 7.21a.75.75 0 011.06-.02L10 10.585l3.71-3.396a.75.75 0 111.02 1.1l-4.185 3.833a.75.75 0 01-1.02 0L5.25 8.29a.75.75 0 01-.02-1.08z" />
-          </svg>
-        </div>
-      </div>
-
-      {/* dropdown */}
-      {open && (
-        <div className="absolute z-50 mt-2 w-full bg-white border border-gray-200 rounded-lg shadow-lg">
-          {/* search input */}
-          <div className="p-2">
-            <input
-              autoFocus
-              value={filter}
-              onChange={(e) => setFilter(e.target.value)}
-              onKeyDown={onKeyDown}
-              placeholder="Search..."
-              className="w-full px-3 py-2 border border-gray-200 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
-            />
-          </div>
-
-          <ul
-            role="listbox"
-            aria-labelledby={id}
-            className="max-h-60 overflow-y-auto divide-y divide-gray-100"
-          >
-            {filtered.length === 0 ? (
-              <li className="p-3 text-sm text-gray-500">No results</li>
-            ) : (
-              filtered.map((opt, idx) => (
-                <li
-                  key={opt.id}
-                  role="option"
-                  aria-selected={opt.id === value}
-                  className={`px-3 py-2 cursor-pointer text-sm ${
-                    idx === highlight ? "bg-blue-50" : "hover:bg-gray-50"
-                  } ${
-                    opt.id === value
-                      ? "font-medium text-gray-800"
-                      : "text-gray-700"
-                  }`}
-                  onMouseEnter={() => setHighlight(idx)}
-                  onClick={() => {
-                    onChange(opt.id);
-                    setOpen(false);
-                  }}
-                >
-                  {opt.name}
-                </li>
-              ))
-            )}
-          </ul>
-        </div>
-      )}
-      {/* hidden input to keep form semantics if you want to submit native form */}
-      <input type="hidden" value={String(value)} />
-    </div>
-  );
-}
-
 export default function TermsConditionsMaster() {
   const [terms, setTerms] = useState<TermsCondition[]>([]);
   const [allVendors, setAllVendors] = useState<any>([]);
@@ -201,10 +49,10 @@ export default function TermsConditionsMaster() {
   const [showModal, setShowModal] = useState(false);
   const [editingId, setEditingId] = useState<number | null>(null);
   const dropdownRef = useRef<HTMLDivElement | null>(null);
+  const [activeTab, setActiveTab] = useState<string>("vendor");
   const [formData, setFormData] = useState<TermsCondition>({
     id: 0,
     vendor_id: 0,
-    title: "",
     content: "",
     category: "general",
     is_default: false,
@@ -216,45 +64,6 @@ export default function TermsConditionsMaster() {
   const [selectedFilter, setSelectedFilter] = useState<any>("");
   const [filteredTerms, setFilteredTerms] = useState<TermsCondition[] | []>([]);
 
-  const seedIfEmpty = (): TermsCondition[] => {
-    const sample: TermsCondition[] = [
-      {
-        id: 0,
-        vendor_id: 0,
-        title: "Payment Terms - 30 Days",
-        content:
-          "Payment due within 30 days from invoice date. Late payments may incur interest.",
-        category: "payment",
-        is_default: true,
-        is_active: true,
-        created_at: new Date().toISOString(),
-      },
-      {
-        id: 0,
-        title: "Delivery Terms",
-        vendor_id: 0,
-        content:
-          "Deliveries will be made to the project site during working hours. Any delays will be communicated.",
-        category: "delivery",
-        is_default: false,
-        is_active: true,
-        created_at: new Date().toISOString(),
-      },
-      {
-        id: 0,
-        title: "Warranty",
-        vendor_id: 0,
-        content:
-          "Supplier provides a 12 month warranty for supplied materials under normal usage.",
-        category: "warranty",
-        is_default: false,
-        is_active: true,
-        created_at: new Date().toISOString(),
-      },
-    ];
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(sample));
-    return sample;
-  };
   const loadAllVendors = async () => {
     try {
       const vendorRes = await vendorApi.getVendors();
@@ -270,18 +79,6 @@ export default function TermsConditionsMaster() {
     try {
       const response = await TermsConditionsApi.getAllTC();
       setTerms(response ?? []);
-      // console.log(response, "all responnse");
-
-      // const raw = localStorage.getItem(STORAGE_KEY);
-      // if (!raw) {
-      //   const seeded = seedIfEmpty();
-      //   setTerms(seeded);
-      //   return;
-      // }
-      // const parsed: TermsCondition[] = JSON.parse(raw);
-      // // sort alphabetically by title
-      // parsed.sort((a, b) => (a.title || "").localeCompare(b.title || ""));
-      // setTerms(parsed);
     } catch (err) {
       console.error("Error reading terms (demo):", err);
       setTerms([]);
@@ -296,16 +93,15 @@ export default function TermsConditionsMaster() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  const persist = (next: TermsCondition[]) => {
-    try {
-      // keep sorted by title for UI parity
-      next.sort((a, b) => (a.title || "").localeCompare(b.title || ""));
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(next));
-      setTerms(next);
-    } catch (err) {
-      console.error("Error saving terms (demo):", err);
+  useEffect(() => {
+    let data;
+    if (activeTab === "common") {
+      data = terms.filter((tc) => !tc.vendor_id);
+    } else {
+      data = terms.filter((tc) => tc.vendor_id);
     }
-  };
+    setFilteredTerms(data);
+  }, [activeTab, terms]);
 
   // --- Helpers ---
 
@@ -315,17 +111,23 @@ export default function TermsConditionsMaster() {
     // console.log(formData, "from form submit");
     // validation
     if (
-      !formData.vendor_id ||
-      !formData.title.trim() ||
-      !formData.content.trim() ||
-      !formData.category.trim()
+      (!formData.vendor_id ||
+        !formData.content.trim() ||
+        !formData.category.trim()) &&
+      activeTab === "vendor"
     ) {
-      alert("Please fill required fields: Title, Content, Category");
+      alert("Please fill required fields: vender, Content, Category");
+      return;
+    }
+    if (
+      !formData.content.trim() ||
+      (!formData.category.trim() && activeTab === "common")
+    ) {
+      alert("Please fill required fields: Content, Category");
       return;
     }
     const payload = {
       vendor_id: formData.vendor_id,
-      title: formData.title,
       content: formData.content,
       category: formData.category,
       is_default: formData.is_default,
@@ -370,7 +172,6 @@ export default function TermsConditionsMaster() {
     setEditingId(term.id || null);
     setFormData({
       vendor_id: term.vendor_id,
-      title: term.title,
       content: term.content,
       category: term.category,
       is_default: !!term.is_default,
@@ -398,13 +199,6 @@ export default function TermsConditionsMaster() {
     }
   };
 
-  const toggleActive = (id: number, currentStatus: boolean) => {
-    const next = terms.map((t) =>
-      t.id === id ? { ...t, is_active: !currentStatus } : t
-    );
-    persist(next);
-  };
-
   const toggleDefault = async (id: number, currentStatus: boolean) => {
     try {
       const updateIsDefaultRes = await TermsConditionsApi.updateIsDefaultTC(
@@ -424,22 +218,12 @@ export default function TermsConditionsMaster() {
     } catch (error) {
       console.log(error);
     }
-    // if setting to true, unset others
-    // let next = [...terms];
-    // if (!currentStatus) {
-    //   next = next.map((t) => ({ ...t, is_default: t.id === id }));
-    // } else {
-    //   // removing default -> just set this to false
-    //   next = next.map((t) => (t.id === id ? { ...t, is_default: false } : t));
-    // }
-    // persist(next);
   };
 
   const resetForm = () => {
     setFormData({
       id: 0,
       vendor_id: 0,
-      title: "",
       content: "",
       category: "general",
       is_default: false,
@@ -449,25 +233,21 @@ export default function TermsConditionsMaster() {
     setEditingId(null);
   };
 
-  // --- filters & UI helpers ---
-  // let filteredTerms = terms.filter((term) => {
-  //   const q = searchTerm.toLowerCase();
-  //   return (
-  //     term.title.toLowerCase().includes(q) ||
-  //     term.content.toLowerCase().includes(q) ||
-  //     term.category.toLowerCase().includes(q)
-  //   );
-  // });
   const filterForSearch = () => {
     const data = terms.filter((term) => {
       const q = searchTerm.toLowerCase();
       return (
-        term.title.toLowerCase().includes(q) ||
         term.content.toLowerCase().includes(q) ||
         term.category.toLowerCase().includes(q)
       );
     });
-    setFilteredTerms(data);
+    let d;
+    if (activeTab === "vendor") {
+      d = data.filter((tc) => tc.vendor_id);
+    } else {
+      d = data.filter((tc) => !tc.vendor_id);
+    }
+    setFilteredTerms(d);
   };
   useEffect(() => {
     filterForSearch();
@@ -475,12 +255,30 @@ export default function TermsConditionsMaster() {
 
   const filterData = () => {
     let data: any = [];
-    if (typeof selectedFilter === "string") {
-      data = terms.filter((d) => d.category === selectedFilter);
-    } else if (typeof selectedFilter === "boolean") {
-      data = terms.filter((d) => d.is_active && selectedFilter);
+    if (activeTab === "vendor") {
+      if (typeof selectedFilter === "string") {
+        data = terms.filter(
+          (d) => d.category === selectedFilter && d.vendor_id
+        );
+      } else if (typeof selectedFilter === "boolean") {
+        data = terms.filter(
+          (d) => d.is_active && selectedFilter && d.vendor_id
+        );
+      } else {
+        data = terms.filter((d) => d.vendor_id);
+      }
     } else {
-      data = terms;
+      if (typeof selectedFilter === "string") {
+        data = terms.filter(
+          (d) => d.category === selectedFilter && !d.vendor_id
+        );
+      } else if (typeof selectedFilter === "boolean") {
+        data = terms.filter(
+          (d) => d.is_active && selectedFilter && !d.vendor_id
+        );
+      } else {
+        data = terms.filter((d) => !d.vendor_id);
+      }
     }
     setFilteredTerms(data);
   };
@@ -533,13 +331,45 @@ export default function TermsConditionsMaster() {
 
   return (
     <div className="p-3">
+      <div className="bg-white rounded-xl shadow-sm border border-gray-200 mb-6 overflow-hidden">
+        <div className="flex border-b border-gray-200">
+          <button
+            onClick={() => setActiveTab("vendor")}
+            className={`flex-1 px-6 py-3 font-medium transition ${
+              activeTab === "vendor"
+                ? "text-blue-600 border-b-2 border-blue-600 bg-blue-50"
+                : "text-gray-600 hover:text-gray-800 hover:bg-gray-50"
+            }`}
+          >
+            <div className="flex items-center justify-center gap-2">
+              <ReceiptText className="w-5 h-5" />
+              <span>Vender Terms & Conditions</span>
+            </div>
+          </button>
+          <button
+            onClick={() => setActiveTab("common")}
+            className={`flex-1 px-6 py-3 font-medium transition ${
+              activeTab === "common"
+                ? "text-blue-600 border-b-2 border-blue-600 bg-blue-50"
+                : "text-gray-600 hover:text-gray-800 hover:bg-gray-50"
+            }`}
+          >
+            <div className="flex items-center justify-center gap-2">
+              <ReceiptText className="w-5 h-5" />
+              <span>Common Terms & Conditions</span>
+            </div>
+          </button>
+        </div>
+      </div>
       <div className="flex justify-between items-center mb-6">
         <div>
           <h1 className="text-3xl font-bold text-gray-800">
-            Terms & Conditions Master
+            {activeTab === "vendor"
+              ? "Vendor Terms & Conditions Master"
+              : "Common Terms & Conditions Master"}
           </h1>
           <p className="text-gray-600 mt-1">
-            Manage terms and conditions for POs (demo/local)
+            Manage terms and conditions for POs
           </p>
         </div>
         <button
@@ -550,7 +380,7 @@ export default function TermsConditionsMaster() {
           className="bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition flex items-center gap-2 shadow-sm"
         >
           <Plus className="w-4 h-4" />
-          Add Terms
+          {activeTab === "vendor" ? "Add Vendor Terms" : "Add Common Terms"}
         </button>
       </div>
 
@@ -627,12 +457,11 @@ export default function TermsConditionsMaster() {
           <table className="min-w-full border-collapse">
             <thead className="bg-gray-50">
               <tr>
-                <th className="px-6 py-4 text-left text-sm font-semibold text-gray-700 border-b">
-                  Vendor
-                </th>
-                <th className="px-6 py-4 text-left text-sm font-semibold text-gray-700 border-b">
-                  Name
-                </th>
+                {activeTab === "vendor" && (
+                  <th className="px-6 py-4 text-left text-sm font-semibold text-gray-700 border-b">
+                    Vendor
+                  </th>
+                )}
                 <th className="px-6 py-4 text-left text-sm font-semibold text-gray-700 border-b">
                   Content
                 </th>
@@ -651,14 +480,12 @@ export default function TermsConditionsMaster() {
             <tbody className="divide-y divide-gray-200">
               {filteredTerms.map((term) => (
                 <tr key={term.id} className="hover:bg-gray-50">
-                  <td className="px-6 py-4 text-sm text-gray-700">
-                    {allVendors.find((v: any) => v.id === term.vendor_id)
-                      ?.name || "-"}
-                  </td>
-
-                  <td className="px-6 py-4 text-sm font-medium text-gray-800">
-                    {term.title}
-                  </td>
+                  {activeTab === "vendor" && (
+                    <td className="px-6 py-4 text-sm text-gray-700">
+                      {allVendors.find((v: any) => v.id === term.vendor_id)
+                        ?.name || "-"}
+                    </td>
+                  )}
 
                   <td className="px-6 py-4 text-sm text-gray-600 max-w-sm truncate">
                     {term.content}
@@ -689,10 +516,10 @@ export default function TermsConditionsMaster() {
                   <td className="px-6 py-4">
                     <button
                       onClick={() => toggleDefault(term.id, !!term.is_default)}
-                      className={`p-2 rounded-lg transition ${
+                      className={`p-1 rounded-lg transition ${
                         term.is_default
-                          ? "text-yellow-600 hover:bg-yellow-50"
-                          : "text-gray-400 hover:bg-gray-50"
+                          ? "text-green-600 bg-green-100 hover:bg-green-50"
+                          : "text-gray-500 hover:bg-gray-100"
                       }`}
                       title={
                         term.is_default
@@ -700,9 +527,9 @@ export default function TermsConditionsMaster() {
                           : "Set as default"
                       }
                     >
-                      <Star
+                      <CheckSquare
                         className={`w-4 h-4 ${
-                          term.is_default ? "fill-yellow-600" : ""
+                          term.is_default ? "text-green-700" : ""
                         }`}
                       />
                     </button>
@@ -747,8 +574,9 @@ export default function TermsConditionsMaster() {
       {showModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-hidden">
-            <div className="bg-gradient-to-r from-blue-600 to-blue-700 px-6 py-4 flex justify-between items-center">
-              <h2 className="text-2xl font-bold text-white">
+            <div className="bg-gradient-to-r from-blue-600 to-blue-700 px-6 py-3 flex justify-between items-center">
+              <h2 className="text-2xl font-bold text-white flex items-center">
+                <ReceiptText className="w-6 h-6 mr-3" />
                 {editingId ? "Edit Terms" : "Add Terms"}
               </h2>
               <button
@@ -766,40 +594,26 @@ export default function TermsConditionsMaster() {
               onSubmit={handleSubmit}
               className="p-6 overflow-y-auto max-h-[calc(90vh-80px)]"
             >
-              <div className="mb-6">
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Vendor <span className="text-red-500">*</span>
-                </label>
-                <SearchableSelect
-                  options={allVendors.map((v: any) => ({
-                    id: v.id,
-                    name: v.name || v.vendor_name || v.display || "",
-                  }))}
-                  value={Number(formData.vendor_id)}
-                  onChange={(id) =>
-                    setFormData({ ...formData, vendor_id: Number(id) })
-                  }
-                  placeholder="Select Vendor"
-                  required
-                />
-              </div>
-              <div className="space-y-6 mb-6">
-                <div>
+              {activeTab === "vendor" && (
+                <div className="mb-6">
                   <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Title <span className="text-red-500">*</span>
+                    Vendor <span className="text-red-500">*</span>
                   </label>
-                  <input
-                    type="text"
-                    value={formData.title}
-                    onChange={(e) =>
-                      setFormData({ ...formData, title: e.target.value })
+                  <SearchableSelect
+                    options={allVendors.map((v: any) => ({
+                      id: v.id,
+                      name: v.name || v.vendor_name || v.display || "",
+                    }))}
+                    value={Number(formData.vendor_id)}
+                    onChange={(id) =>
+                      setFormData({ ...formData, vendor_id: Number(id) })
                     }
-                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                    placeholder="Payment Terms - 30 Days"
+                    placeholder="Select Vendor"
                     required
                   />
                 </div>
-
+              )}
+              <div className="space-y-6 mb-6">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
                     Category <span className="text-red-500">*</span>
@@ -809,7 +623,7 @@ export default function TermsConditionsMaster() {
                     onChange={(e) =>
                       setFormData({ ...formData, category: e.target.value })
                     }
-                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                     required
                   >
                     <option value="general">General</option>
@@ -825,7 +639,7 @@ export default function TermsConditionsMaster() {
 
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Content <span className="text-red-500">*</span>
+                    Terms & Condition <span className="text-red-500">*</span>
                   </label>
                   <textarea
                     value={formData.content}
@@ -833,8 +647,8 @@ export default function TermsConditionsMaster() {
                       setFormData({ ...formData, content: e.target.value })
                     }
                     className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                    rows={6}
-                    placeholder="Enter the full terms and conditions text..."
+                    rows={3}
+                    placeholder="Enter the full terms & conditions text..."
                     required
                   />
                 </div>
@@ -888,7 +702,7 @@ export default function TermsConditionsMaster() {
               <div className="flex gap-3 pt-6 border-t">
                 <button
                   type="submit"
-                  className="flex-1 bg-blue-600 text-white py-3 px-6 rounded-lg hover:bg-blue-700 transition font-medium shadow-sm"
+                  className="flex-1 bg-blue-600 text-white py-2 px-6 rounded-lg hover:bg-blue-700 transition font-medium shadow-sm"
                 >
                   {editingId ? "Update Terms" : "Add Terms"}
                 </button>
@@ -898,7 +712,7 @@ export default function TermsConditionsMaster() {
                     setShowModal(false);
                     resetForm();
                   }}
-                  className="px-6 py-3 border border-gray-300 rounded-lg hover:bg-gray-50 transition font-medium"
+                  className="px-6 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition font-medium"
                 >
                   Cancel
                 </button>

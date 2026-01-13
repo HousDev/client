@@ -1,4 +1,5 @@
 // src/components/PurchaseOrders.tsx
+import axios from "axios";
 import { useState, useEffect } from "react";
 import {
   Plus,
@@ -13,6 +14,8 @@ import {
   FileCheck2,
   Check,
   IndianRupee,
+  FileDown,
+  Loader2,
 } from "lucide-react";
 import { useAuth } from "../contexts/AuthContext";
 import vendorApi from "../lib/vendorApi";
@@ -23,12 +26,11 @@ import po_trackingApi from "../lib/po_tracking";
 import CreatePurchaseOrderForm from "../components/CreatePurchaseOrderForm";
 import UpdatePurchaseOrderForm from "../components/updatePurchaseOrderForm";
 import ItemsApi from "../lib/itemsApi";
-import { PDFViewer } from "@react-pdf/renderer";
-import PurchaseOrderPDF from "../components/purchaseOrderPdf/PurchaseOrderPdf";
 import SearchableSelect from "../components/SearchableSelect";
 import { UsersApi } from "../lib/Api";
 import { toast } from "sonner";
 import MySwal from "../utils/swal";
+import TermsConditionsApi from "../lib/termsConditionsApi";
 
 type Vendor = {
   id: string;
@@ -92,6 +94,7 @@ export default function PurchaseOrders() {
   const [trackingData, setTrackingData] = useState<Tracking[]>([]);
   const [vendors, setVendors] = useState<Vendor[]>([]);
   const [projects, setProjects] = useState<Project[]>([]);
+  const [pdfUrl, setPdfUrl] = useState<any>("");
   const [poTypes, setPOTypes] = useState<POType[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
@@ -251,7 +254,6 @@ export default function PurchaseOrders() {
 
   const loadAllStoreManagementEmployee = async () => {
     const res: any = await UsersApi.list();
-    console.log(res);
     setAllStoreManagementEmployee(res ?? []);
   };
   useEffect(() => {
@@ -263,7 +265,6 @@ export default function PurchaseOrders() {
   const loadVendor = async () => {
     try {
       const response = await vendorApi.getVendors();
-      console.log("Venders", response);
       return response;
     } catch (error) {
       console.log(error);
@@ -272,7 +273,6 @@ export default function PurchaseOrders() {
   const loadProjects = async () => {
     try {
       const response: any = await projectApi.getProjects();
-      console.log("Projects", response);
       return response.data;
     } catch (error) {
       console.log(error);
@@ -281,7 +281,6 @@ export default function PurchaseOrders() {
   const loadPO_Type = async () => {
     try {
       const response = await poTypeApi.getPOTypes();
-      console.log("PO_Types", response);
       return response;
     } catch (error) {
       console.log(error);
@@ -290,7 +289,6 @@ export default function PurchaseOrders() {
   const loadPOS = async () => {
     try {
       const response = await poApi.getPOs();
-      console.log("POs", response);
       return response;
     } catch (error) {
       console.log(error);
@@ -299,7 +297,6 @@ export default function PurchaseOrders() {
   const loadTrackings = async () => {
     try {
       const response = await po_trackingApi.getTrackings();
-      console.log("POs Trackings : ", response);
       return response;
     } catch (error) {
       console.log(error);
@@ -723,7 +720,6 @@ export default function PurchaseOrders() {
         id: String(item.id),
       }));
       setItems(updatedData);
-      console.log(data, "from purchase orders items");
     } catch (error) {
       console.log(error);
     }
@@ -732,7 +728,6 @@ export default function PurchaseOrders() {
   const loadAllPOsItems = async () => {
     try {
       const data: any = await poApi.getPOsItems();
-      console.log(data, "all po items");
       setAllPurchaseOrderItems(data.data);
       // console.log(data, "from purchase orders items");
     } catch (error) {
@@ -771,6 +766,36 @@ export default function PurchaseOrders() {
       style: "currency",
       currency: "INR",
     }).format(amount || 0);
+  };
+
+  const viewPoPdf = async (id: number, type = "view") => {
+    try {
+      setPdfLoading(true);
+      setShowViewModal(type === "view");
+      const res = await axios.get(
+        import.meta.env.VITE_API_URL + "/pdf/po/" + id,
+        {
+          responseType: "blob", // IMPORTANT: treat response as binary
+        }
+      );
+      const fileURL = URL.createObjectURL(res.data);
+      if (type === "view") {
+        setPdfUrl(fileURL);
+        setPdfLoading(false);
+      } else {
+        const a = document.createElement("a");
+        a.href = fileURL;
+        a.download = `PO_${id}.pdf`; // filename
+        document.body.appendChild(a);
+
+        // 4️⃣ Trigger click to download
+        a.click();
+        setPdfLoading(false);
+      }
+    } catch (error) {
+      console.log(error);
+      toast.error("Something went wrong.");
+    }
   };
 
   // --- UI states while loading ---
@@ -1050,27 +1075,23 @@ export default function PurchaseOrders() {
                     <td className="px-6 py-4">
                       <div className="flex gap-2">
                         <button
-                          className="p-2 text-black hover:bg-blue-50 rounded-lg transition hidden"
+                          onClick={() => {
+                            viewPoPdf(po.id, "download");
+                            setPdfUrl(po.id);
+                          }}
+                          disabled={pdfLoading}
+                          className="p-2 text-black hover:bg-blue-50 rounded-lg transition"
                           title="View"
                         >
-                          {/* <PDFDownloadLink
-                            document={
-                              <PurchaseOrderPDF selectedPO={selectedPO} />
-                            }
-                            fileName="purchase-order.pdf"
-                          >
-                            {({ loading }) =>
-                              loading ? (
-                                <Loader2 className="w-4 h-4" />
-                              ) : (
-                                <FileDown className="w-4 h-4" />
-                              )
-                            }
-                          </PDFDownloadLink> */}
+                          {pdfLoading && pdfUrl === po.id ? (
+                            <Loader2 className="w-4 h-4 animate-spin" />
+                          ) : (
+                            <FileDown className="w-4 h-4 " />
+                          )}
                         </button>
                         <button
                           onClick={() => {
-                            handleView(po);
+                            viewPoPdf(po.id);
                           }}
                           className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition"
                           title="View"
@@ -1079,8 +1100,7 @@ export default function PurchaseOrders() {
                         </button>
                         {can("edit_pos") && po.status === "draft" && (
                           <button
-                            onClick={() => {
-                              console.log("this is po data : ", po);
+                            onClick={async () => {
                               if (!allPurchaseOrderItems) {
                                 toast.success("wait data is loading");
                                 return;
@@ -1088,7 +1108,6 @@ export default function PurchaseOrders() {
                               const itemsList = allPurchaseOrderItems.filter(
                                 (d: any) => d.po_id === po.id
                               );
-                              console.log(itemsList, "form update button");
                               const result = itemsList.map((item: any) => {
                                 let materialTrackingId = null;
 
@@ -1114,6 +1133,56 @@ export default function PurchaseOrders() {
                                 };
                               });
 
+                              const vendorTerms: any =
+                                (await TermsConditionsApi.getByIdVendorTC(
+                                  po.vendor_id
+                                )) || [];
+
+                              const selected_terms_idsData = JSON.parse(
+                                po.selected_terms_ids
+                              );
+
+                              const terms_and_conditionsData =
+                                JSON.parse(po.terms_and_conditions) || [];
+
+                              const terms =
+                                vendorTerms.filter((term: any) =>
+                                  selected_terms_idsData.includes(term.id)
+                                ) || [];
+
+                              console.log(terms, "this is terms");
+
+                              terms_and_conditionsData.forEach(
+                                (element: any) => {
+                                  terms.push(element);
+                                }
+                              );
+
+                              const formatedTerms: any = Object.values(
+                                terms.reduce((acc: any, item: any) => {
+                                  const key = item.category;
+
+                                  if (!acc[key]) {
+                                    acc[key] = {
+                                      id: item.id,
+                                      vendor_id: item.vendor_id,
+                                      category: item.category,
+                                      content: [],
+                                      is_active: item.is_active,
+                                    };
+                                  }
+
+                                  acc[key].content.push({
+                                    content: item.content,
+                                    is_default: Boolean(item.is_default),
+                                    term_id: item.id,
+                                  });
+                                  acc[key].isActive = false;
+
+                                  return acc;
+                                }, {})
+                              );
+
                               const data = {
                                 poId: po.id,
                                 advance_amount: po.advance_amount,
@@ -1135,15 +1204,11 @@ export default function PurchaseOrders() {
                                 sgst_amount: po.sgst_amount ?? 0,
                                 subtotal: po.subtotal ?? 0,
                                 taxable_amount: po.taxable_amount ?? 0,
-                                terms_and_conditions:
-                                  po.terms_and_conditions ?? "",
+                                terms_and_conditions: formatedTerms ?? [],
                                 total_gst_amount: po.total_gst_amount ?? 0,
                                 vendor_id: Number(po.vendor_id),
                               };
-                              console.log(
-                                data,
-                                "after some op on data in edit button"
-                              );
+
                               setSelectedPOForUpdate(data);
                               setShowEditModal(true);
                             }}
@@ -1275,7 +1340,7 @@ export default function PurchaseOrders() {
       )}
 
       {/* View Modal */}
-      {showViewModal && selectedPO && (
+      {showViewModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-2xl shadow-2xl w-full max-w-4xl max-h-[95vh] overflow-hidden">
             <div className="bg-gradient-to-r from-blue-600 to-blue-700 px-6 py-4 flex justify-between items-center">
@@ -1298,22 +1363,16 @@ export default function PurchaseOrders() {
                   </div>
                 </div>
               ) : (
-                <PDFViewer width="100%" height="600" className="bg-white">
-                  <PurchaseOrderPDF
-                    selectedPO={
-                      selectedPO ?? {
-                        po_number: 0,
-                        po_date: 0,
-                        vendor_name: "",
-                        vendor_address: ``,
-                        vendor_gstn: "",
-                        vendor_phone: "",
-                        po_items: "",
-                        po_terms_and_conditions: [],
-                      }
-                    }
-                  />
-                </PDFViewer>
+                <div>
+                  {pdfUrl && (
+                    <iframe
+                      src={pdfUrl}
+                      width="100%"
+                      height="600"
+                      style={{ border: "none" }}
+                    />
+                  )}
+                </div>
               )}
             </div>
           </div>

@@ -19,6 +19,7 @@ import { toast } from "sonner";
 import ItemsApi from "../../lib/itemsApi";
 import { useAuth } from "../../contexts/AuthContext";
 import RequestMaterialApi from "../../lib/requestMaterialApi";
+import inventoryApi from "../../lib/inventoryApi";
 
 interface MaterialOutFormProps {
   setShowRequestMaterial: React.Dispatch<SetStateAction<boolean>>;
@@ -44,7 +45,7 @@ export default function RequestMaterial({
   const [showMaterialSelector, setShowMaterialSelector] = useState(false);
   const [materialSearch, setMaterialSearch] = useState("");
   const [allProjects, setAllProjects] = useState<any[]>([]);
-  const [allInventory, setAllInventory] = useState<any>([]);
+  const [allItems, setAllItems] = useState<any>([]);
 
   const defaultWork = [
     "RCC (Structure)",
@@ -259,7 +260,15 @@ export default function RequestMaterial({
   const loadItems = async () => {
     try {
       const itemsRes: any = await ItemsApi.getItems();
-      setAllInventory(Array.isArray(itemsRes) ? itemsRes : []);
+      const allInventory: any = await inventoryApi.getInventory();
+      const data = itemsRes.map((item: any) => {
+        const inventoryItem = allInventory.find(
+          (ii: any) => ii.item_id === item.id
+        );
+        return { ...item, inventoryItem: inventoryItem };
+      });
+      console.log(data, "res");
+      setAllItems(Array.isArray(data) ? data : []);
     } catch (error) {
       toast.error("Something went wrong while fetching items.");
     }
@@ -276,7 +285,7 @@ export default function RequestMaterial({
     setFormData((prev: any) => ({ ...prev, materials: updatedMaterials }));
   };
 
-  const filteredInventory = allInventory.filter((item: any) => {
+  const filteredInventory = allItems.filter((item: any) => {
     const searchTerm = materialSearch.toLowerCase();
     return (
       (item.item_name || "").toLowerCase().includes(searchTerm) ||
@@ -291,7 +300,7 @@ export default function RequestMaterial({
         return false;
       }
 
-      const stockItem = allInventory.find(
+      const stockItem = allItems.find(
         (item: any) => item.id === material.materialId
       );
       if (stockItem && parseFloat(material.quantity) > stockItem.quantity) {
@@ -660,73 +669,88 @@ export default function RequestMaterial({
                 ) : (
                   <div className="space-y-3 overflow-x-auto">
                     <div className="w-full">
-                      {formData.materials.map((material: any) => (
-                        <div
-                          key={material.id}
-                          className="bg-gray-50 p-3 sm:p-4 rounded-lg border border-gray-200"
-                        >
-                          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 items-center">
-                            <div>
-                              <label className="text-xs text-gray-600">
-                                Material
-                              </label>
-                              <p className="font-medium text-gray-800 text-sm sm:text-base truncate">
-                                {material.materialName}
-                              </p>
-                            </div>
+                      {formData.materials.map((material: any) => {
+                        const inventory = allItems.find(
+                          (d: any) => d.id === material.materialId
+                        ).inventoryItem;
+                        return (
+                          <div
+                            key={material.id}
+                            className="bg-gray-50 p-3 sm:p-4 rounded-lg border border-gray-200"
+                          >
+                            <div className="grid grid-cols-1 sm:grid-cols-4 gap-3 items-center">
+                              <div>
+                                <label className="text-xs text-gray-600">
+                                  Material
+                                </label>
+                                <p className="font-medium text-gray-800 text-sm sm:text-base truncate">
+                                  {material.materialName}
+                                </p>
+                              </div>
 
-                            <div className="w-40 sm:w-full">
-                              <label className="text-xs text-gray-600 mb-1 block">
-                                Required Quantity{" "}
-                                <span className="text-red-500">*</span>
-                              </label>
-                              <div className="flex items-center gap-2">
-                                <input
-                                  type="text"
-                                  value={material.quantity}
-                                  onChange={(e) => {
-                                    if (
-                                      !/^\d*\.?\d*$/.test(e.target.value) ||
-                                      Number(e.target.value) < 0
-                                    )
-                                      return;
-                                    if (
-                                      material.currentStock < e.target.value
-                                    ) {
-                                      toast.warning(
-                                        "Entered quantity is exceeding stock quantity."
-                                      );
-                                      return;
-                                    }
-                                    updateMaterialQuantity(
-                                      material.id,
-                                      e.target.value
-                                    );
-                                  }}
-                                  className="outline-none w-full sm:w-24 px-3 py-1.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
-                                  min="0.01"
-                                  step="0.01"
-                                  required
-                                />
-                                <span className="text-sm font-semibold whitespace-nowrap">
+                              <div>
+                                <label className="text-xs text-gray-600">
+                                  Stock
+                                </label>
+                                <p className="font-medium text-gray-800 text-sm sm:text-base truncate">
+                                  {inventory.quantity_after_approve}{" "}
                                   {material.unit}
-                                </span>
+                                </p>
+                              </div>
+
+                              <div className="w-40 sm:w-full">
+                                <label className="text-xs text-gray-600 mb-1 block">
+                                  Required Quantity{" "}
+                                  <span className="text-red-500">*</span>
+                                </label>
+                                <div className="flex items-center gap-2">
+                                  <input
+                                    type="text"
+                                    value={material.quantity}
+                                    onChange={(e) => {
+                                      if (
+                                        !/^\d*\.?\d*$/.test(e.target.value) ||
+                                        Number(e.target.value) < 0
+                                      )
+                                        return;
+                                      if (
+                                        material.currentStock < e.target.value
+                                      ) {
+                                        toast.warning(
+                                          "Entered quantity is exceeding stock quantity."
+                                        );
+                                        return;
+                                      }
+                                      updateMaterialQuantity(
+                                        material.id,
+                                        e.target.value
+                                      );
+                                    }}
+                                    className="outline-none w-full sm:w-24 px-3 py-1.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
+                                    min="0.01"
+                                    step="0.01"
+                                    required
+                                  />
+                                  <span className="text-sm font-semibold whitespace-nowrap">
+                                    {material.unit}
+                                  </span>
+                                </div>
+                              </div>
+
+                              <div className="flex">
+                                <button
+                                  type="button"
+                                  onClick={() => removeMaterial(material.id)}
+                                  className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition"
+                                  title="Remove"
+                                >
+                                  <Trash2 className="w-4 h-4" />
+                                </button>
                               </div>
                             </div>
-
-                            <div className="flex">
-                              <button
-                                type="button"
-                                onClick={() => removeMaterial(material.id)}
-                                className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition"
-                                title="Remove"
-                              >
-                                <Trash2 className="w-4 h-4" />
-                              </button>
-                            </div>
                           </div>
-                        </div>
-                      ))}
+                        );
+                      })}
                     </div>
                   </div>
                 )}
@@ -812,7 +836,7 @@ export default function RequestMaterial({
                             : "border-gray-200 hover:bg-blue-50 hover:border-blue-300"
                         }`}
                       >
-                        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 items-start">
+                        <div className="grid grid-cols-1 sm:grid-cols-4 gap-3 items-start">
                           <div>
                             <div className="flex items-center gap-2 mb-1">
                               <p className="font-medium text-gray-800 text-sm sm:text-base truncate">
@@ -841,6 +865,19 @@ export default function RequestMaterial({
                             {item.hsn_code && (
                               <p className="text-start text-sm text-gray-500">
                                 {item.hsn_code}
+                              </p>
+                            )}
+                          </div>
+
+                          <div>
+                            <div className="flex items-center gap-2 mb-1">
+                              <p className="font-medium text-gray-800 text-sm sm:text-base">
+                                Stock
+                              </p>
+                            </div>
+                            {item.inventoryItem && (
+                              <p className="text-start text-sm text-gray-500">
+                                {item.inventoryItem.quantity_after_approve}
                               </p>
                             )}
                           </div>
