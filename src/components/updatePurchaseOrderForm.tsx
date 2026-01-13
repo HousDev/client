@@ -55,7 +55,7 @@ interface POFormData {
   terms_and_conditions: any[];
   notes: string;
 }
-
+type addTermType = { category: string; content: string; is_default: boolean };
 type Option = { id: string; name: string } | string;
 
 /* ------------------ SearchableSelect component (inline) ------------------ */
@@ -242,6 +242,14 @@ export default function UpdatePurchaseOrderForm({
   const [showItemSelector, setShowItemSelector] = useState(false);
   const [newTermsAndCondition, setNewTermsAndConditions] = useState("");
 
+  const [showAddTerm, setShowAddTerm] = useState<boolean>(false);
+  const [extraTerms, setExtraTerms] = useState<addTermType[]>([]);
+  const [extraTermData, setExtraTermData] = useState<addTermType>({
+    category: "",
+    content: "",
+    is_default: false,
+  });
+
   // item selector internal search
   const [itemSelectorSearch, setItemSelectorSearch] = useState("");
 
@@ -356,14 +364,18 @@ export default function UpdatePurchaseOrderForm({
       const data: any = await TermsConditionsApi.getByIdVendorTC(
         selectedPO.vendor_id
       );
-      const tempTerms = formData.terms_and_conditions.split(",");
-      tempTerms.forEach((d: any) => {
-        const existing = data.some((i: any) => i.content.includes(d));
-        if (!existing) {
-          data.push({ content: d });
-        }
-      });
-      setTerms(Array.isArray(data) ? data : []);
+      if (Array.isArray(data)) {
+        const newData = [];
+        selectedPO.terms_and_conditions.forEach((element: any) => {
+          const status = true;
+          element.forEach((element1: any) => {
+            data.forEach((element2: any) => {});
+          });
+        });
+        setTerms(Array.isArray(data) ? data : []);
+      } else {
+        setTerms([]);
+      }
     } catch (err) {
       console.warn("loadTerms failed, fallback to empty", err);
       setTerms([]);
@@ -701,7 +713,7 @@ export default function UpdatePurchaseOrderForm({
       payment_terms_id: "",
       advance_amount: 0,
       selected_terms_ids: [],
-      terms_and_conditions: "",
+      terms_and_conditions: [],
       notes: "",
     });
     setItemSelectorSearch("");
@@ -716,6 +728,7 @@ export default function UpdatePurchaseOrderForm({
 
   // --- item selector filtering by selected PO type category + search
   const selectedCategory = getselectedPOSTypeCategory(); // 'material' | 'service' | null
+
   const filteredItems = items
     .filter((it) => {
       // if category known, filter by it
@@ -1073,44 +1086,21 @@ export default function UpdatePurchaseOrderForm({
                 <div className="py-3">
                   <ul className="px-6 list-decimal">
                     {formData.terms_and_conditions.map((d, indx: number) => {
-                      const extraTCData =
-                        extraTerms.filter(
-                          (ed: any) =>
-                            ed.category === d.category && ed.is_default
-                        ) || [];
-                      if (
-                        d.content.find((d: any) => d.is_default) ||
-                        extraTCData.length > 0
-                      ) {
-                        return (
-                          <li className="mb-3" key={indx}>
-                            <div>
-                              <h1 className="font-semibold">
-                                {d.category.charAt(0).toUpperCase() +
-                                  d.category.slice(1) || ""}
-                              </h1>
-                            </div>
-                            <ul className=" ml-3 list-disc">
-                              {d.content.map((term: any, idx: number) => {
-                                return (
-                                  term.is_default && (
-                                    <li key={idx}>{term.content}</li>
-                                  )
-                                );
-                              })}
-                              {extraTCData.map((etc: any) => {
-                                return (
-                                  etc.is_default && (
-                                    <li key={etc.content}>{etc.content}</li>
-                                  )
-                                );
-                              })}
-                            </ul>
-                          </li>
-                        );
-                      } else {
-                        return;
-                      }
+                      return (
+                        <li className="mb-3" key={indx}>
+                          <div>
+                            <h1 className="font-semibold">
+                              {d.category.charAt(0).toUpperCase() +
+                                d.category.slice(1) || ""}
+                            </h1>
+                          </div>
+                          <ul className=" ml-3 list-disc">
+                            {d.content.map((term: any, idx: number) => {
+                              return <li key={idx}>{term.content}</li>;
+                            })}
+                          </ul>
+                        </li>
+                      );
                     })}
                   </ul>
                 </div>
@@ -1269,101 +1259,224 @@ export default function UpdatePurchaseOrderForm({
               <h2 className="text-2xl font-bold text-white">
                 Add Terms & Conditions
               </h2>
-              <button
-                onClick={() => setShowTermsConditions(false)}
-                className="text-white hover:bg-white hover:bg-opacity-20 rounded-lg p-2 transition"
-              >
-                <X className="w-6 h-6" />
-              </button>
+              <div className="flex">
+                <button
+                  onClick={() => setShowAddTerm(true)}
+                  className="text-white bg-green-600 hover:bg-green-700 rounded-lg px-3 font-semibold py-1 flex items-center mr-3 text-sm"
+                >
+                  <Plus className="w-4 h-4" /> Add
+                </button>
+                <button
+                  onClick={() => setShowTermsConditions(false)}
+                  className="text-white hover:bg-white hover:bg-opacity-20 rounded-lg p-2 transition"
+                >
+                  <X className="w-6 h-6" />
+                </button>
+              </div>
             </div>
-            <div className="py-6">
+            <div className="py-6 ">
               <ul className="px-6">
-                {terms.map((d) => (
-                  <li className="mb-3">
-                    <button
-                      onClick={() => {
-                        if (formData.terms_and_conditions.includes(d.content)) {
-                          if (
-                            formData.terms_and_conditions.includes(
-                              d.content + ","
-                            )
-                          ) {
-                            setFormData((prev) => ({
-                              ...prev,
-                              terms_and_conditions:
-                                prev.terms_and_conditions.replace(
-                                  d.content + ",",
-                                  ""
-                                ),
-                            }));
-                          } else {
-                            setFormData((prev) => ({
-                              ...prev,
-                              terms_and_conditions:
-                                prev.terms_and_conditions.replace(
-                                  d.content,
-                                  ""
-                                ),
-                            }));
-                          }
-                        } else {
-                          setFormData((prev) => ({
-                            ...prev,
-                            terms_and_conditions: prev.terms_and_conditions
-                              ? `${prev.terms_and_conditions}, ${d.content}`
-                              : d.content,
-                          }));
-                        }
-                      }}
-                      className="flex items-center cursor-pointer"
-                    >
-                      <input
-                        type="checkbox"
-                        checked={formData.terms_and_conditions.includes(
-                          d.content
-                        )}
-                        className="w-4 h-4 text-blue-600 rounded focus:ring-2 focus:ring-blue-500 mr-3 cursor-pointer"
-                      />
-                      <span className="text-justify">{d.content}</span>
-                    </button>
-                  </li>
-                ))}
+                {terms.map((d, indx: number) => {
+                  const extraTCData =
+                    extraTerms.filter(
+                      (ed: any) => ed.category === d.category
+                    ) || [];
+                  return (
+                    <li className="mb-3" key={indx}>
+                      <div>
+                        <h1 className="font-semibold">
+                          <input
+                            type="checkbox"
+                            onChange={(e) => {
+                              setTerms((prev) =>
+                                prev.map((tc) =>
+                                  tc.id === d.id
+                                    ? {
+                                        ...tc,
+                                        isActive: !tc.isActive,
+                                        content: tc.content.map((i: any) => ({
+                                          ...i,
+                                          is_default: !tc.isActive,
+                                        })),
+                                      }
+                                    : tc
+                                )
+                              );
+
+                              setExtraTerms((prev) =>
+                                prev.map((tc) =>
+                                  tc.category === d.category
+                                    ? {
+                                        ...tc,
+                                        is_default: !d.isActive,
+                                      }
+                                    : tc
+                                )
+                              );
+                            }}
+                            checked={d.isActive}
+                            className="w-4 h-4 accent-blue-600 cursor-pointer mr-1"
+                          />{" "}
+                          {d.category.charAt(0).toUpperCase() +
+                            d.category.slice(1) || ""}
+                        </h1>
+                      </div>
+                      <ul className=" ml-3">
+                        {d.content.map((term: any, idx: number) => {
+                          return (
+                            <li key={idx}>
+                              <input
+                                type="checkbox"
+                                checked={term.is_default}
+                                onChange={(e) => {
+                                  setTerms((prev) =>
+                                    prev.map((tc) =>
+                                      tc.id === d.id
+                                        ? {
+                                            ...tc,
+                                            content: tc.content.map((i: any) =>
+                                              i.term_id === term.term_id
+                                                ? {
+                                                    ...i,
+                                                    is_default: !i.is_default,
+                                                  }
+                                                : i
+                                            ),
+                                          }
+                                        : tc
+                                    )
+                                  );
+                                }}
+                                className="w-4 h-4 accent-blue-600 cursor-pointer mr-1"
+                              />{" "}
+                              {term.content}
+                            </li>
+                          );
+                        })}
+                        {extraTCData.map((etc: any) => {
+                          return (
+                            <li key={etc.content}>
+                              <input
+                                type="checkbox"
+                                checked={etc.is_default}
+                                onChange={() => {
+                                  setExtraTerms((prev) =>
+                                    prev.map((etci) =>
+                                      etci.content === etc.content
+                                        ? {
+                                            ...etci,
+                                            is_default: !etci.is_default, // ✅ TOGGLE
+                                          }
+                                        : etci
+                                    )
+                                  );
+                                }}
+                                className="w-4 h-4 accent-blue-600 cursor-pointer mr-1"
+                              />{" "}
+                              {etc.content}
+                            </li>
+                          );
+                        })}
+                      </ul>
+                    </li>
+                  );
+                })}
               </ul>
             </div>
-            <div className="flex gap-3 items-end mb-6 px-6">
-              <div className="w-full">
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Add Extra Terms & Conditions
-                </label>
-                <div>
-                  <input
-                    type="text"
-                    value={newTermsAndCondition}
-                    onChange={(e) => setNewTermsAndConditions(e.target.value)}
-                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  />
-                </div>
+          </div>
+        </div>
+      )}
+      {showAddTerm && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-xl">
+            <div className="bg-gradient-to-r rounded-t-2xl from-blue-600 to-blue-700 px-6 py-4 flex justify-between items-center">
+              <h2 className="text-2xl font-bold text-white">
+                Add Terms & Conditions
+              </h2>
+              <div className="flex">
+                <button
+                  onClick={() => setShowAddTerm(false)}
+                  className="text-white hover:bg-white hover:bg-opacity-20 rounded-lg p-2 transition"
+                >
+                  <X className="w-6 h-6" />
+                </button>
               </div>
-              <button
-                type="button"
-                onClick={() => {
-                  setTerms((prev) => [
-                    ...prev,
-                    { content: newTermsAndCondition },
-                  ]);
-                  setFormData((prev) => ({
-                    ...prev,
-                    terms_and_conditions: prev.terms_and_conditions
-                      ? `${prev.terms_and_conditions}, ${newTermsAndCondition}`
-                      : newTermsAndCondition,
-                  }));
-                  setNewTermsAndConditions("");
-                }}
-                disabled={newTermsAndCondition.length === 0}
-                className="bg-blue-600 text-white px-4 py-3 h-fit w-fit  rounded-lg hover:bg-blue-700 transition text-sm flex items-center gap-2 cursor-pointer"
-              >
-                <Plus className="w-4 h-4" /> Add
-              </button>
+            </div>
+
+            <div className="grid grid-cols-1 gap-3 items-end mb-6 px-6 py-3">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Category <span className="text-red-500">*</span>
+                </label>
+                <select
+                  value={extraTermData.category}
+                  onChange={(e) =>
+                    setExtraTermData({
+                      ...extraTermData,
+                      category: e.target.value,
+                    })
+                  }
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  required
+                >
+                  <option value="">Select Category</option>
+                  <option value="general">General</option>
+                  <option value="payment">Payment</option>
+                  <option value="delivery">Delivery</option>
+                  <option value="quality">Quality</option>
+                  <option value="warranty">Warranty</option>
+                  <option value="tax">Tax</option>
+                  <option value="legal">Legal</option>
+                  <option value="returns">Returns</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Terms & Condition <span className="text-red-500">*</span>
+                </label>
+                <textarea
+                  value={extraTermData.content}
+                  onChange={(e) => {
+                    setExtraTermData({
+                      ...extraTermData,
+                      content: e.target.value,
+                    });
+                  }}
+                  className="w-full outline-none px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  rows={3}
+                  placeholder="Enter the full terms & conditions text..."
+                  required
+                />
+              </div>
+              <div className="flex flex-col sm:flex-row gap-3 w-full">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setExtraTerms([
+                      ...extraTerms,
+                      { ...extraTermData, is_default: true },
+                    ]);
+                    setExtraTermData({
+                      category: "",
+                      content: "",
+                      is_default: false,
+                    });
+                    setShowAddTerm(false);
+                    console.log(extraTerms);
+                  }}
+                  className="bg-blue-600 text-white px-4 py-3 h-fit w-full  rounded-lg hover:bg-blue-700 transition text-sm flex items-center gap-2 cursor-pointer justify-center"
+                >
+                  <Plus className="w-4 h-4" /> Add
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setShowAddTerm(false)}
+                  className="bg-gray-600 text-white px-4 py-3 h-fit  w-full sm:w-40  rounded-lg hover:bg-gray-700 transition text-sm flex items-center justify-center gap-2 cursor-pointer"
+                >
+                  Close
+                </button>
+              </div>
             </div>
           </div>
         </div>
