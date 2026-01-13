@@ -13,7 +13,7 @@ export default function SearchableSelect({
   id,
 }: {
   options: Option[];
-  value: string;
+  value: string | number;
   onChange: (id: string) => void;
   placeholder?: string;
   required?: boolean;

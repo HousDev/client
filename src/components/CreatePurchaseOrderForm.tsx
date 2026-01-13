@@ -49,6 +49,7 @@ interface POFormData {
   terms_and_conditions: string;
   notes: string;
 }
+type addTermType = { category: string; content: string; is_default: boolean };
 
 type Option = { id: string; name: string } | string;
 
@@ -227,12 +228,17 @@ export default function CreatePurchaseOrderForm({
   const [terms, setTerms] = useState<any[]>([]);
   const [paymentTerms, setPaymentTerms] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
-  const [searchTerm, setSearchTerm] = useState("");
-  const [showModal, setShowModal] = useState(false);
-  const [selectedPO, setSelectedPO] = useState<any>(null);
   const [showItemSelector, setShowItemSelector] = useState(false);
   const [showTermsConditions, setShowTermsConditions] = useState(false);
   const [newTermsAndCondition, setNewTermsAndConditions] = useState("");
+
+  const [showAddTerm, setShowAddTerm] = useState<boolean>(false);
+  const [extraTerms, setExtraTerms] = useState<addTermType[]>([]);
+  const [extraTermData, setExtraTermData] = useState<addTermType>({
+    category: "",
+    content: "",
+    is_default: false,
+  });
 
   // item selector internal search
   const [itemSelectorSearch, setItemSelectorSearch] = useState("");
@@ -293,7 +299,6 @@ export default function CreatePurchaseOrderForm({
   const loadPOs = async () => {
     try {
       const data = await poApi.getPOs();
-      console.log("from loadPOs", data);
       setPOs(Array.isArray(data) ? data : []);
     } catch (err) {
       console.warn("loadPOs failed, fallback to empty", err);
@@ -304,7 +309,6 @@ export default function CreatePurchaseOrderForm({
   const loadVendors = async () => {
     try {
       const data = await poApi.getVendors(true);
-      console.log(data);
       setVendors(
         Array.isArray(data)
           ? data.filter((d: any) => d.category_name === "Material")
@@ -360,8 +364,36 @@ export default function CreatePurchaseOrderForm({
 
   const loadTerms = async (id: any) => {
     try {
-      const data = await TermsConditionsApi.getByIdVendorTC(id);
-      setTerms(Array.isArray(data) ? data : []);
+      let data: any = await TermsConditionsApi.getByIdVendorTC(id);
+      data = data.filter((d: any) => d.is_active);
+      console.log("terms response ", data);
+      const result = Object.values(
+        data.reduce((acc: any, item: any) => {
+          const key = item.category;
+
+          if (!acc[key]) {
+            acc[key] = {
+              id: item.id,
+              vendor_id: item.vendor_id,
+              category: item.category,
+              content: [],
+              is_active: item.is_active,
+            };
+          }
+
+          acc[key].content.push({
+            content: item.content,
+            is_default: Boolean(item.is_default),
+            term_id: item.id,
+          });
+          acc[key].isActive = false;
+
+          return acc;
+        }, {})
+      );
+      console.log(result);
+
+      setTerms(Array.isArray(result) ? result : []);
     } catch (err) {
       console.warn("loadTerms failed, fallback to empty", err);
       setTerms([]);
@@ -472,7 +504,6 @@ export default function CreatePurchaseOrderForm({
               (parseFloat(String(item.sgst_rate)) || 0))) /
           100;
       }
-      console.log("gstAmout .........", gstAmount);
 
       newItems[index].amount = amount;
       newItems[index].gst_amount = gstAmount;
@@ -638,7 +669,6 @@ export default function CreatePurchaseOrderForm({
     try {
       const res: any = await poApi.nextSequence();
       if (res && res.po_number) {
-        console.log(res.po.number, "from api");
         return res.po_number;
       }
     } catch (err) {
@@ -651,12 +681,7 @@ export default function CreatePurchaseOrderForm({
     const year = now.getFullYear();
     const month = now.getMonth() + 1;
     const seq = Math.floor(Math.random() * 9000) + 1;
-    console.log(
-      `PO/${year}/${String(month).padStart(2, "0")}/${String(seq).padStart(
-        4,
-        "0"
-      )} from frontend`
-    );
+
     return `PO/${year}/${String(month).padStart(2, "0")}/${String(seq).padStart(
       4,
       "0"
@@ -683,6 +708,22 @@ export default function CreatePurchaseOrderForm({
         return;
       }
 
+      const selected_terms_idsData: any = [];
+      const terms_and_conditionsData: any = [];
+
+      terms.forEach((tc) => {
+        tc.content.forEach((cont: any) => {
+          if (cont.is_default) {
+            selected_terms_idsData.push(cont.term_id);
+          }
+        });
+      });
+      extraTerms.forEach((tc: any) => {
+        if (tc.is_default) {
+          terms_and_conditionsData.push(tc);
+        }
+      });
+
       const payload = {
         po_number: poNumber,
         vendor_id: formData.vendor_id,
@@ -705,14 +746,16 @@ export default function CreatePurchaseOrderForm({
         advance_amount: formData.advance_amount,
         total_paid: 0,
         balance_amount: formData.grand_total,
-        selected_terms_ids: formData.selected_terms_ids,
-        terms_and_conditions: formData.terms_and_conditions,
+        selected_terms_ids: JSON.stringify(selected_terms_idsData),
+        terms_and_conditions: JSON.stringify(terms_and_conditionsData),
         notes: formData.notes,
         status: "draft",
         material_status: "pending",
         payment_status: "pending",
         created_by: user?.id,
       };
+
+      console.log(payload);
 
       const created: any = await poApi.createPO(payload);
 
@@ -825,7 +868,6 @@ export default function CreatePurchaseOrderForm({
             </h2>
             <button
               onClick={() => {
-                console.log(false);
                 setShowCreatePro(false);
                 resetForm();
               }}
@@ -946,22 +988,6 @@ export default function CreatePurchaseOrderForm({
                     className="w-full px-4 py-1 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                   />
                 </div>
-
-                {/* <div className="flex items-center pt-8">
-                  <input
-                    type="checkbox"
-                    id="interstate"
-                    checked={formData.is_interstate}
-                    onChange={(e) => handleInterstateChange(e.target.checked)}
-                    className="w-4 h-4 text-blue-600 rounded focus:ring-2 focus:ring-blue-500"
-                  />
-                  <label
-                    htmlFor="interstate"
-                    className="ml-2 text-sm font-medium text-gray-700"
-                  >
-                    Interstate Supply (IGST)
-                  </label>
-                </div> */}
               </div>
             </div>
 
@@ -1125,70 +1151,58 @@ export default function CreatePurchaseOrderForm({
               </div>
             </div>
             <div className="pb-6">
-              {formData.terms_and_conditions.length !== 0 && (
+              {
                 <div>
-                  <h1 className="font-semibold">Terms & Conditions</h1>
+                  {extraTerms.length > 0 &&
+                    terms.find((d) =>
+                      d.content.find((dd: any) => dd.is_default)
+                    ) && <h1 className="font-semibold">Terms & Conditions</h1>}
                   <div className="py-3">
-                    <ul className="px-6">
-                      {terms.map((d) => (
-                        <li className="mb-3">
-                          <div
-                            onClick={() => {
-                              if (
-                                formData.terms_and_conditions.includes(
-                                  d.content
-                                )
-                              ) {
-                                if (
-                                  formData.terms_and_conditions.includes(
-                                    d.content + ","
-                                  )
-                                ) {
-                                  setFormData((prev) => ({
-                                    ...prev,
-                                    terms_and_conditions:
-                                      prev.terms_and_conditions.replace(
-                                        d.content + ",",
-                                        ""
-                                      ),
-                                  }));
-                                } else {
-                                  setFormData((prev) => ({
-                                    ...prev,
-                                    terms_and_conditions:
-                                      prev.terms_and_conditions.replace(
-                                        d.content,
-                                        ""
-                                      ),
-                                  }));
-                                }
-                              } else {
-                                setFormData((prev) => ({
-                                  ...prev,
-                                  terms_and_conditions:
-                                    prev.terms_and_conditions
-                                      ? `${prev.terms_and_conditions}, ${d.content}`
-                                      : d.content,
-                                }));
-                              }
-                            }}
-                            className="flex items-center cursor-pointer"
-                          >
-                            <input
-                              type="checkbox"
-                              checked={formData.terms_and_conditions.includes(
-                                d.content
-                              )}
-                              className="w-4 h-4 text-blue-600 rounded focus:ring-2 focus:ring-blue-500 mr-3 cursor-pointer"
-                            />
-                            <span className="text-justify">{d.content}</span>
-                          </div>
-                        </li>
-                      ))}
+                    <ul className="px-6 list-decimal">
+                      {terms.map((d, indx: number) => {
+                        const extraTCData =
+                          extraTerms.filter(
+                            (ed: any) =>
+                              ed.category === d.category && ed.is_default
+                          ) || [];
+                        if (
+                          d.content.find((d: any) => d.is_default) ||
+                          extraTCData.length > 0
+                        ) {
+                          return (
+                            <li className="mb-3" key={indx}>
+                              <div>
+                                <h1 className="font-semibold">
+                                  {d.category.charAt(0).toUpperCase() +
+                                    d.category.slice(1) || ""}
+                                </h1>
+                              </div>
+                              <ul className=" ml-3 list-disc">
+                                {d.content.map((term: any, idx: number) => {
+                                  return (
+                                    term.is_default && (
+                                      <li key={idx}>{term.content}</li>
+                                    )
+                                  );
+                                })}
+                                {extraTCData.map((etc: any) => {
+                                  return (
+                                    etc.is_default && (
+                                      <li key={etc.content}>{etc.content}</li>
+                                    )
+                                  );
+                                })}
+                              </ul>
+                            </li>
+                          );
+                        } else {
+                          return;
+                        }
+                      })}
                     </ul>
                   </div>
                 </div>
-              )}
+              }
               <div className="flex items-center pt-6">
                 <button
                   onClick={() => {
@@ -1345,101 +1359,224 @@ export default function CreatePurchaseOrderForm({
               <h2 className="text-2xl font-bold text-white">
                 Add Terms & Conditions
               </h2>
-              <button
-                onClick={() => setShowTermsConditions(false)}
-                className="text-white hover:bg-white hover:bg-opacity-20 rounded-lg p-2 transition"
-              >
-                <X className="w-6 h-6" />
-              </button>
+              <div className="flex">
+                <button
+                  onClick={() => setShowAddTerm(true)}
+                  className="text-white bg-green-600 hover:bg-green-700 rounded-lg px-3 font-semibold py-1 flex items-center mr-3 text-sm"
+                >
+                  <Plus className="w-4 h-4" /> Add
+                </button>
+                <button
+                  onClick={() => setShowTermsConditions(false)}
+                  className="text-white hover:bg-white hover:bg-opacity-20 rounded-lg p-2 transition"
+                >
+                  <X className="w-6 h-6" />
+                </button>
+              </div>
             </div>
-            <div className="py-6">
+            <div className="py-6 ">
               <ul className="px-6">
-                {terms.map((d) => (
-                  <li className="mb-3">
-                    <button
-                      onClick={() => {
-                        if (formData.terms_and_conditions.includes(d.content)) {
-                          if (
-                            formData.terms_and_conditions.includes(
-                              d.content + ","
-                            )
-                          ) {
-                            setFormData((prev) => ({
-                              ...prev,
-                              terms_and_conditions:
-                                prev.terms_and_conditions.replace(
-                                  d.content + ",",
-                                  ""
-                                ),
-                            }));
-                          } else {
-                            setFormData((prev) => ({
-                              ...prev,
-                              terms_and_conditions:
-                                prev.terms_and_conditions.replace(
-                                  d.content,
-                                  ""
-                                ),
-                            }));
-                          }
-                        } else {
-                          setFormData((prev) => ({
-                            ...prev,
-                            terms_and_conditions: prev.terms_and_conditions
-                              ? `${prev.terms_and_conditions}, ${d.content}`
-                              : d.content,
-                          }));
-                        }
-                      }}
-                      className="flex items-center cursor-pointer"
-                    >
-                      <input
-                        type="checkbox"
-                        checked={formData.terms_and_conditions.includes(
-                          d.content
-                        )}
-                        className="w-4 h-4 text-blue-600 rounded focus:ring-2 focus:ring-blue-500 mr-3 cursor-pointer"
-                      />
-                      <span className="text-justify">{d.content}</span>
-                    </button>
-                  </li>
-                ))}
+                {terms.map((d, indx: number) => {
+                  const extraTCData =
+                    extraTerms.filter(
+                      (ed: any) => ed.category === d.category
+                    ) || [];
+                  return (
+                    <li className="mb-3" key={indx}>
+                      <div>
+                        <h1 className="font-semibold">
+                          <input
+                            type="checkbox"
+                            onChange={(e) => {
+                              setTerms((prev) =>
+                                prev.map((tc) =>
+                                  tc.id === d.id
+                                    ? {
+                                        ...tc,
+                                        isActive: !tc.isActive,
+                                        content: tc.content.map((i: any) => ({
+                                          ...i,
+                                          is_default: !tc.isActive,
+                                        })),
+                                      }
+                                    : tc
+                                )
+                              );
+
+                              setExtraTerms((prev) =>
+                                prev.map((tc) =>
+                                  tc.category === d.category
+                                    ? {
+                                        ...tc,
+                                        is_default: !d.isActive,
+                                      }
+                                    : tc
+                                )
+                              );
+                            }}
+                            checked={d.isActive}
+                            className="w-4 h-4 accent-blue-600 cursor-pointer mr-1"
+                          />{" "}
+                          {d.category.charAt(0).toUpperCase() +
+                            d.category.slice(1) || ""}
+                        </h1>
+                      </div>
+                      <ul className=" ml-3">
+                        {d.content.map((term: any, idx: number) => {
+                          return (
+                            <li key={idx}>
+                              <input
+                                type="checkbox"
+                                checked={term.is_default}
+                                onChange={(e) => {
+                                  setTerms((prev) =>
+                                    prev.map((tc) =>
+                                      tc.id === d.id
+                                        ? {
+                                            ...tc,
+                                            content: tc.content.map((i: any) =>
+                                              i.term_id === term.term_id
+                                                ? {
+                                                    ...i,
+                                                    is_default: !i.is_default,
+                                                  }
+                                                : i
+                                            ),
+                                          }
+                                        : tc
+                                    )
+                                  );
+                                }}
+                                className="w-4 h-4 accent-blue-600 cursor-pointer mr-1"
+                              />{" "}
+                              {term.content}
+                            </li>
+                          );
+                        })}
+                        {extraTCData.map((etc: any) => {
+                          return (
+                            <li key={etc.content}>
+                              <input
+                                type="checkbox"
+                                checked={etc.is_default}
+                                onChange={() => {
+                                  setExtraTerms((prev) =>
+                                    prev.map((etci) =>
+                                      etci.content === etc.content
+                                        ? {
+                                            ...etci,
+                                            is_default: !etci.is_default, // ✅ TOGGLE
+                                          }
+                                        : etci
+                                    )
+                                  );
+                                }}
+                                className="w-4 h-4 accent-blue-600 cursor-pointer mr-1"
+                              />{" "}
+                              {etc.content}
+                            </li>
+                          );
+                        })}
+                      </ul>
+                    </li>
+                  );
+                })}
               </ul>
             </div>
-            <div className="flex gap-3 items-end mb-6 px-6">
-              <div className="w-full">
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Add Extra Terms & Conditions
-                </label>
-                <div>
-                  <input
-                    type="text"
-                    value={newTermsAndCondition}
-                    onChange={(e) => setNewTermsAndConditions(e.target.value)}
-                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  />
-                </div>
+          </div>
+        </div>
+      )}
+      {showAddTerm && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-xl">
+            <div className="bg-gradient-to-r rounded-t-2xl from-blue-600 to-blue-700 px-6 py-4 flex justify-between items-center">
+              <h2 className="text-2xl font-bold text-white">
+                Add Terms & Conditions
+              </h2>
+              <div className="flex">
+                <button
+                  onClick={() => setShowAddTerm(false)}
+                  className="text-white hover:bg-white hover:bg-opacity-20 rounded-lg p-2 transition"
+                >
+                  <X className="w-6 h-6" />
+                </button>
               </div>
-              <button
-                type="button"
-                onClick={() => {
-                  setTerms((prev) => [
-                    ...prev,
-                    { content: newTermsAndCondition },
-                  ]);
-                  setFormData((prev) => ({
-                    ...prev,
-                    terms_and_conditions: prev.terms_and_conditions
-                      ? `${prev.terms_and_conditions}, ${newTermsAndCondition}`
-                      : newTermsAndCondition,
-                  }));
-                  setNewTermsAndConditions("");
-                }}
-                disabled={newTermsAndCondition.length === 0}
-                className="bg-blue-600 text-white px-4 py-3 h-fit w-fit  rounded-lg hover:bg-blue-700 transition text-sm flex items-center gap-2 cursor-pointer"
-              >
-                <Plus className="w-4 h-4" /> Add
-              </button>
+            </div>
+
+            <div className="grid grid-cols-1 gap-3 items-end mb-6 px-6 py-3">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Category <span className="text-red-500">*</span>
+                </label>
+                <select
+                  value={extraTermData.category}
+                  onChange={(e) =>
+                    setExtraTermData({
+                      ...extraTermData,
+                      category: e.target.value,
+                    })
+                  }
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  required
+                >
+                  <option value="">Select Category</option>
+                  <option value="general">General</option>
+                  <option value="payment">Payment</option>
+                  <option value="delivery">Delivery</option>
+                  <option value="quality">Quality</option>
+                  <option value="warranty">Warranty</option>
+                  <option value="tax">Tax</option>
+                  <option value="legal">Legal</option>
+                  <option value="returns">Returns</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Terms & Condition <span className="text-red-500">*</span>
+                </label>
+                <textarea
+                  value={extraTermData.content}
+                  onChange={(e) => {
+                    setExtraTermData({
+                      ...extraTermData,
+                      content: e.target.value,
+                    });
+                  }}
+                  className="w-full outline-none px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  rows={3}
+                  placeholder="Enter the full terms & conditions text..."
+                  required
+                />
+              </div>
+              <div className="flex flex-col sm:flex-row gap-3 w-full">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setExtraTerms([
+                      ...extraTerms,
+                      { ...extraTermData, is_default: true },
+                    ]);
+                    setExtraTermData({
+                      category: "",
+                      content: "",
+                      is_default: false,
+                    });
+                    setShowAddTerm(false);
+                    console.log(extraTerms);
+                  }}
+                  className="bg-blue-600 text-white px-4 py-3 h-fit w-full  rounded-lg hover:bg-blue-700 transition text-sm flex items-center gap-2 cursor-pointer justify-center"
+                >
+                  <Plus className="w-4 h-4" /> Add
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setShowAddTerm(false)}
+                  className="bg-gray-600 text-white px-4 py-3 h-fit  w-full sm:w-40  rounded-lg hover:bg-gray-700 transition text-sm flex items-center justify-center gap-2 cursor-pointer"
+                >
+                  Close
+                </button>
+              </div>
             </div>
           </div>
         </div>

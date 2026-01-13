@@ -4,7 +4,6 @@ import { api, unwrap } from "../lib/Api";
 export type TermsCondition = {
   id: number;
   vendor_id: number;
-  title: string;
   category: string;
   content: string;
   is_active: boolean;

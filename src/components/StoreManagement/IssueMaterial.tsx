@@ -20,6 +20,8 @@ import projectApi from "../../lib/projectApi";
 import inventoryTransactionApi from "../../lib/inventoryTransactionApi";
 import { toast } from "sonner";
 import vendorApi from "../../lib/vendorApi";
+import SearchableSelect from "../SearchableSelect";
+import RequestMaterialApi from "../../lib/requestMaterialApi";
 
 interface MaterialOutFormProps {
   setActiveFormTab: (show: string) => void;
@@ -83,6 +85,7 @@ export default function IssueMaterial({
   ]);
 
   const [formData, setFormData] = useState<any>({
+    requestId: null,
     projectId: null,
     buildingId: null,
     floorId: null,
@@ -101,6 +104,7 @@ export default function IssueMaterial({
   const [selectedFloor, setSelectedFloor] = useState<any>(null);
   const [selectedFlat, setSelectedFlat] = useState<any>(null);
   const [selectedCommonArea, setSelectedCommonArea] = useState<any>(null);
+  const [allMaterialRequest, setAllMaterialRequest] = useState<any>([]);
 
   const selectedVendor = vendors.find(
     (vendor) => vendor.id === formData.vendorId
@@ -145,18 +149,41 @@ export default function IssueMaterial({
   }, []);
 
   // Load project details when project is selected
-  const loadProjectDetails = async (projectId: number) => {
+  const loadProjectDetails = async (
+    projectId: number,
+    buildingId?: number,
+    floorId?: number,
+    flatId?: number,
+    commonAreaId?: number
+  ) => {
     try {
       const projectDetailsRes: any = await projectApi.getProjectById(projectId);
       if (projectDetailsRes.success) {
         const project = projectDetailsRes.data;
         setSelectedProject(project);
+        console.log(selectedProject);
+
+        const building = project?.buildings?.find(
+          (b: any) => b.id === buildingId
+        );
+
+        setSelectedBuilding(building ? building : null);
+
+        const floor = building?.floors?.find((f: any) => f.id === floorId);
+
+        setSelectedFloor(floor ? floor : null);
+
+        const flat = floor?.flats?.find((f: any) => f.id === flatId);
+
+        setSelectedFlat(flat ? flat : null);
+
+        const commonArea = floor?.common_areas?.find(
+          (ca: any) => ca.id === commonAreaId
+        );
+
+        setSelectedCommonArea(commonArea ? commonArea : null);
 
         // Reset all child selections
-        setSelectedBuilding(null);
-        setSelectedFloor(null);
-        setSelectedFlat(null);
-        setSelectedCommonArea(null);
 
         setFormData((prev: any) => ({
           ...prev,
@@ -181,6 +208,7 @@ export default function IssueMaterial({
     const building = selectedProject?.buildings?.find(
       (b: any) => b.id === buildingId
     );
+
     if (building) {
       setSelectedBuilding(building);
       setSelectedFloor(null);
@@ -261,6 +289,7 @@ export default function IssueMaterial({
 
   // Add material to the list
   const addMaterial = (inventoryItem: any) => {
+    console.log(inventoryItem);
     const existingIndex = formData.materials.findIndex(
       (item: any) => item.materialId === inventoryItem.id
     );
@@ -454,10 +483,22 @@ export default function IssueMaterial({
 
   // Calculate total materials count
   const totalItems = formData.materials.length;
-  const totalQuantity = formData.materials.reduce(
-    (sum: number, item: any) => sum + (parseFloat(item.quantity) || 0),
-    0
-  );
+
+  const loadAllMaterialRequest = async () => {
+    try {
+      const materialRequestRes = await RequestMaterialApi.getAll();
+      setAllMaterialRequest(
+        Array.isArray(materialRequestRes) ? materialRequestRes : []
+      );
+    } catch (error) {
+      console.log(error);
+      toast.error("Something went wrong.");
+    }
+  };
+  useEffect(() => {
+    loadAllMaterialRequest();
+  }, []);
+
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4 overflow-y-auto">
       <div className="bg-white rounded-2xl shadow-2xl w-full max-w-3xl my-8">
@@ -485,249 +526,309 @@ export default function IssueMaterial({
 
         {/* Content */}
         <div className="my-3 px-6 py-3 h-[530px] overflow-y-scroll rounded-b-lg">
-          <form onSubmit={handleSubmit} className="space-y-3">
+          <form onSubmit={handleSubmit} className="gap-3 grid grid-cols-3">
             {/* Project Selection */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-3 md:gap-6">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Project <span className="text-red-500">*</span>
-                </label>
-                <div className="relative">
-                  <FileText className="absolute left-3 top-3 w-4 h-4 text-gray-400" />
-                  <select
-                    value={formData.projectId || ""}
-                    onChange={(e: any) =>
-                      loadProjectDetails(Number(e.target.value))
+            <div className="col-span-3">
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Material Request <span className="text-red-500">*</span>
+              </label>
+              <div className="relative">
+                <FileText className="absolute left-3 top-3 w-4 h-4 text-gray-400" />
+                <SearchableSelect
+                  options={allMaterialRequest.map((i: any) => ({
+                    id: i.request_material_id,
+                    name: `${i.user_name} (${i.request_no})` || "",
+                  }))}
+                  value={formData.requestId}
+                  onChange={async (id) => {
+                    console.log(allMaterialRequest, id, "that");
+                    const mr = allMaterialRequest.find(
+                      (d: any) => d.request_material_id === id
+                    );
+                    console.log(mr, "mr");
+                    const materials = [];
+                    for (const i of mr.items) {
+                      for (const inventoryItem of allInventory) {
+                        if (
+                          i.request_material_item_id === inventoryItem.item_id
+                        ) {
+                          console.log(mr);
+                          console.log(inventoryItem, "dj");
+                          const data = {
+                            id: Date.now() + Math.random(),
+                            materialId: inventoryItem.id,
+                            materialName:
+                              inventoryItem.item_name || inventoryItem.name,
+                            quantity: i.approved_quantity,
+                            unit: inventoryItem.unit,
+                            currentStock: inventoryItem.quantity,
+                            reorder_qty: inventoryItem.reorder_qty,
+                          };
+                          materials.push(data);
+                        }
+                      }
                     }
-                    className="w-full pl-10 pr-4 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent appearance-none bg-white outline-none"
-                    required
-                  >
-                    <option value="">Select Project</option>
-                    {allProjects.map((project: any) => (
-                      <option key={project.id} value={project.id}>
-                        {project.name}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Building <span className="text-red-500">*</span>
-                </label>
-                <div className="relative">
-                  <Building className="absolute left-3 top-3 w-4 h-4 text-gray-400" />
-                  <select
-                    value={formData.buildingId || ""}
-                    onChange={(e: any) =>
-                      handleBuildingChange(Number(e.target.value))
-                    }
-                    disabled={!selectedProject}
-                    className="w-full pl-10 pr-4 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent appearance-none bg-white outline-none disabled:bg-gray-100 disabled:cursor-not-allowed"
-                    required
-                  >
-                    <option value="">Select Building</option>
-                    {selectedProject?.buildings?.map((building: any) => (
-                      <option key={building.id} value={building.id}>
-                        {building.building_name}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-              </div>
+                    console.log(materials);
+                    await loadProjectDetails(
+                      mr.projectId,
+                      mr.buildingId,
+                      mr.floorId,
+                      mr.flatId,
+                      mr.commonAreaId
+                    );
 
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Floor <span className="text-red-500">*</span>
-                </label>
-                <div className="relative">
-                  <Layers className="absolute left-3 top-3 w-4 h-4 text-gray-400" />
-                  <select
-                    value={formData.floorId || ""}
-                    onChange={(e: any) =>
-                      handleFloorChange(Number(e.target.value))
-                    }
-                    disabled={!selectedBuilding}
-                    className="w-full pl-10 pr-4 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent appearance-none bg-white outline-none disabled:bg-gray-100 disabled:cursor-not-allowed"
-                    required
-                  >
-                    <option value="">Select Floor</option>
-                    {selectedBuilding?.floors?.map((floor: any) => (
-                      <option key={floor.id} value={floor.id}>
-                        {floor.floor_name}
-                      </option>
-                    ))}
-                  </select>
-                </div>
+                    setFormData({
+                      ...formData,
+                      requestId: id,
+                      projectId: mr.projectId,
+                      buildingId: mr.buildingId,
+                      floorId: mr.floorId,
+                      flatId: mr.flatId,
+                      commonAreaId: mr.commonAreaId,
+                      receiverName: mr.user_name,
+                      receiverNumber: mr.user_phone,
+                      purpose: mr.work,
+                      materials: materials,
+                    });
+                  }}
+                  placeholder="Select Material Request"
+                  required
+                />
+              </div>
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Project <span className="text-red-500">*</span>
+              </label>
+              <div className="relative">
+                <FileText className="absolute left-3 top-3 w-4 h-4 text-gray-400" />
+                <select
+                  value={formData.projectId || ""}
+                  onChange={(e: any) =>
+                    loadProjectDetails(Number(e.target.value))
+                  }
+                  className="w-full pl-10 pr-4 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent appearance-none bg-white outline-none"
+                  required
+                >
+                  <option value="">Select Project</option>
+                  {allProjects.map((project: any) => (
+                    <option key={project.id} value={project.id}>
+                      {project.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Building <span className="text-red-500">*</span>
+              </label>
+              <div className="relative">
+                <Building className="absolute left-3 top-3 w-4 h-4 text-gray-400" />
+                <select
+                  value={formData.buildingId || ""}
+                  onChange={(e: any) =>
+                    handleBuildingChange(Number(e.target.value))
+                  }
+                  disabled={!selectedProject}
+                  className="w-full pl-10 pr-4 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent appearance-none bg-white outline-none disabled:bg-gray-100 disabled:cursor-not-allowed"
+                  required
+                >
+                  <option value="">Select Building</option>
+                  {selectedProject?.buildings?.map((building: any) => (
+                    <option key={building.id} value={building.id}>
+                      {building.building_name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Floor <span className="text-red-500">*</span>
+              </label>
+              <div className="relative">
+                <Layers className="absolute left-3 top-3 w-4 h-4 text-gray-400" />
+                <select
+                  value={formData.floorId || ""}
+                  onChange={(e: any) =>
+                    handleFloorChange(Number(e.target.value))
+                  }
+                  disabled={!selectedBuilding}
+                  className="w-full pl-10 pr-4 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent appearance-none bg-white outline-none disabled:bg-gray-100 disabled:cursor-not-allowed"
+                  required
+                >
+                  <option value="">Select Floor</option>
+                  {selectedBuilding?.floors?.map((floor: any) => (
+                    <option key={floor.id} value={floor.id}>
+                      {floor.floor_name}
+                    </option>
+                  ))}
+                </select>
               </div>
             </div>
 
             {/* Flat and Common Area Selection */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-3 md:gap-6">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Flat
-                </label>
-                <div className="relative">
-                  <Home className="absolute left-3 top-3 w-4 h-4 text-gray-400" />
-                  <select
-                    value={formData.flatId || ""}
-                    onChange={(e: any) =>
-                      handleFlatChange(Number(e.target.value))
-                    }
-                    disabled={
-                      !selectedFloor ||
-                      formData.commonAreaId ||
-                      selectedFloor?.flats?.length === 0
-                    }
-                    className="w-full pl-10 pr-4 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent appearance-none bg-white outline-none disabled:bg-gray-100 disabled:cursor-not-allowed"
-                  >
-                    <option value="">Select Flat</option>
-                    {selectedFloor?.flats?.map((flat: any) => (
-                      <option key={flat.id} value={flat.id}>
-                        {flat.flat_name}
-                      </option>
-                    ))}
-                  </select>
-                </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Flat
+              </label>
+              <div className="relative">
+                <Home className="absolute left-3 top-3 w-4 h-4 text-gray-400" />
+                <select
+                  value={formData.flatId || ""}
+                  onChange={(e: any) =>
+                    handleFlatChange(Number(e.target.value))
+                  }
+                  disabled={
+                    !selectedFloor ||
+                    formData.commonAreaId ||
+                    selectedFloor?.flats?.length === 0
+                  }
+                  className="w-full pl-10 pr-4 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent appearance-none bg-white outline-none disabled:bg-gray-100 disabled:cursor-not-allowed"
+                >
+                  <option value="">Select Flat</option>
+                  {selectedFloor?.flats?.map((flat: any) => (
+                    <option key={flat.id} value={flat.id}>
+                      {flat.flat_name}
+                    </option>
+                  ))}
+                </select>
               </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Common Area
-                </label>
-                <div className="relative">
-                  <DoorOpen className="absolute left-3 top-3 w-4 h-4 text-gray-400" />
-                  <select
-                    value={formData.commonAreaId || ""}
-                    onChange={(e: any) =>
-                      handleCommonAreaChange(Number(e.target.value))
-                    }
-                    disabled={
-                      !selectedFloor ||
-                      formData.flatId ||
-                      selectedFloor?.common_areas?.length === 0
-                    }
-                    className="w-full pl-10 pr-4 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent appearance-none bg-white outline-none disabled:bg-gray-100 disabled:cursor-not-allowed"
-                  >
-                    <option value="">Select Common Area</option>
-                    {selectedFloor?.common_areas?.map((commonArea: any) => (
-                      <option key={commonArea.id} value={commonArea.id}>
-                        {commonArea.common_area_name}
-                      </option>
-                    ))}
-                  </select>
-                </div>
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Common Area
+              </label>
+              <div className="relative">
+                <DoorOpen className="absolute left-3 top-3 w-4 h-4 text-gray-400" />
+                <select
+                  value={formData.commonAreaId || ""}
+                  onChange={(e: any) =>
+                    handleCommonAreaChange(Number(e.target.value))
+                  }
+                  disabled={
+                    !selectedFloor ||
+                    formData.flatId ||
+                    selectedFloor?.common_areas?.length === 0
+                  }
+                  className="w-full pl-10 pr-4 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent appearance-none bg-white outline-none disabled:bg-gray-100 disabled:cursor-not-allowed"
+                >
+                  <option value="">Select Common Area</option>
+                  {selectedFloor?.common_areas?.map((commonArea: any) => (
+                    <option key={commonArea.id} value={commonArea.id}>
+                      {commonArea.common_area_name}
+                    </option>
+                  ))}
+                </select>
               </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Vendor
-                </label>
-                <div className="relative">
-                  <User className="absolute left-3 top-3 w-4 h-4 text-gray-400" />
-                  <select
-                    value={formData.vendorId || ""}
-                    onChange={(e: any) =>
-                      handleVendorChange(Number(e.target.value))
-                    }
-                    className="w-full pl-10 pr-4 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent appearance-none bg-white outline-none"
-                  >
-                    <option value="">Select Vendor</option>
-                    {allServiceVendors.map((vendor: any) => (
-                      <option key={vendor.id} value={vendor.id}>
-                        {vendor.name}
-                      </option>
-                    ))}
-                  </select>
-                </div>
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Vendor <span className="text-red-500">*</span>
+              </label>
+              <div className="relative">
+                <User className="absolute left-3 top-3 w-4 h-4 text-gray-400" />
+                <select
+                  value={formData.vendorId || ""}
+                  onChange={(e: any) =>
+                    handleVendorChange(Number(e.target.value))
+                  }
+                  className="w-full pl-10 pr-4 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent appearance-none bg-white outline-none"
+                >
+                  <option value="">Select Vendor</option>
+                  {allServiceVendors.map((vendor: any) => (
+                    <option key={vendor.id} value={vendor.id}>
+                      {vendor.name}
+                    </option>
+                  ))}
+                </select>
               </div>
             </div>
 
             {/* Receiver Information */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-3 md:gap-6">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Receiver Name <span className="text-red-500">*</span>
-                </label>
-                <div className="relative">
-                  <User className="absolute left-3 top-3 w-4 h-4 text-gray-400" />
-                  <input
-                    type="text"
-                    value={formData.receiverName}
-                    onChange={(e) => {
-                      if (!/^[A-Za-z\s]*$/.test(e.target.value)) {
-                        toast.warning("Only alphabet allowed.");
-                        return;
-                      }
-                      handleInputChange("receiverName", e.target.value);
-                    }}
-                    className="w-full pl-10 pr-4 py-2 text-sm outline-none border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                    placeholder="Enter Receiver Name"
-                    required
-                  />
-                </div>
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Receiver Phone Number <span className="text-red-500">*</span>
-                </label>
-                <div className="relative">
-                  <Phone className="absolute left-3 top-3 w-4 h-4 text-gray-400" />
-                  <input
-                    type="tel"
-                    value={formData.receiverNumber}
-                    onChange={(e) => {
-                      if (!/^\d*$/.test(e.target.value)) {
-                        toast.warning("Enter Valid Phone Number.");
-                        return;
-                      }
-                      if (e.target.value.length > 10) {
-                        toast.warning("Mobile number must be 10 digit.");
-                        return;
-                      }
-                      handleInputChange("receiverNumber", e.target.value);
-                    }}
-                    className="w-full pl-10 pr-4 py-2 text-sm outline-none border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                    placeholder="Enter Phone Number"
-                    required
-                  />
-                </div>
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Issue Date
-                </label>
-                <div className="relative">
-                  <Calendar className="absolute left-3 top-3 w-4 h-4 text-gray-400" />
-                  <input
-                    type="date"
-                    value={formData.issueDate}
-                    onChange={(e) =>
-                      handleInputChange("issueDate", e.target.value)
-                    }
-                    className="w-full pl-10 pr-4 py-2 text-sm outline-none border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  />
-                </div>
-              </div>
-            </div>
-
-            {/* Date and Purpose */}
-            <div className="grid grid-cols-3 gap-6">
-              <div className="col-span-2">
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Purpose
-                </label>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Receiver Name <span className="text-red-500">*</span>
+              </label>
+              <div className="relative">
+                <User className="absolute left-3 top-3 w-4 h-4 text-gray-400" />
                 <input
                   type="text"
-                  value={formData.purpose}
-                  onChange={(e) => handleInputChange("purpose", e.target.value)}
-                  className="w-full px-4 py-2 text-sm outline-none border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  placeholder="Purpose of issue"
+                  value={formData.receiverName}
+                  onChange={(e) => {
+                    if (!/^[A-Za-z\s]*$/.test(e.target.value)) {
+                      toast.warning("Only alphabet allowed.");
+                      return;
+                    }
+                    handleInputChange("receiverName", e.target.value);
+                  }}
+                  className="w-full pl-10 pr-4 py-2 text-sm outline-none border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  placeholder="Enter Receiver Name"
+                  required
+                />
+              </div>
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Receiver Phone Number <span className="text-red-500">*</span>
+              </label>
+              <div className="relative">
+                <Phone className="absolute left-3 top-3 w-4 h-4 text-gray-400" />
+                <input
+                  type="tel"
+                  value={formData.receiverNumber}
+                  onChange={(e) => {
+                    if (!/^\d*$/.test(e.target.value)) {
+                      toast.warning("Enter Valid Phone Number.");
+                      return;
+                    }
+                    if (e.target.value.length > 10) {
+                      toast.warning("Mobile number must be 10 digit.");
+                      return;
+                    }
+                    handleInputChange("receiverNumber", e.target.value);
+                  }}
+                  className="w-full pl-10 pr-4 py-2 text-sm outline-none border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  placeholder="Enter Phone Number"
+                  required
+                />
+              </div>
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Issue Date
+              </label>
+              <div className="relative">
+                <Calendar className="absolute left-3 top-3 w-4 h-4 text-gray-400" />
+                <input
+                  type="date"
+                  value={formData.issueDate}
+                  onChange={(e) =>
+                    handleInputChange("issueDate", e.target.value)
+                  }
+                  className="w-full pl-10 pr-4 py-2 text-sm outline-none border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 />
               </div>
             </div>
 
+            {/* Date and Purpose */}
+            <div className="col-span-2">
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Purpose
+              </label>
+              <input
+                type="text"
+                value={formData.purpose}
+                onChange={(e) => handleInputChange("purpose", e.target.value)}
+                className="w-full px-4 py-2 text-sm outline-none border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                placeholder="Purpose of issue"
+              />
+            </div>
+
             {/* Materials Section */}
-            <div className="border-t pt-6">
+            <div className="border-t pt-6 col-span-3">
               <div className="flex justify-between items-center mb-4">
                 <h3 className="text-lg font-semibold text-gray-800">
                   Materials
@@ -846,7 +947,7 @@ export default function IssueMaterial({
             </div>
 
             {/* Submit Button */}
-            <div className="flex gap-3 pt-6 border-t sticky bottom-0 bg-white">
+            <div className="flex gap-3 pt-6 border-t sticky bottom-0 bg-white col-span-3">
               <button
                 type="submit"
                 disabled={loading || formData.materials.length === 0}
@@ -910,7 +1011,6 @@ export default function IssueMaterial({
                       (m: any) => m.materialId === item.id
                     );
                     const isLowStock = item.quantity <= item.reorder_qty;
-
                     return (
                       <button
                         key={item.id}
@@ -951,8 +1051,7 @@ export default function IssueMaterial({
                             )}
                           </div>
                           <div className="text-right">
-                            <button
-                              type="button"
+                            <div
                               onClick={(e) => {
                                 e.stopPropagation();
                                 addMaterial(item);
@@ -960,7 +1059,7 @@ export default function IssueMaterial({
                               className="px-3 py-1 bg-green-600 text-white rounded hover:bg-green-700 text-sm font-medium"
                             >
                               {existingMaterial ? "Add More" : "Add"}
-                            </button>
+                            </div>
                           </div>
                         </div>
                       </button>

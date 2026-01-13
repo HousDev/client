@@ -36,9 +36,16 @@ export const RequestMaterialApi = {
   // 3️⃣ Update status
   updateStatus: async (
     id: string | number,
-    status: "pending" | "approved"
+    status: string,
+    userId: string
   ): Promise<any> =>
-    unwrap(api.patch(`/requestMaterial/status/${id}`, { status })),
+    unwrap(
+      api.put(`/requestMaterial/status/${id}`, { status, user_id: userId })
+    ),
+
+  //update request material items
+  updateItems: async (payload: any): Promise<any> =>
+    unwrap(api.put(`/requestMaterial/update-items`, payload)),
 };
 
 export default RequestMaterialApi;

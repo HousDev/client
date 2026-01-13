@@ -59,6 +59,7 @@ export default function MaterialRequests() {
 
       setRequests(response);
       setFilteredRequests(response);
+      loadAllInventory();
     } catch (error) {
       toast.error("Failed to load material requests");
       console.error("Error loading material requests:", error);
@@ -202,6 +203,7 @@ export default function MaterialRequests() {
                   allInventory.find(
                     (i: any) => i.item_id === d.request_material_item_id
                   )?.quantity >= d.required_quantity;
+
                 return {
                   ...d,
                   status: s ? "IN STOCK" : "OUT OF STOCK",
@@ -331,13 +333,19 @@ export default function MaterialRequests() {
                   className="hover:bg-gray-50 transition bg-blue-50/30 cursor-pointer"
                   onClick={() => {
                     const data = request.items.map((d: any) => {
-                      const s =
-                        allInventory.find(
-                          (i: any) => i.item_id === d.request_material_item_id
-                        )?.quantity >= d.required_quantity;
+                      const s = allInventory.find(
+                        (i: any) => i.item_id === d.request_material_item_id
+                      );
                       return {
                         ...d,
-                        status: s ? "IN STOCK" : "OUT OF STOCK",
+                        stock_status:
+                          s?.quantity_after_approve >= d.required_quantity
+                            ? "IN STOCK"
+                            : s?.quantity_after_approve === 0
+                            ? "OUT OF STOCK"
+                            : "LOW STOCK",
+                        stock_quantity: s?.quantity_after_approve,
+                        approveQuantity: 0,
                       };
                     });
                     setSelectedRequest({ ...request, items: data });
@@ -437,6 +445,7 @@ export default function MaterialRequests() {
         <ViewRequestMaterial
           setViewRequestMaterial={setViewRequestMaterial}
           requestData={selectedRequest}
+          loadMaterialRequests={loadMaterialRequests}
         />
       )}
     </div>

@@ -52,7 +52,7 @@ interface POFormData {
   payment_terms_id: string;
   advance_amount: number;
   selected_terms_ids: string[];
-  terms_and_conditions: string;
+  terms_and_conditions: any[];
   notes: string;
 }
 
@@ -268,7 +268,7 @@ export default function UpdatePurchaseOrderForm({
         loadPOTypes(),
         loadItems(),
         loadTerms(),
-        loadPaymentTerms(),
+        // loadPaymentTerms(),
       ]);
     } catch (err) {
       console.error("loadData error", err);
@@ -280,7 +280,6 @@ export default function UpdatePurchaseOrderForm({
   const loadPOs = async () => {
     try {
       const data = await poApi.getPOs();
-      console.log("from loadPOs", data);
       setPOs(Array.isArray(data) ? data : []);
     } catch (err) {
       console.warn("loadPOs failed, fallback to empty", err);
@@ -291,7 +290,6 @@ export default function UpdatePurchaseOrderForm({
   const loadVendors = async () => {
     try {
       const data = await poApi.getVendors(true);
-      console.log(data, "update venders");
       setVendors(
         Array.isArray(data)
           ? data.filter((d: any) => d.category_name === "Material")
@@ -339,7 +337,6 @@ export default function UpdatePurchaseOrderForm({
           ...item,
           id: String(item.id),
         }));
-        console.log(updatedData, "from items api");
         const onlyMaterial = updatedData.filter(
           (d: any) => d.category === "material"
         );
@@ -366,8 +363,6 @@ export default function UpdatePurchaseOrderForm({
           data.push({ content: d });
         }
       });
-      console.log(tempTerms);
-      console.log(data, "from create po from terms data");
       setTerms(Array.isArray(data) ? data : []);
     } catch (err) {
       console.warn("loadTerms failed, fallback to empty", err);
@@ -378,15 +373,15 @@ export default function UpdatePurchaseOrderForm({
     loadTerms();
   }, []);
 
-  const loadPaymentTerms = async () => {
-    try {
-      const data = await poApi.getPaymentTerms();
-      setPaymentTerms(Array.isArray(data) ? data : []);
-    } catch (err) {
-      console.warn("loadPaymentTerms failed, fallback to empty", err);
-      setPaymentTerms([]);
-    }
-  };
+  // const loadPaymentTerms = async () => {
+  //   try {
+  //     const data = await poApi.getPaymentTerms();
+  //     setPaymentTerms(Array.isArray(data) ? data : []);
+  //   } catch (err) {
+  //     console.warn("loadPaymentTerms failed, fallback to empty", err);
+  //     setPaymentTerms([]);
+  //   }
+  // };
 
   // --- Items helpers (keep existing functions) ---
   const addItemFromMaster = (item: any) => {
@@ -484,7 +479,6 @@ export default function UpdatePurchaseOrderForm({
       );
 
       await loadAllData();
-      console.log("response after delete po item", response);
       if (response.status === "Completed") {
         toast.success(response.message);
       } else {
@@ -625,7 +619,6 @@ export default function UpdatePurchaseOrderForm({
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    console.log("form data after submiting form", formData);
 
     try {
       if (
@@ -675,8 +668,6 @@ export default function UpdatePurchaseOrderForm({
       const response = await poApi.updatePO(formData?.poId, payload);
       toast.success("PO Updated Successfully.");
       await loadAllData();
-
-      console.log(response);
 
       setShowEditModal(false);
       resetForm();
@@ -755,7 +746,6 @@ export default function UpdatePurchaseOrderForm({
             </h2>
             <button
               onClick={() => {
-                console.log(false);
                 setShowEditModal(false);
                 resetForm();
               }}
@@ -849,7 +839,6 @@ export default function UpdatePurchaseOrderForm({
                     type="date"
                     value={formData.po_date}
                     onChange={(e) => {
-                      console.log(e.target.value, "date from PO Date");
                       setFormData({ ...formData, po_date: e.target.value });
                     }}
                     className="w-full px-4 py-1 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
@@ -1077,62 +1066,54 @@ export default function UpdatePurchaseOrderForm({
               </div>
             </div>
             <div className="pb-6">
-              <h1 className="font-semibold">Terms & Conditions</h1>
-              <div className="py-3">
-                <ul className="px-6">
-                  {terms.map((d) => (
-                    <li className="mb-3">
-                      <button
-                        onClick={() => {
-                          if (
-                            formData.terms_and_conditions.includes(d.content)
-                          ) {
-                            if (
-                              formData.terms_and_conditions.includes(
-                                d.content + ","
-                              )
-                            ) {
-                              setFormData((prev) => ({
-                                ...prev,
-                                terms_and_conditions:
-                                  prev.terms_and_conditions.replace(
-                                    d.content + ",",
-                                    ""
-                                  ),
-                              }));
-                            } else {
-                              setFormData((prev) => ({
-                                ...prev,
-                                terms_and_conditions:
-                                  prev.terms_and_conditions.replace(
-                                    d.content,
-                                    ""
-                                  ),
-                              }));
-                            }
-                          } else {
-                            setFormData((prev) => ({
-                              ...prev,
-                              terms_and_conditions: prev.terms_and_conditions
-                                ? `${prev.terms_and_conditions}, ${d.content}`
-                                : d.content,
-                            }));
-                          }
-                        }}
-                        className="flex items-center cursor-pointer"
-                      >
-                        <input
-                          type="checkbox"
-                          checked={formData.terms_and_conditions.includes(
-                            d.content
-                          )}
-                          className="w-4 h-4 text-blue-600 rounded focus:ring-2 focus:ring-blue-500 mr-3 cursor-pointer"
-                        />
-                        <span className="text-justify">{d.content}</span>
-                      </button>
-                    </li>
-                  ))}
-                </ul>
+              <div>
+                {formData.terms_and_conditions.length > 0 && (
+                  <h1 className="font-semibold">Terms & Conditions</h1>
+                )}
+                <div className="py-3">
+                  <ul className="px-6 list-decimal">
+                    {formData.terms_and_conditions.map((d, indx: number) => {
+                      const extraTCData =
+                        extraTerms.filter(
+                          (ed: any) =>
+                            ed.category === d.category && ed.is_default
+                        ) || [];
+                      if (
+                        d.content.find((d: any) => d.is_default) ||
+                        extraTCData.length > 0
+                      ) {
+                        return (
+                          <li className="mb-3" key={indx}>
+                            <div>
+                              <h1 className="font-semibold">
+                                {d.category.charAt(0).toUpperCase() +
+                                  d.category.slice(1) || ""}
+                              </h1>
+                            </div>
+                            <ul className=" ml-3 list-disc">
+                              {d.content.map((term: any, idx: number) => {
+                                return (
+                                  term.is_default && (
+                                    <li key={idx}>{term.content}</li>
+                                  )
+                                );
+                              })}
+                              {extraTCData.map((etc: any) => {
+                                return (
+                                  etc.is_default && (
+                                    <li key={etc.content}>{etc.content}</li>
+                                  )
+                                );
+                              })}
+                            </ul>
+                          </li>
+                        );
+                      } else {
+                        return;
+                      }
+                    })}
+                  </ul>
+                </div>
               </div>
               <div className="flex items-center ">
                 <button
