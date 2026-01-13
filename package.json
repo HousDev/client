@@ -16,7 +16,7 @@
     "bcryptjs": "^3.0.3",
     "buffer": "^6.0.3",
     "jsonwebtoken": "^9.0.2",
-    "lucide-react": "^0.344.0",
+    "lucide-react": "^0.562.0",
     "react": "^19.2.0",
     "react-dom": "^19.2.0",
     "sonner": "^2.0.7",
