@@ -32,6 +32,7 @@ interface POFormData {
   po_type_id: string;
   po_date: string;
   delivery_date: string;
+  due_date: string;
   is_interstate: boolean;
   items: POItem[];
   subtotal: number;
@@ -250,6 +251,7 @@ export default function CreatePurchaseOrderForm({
     po_type_id: "",
     po_date: new Date().toISOString().split("T")[0],
     delivery_date: "",
+    due_date: "",
     is_interstate: false,
     items: [],
     subtotal: 0,
@@ -698,7 +700,8 @@ export default function CreatePurchaseOrderForm({
         formData.project_id === "" ||
         formData.po_type_id === "" ||
         formData.po_date === "" ||
-        formData.delivery_date === ""
+        formData.delivery_date === "" ||
+        formData.due_date === ""
       ) {
         toast.error("Fill all required fields.");
         return;
@@ -731,6 +734,7 @@ export default function CreatePurchaseOrderForm({
         po_type_id: formData.po_type_id,
         po_date: formData.po_date,
         delivery_date: formData.delivery_date,
+        due_date: formData.due_date,
         is_interstate: formData.is_interstate,
         items: formData.items,
         subtotal: formData.subtotal,
@@ -809,6 +813,7 @@ export default function CreatePurchaseOrderForm({
       po_type_id: "",
       po_date: new Date().toISOString().split("T")[0],
       delivery_date: "",
+      due_date: "",
       is_interstate: false,
       items: [],
       subtotal: 0,
@@ -974,7 +979,7 @@ export default function CreatePurchaseOrderForm({
 
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Delivery Date
+                    Delivery Date <span className="text-red-500">*</span>
                   </label>
                   <input
                     type="date"
@@ -983,6 +988,22 @@ export default function CreatePurchaseOrderForm({
                       setFormData({
                         ...formData,
                         delivery_date: e.target.value,
+                      })
+                    }
+                    className="w-full px-4 py-1 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Payment Due Date <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    type="date"
+                    value={formData.due_date}
+                    onChange={(e) =>
+                      setFormData({
+                        ...formData,
+                        due_date: e.target.value,
                       })
                     }
                     className="w-full px-4 py-1 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
@@ -1414,7 +1435,11 @@ export default function CreatePurchaseOrderForm({
                                 )
                               );
                             }}
-                            checked={d.isActive}
+                            checked={
+                              d.isActive ||
+                              d.content.filter((ftc: any) => ftc.is_default)
+                                .length === d.content.length
+                            }
                             className="w-4 h-4 accent-blue-600 cursor-pointer mr-1"
                           />{" "}
                           {d.category.charAt(0).toUpperCase() +
