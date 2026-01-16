@@ -38,6 +38,7 @@ interface POFormData {
   po_type_id: string;
   po_date: string;
   delivery_date: string;
+  due_date: string;
   is_interstate: boolean;
   items: any[];
   subtotal: number;
@@ -55,7 +56,7 @@ interface POFormData {
   terms_and_conditions: any[];
   notes: string;
 }
-
+type addTermType = { category: string; content: string; is_default: boolean };
 type Option = { id: string; name: string } | string;
 
 /* ------------------ SearchableSelect component (inline) ------------------ */
@@ -242,6 +243,14 @@ export default function UpdatePurchaseOrderForm({
   const [showItemSelector, setShowItemSelector] = useState(false);
   const [newTermsAndCondition, setNewTermsAndConditions] = useState("");
 
+  const [showAddTerm, setShowAddTerm] = useState<boolean>(false);
+  const [extraTerms, setExtraTerms] = useState<addTermType[]>([]);
+  const [extraTermData, setExtraTermData] = useState<addTermType>({
+    category: "",
+    content: "",
+    is_default: false,
+  });
+
   // item selector internal search
   const [itemSelectorSearch, setItemSelectorSearch] = useState("");
 
@@ -356,19 +365,64 @@ export default function UpdatePurchaseOrderForm({
       const data: any = await TermsConditionsApi.getByIdVendorTC(
         selectedPO.vendor_id
       );
-      const tempTerms = formData.terms_and_conditions.split(",");
-      tempTerms.forEach((d: any) => {
-        const existing = data.some((i: any) => i.content.includes(d));
-        if (!existing) {
-          data.push({ content: d });
-        }
+
+      if (!Array.isArray(data)) return;
+
+      setFormData((prev: any) => {
+        // clone existing terms safely
+        const terms = structuredClone(prev.terms_and_conditions || []);
+
+        data.forEach((element) => {
+          let exists = false;
+
+          // check duplicate
+          terms.forEach((group: any) => {
+            group.content.forEach((item: any) => {
+              if (item.content === element.content) {
+                exists = true;
+              }
+            });
+          });
+
+          if (!exists) {
+            const group = terms.find(
+              (g: any) => g.category === element.category
+            );
+
+            if (group) {
+              group.content.push({
+                content: element.content,
+                is_default: false,
+                term_id: element.id,
+              });
+            } else {
+              terms.push({
+                category: element.category,
+                content: [
+                  {
+                    content: element.content,
+                    is_default: false,
+                    term_id: element.id,
+                  },
+                ],
+              });
+            }
+          }
+        });
+        return {
+          ...prev,
+          terms_and_conditions: terms,
+        };
       });
-      setTerms(Array.isArray(data) ? data : []);
     } catch (err) {
-      console.warn("loadTerms failed, fallback to empty", err);
-      setTerms([]);
+      console.warn("loadTerms failed", err);
     }
   };
+
+  useEffect(() => {
+    console.log(formData);
+  }, [formData]);
+
   useEffect(() => {
     loadTerms();
   }, []);
@@ -626,7 +680,8 @@ export default function UpdatePurchaseOrderForm({
         formData.project_id === "" ||
         formData.po_type_id === "" ||
         formData.po_date === "" ||
-        formData.delivery_date === ""
+        formData.delivery_date === "" ||
+        formData.due_date === ""
       ) {
         toast.error("Fill all required fields.");
         return;
@@ -635,6 +690,23 @@ export default function UpdatePurchaseOrderForm({
         toast.error("Add Items.");
         return;
       }
+
+      const selected_terms_idsData: any = [];
+      const terms_and_conditionsData: any = [];
+
+      formData.terms_and_conditions.forEach((element: any) => {
+        element.content.forEach((elem: any) => {
+          if (elem.is_default && elem.term_id) {
+            selected_terms_idsData.push(elem.term_id);
+          } else if (elem.is_default) {
+            terms_and_conditionsData.push(elem);
+          }
+        });
+      });
+
+      console.log(selected_terms_idsData);
+      console.log(terms_and_conditionsData);
+
       const payload = {
         po_number: formData.po_number,
         vendor_id: formData.vendor_id,
@@ -642,6 +714,7 @@ export default function UpdatePurchaseOrderForm({
         po_type_id: formData.po_type_id,
         po_date: formData.po_date,
         delivery_date: formData.delivery_date,
+        due_date: formData.due_date,
         is_interstate: formData.is_interstate,
         items: formData.items,
         subtotal: formData.subtotal,
@@ -657,14 +730,15 @@ export default function UpdatePurchaseOrderForm({
         advance_amount: formData.advance_amount,
         total_paid: 0,
         balance_amount: formData.grand_total,
-        selected_terms_ids: [],
-        terms_and_conditions: formData.terms_and_conditions,
+        selected_terms_ids: JSON.stringify(selected_terms_idsData),
+        terms_and_conditions: JSON.stringify(terms_and_conditionsData),
         notes: formData.notes,
         status: "draft",
         material_status: "pending",
         payment_status: "pending",
         created_by: user?.id,
       };
+
       const response = await poApi.updatePO(formData?.poId, payload);
       toast.success("PO Updated Successfully.");
       await loadAllData();
@@ -687,6 +761,7 @@ export default function UpdatePurchaseOrderForm({
       po_type_id: "",
       po_date: new Date().toISOString().split("T")[0],
       delivery_date: "",
+      due_date: "",
       is_interstate: false,
       items: [],
       subtotal: 0,
@@ -701,7 +776,7 @@ export default function UpdatePurchaseOrderForm({
       payment_terms_id: "",
       advance_amount: 0,
       selected_terms_ids: [],
-      terms_and_conditions: "",
+      terms_and_conditions: [],
       notes: "",
     });
     setItemSelectorSearch("");
@@ -716,6 +791,7 @@ export default function UpdatePurchaseOrderForm({
 
   // --- item selector filtering by selected PO type category + search
   const selectedCategory = getselectedPOSTypeCategory(); // 'material' | 'service' | null
+
   const filteredItems = items
     .filter((it) => {
       // if category known, filter by it
@@ -857,6 +933,23 @@ export default function UpdatePurchaseOrderForm({
                       setFormData({
                         ...formData,
                         delivery_date: e.target.value,
+                      })
+                    }
+                    className="w-full px-4 py-1 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Payment Due Date
+                  </label>
+                  <input
+                    type="date"
+                    value={formData.due_date}
+                    onChange={(e) =>
+                      setFormData({
+                        ...formData,
+                        due_date: e.target.value,
                       })
                     }
                     className="w-full px-4 py-1 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
@@ -1073,37 +1166,23 @@ export default function UpdatePurchaseOrderForm({
                 <div className="py-3">
                   <ul className="px-6 list-decimal">
                     {formData.terms_and_conditions.map((d, indx: number) => {
-                      const extraTCData =
-                        extraTerms.filter(
-                          (ed: any) =>
-                            ed.category === d.category && ed.is_default
-                        ) || [];
-                      if (
-                        d.content.find((d: any) => d.is_default) ||
-                        extraTCData.length > 0
-                      ) {
+                      const displayTerms = d.content.filter((dtc: any) =>
+                        Boolean(dtc.is_default)
+                      );
+                      if (displayTerms.length > 0) {
                         return (
                           <li className="mb-3" key={indx}>
                             <div>
-                              <h1 className="font-semibold">
-                                {d.category.charAt(0).toUpperCase() +
-                                  d.category.slice(1) || ""}
-                              </h1>
+                              {d.content.find((tcD: any) => tcD.is_default) && (
+                                <h1 className="font-semibold">
+                                  {d.category.charAt(0).toUpperCase() +
+                                    d.category.slice(1) || ""}
+                                </h1>
+                              )}
                             </div>
                             <ul className=" ml-3 list-disc">
-                              {d.content.map((term: any, idx: number) => {
-                                return (
-                                  term.is_default && (
-                                    <li key={idx}>{term.content}</li>
-                                  )
-                                );
-                              })}
-                              {extraTCData.map((etc: any) => {
-                                return (
-                                  etc.is_default && (
-                                    <li key={etc.content}>{etc.content}</li>
-                                  )
-                                );
+                              {displayTerms.map((term: any, idx: number) => {
+                                return <li key={idx}>{term.content}</li>;
                               })}
                             </ul>
                           </li>
@@ -1269,101 +1348,235 @@ export default function UpdatePurchaseOrderForm({
               <h2 className="text-2xl font-bold text-white">
                 Add Terms & Conditions
               </h2>
-              <button
-                onClick={() => setShowTermsConditions(false)}
-                className="text-white hover:bg-white hover:bg-opacity-20 rounded-lg p-2 transition"
-              >
-                <X className="w-6 h-6" />
-              </button>
+              <div className="flex">
+                <button
+                  onClick={() => setShowAddTerm(true)}
+                  className="text-white bg-green-600 hover:bg-green-700 rounded-lg px-3 font-semibold py-1 flex items-center mr-3 text-sm"
+                >
+                  <Plus className="w-4 h-4" /> Add
+                </button>
+                <button
+                  onClick={() => setShowTermsConditions(false)}
+                  className="text-white hover:bg-white hover:bg-opacity-20 rounded-lg p-2 transition"
+                >
+                  <X className="w-6 h-6" />
+                </button>
+              </div>
             </div>
-            <div className="py-6">
+            <div className="py-6 ">
               <ul className="px-6">
-                {terms.map((d) => (
-                  <li className="mb-3">
-                    <button
-                      onClick={() => {
-                        if (formData.terms_and_conditions.includes(d.content)) {
-                          if (
-                            formData.terms_and_conditions.includes(
-                              d.content + ","
-                            )
-                          ) {
-                            setFormData((prev) => ({
-                              ...prev,
-                              terms_and_conditions:
-                                prev.terms_and_conditions.replace(
-                                  d.content + ",",
-                                  ""
-                                ),
-                            }));
-                          } else {
-                            setFormData((prev) => ({
-                              ...prev,
-                              terms_and_conditions:
-                                prev.terms_and_conditions.replace(
-                                  d.content,
-                                  ""
-                                ),
-                            }));
-                          }
-                        } else {
-                          setFormData((prev) => ({
-                            ...prev,
-                            terms_and_conditions: prev.terms_and_conditions
-                              ? `${prev.terms_and_conditions}, ${d.content}`
-                              : d.content,
-                          }));
-                        }
-                      }}
-                      className="flex items-center cursor-pointer"
-                    >
-                      <input
-                        type="checkbox"
-                        checked={formData.terms_and_conditions.includes(
-                          d.content
-                        )}
-                        className="w-4 h-4 text-blue-600 rounded focus:ring-2 focus:ring-blue-500 mr-3 cursor-pointer"
-                      />
-                      <span className="text-justify">{d.content}</span>
-                    </button>
-                  </li>
-                ))}
+                {formData.terms_and_conditions.map((d, indx: number) => {
+                  return (
+                    <li className="mb-3" key={indx}>
+                      <div>
+                        <h1 className="font-semibold">
+                          <input
+                            type="checkbox"
+                            onChange={(e) => {
+                              setFormData((prev) => ({
+                                ...prev,
+                                terms_and_conditions:
+                                  prev.terms_and_conditions.map((tc) =>
+                                    tc.category === d.category
+                                      ? {
+                                          ...tc,
+                                          isActive: !tc.isActive,
+                                          content: tc.content.map((i: any) => ({
+                                            ...i,
+                                            is_default: !tc.isActive,
+                                          })),
+                                        }
+                                      : tc
+                                  ),
+                              }));
+
+                              setTerms((prev) =>
+                                prev.map((tc) =>
+                                  tc.id === d.id
+                                    ? {
+                                        ...tc,
+                                        isActive: !tc.isActive,
+                                        content: tc.content.map((i: any) => ({
+                                          ...i,
+                                          is_default: !tc.isActive,
+                                        })),
+                                      }
+                                    : tc
+                                )
+                              );
+                            }}
+                            checked={
+                              d.isActive ||
+                              d.content.filter((ftc: any) => ftc.is_default)
+                                .length === d.content.length
+                            }
+                            className="w-4 h-4 accent-blue-600 cursor-pointer mr-1"
+                          />{" "}
+                          {d.category.charAt(0).toUpperCase() +
+                            d.category.slice(1) || ""}
+                        </h1>
+                      </div>
+                      <ul className=" ml-3">
+                        {d.content.map((term: any, idx: number) => {
+                          return (
+                            <li key={idx}>
+                              <input
+                                type="checkbox"
+                                checked={term.is_default}
+                                onChange={(e) => {
+                                  setFormData((prev) => ({
+                                    ...prev,
+                                    terms_and_conditions:
+                                      prev.terms_and_conditions.map((tc) =>
+                                        tc.category === d.category
+                                          ? {
+                                              ...tc,
+                                              content: tc.content.map(
+                                                (i: any) =>
+                                                  i.content === term.content
+                                                    ? {
+                                                        ...i,
+                                                        is_default:
+                                                          !i.is_default,
+                                                      }
+                                                    : i
+                                              ),
+                                            }
+                                          : tc
+                                      ),
+                                  }));
+                                }}
+                                className="w-4 h-4 accent-blue-600 cursor-pointer mr-1"
+                              />{" "}
+                              {term.content}
+                            </li>
+                          );
+                        })}
+                      </ul>
+                    </li>
+                  );
+                })}
               </ul>
             </div>
-            <div className="flex gap-3 items-end mb-6 px-6">
-              <div className="w-full">
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Add Extra Terms & Conditions
-                </label>
-                <div>
-                  <input
-                    type="text"
-                    value={newTermsAndCondition}
-                    onChange={(e) => setNewTermsAndConditions(e.target.value)}
-                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  />
-                </div>
+          </div>
+        </div>
+      )}
+      {showAddTerm && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-xl">
+            <div className="bg-gradient-to-r rounded-t-2xl from-blue-600 to-blue-700 px-6 py-4 flex justify-between items-center">
+              <h2 className="text-2xl font-bold text-white">
+                Add Terms & Conditions
+              </h2>
+              <div className="flex">
+                <button
+                  onClick={() => setShowAddTerm(false)}
+                  className="text-white hover:bg-white hover:bg-opacity-20 rounded-lg p-2 transition"
+                >
+                  <X className="w-6 h-6" />
+                </button>
               </div>
-              <button
-                type="button"
-                onClick={() => {
-                  setTerms((prev) => [
-                    ...prev,
-                    { content: newTermsAndCondition },
-                  ]);
-                  setFormData((prev) => ({
-                    ...prev,
-                    terms_and_conditions: prev.terms_and_conditions
-                      ? `${prev.terms_and_conditions}, ${newTermsAndCondition}`
-                      : newTermsAndCondition,
-                  }));
-                  setNewTermsAndConditions("");
-                }}
-                disabled={newTermsAndCondition.length === 0}
-                className="bg-blue-600 text-white px-4 py-3 h-fit w-fit  rounded-lg hover:bg-blue-700 transition text-sm flex items-center gap-2 cursor-pointer"
-              >
-                <Plus className="w-4 h-4" /> Add
-              </button>
+            </div>
+
+            <div className="grid grid-cols-1 gap-3 items-end mb-6 px-6 py-3">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Category <span className="text-red-500">*</span>
+                </label>
+                <select
+                  value={extraTermData.category}
+                  onChange={(e) =>
+                    setExtraTermData({
+                      ...extraTermData,
+                      category: e.target.value,
+                    })
+                  }
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  required
+                >
+                  <option value="">Select Category</option>
+                  <option value="general">General</option>
+                  <option value="payment">Payment</option>
+                  <option value="delivery">Delivery</option>
+                  <option value="quality">Quality</option>
+                  <option value="warranty">Warranty</option>
+                  <option value="tax">Tax</option>
+                  <option value="legal">Legal</option>
+                  <option value="returns">Returns</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Terms & Condition <span className="text-red-500">*</span>
+                </label>
+                <textarea
+                  value={extraTermData.content}
+                  onChange={(e) => {
+                    setExtraTermData({
+                      ...extraTermData,
+                      content: e.target.value,
+                    });
+                  }}
+                  className="w-full outline-none px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  rows={3}
+                  placeholder="Enter the full terms & conditions text..."
+                  required
+                />
+              </div>
+              <div className="flex flex-col sm:flex-row gap-3 w-full">
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (
+                      extraTermData.category.length === 0 ||
+                      extraTermData.content.length === 0
+                    ) {
+                      toast.error("All input fields required.");
+                      return;
+                    }
+                    console.log(extraTermData);
+                    setFormData((prev) => ({
+                      ...prev,
+                      terms_and_conditions: prev.terms_and_conditions.map(
+                        (tc: any) => {
+                          if (tc.category === extraTermData.category) {
+                            return {
+                              ...tc,
+                              content: [
+                                ...tc.content,
+                                {
+                                  category: extraTermData.category,
+                                  content: extraTermData.content,
+                                  is_default: true,
+                                },
+                              ],
+                            };
+                          } else {
+                            return tc;
+                          }
+                        }
+                      ),
+                    }));
+                    setExtraTermData({
+                      category: "",
+                      content: "",
+                      is_default: false,
+                    });
+                    setShowAddTerm(false);
+                  }}
+                  className="bg-blue-600 text-white px-4 py-3 h-fit w-full  rounded-lg hover:bg-blue-700 transition text-sm flex items-center gap-2 cursor-pointer justify-center"
+                >
+                  <Plus className="w-4 h-4" /> Add
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setShowAddTerm(false)}
+                  className="bg-gray-600 text-white px-4 py-3 h-fit  w-full sm:w-40  rounded-lg hover:bg-gray-700 transition text-sm flex items-center justify-center gap-2 cursor-pointer"
+                >
+                  Close
+                </button>
+              </div>
             </div>
           </div>
         </div>

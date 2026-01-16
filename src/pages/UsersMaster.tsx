@@ -13,6 +13,8 @@ import {
 } from "lucide-react";
 import { api, UsersApi } from "../lib/Api"; // adjust path if needed
 import { getAllRoles } from "../lib/rolesApi";
+import { toast } from "sonner";
+import MySwal from "../utils/swal";
 
 // Keep your local type definitions (or import them from Api.ts if you exported them there)
 interface Permissions {
@@ -210,7 +212,7 @@ export default function UsersMaster() {
       })
       .catch((err) => {
         console.error("Failed to load users", err);
-        alert("Failed to load users. See console for details.");
+        toast.error("Failed to load users. See console for details.");
         // fallback seed
         setUsers([
           {
@@ -236,15 +238,33 @@ export default function UsersMaster() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!formData.email) {
-      alert("Email is required");
+      toast.error("Email is required");
       return;
     }
     if (!editingId && formData.password.length < 6) {
-      alert("Password must be at least 6 characters");
+      toast.error("Password must be at least 6 characters");
+      return;
+    }
+
+    if (formData.full_name.length < 3) {
+      toast.error("Enter valid full name.");
+      return;
+    }
+    if (formData.department.length < 3) {
+      toast.error("Enter valid department.");
+      return;
+    }
+    if (formData.phone.length !== 10) {
+      toast.error("Mobile number must be 10 digit.");
+      return;
+    }
+    if (formData.role.length === 0) {
+      toast.error("Enter valid user role.");
       return;
     }
 
     setSubmitting(true);
+
     try {
       if (editingId) {
         // build payload; send password only if provided
@@ -262,7 +282,7 @@ export default function UsersMaster() {
         setUsers((prev) =>
           prev.map((u) => (u.id === updated.id ? { ...u, ...updated } : u))
         );
-        alert("User updated successfully!");
+        toast.success("User updated successfully!");
       } else {
         // create
         if (
@@ -270,7 +290,7 @@ export default function UsersMaster() {
             (u) => u.email.toLowerCase() === formData.email.toLowerCase()
           )
         ) {
-          alert("A user with this email already exists.");
+          toast.error("A user with this email already exists.");
           setSubmitting(false);
           return;
         }
@@ -294,7 +314,7 @@ export default function UsersMaster() {
             (a.full_name || "").localeCompare(b.full_name || "")
           )
         );
-        alert("User created successfully!");
+        toast.success("User created successfully!");
       }
 
       setShowModal(false);
@@ -305,7 +325,7 @@ export default function UsersMaster() {
         err?.message ||
         (err?.details && JSON.stringify(err.details)) ||
         "Operation failed";
-      alert(message);
+      toast.error(message);
     } finally {
       setSubmitting(false);
     }
@@ -332,14 +352,20 @@ export default function UsersMaster() {
   };
 
   const handleDelete = async (id: string) => {
-    if (!confirm("Are you sure you want to delete this user?")) return;
+    const result: any = await MySwal.fire({
+      title: "Delete User?",
+      text: "This action cannot be undone",
+      icon: "warning",
+      showCancelButton: true,
+    });
+    if (!result.isConfirmed) return;
     try {
       await UsersApi.remove(id);
       setUsers((prev) => prev.filter((u) => u.id !== id));
-      alert("User deleted successfully!");
+      toast.success("User deleted successfully!");
     } catch (err) {
       console.error("delete error", err);
-      alert("Failed to delete user");
+      toast.error("Failed to delete user");
     }
   };
 
@@ -351,7 +377,7 @@ export default function UsersMaster() {
       );
     } catch (err) {
       console.error("toggle error", err);
-      alert("Failed to toggle status");
+      toast.error("Failed to toggle status");
     }
   };
 
@@ -583,7 +609,7 @@ export default function UsersMaster() {
                       onChange={(e) =>
                         setFormData({ ...formData, full_name: e.target.value })
                       }
-                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                       placeholder="John Doe"
                       required
                     />
@@ -599,7 +625,7 @@ export default function UsersMaster() {
                       onChange={(e) =>
                         setFormData({ ...formData, email: e.target.value })
                       }
-                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                       placeholder="john@example.com"
                       required
                       disabled={!!editingId}
@@ -608,36 +634,46 @@ export default function UsersMaster() {
 
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Phone
+                      Phone <span className="text-red-500">*</span>
                     </label>
                     <input
                       type="tel"
                       value={formData.phone}
-                      onChange={(e) =>
-                        setFormData({ ...formData, phone: e.target.value })
-                      }
-                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      required
+                      onChange={(e) => {
+                        if (!/^\d*$/.test(e.target.value)) {
+                          toast.warning("Enter Valid Phone Number.");
+                          return;
+                        }
+                        if (e.target.value.length > 10) {
+                          toast.warning("Mobile number must be 10 digit.");
+                          return;
+                        }
+                        setFormData({ ...formData, phone: e.target.value });
+                      }}
+                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                       placeholder="+91 98765 43210"
                     />
                   </div>
 
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Department
+                      Department <span className="text-red-500">*</span>
                     </label>
                     <input
                       type="text"
+                      required
                       value={formData.department}
                       onChange={(e) =>
                         setFormData({ ...formData, department: e.target.value })
                       }
-                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                       placeholder="Procurement"
                     />
                   </div>
 
                   {!editingId && (
-                    <div className="md:col-span-2">
+                    <div className="">
                       <label className="block text-sm font-medium text-gray-700 mb-2">
                         Password <span className="text-red-500">*</span>
                       </label>
@@ -651,7 +687,7 @@ export default function UsersMaster() {
                               password: e.target.value,
                             })
                           }
-                          className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent pr-12"
+                          className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent pr-12"
                           placeholder="Min 6 characters"
                           required={!editingId}
                           minLength={6}
@@ -672,7 +708,7 @@ export default function UsersMaster() {
                   )}
 
                   {editingId && (
-                    <div className="md:col-span-2">
+                    <div className="">
                       <label className="block text-sm font-medium text-gray-700 mb-2">
                         Change Password (optional)
                       </label>
@@ -686,7 +722,8 @@ export default function UsersMaster() {
                               password: e.target.value,
                             })
                           }
-                          className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent pr-12"
+                          required
+                          className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent pr-12"
                           placeholder="Leave blank to keep existing password"
                           minLength={0}
                         />
@@ -715,7 +752,7 @@ export default function UsersMaster() {
                       id="role"
                       name="role"
                       value={formData.role}
-                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent pr-12"
+                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent pr-12"
                       onChange={(e) => handleRoleChange(e.target.value)}
                     />
                     <datalist
@@ -728,7 +765,7 @@ export default function UsersMaster() {
                     </datalist>
                   </div>
 
-                  <div className="flex items-center pt-8">
+                  <div className="flex items-center pt-3">
                     <input
                       type="checkbox"
                       id="is_active"
@@ -792,7 +829,7 @@ export default function UsersMaster() {
                 <button
                   type="submit"
                   disabled={submitting}
-                  className="flex-1 bg-blue-600 text-white py-3 px-6 rounded-lg hover:bg-blue-700 transition font-medium shadow-sm"
+                  className="flex-1 bg-blue-600 text-white py-2 px-6 rounded-lg hover:bg-blue-700 transition font-medium shadow-sm"
                 >
                   {submitting
                     ? "Saving..."
@@ -806,7 +843,7 @@ export default function UsersMaster() {
                     setShowModal(false);
                     resetForm();
                   }}
-                  className="px-6 py-3 border border-gray-300 rounded-lg hover:bg-gray-50 transition font-medium"
+                  className="px-6 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition font-medium"
                 >
                   Cancel
                 </button>
