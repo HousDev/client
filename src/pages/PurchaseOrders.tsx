@@ -757,6 +757,7 @@ export default function PurchaseOrders() {
       pending: "bg-red-100 text-red-700",
       partial: "bg-yellow-100 text-yellow-700",
       paid: "bg-green-100 text-green-700",
+      completed: "bg-green-100 text-green-700",
     };
     return (status && colors[status]) || "bg-gray-100 text-gray-700";
   };
@@ -1150,13 +1151,13 @@ export default function PurchaseOrders() {
                                   selected_terms_idsData.includes(term.id)
                                 ) || [];
 
-                              console.log(terms, "this is terms");
-
                               terms_and_conditionsData.forEach(
                                 (element: any) => {
                                   terms.push(element);
                                 }
                               );
+
+                              console.log(terms, "this is terms");
 
                               const formatedTerms: any = Object.values(
                                 terms.reduce((acc: any, item: any) => {
@@ -1171,10 +1172,11 @@ export default function PurchaseOrders() {
                                       is_active: item.is_active,
                                     };
                                   }
-
+                                  console.log(item);
                                   acc[key].content.push({
+                                    category: item.category,
                                     content: item.content,
-                                    is_default: Boolean(item.is_default),
+                                    is_default: Boolean(true),
                                     term_id: item.id,
                                   });
                                   acc[key].isActive = false;
@@ -1183,11 +1185,17 @@ export default function PurchaseOrders() {
                                 }, {})
                               );
 
+                              console.log(
+                                formatedTerms,
+                                "this is form update po"
+                              );
+
                               const data = {
                                 poId: po.id,
                                 advance_amount: po.advance_amount,
                                 cgst_amount: po.cgst_amount,
                                 delivery_date: po.delivery_date.slice(0, 10),
+                                due_date: po.due_date,
                                 discount_amount: po.discount_amount,
                                 discount_percentage: po.discount_percentage,
                                 grand_total: po.grand_total,

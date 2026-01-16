@@ -17,6 +17,7 @@ import TermsConditionsApi from "../lib/termsConditionsApi";
 import { TermsCondition } from "../lib/termsConditionsApi";
 import vendorApi from "../lib/vendorApi";
 import SearchableSelect from "../components/SearchableSelect";
+import MySwal from "../utils/swal";
 
 const CATEGORY_OPTIONS = [
   {
@@ -184,7 +185,13 @@ export default function TermsConditionsMaster() {
 
   const handleDelete = async (id: number) => {
     try {
-      if (!confirm("Are you sure you want to delete this term?")) return;
+      const result: any = await MySwal.fire({
+        title: "Delete Term?",
+        text: "This action cannot be undone",
+        icon: "warning",
+        showCancelButton: true,
+      });
+      if (!result.isConfirmed) return;
       const deleteRes = await TermsConditionsApi.deleteTC(id);
       if (deleteRes.status) {
         loadTerms();

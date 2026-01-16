@@ -38,6 +38,7 @@ interface POFormData {
   po_type_id: string;
   po_date: string;
   delivery_date: string;
+  due_date: string;
   is_interstate: boolean;
   items: any[];
   subtotal: number;
@@ -364,23 +365,64 @@ export default function UpdatePurchaseOrderForm({
       const data: any = await TermsConditionsApi.getByIdVendorTC(
         selectedPO.vendor_id
       );
-      if (Array.isArray(data)) {
-        const newData = [];
-        selectedPO.terms_and_conditions.forEach((element: any) => {
-          const status = true;
-          element.forEach((element1: any) => {
-            data.forEach((element2: any) => {});
+
+      if (!Array.isArray(data)) return;
+
+      setFormData((prev: any) => {
+        // clone existing terms safely
+        const terms = structuredClone(prev.terms_and_conditions || []);
+
+        data.forEach((element) => {
+          let exists = false;
+
+          // check duplicate
+          terms.forEach((group: any) => {
+            group.content.forEach((item: any) => {
+              if (item.content === element.content) {
+                exists = true;
+              }
+            });
           });
+
+          if (!exists) {
+            const group = terms.find(
+              (g: any) => g.category === element.category
+            );
+
+            if (group) {
+              group.content.push({
+                content: element.content,
+                is_default: false,
+                term_id: element.id,
+              });
+            } else {
+              terms.push({
+                category: element.category,
+                content: [
+                  {
+                    content: element.content,
+                    is_default: false,
+                    term_id: element.id,
+                  },
+                ],
+              });
+            }
+          }
         });
-        setTerms(Array.isArray(data) ? data : []);
-      } else {
-        setTerms([]);
-      }
+        return {
+          ...prev,
+          terms_and_conditions: terms,
+        };
+      });
     } catch (err) {
-      console.warn("loadTerms failed, fallback to empty", err);
-      setTerms([]);
+      console.warn("loadTerms failed", err);
     }
   };
+
+  useEffect(() => {
+    console.log(formData);
+  }, [formData]);
+
   useEffect(() => {
     loadTerms();
   }, []);
@@ -638,7 +680,8 @@ export default function UpdatePurchaseOrderForm({
         formData.project_id === "" ||
         formData.po_type_id === "" ||
         formData.po_date === "" ||
-        formData.delivery_date === ""
+        formData.delivery_date === "" ||
+        formData.due_date === ""
       ) {
         toast.error("Fill all required fields.");
         return;
@@ -647,6 +690,23 @@ export default function UpdatePurchaseOrderForm({
         toast.error("Add Items.");
         return;
       }
+
+      const selected_terms_idsData: any = [];
+      const terms_and_conditionsData: any = [];
+
+      formData.terms_and_conditions.forEach((element: any) => {
+        element.content.forEach((elem: any) => {
+          if (elem.is_default && elem.term_id) {
+            selected_terms_idsData.push(elem.term_id);
+          } else if (elem.is_default) {
+            terms_and_conditionsData.push(elem);
+          }
+        });
+      });
+
+      console.log(selected_terms_idsData);
+      console.log(terms_and_conditionsData);
+
       const payload = {
         po_number: formData.po_number,
         vendor_id: formData.vendor_id,
@@ -654,6 +714,7 @@ export default function UpdatePurchaseOrderForm({
         po_type_id: formData.po_type_id,
         po_date: formData.po_date,
         delivery_date: formData.delivery_date,
+        due_date: formData.due_date,
         is_interstate: formData.is_interstate,
         items: formData.items,
         subtotal: formData.subtotal,
@@ -669,14 +730,15 @@ export default function UpdatePurchaseOrderForm({
         advance_amount: formData.advance_amount,
         total_paid: 0,
         balance_amount: formData.grand_total,
-        selected_terms_ids: [],
-        terms_and_conditions: formData.terms_and_conditions,
+        selected_terms_ids: JSON.stringify(selected_terms_idsData),
+        terms_and_conditions: JSON.stringify(terms_and_conditionsData),
         notes: formData.notes,
         status: "draft",
         material_status: "pending",
         payment_status: "pending",
         created_by: user?.id,
       };
+
       const response = await poApi.updatePO(formData?.poId, payload);
       toast.success("PO Updated Successfully.");
       await loadAllData();
@@ -699,6 +761,7 @@ export default function UpdatePurchaseOrderForm({
       po_type_id: "",
       po_date: new Date().toISOString().split("T")[0],
       delivery_date: "",
+      due_date: "",
       is_interstate: false,
       items: [],
       subtotal: 0,
@@ -870,6 +933,23 @@ export default function UpdatePurchaseOrderForm({
                       setFormData({
                         ...formData,
                         delivery_date: e.target.value,
+                      })
+                    }
+                    className="w-full px-4 py-1 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Payment Due Date
+                  </label>
+                  <input
+                    type="date"
+                    value={formData.due_date}
+                    onChange={(e) =>
+                      setFormData({
+                        ...formData,
+                        due_date: e.target.value,
                       })
                     }
                     className="w-full px-4 py-1 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
@@ -1086,21 +1166,30 @@ export default function UpdatePurchaseOrderForm({
                 <div className="py-3">
                   <ul className="px-6 list-decimal">
                     {formData.terms_and_conditions.map((d, indx: number) => {
-                      return (
-                        <li className="mb-3" key={indx}>
-                          <div>
-                            <h1 className="font-semibold">
-                              {d.category.charAt(0).toUpperCase() +
-                                d.category.slice(1) || ""}
-                            </h1>
-                          </div>
-                          <ul className=" ml-3 list-disc">
-                            {d.content.map((term: any, idx: number) => {
-                              return <li key={idx}>{term.content}</li>;
-                            })}
-                          </ul>
-                        </li>
+                      const displayTerms = d.content.filter((dtc: any) =>
+                        Boolean(dtc.is_default)
                       );
+                      if (displayTerms.length > 0) {
+                        return (
+                          <li className="mb-3" key={indx}>
+                            <div>
+                              {d.content.find((tcD: any) => tcD.is_default) && (
+                                <h1 className="font-semibold">
+                                  {d.category.charAt(0).toUpperCase() +
+                                    d.category.slice(1) || ""}
+                                </h1>
+                              )}
+                            </div>
+                            <ul className=" ml-3 list-disc">
+                              {displayTerms.map((term: any, idx: number) => {
+                                return <li key={idx}>{term.content}</li>;
+                              })}
+                            </ul>
+                          </li>
+                        );
+                      } else {
+                        return;
+                      }
                     })}
                   </ul>
                 </div>
@@ -1276,11 +1365,7 @@ export default function UpdatePurchaseOrderForm({
             </div>
             <div className="py-6 ">
               <ul className="px-6">
-                {terms.map((d, indx: number) => {
-                  const extraTCData =
-                    extraTerms.filter(
-                      (ed: any) => ed.category === d.category
-                    ) || [];
+                {formData.terms_and_conditions.map((d, indx: number) => {
                   return (
                     <li className="mb-3" key={indx}>
                       <div>
@@ -1288,6 +1373,23 @@ export default function UpdatePurchaseOrderForm({
                           <input
                             type="checkbox"
                             onChange={(e) => {
+                              setFormData((prev) => ({
+                                ...prev,
+                                terms_and_conditions:
+                                  prev.terms_and_conditions.map((tc) =>
+                                    tc.category === d.category
+                                      ? {
+                                          ...tc,
+                                          isActive: !tc.isActive,
+                                          content: tc.content.map((i: any) => ({
+                                            ...i,
+                                            is_default: !tc.isActive,
+                                          })),
+                                        }
+                                      : tc
+                                  ),
+                              }));
+
                               setTerms((prev) =>
                                 prev.map((tc) =>
                                   tc.id === d.id
@@ -1302,19 +1404,12 @@ export default function UpdatePurchaseOrderForm({
                                     : tc
                                 )
                               );
-
-                              setExtraTerms((prev) =>
-                                prev.map((tc) =>
-                                  tc.category === d.category
-                                    ? {
-                                        ...tc,
-                                        is_default: !d.isActive,
-                                      }
-                                    : tc
-                                )
-                              );
                             }}
-                            checked={d.isActive}
+                            checked={
+                              d.isActive ||
+                              d.content.filter((ftc: any) => ftc.is_default)
+                                .length === d.content.length
+                            }
                             className="w-4 h-4 accent-blue-600 cursor-pointer mr-1"
                           />{" "}
                           {d.category.charAt(0).toUpperCase() +
@@ -1329,51 +1424,31 @@ export default function UpdatePurchaseOrderForm({
                                 type="checkbox"
                                 checked={term.is_default}
                                 onChange={(e) => {
-                                  setTerms((prev) =>
-                                    prev.map((tc) =>
-                                      tc.id === d.id
-                                        ? {
-                                            ...tc,
-                                            content: tc.content.map((i: any) =>
-                                              i.term_id === term.term_id
-                                                ? {
-                                                    ...i,
-                                                    is_default: !i.is_default,
-                                                  }
-                                                : i
-                                            ),
-                                          }
-                                        : tc
-                                    )
-                                  );
+                                  setFormData((prev) => ({
+                                    ...prev,
+                                    terms_and_conditions:
+                                      prev.terms_and_conditions.map((tc) =>
+                                        tc.category === d.category
+                                          ? {
+                                              ...tc,
+                                              content: tc.content.map(
+                                                (i: any) =>
+                                                  i.content === term.content
+                                                    ? {
+                                                        ...i,
+                                                        is_default:
+                                                          !i.is_default,
+                                                      }
+                                                    : i
+                                              ),
+                                            }
+                                          : tc
+                                      ),
+                                  }));
                                 }}
                                 className="w-4 h-4 accent-blue-600 cursor-pointer mr-1"
                               />{" "}
                               {term.content}
-                            </li>
-                          );
-                        })}
-                        {extraTCData.map((etc: any) => {
-                          return (
-                            <li key={etc.content}>
-                              <input
-                                type="checkbox"
-                                checked={etc.is_default}
-                                onChange={() => {
-                                  setExtraTerms((prev) =>
-                                    prev.map((etci) =>
-                                      etci.content === etc.content
-                                        ? {
-                                            ...etci,
-                                            is_default: !etci.is_default, // ✅ TOGGLE
-                                          }
-                                        : etci
-                                    )
-                                  );
-                                }}
-                                className="w-4 h-4 accent-blue-600 cursor-pointer mr-1"
-                              />{" "}
-                              {etc.content}
                             </li>
                           );
                         })}
@@ -1453,17 +1528,42 @@ export default function UpdatePurchaseOrderForm({
                 <button
                   type="button"
                   onClick={() => {
-                    setExtraTerms([
-                      ...extraTerms,
-                      { ...extraTermData, is_default: true },
-                    ]);
+                    if (
+                      extraTermData.category.length === 0 ||
+                      extraTermData.content.length === 0
+                    ) {
+                      toast.error("All input fields required.");
+                      return;
+                    }
+                    console.log(extraTermData);
+                    setFormData((prev) => ({
+                      ...prev,
+                      terms_and_conditions: prev.terms_and_conditions.map(
+                        (tc: any) => {
+                          if (tc.category === extraTermData.category) {
+                            return {
+                              ...tc,
+                              content: [
+                                ...tc.content,
+                                {
+                                  category: extraTermData.category,
+                                  content: extraTermData.content,
+                                  is_default: true,
+                                },
+                              ],
+                            };
+                          } else {
+                            return tc;
+                          }
+                        }
+                      ),
+                    }));
                     setExtraTermData({
                       category: "",
                       content: "",
                       is_default: false,
                     });
                     setShowAddTerm(false);
-                    console.log(extraTerms);
                   }}
                   className="bg-blue-600 text-white px-4 py-3 h-fit w-full  rounded-lg hover:bg-blue-700 transition text-sm flex items-center gap-2 cursor-pointer justify-center"
                 >

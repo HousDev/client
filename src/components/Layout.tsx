@@ -128,7 +128,7 @@ export default function Layout({
       id: "notifications",
       label: "Notifications",
       icon: Bell,
-      value: [],
+      value: ["view_notifications"],
     },
     {
       id: "reports",
