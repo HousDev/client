@@ -114,7 +114,7 @@ export default function ProjectDetailsForm({
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4 overflow-y-auto">
       <div className="bg-white rounded-xl shadow-xl w-full max-w-md my-8 border border-gray-200">
         {/* Header */}
-        <div className="bg-gradient-to-r from-blue-600 to-blue-700 px-6 py-4 flex justify-between items-center rounded-t-xl">
+        <div className="bg-gradient-to-r from-[#40423f] via-[#4a4c49] to-[#5a5d5a] px-6 py-4 flex justify-between items-center rounded-t-xl">
           <div className="flex items-center gap-3">
             <div className="p-2 bg-white/10 rounded-lg">
               <FileText className="w-6 h-6 text-white" />
@@ -212,7 +212,7 @@ export default function ProjectDetailsForm({
             <button
               type="button"
               onClick={handleSubmit}
-              className="px-8 py-2.5 bg-gradient-to-r from-blue-600 to-blue-700 text-white rounded-lg hover:from-blue-700 hover:to-blue-800 transition font-medium flex items-center gap-2 shadow-sm"
+              className="px-8 py-2.5 bg-[#C62828] text-white rounded-lg hover:from-blue-700 hover:to-blue-800 transition font-medium flex items-center gap-2 shadow-sm"
             >
               <Save className="w-4 h-4" />
               Save Details

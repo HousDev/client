@@ -807,14 +807,7 @@ export default function Permissions() {
   // Main UI
   return (
     <div className="space-y-6 p-6">
-      <div>
-        <h1 className="text-3xl font-bold text-gray-800">
-          Permissions Management
-        </h1>
-        <p className="text-gray-600 mt-1">
-          Manage role-based and user-specific permissions
-        </p>
-      </div>
+      
 
       <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
         <div className="flex border-b border-gray-200">

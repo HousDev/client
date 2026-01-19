@@ -9,7 +9,7 @@ async function getTransactions() {
   return unwrap(res);
 }
 
-async function getIssueMaterialTransactions() {
+async function getIssueMaterialTransactions(id?: number) {
   const res = await api.get("/inventory-transaction/issueMaterialTransaction");
   return unwrap(res);
 }
