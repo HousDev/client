@@ -824,7 +824,7 @@ export default function PurchaseOrders() {
         {can("create_pos") && (
           <button
             onClick={() => setShowCreatePro(true)}
-            className="bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition flex items-center gap-2 shadow-sm"
+            className="bg-[#C62828] text-white px-6 py-3 rounded-lg transition flex items-center gap-2 shadow-sm"
           >
             <Plus className="w-5 h-5" />
             Create PO
@@ -1351,7 +1351,7 @@ export default function PurchaseOrders() {
       {showViewModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-2xl shadow-2xl w-full max-w-4xl max-h-[95vh] overflow-hidden">
-            <div className="bg-gradient-to-r from-blue-600 to-blue-700 px-6 py-4 flex justify-between items-center">
+            <div className=" bg-[#C62828] px-6 py-4 flex justify-between items-center">
               <h2 className="text-2xl font-bold text-white">
                 Purchase Order PDF Preveiw
               </h2>

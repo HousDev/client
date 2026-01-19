@@ -879,7 +879,7 @@ export default function CreatePurchaseOrderForm({
       {/* Create Modal (with SearchableSelects) */}
       <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4 overflow-y-auto">
         <div className="bg-white rounded-2xl shadow-2xl w-full max-w-4xl my-8">
-          <div className="bg-gradient-to-r from-blue-600 to-blue-700 px-6 py-4 flex justify-between items-center sticky top-0 rounded-t-2xl">
+          <div className="bg-[#C62828] px-6 py-4 flex justify-between items-center sticky top-0 rounded-t-2xl">
             <h2 className="text-2xl font-bold text-white">
               Create Purchase Order
             </h2>
