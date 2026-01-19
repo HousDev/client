@@ -438,37 +438,37 @@ export default function PaymentTermsMaster() {
   const [selectAll, setSelectAll] = useState(false);
   
   const [formData, setFormData] = useState<PaymentTermFormData>({
-    name: '',
+    name: "",
     days: 0,
-    description: '',
+    description: "",
     advance_percentage: 0,
     is_active: true,
   });
 
-  const KEY_TERMS = 'mock_payment_terms_master_v1';
+  const KEY_TERMS = "mock_payment_terms_master_v1";
 
   const defaultTerms: PaymentTerm[] = [
     {
-      id: 'pt_30',
-      name: '30 Days Credit',
+      id: "pt_30",
+      name: "30 Days Credit",
       days: 30,
-      description: 'Payment within 30 days from invoice date',
+      description: "Payment within 30 days from invoice date",
       advance_percentage: 0,
       is_active: true,
     },
     {
-      id: 'pt_50_adv',
-      name: '50% Advance',
+      id: "pt_50_adv",
+      name: "50% Advance",
       days: 0,
-      description: '50% advance on order, balance on delivery',
+      description: "50% advance on order, balance on delivery",
       advance_percentage: 50,
       is_active: true,
     },
     {
-      id: 'pt_immediate',
-      name: 'Immediate',
+      id: "pt_immediate",
+      name: "Immediate",
       days: 0,
-      description: 'Immediate payment on delivery',
+      description: "Immediate payment on delivery",
       advance_percentage: 0,
       is_active: false,
     },
@@ -488,11 +488,11 @@ export default function PaymentTermsMaster() {
           parsed = defaultTerms;
           localStorage.setItem(KEY_TERMS, JSON.stringify(parsed));
         }
-        parsed.sort((a, b) => (a.name || '').localeCompare(b.name || ''));
+        parsed.sort((a, b) => (a.name || "").localeCompare(b.name || ""));
         setPaymentTerms(parsed);
         toast.success('Payment terms loaded successfully!');
       } catch (err) {
-        console.error('Error loading payment terms from storage:', err);
+        console.error("Error loading payment terms from storage:", err);
         setPaymentTerms([]);
         toast.error('Failed to load payment terms.');
       } finally {
@@ -503,15 +503,15 @@ export default function PaymentTermsMaster() {
 
   const persistTerms = (terms: PaymentTerm[]) => {
     localStorage.setItem(KEY_TERMS, JSON.stringify(terms));
-    terms.sort((a, b) => (a.name || '').localeCompare(b.name || ''));
+    terms.sort((a, b) => (a.name || "").localeCompare(b.name || ""));
     setPaymentTerms(terms);
   };
 
   const resetForm = () => {
     setFormData({
-      name: '',
+      name: "",
       days: 0,
-      description: '',
+      description: "",
       advance_percentage: 0,
       is_active: true,
     });
@@ -564,7 +564,7 @@ export default function PaymentTermsMaster() {
     setFormData({
       name: term.name,
       days: term.days,
-      description: term.description || '',
+      description: term.description || "",
       advance_percentage: term.advance_percentage,
       is_active: term.is_active ?? true,
     });
@@ -908,7 +908,9 @@ export default function PaymentTermsMaster() {
         {filteredTerms.length === 0 && (
           <div className="text-center py-12">
             <CreditCard className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-            <h3 className="text-lg font-semibold text-gray-800 mb-2">No payment terms found</h3>
+            <h3 className="text-lg font-semibold text-gray-800 mb-2">
+              No payment terms found
+            </h3>
             <p className="text-gray-600">
               {searchName || searchDays || searchDescription
                 ? 'Try a different search term'
@@ -1041,7 +1043,9 @@ export default function PaymentTermsMaster() {
                     <p className="text-xs font-medium text-orange-800">
                       Advance Payment Required: {formData.advance_percentage}%
                     </p>
-                    <p className="text-xs text-orange-600 mt-1">This percentage will be auto-calculated from PO total</p>
+                    <p className="text-xs text-orange-600 mt-1">
+                      This percentage will be auto-calculated from PO total
+                    </p>
                   </div>
                 )}
               </div>

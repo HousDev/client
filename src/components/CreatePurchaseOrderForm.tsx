@@ -6,6 +6,7 @@ import poApi from "../lib/poApi";
 import poTypeApi from "../lib/poTypeApi";
 import TermsConditionsApi from "../lib/termsConditionsApi";
 import { toast } from "sonner";
+import classifiedPaymentTerms from "../data/paymentTerms";
 
 /* --- types (updated to include individual GST rates) --- */
 interface POItem {
@@ -79,13 +80,13 @@ function SearchableSelect({
 
   // Normalize options to {id,name}
   const normalized = options.map((opt) =>
-    typeof opt === "string" ? { id: opt, name: opt } : opt
+    typeof opt === "string" ? { id: opt, name: opt } : opt,
   );
 
   const selected = normalized.find((o) => o.id === value) || null;
 
   const filtered = normalized.filter((o) =>
-    o.name.toLowerCase().includes(filter.toLowerCase())
+    o.name.toLowerCase().includes(filter.toLowerCase()),
   );
 
   useEffect(() => {
@@ -232,6 +233,14 @@ export default function CreatePurchaseOrderForm({
   const [showItemSelector, setShowItemSelector] = useState(false);
   const [showTermsConditions, setShowTermsConditions] = useState(false);
   const [newTermsAndCondition, setNewTermsAndConditions] = useState("");
+  const [showAddPaymentTerm, setShowAddPaymentTerm] = useState<Boolean>(false);
+  const [selectedPaymentTermId, setSelectedPaymentTermId] = useState<any>("");
+  const [selectedPaymentTerm, setSelectedPaymentTerm] = useState<any>("");
+  const [poPaymentTerms, setPoPaymentTerms] = useState<any[]>([]);
+  const [showTermDropdown, setShowTermDropdown] = useState(false);
+
+  const [selectedPaymentTermData, setSelectedPaymentTermData] =
+    useState<any>("");
 
   const [showAddTerm, setShowAddTerm] = useState<boolean>(false);
   const [extraTerms, setExtraTerms] = useState<addTermType[]>([]);
@@ -314,7 +323,7 @@ export default function CreatePurchaseOrderForm({
       setVendors(
         Array.isArray(data)
           ? data.filter((d: any) => d.category_name === "Material")
-          : []
+          : [],
       );
     } catch (err) {
       console.warn("loadVendors failed, fallback to empty", err);
@@ -339,8 +348,8 @@ export default function CreatePurchaseOrderForm({
       const list = Array.isArray(data)
         ? data
         : Array.isArray((data as any)?.data)
-        ? (data as any).data
-        : [];
+          ? (data as any).data
+          : [];
       setPOTypes(list);
     } catch (err) {
       console.warn("loadPOTypes failed, fallback to empty", err);
@@ -356,7 +365,7 @@ export default function CreatePurchaseOrderForm({
       setItems(
         Array.isArray(data)
           ? data.filter((d: any) => d.category === "material")
-          : []
+          : [],
       );
     } catch (err) {
       console.warn("loadItems failed, fallback to empty", err);
@@ -391,7 +400,7 @@ export default function CreatePurchaseOrderForm({
           acc[key].isActive = false;
 
           return acc;
-        }, {})
+        }, {}),
       );
       console.log(result);
 
@@ -415,7 +424,7 @@ export default function CreatePurchaseOrderForm({
   // --- Items helpers (updated for individual GST rates) ---
   const addItemFromMaster = (item: any) => {
     const existingIndex = formData.items.findIndex(
-      (i) => i.item_id === item.id
+      (i) => i.item_id === item.id,
     );
 
     let updatedItems: POItem[];
@@ -480,7 +489,7 @@ export default function CreatePurchaseOrderForm({
     calculateTotals(
       updatedItems,
       formData.discount_percentage,
-      formData.is_interstate
+      formData.is_interstate,
     );
 
     setShowItemSelector(false);
@@ -506,7 +515,6 @@ export default function CreatePurchaseOrderForm({
               (parseFloat(String(item.sgst_rate)) || 0))) /
           100;
       }
-
       newItems[index].amount = amount;
       newItems[index].gst_amount = gstAmount;
     }
@@ -515,7 +523,7 @@ export default function CreatePurchaseOrderForm({
     calculateTotals(
       newItems,
       formData.discount_percentage,
-      formData.is_interstate
+      formData.is_interstate,
     );
   };
 
@@ -525,18 +533,18 @@ export default function CreatePurchaseOrderForm({
     calculateTotals(
       newItems,
       formData.discount_percentage,
-      formData.is_interstate
+      formData.is_interstate,
     );
   };
 
   const calculateTotals = (
     itemsList: POItem[],
     discountPercentage: number,
-    isInterstate: boolean
+    isInterstate: boolean,
   ) => {
     const subtotal = itemsList.reduce(
       (sum, item) => sum + (Number(item.amount) || 0),
-      0
+      0,
     );
 
     const discountAmount = (subtotal * (discountPercentage || 0)) / 100;
@@ -619,7 +627,7 @@ export default function CreatePurchaseOrderForm({
 
   const handlePaymentTermsChange = (paymentTermsId: string) => {
     const selectedPaymentTerms = paymentTerms.find(
-      (pt) => pt.id === paymentTermsId
+      (pt) => pt.id === paymentTermsId,
     );
     const advanceAmount =
       selectedPaymentTerms && formData.grand_total
@@ -676,7 +684,7 @@ export default function CreatePurchaseOrderForm({
     } catch (err) {
       console.warn(
         "generatePONumber remote failed, falling back to client seq",
-        err
+        err,
       );
     }
     const now = new Date();
@@ -686,7 +694,7 @@ export default function CreatePurchaseOrderForm({
 
     return `PO/${year}/${String(month).padStart(2, "0")}/${String(seq).padStart(
       4,
-      "0"
+      "0",
     )}`;
   };
 
@@ -862,6 +870,10 @@ export default function CreatePurchaseOrderForm({
       );
     });
 
+  useEffect(() => {
+    console.log(selectedPaymentTermData);
+  }, [selectedPaymentTermData]);
+
   return (
     <div className="p-6">
       {/* Create Modal (with SearchableSelects) */}
@@ -874,6 +886,7 @@ export default function CreatePurchaseOrderForm({
             <button
               onClick={() => {
                 setShowCreatePro(false);
+                setPoPaymentTerms([]);
                 resetForm();
               }}
               className="text-white hover:bg-white hover:bg-opacity-20 rounded-lg p-2 transition"
@@ -1077,7 +1090,7 @@ export default function CreatePurchaseOrderForm({
                               handleItemChange(
                                 index,
                                 "quantity",
-                                parseFloat(e.target.value) || 0
+                                parseFloat(e.target.value) || 0,
                               );
                             }}
                             className="w-full px-2 py-1 border border-gray-300 rounded text-sm"
@@ -1103,7 +1116,7 @@ export default function CreatePurchaseOrderForm({
                               handleItemChange(
                                 index,
                                 "rate",
-                                parseFloat(e.target.value) || 0
+                                parseFloat(e.target.value) || 0,
                               );
                             }}
                             className="w-full px-2 py-1 border border-gray-300 rounded text-sm"
@@ -1171,20 +1184,69 @@ export default function CreatePurchaseOrderForm({
                 </div>
               </div>
             </div>
+
             <div className="pb-6">
               {
                 <div>
-                  {extraTerms.length > 0 &&
-                    terms.find((d) =>
-                      d.content.find((dd: any) => dd.is_default)
-                    ) && <h1 className="font-semibold">Terms & Conditions</h1>}
+                  {poPaymentTerms.length > 0 && (
+                    <div>
+                      <h1 className="font-semibold">
+                        Payment Terms & Conditions
+                      </h1>
+                      <div>
+                        <h1 className="font-semibold">Payment</h1>
+                      </div>
+                    </div>
+                  )}
+                  <div className="py-3">
+                    <ul className="px-6 list-disc">
+                      {poPaymentTerms.map((d, indx: number) => {
+                        return (
+                          <li className="mb-3" key={indx}>
+                            <p>
+                              {d.content
+                                .replace("${percent}", d.percent)
+                                .replace(
+                                  "${materialPercent}",
+                                  d.materialPercent,
+                                )
+                                .replace("${days}", d.days)}
+                            </p>
+                          </li>
+                        );
+                      })}
+                    </ul>
+                  </div>
+                </div>
+              }
+
+              <div className="flex items-center pt-3">
+                <button
+                  onClick={() => {
+                    if (formData.vendor_id) setShowAddPaymentTerm(true);
+                    else toast.warning("Select Vendor.");
+                  }}
+                  type="button"
+                  className="ml-2 text-sm font-medium text-blue-700 pb-6"
+                >
+                  Add Payment Terms & Conditions
+                </button>
+              </div>
+            </div>
+            <div className="pb-6">
+              {
+                <div>
+                  {extraTerms.length > 0 ||
+                    (terms.find((d) =>
+                      d.content.find((dd: any) => dd.is_default),
+                    ) && <h1 className="font-semibold">Terms & Conditions</h1>)}
                   <div className="py-3">
                     <ul className="px-6 list-decimal">
                       {terms.map((d, indx: number) => {
                         const extraTCData =
                           extraTerms.filter(
                             (ed: any) =>
-                              ed.category === d.category && ed.is_default
+                              ed.category === d.category && ed.is_default,
                           ) || [];
                         if (
                           d.content.find((d: any) => d.is_default) ||
@@ -1224,7 +1286,8 @@ export default function CreatePurchaseOrderForm({
                   </div>
                 </div>
               }
-              <div className="flex items-center pt-6">
+
+              <div className="flex items-center pt-3">
                 <button
                   onClick={() => {
                     if (formData.vendor_id) setShowTermsConditions(true);
@@ -1250,6 +1313,7 @@ export default function CreatePurchaseOrderForm({
                 type="button"
                 onClick={() => {
                   setShowCreatePro(false);
+                  setPoPaymentTerms([]);
                   resetForm();
                 }}
                 className="px-6 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition font-medium"
@@ -1400,7 +1464,7 @@ export default function CreatePurchaseOrderForm({
                 {terms.map((d, indx: number) => {
                   const extraTCData =
                     extraTerms.filter(
-                      (ed: any) => ed.category === d.category
+                      (ed: any) => ed.category === d.category,
                     ) || [];
                   return (
                     <li className="mb-3" key={indx}>
@@ -1420,8 +1484,8 @@ export default function CreatePurchaseOrderForm({
                                           is_default: !tc.isActive,
                                         })),
                                       }
-                                    : tc
-                                )
+                                    : tc,
+                                ),
                               );
 
                               setExtraTerms((prev) =>
@@ -1431,8 +1495,8 @@ export default function CreatePurchaseOrderForm({
                                         ...tc,
                                         is_default: !d.isActive,
                                       }
-                                    : tc
-                                )
+                                    : tc,
+                                ),
                               );
                             }}
                             checked={
@@ -1465,11 +1529,11 @@ export default function CreatePurchaseOrderForm({
                                                     ...i,
                                                     is_default: !i.is_default,
                                                   }
-                                                : i
+                                                : i,
                                             ),
                                           }
-                                        : tc
-                                    )
+                                        : tc,
+                                    ),
                                   );
                                 }}
                                 className="w-4 h-4 accent-blue-600 cursor-pointer mr-1"
@@ -1492,8 +1556,8 @@ export default function CreatePurchaseOrderForm({
                                             ...etci,
                                             is_default: !etci.is_default, // ✅ TOGGLE
                                           }
-                                        : etci
-                                    )
+                                        : etci,
+                                    ),
                                   );
                                 }}
                                 className="w-4 h-4 accent-blue-600 cursor-pointer mr-1"
@@ -1507,6 +1571,321 @@ export default function CreatePurchaseOrderForm({
                   );
                 })}
               </ul>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {showAddPaymentTerm && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-xl">
+            <div className="bg-gradient-to-r rounded-t-2xl from-blue-600 to-blue-700 px-6 py-4 flex justify-between items-center">
+              <h2 className="text-2xl font-bold text-white">
+                Add Payment Terms & Conditions
+              </h2>
+              <div className="flex">
+                <button
+                  onClick={() => {
+                    setSelectedPaymentTerm("");
+                    setSelectedPaymentTermData("");
+                    setSelectedPaymentTermId("");
+                    setShowAddPaymentTerm(false);
+                  }}
+                  className="text-white hover:bg-white hover:bg-opacity-20 rounded-lg p-2 transition"
+                >
+                  <X className="w-6 h-6" />
+                </button>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 gap-3 items-end mb-6 px-6 py-3 overflow-hidden relative">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Payment Term Category <span className="text-red-500">*</span>
+                </label>
+                <select
+                  value={selectedPaymentTermId}
+                  onChange={(e) => {
+                    setSelectedPaymentTermData("");
+                    setSelectedPaymentTermId(e.target.value);
+                  }}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  required
+                >
+                  <option value={""}>Select Category</option>
+                  {classifiedPaymentTerms.map((d: any) => (
+                    <option
+                      value={d.category}
+                      className="w-40 break-words relative"
+                    >
+                      {d.category.replaceAll("_", " ")}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              {/* Custom Payment Term Select */}
+              {selectedPaymentTermId && (
+                <div className="relative w-full ">
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Payment Term <span className="text-red-500">*</span>
+                  </label>
+
+                  {/* Selected value */}
+                  <button
+                    type="button"
+                    className="w-full text-left px-4 py-2 border border-gray-300 rounded-lg bg-white focus:ring-2 focus:ring-blue-500"
+                    onClick={() => setShowTermDropdown((prev) => !prev)}
+                  >
+                    {selectedPaymentTermData?.displayContent ||
+                      "Select Payment Term"}
+                  </button>
+
+                  {/* Dropdown */}
+                  {showTermDropdown && (
+                    <div className=" z-50 mt-1 w-full max-h-64 overflow-y-auto bg-white border border-gray-300 rounded-lg shadow-lg ">
+                      <div
+                        onClick={() => {
+                          setSelectedPaymentTermData("");
+                          setShowTermDropdown(false);
+                        }}
+                        className="px-4 py-3 text-sm cursor-pointer hover:bg-blue-50 whitespace-normal break-words border-b last:border-b-0"
+                      >
+                        Select Payment Term
+                      </div>
+                      {classifiedPaymentTerms
+                        .find((d: any) => d.category === selectedPaymentTermId)
+                        ?.details.filter(
+                          (dtc: any) =>
+                            !(
+                              dtc.id === 1 &&
+                              poPaymentTerms.some((dttc: any) => dttc.id === 1)
+                            ) ||
+                            !(
+                              dtc.id === 2 &&
+                              poPaymentTerms.some((dttc: any) => dttc.id === 2)
+                            ),
+                        )
+                        .map((t: any) => (
+                          <div
+                            key={t.id}
+                            onClick={() => {
+                              setSelectedPaymentTermData(t);
+                              setShowTermDropdown(false);
+                            }}
+                            className="px-4 py-3 text-sm cursor-pointer hover:bg-blue-50 whitespace-normal break-words border-b last:border-b-0"
+                          >
+                            {t.displayContent}
+                          </div>
+                        ))}
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {selectedPaymentTermData.id === 1 && (
+                <div>
+                  <div className="my-2 ">
+                    <input
+                      type="text"
+                      value={selectedPaymentTermData.percent}
+                      onChange={(e) => {
+                        const totalPercent = poPaymentTerms.reduce(
+                          (acc, term) => acc + Number(term.percent),
+                          0,
+                        );
+                        if (totalPercent + Number(e.target.value) > 100) {
+                          toast.error(
+                            "You have already entered payment percent of " +
+                              totalPercent +
+                              "% You can not exceed 100%",
+                          );
+                          return;
+                        }
+                        setSelectedPaymentTermData((prev: any) => ({
+                          ...prev,
+                          percent: Number(e.target.value),
+                        }));
+                      }}
+                      className="w-16 mr-3 border border-slate-600 rounded-md outline-none px-2 "
+                    />
+                    % advance payment payable after order confirmation.
+                  </div>
+                </div>
+              )}
+
+              {selectedPaymentTermData.id === 2 && (
+                <div>
+                  <div className="my-2 ">
+                    <input
+                      type="text"
+                      value={selectedPaymentTermData.percent}
+                      onChange={(e) => {
+                        const totalPercent = poPaymentTerms.reduce(
+                          (acc, term) => acc + Number(term.percent),
+                          0,
+                        );
+                        if (totalPercent + Number(e.target.value) > 100) {
+                          toast.error(
+                            "You have already entered payment percent of " +
+                              totalPercent +
+                              "% You can not exceed 100%",
+                          );
+                          return;
+                        }
+                        setSelectedPaymentTermData((prev: any) => ({
+                          ...prev,
+                          percent: Number(e.target.value),
+                        }));
+                      }}
+                      className="w-16 mr-3 border border-slate-600 rounded-md outline-none px-2 "
+                    />{" "}
+                    % payment before dispatch of material.
+                  </div>
+                </div>
+              )}
+
+              {selectedPaymentTermData.id === 3 && (
+                <div>
+                  <div className="my-2 ">
+                    <input
+                      type="text"
+                      value={selectedPaymentTermData.percent}
+                      onChange={(e) => {
+                        const totalPercent = poPaymentTerms.reduce(
+                          (acc, term) => acc + Number(term.percent),
+                          0,
+                        );
+                        if (totalPercent + Number(e.target.value) > 100) {
+                          toast.error(
+                            "You have already entered payment percent of " +
+                              totalPercent +
+                              "% You can not exceed 100%",
+                          );
+                          return;
+                        }
+                        setSelectedPaymentTermData((prev: any) => ({
+                          ...prev,
+                          percent: Number(e.target.value),
+                        }));
+                      }}
+                      className="w-16 mr-3 border border-slate-600 rounded-md outline-none px-2 "
+                    />{" "}
+                    % payment after receiving{" "}
+                    <input
+                      type="text"
+                      value={selectedPaymentTermData.materialPercent}
+                      onChange={(e) => {
+                        const totalMaterialPercent = poPaymentTerms.reduce(
+                          (acc, term) => acc + Number(term.materialPercent),
+                          0,
+                        );
+
+                        if (
+                          totalMaterialPercent + Number(e.target.value) >
+                          100
+                        ) {
+                          toast.error(
+                            "You have already entered material percent of " +
+                              totalMaterialPercent +
+                              "% You can not exceed 100%",
+                          );
+                          return;
+                        }
+                        setSelectedPaymentTermData((prev: any) => ({
+                          ...prev,
+                          materialPercent: Number(e.target.value),
+                        }));
+                      }}
+                      className="w-16 mr-3 border border-slate-600 rounded-md outline-none px-2 "
+                    />{" "}
+                    % material within{" "}
+                    <input
+                      type="text"
+                      value={selectedPaymentTermData.days}
+                      onChange={(e) =>
+                        setSelectedPaymentTermData((prev: any) => ({
+                          ...prev,
+                          days: e.target.value,
+                        }))
+                      }
+                      className="w-16 mr-3 border border-slate-600 rounded-md outline-none px-2 "
+                    />{" "}
+                    days.
+                  </div>
+                </div>
+              )}
+
+              <div className="flex flex-col sm:flex-row gap-3 w-full">
+                <button
+                  type="button"
+                  disabled={!selectedPaymentTermData}
+                  onClick={() => {
+                    if (!selectedPaymentTermData) {
+                      toast.error("Fill correct data.");
+                      return;
+                    }
+
+                    const totalPercent = poPaymentTerms.reduce(
+                      (acc, term) => acc + Number(term.percent),
+                      0,
+                    );
+                    const totalMaterialPercent = poPaymentTerms.reduce(
+                      (acc, term) => acc + Number(term.materialPercent),
+                      0,
+                    );
+
+                    if (
+                      totalMaterialPercent +
+                        Number(selectedPaymentTermData.materialPercent) >
+                      100
+                    ) {
+                      toast.error(
+                        "You have already entered material percent of " +
+                          totalMaterialPercent +
+                          "% You can not exceed 100%",
+                      );
+                      return;
+                    }
+                    if (
+                      totalPercent + Number(selectedPaymentTermData.percent) >
+                      100
+                    ) {
+                      toast.error(
+                        "You have already entered payment percent of " +
+                          totalPercent +
+                          "% You can not exceed 100%",
+                      );
+                      return;
+                    }
+                    console.log(poPaymentTerms);
+                    let data = poPaymentTerms;
+                    console.log("this is payment terms", data);
+                    data.push(selectedPaymentTermData);
+                    setPoPaymentTerms(data);
+                    setSelectedPaymentTerm("");
+                    setSelectedPaymentTermData("");
+                    setSelectedPaymentTermId("");
+                    setShowAddPaymentTerm(false);
+                    setShowAddPaymentTerm(false);
+                  }}
+                  className="bg-blue-600 text-white px-4 py-3 h-fit w-full  rounded-lg hover:bg-blue-700 transition text-sm flex items-center gap-2 cursor-pointer justify-center"
+                >
+                  <Plus className="w-4 h-4" /> Add
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setSelectedPaymentTerm("");
+                    setSelectedPaymentTermData("");
+                    setSelectedPaymentTermId("");
+                    setShowAddPaymentTerm(false);
+                  }}
+                  className="bg-gray-600 text-white px-4 py-3 h-fit  w-full sm:w-40  rounded-lg hover:bg-gray-700 transition text-sm flex items-center justify-center gap-2 cursor-pointer"
+                >
+                  Close
+                </button>
+              </div>
             </div>
           </div>
         </div>
@@ -1587,7 +1966,7 @@ export default function CreatePurchaseOrderForm({
                       content: "",
                       is_default: false,
                     });
-                    setShowAddTerm(false);
+                    setShowAddPaymentTerm(false);
                     console.log(extraTerms);
                   }}
                   className="bg-blue-600 text-white px-4 py-3 h-fit w-full  rounded-lg hover:bg-blue-700 transition text-sm flex items-center gap-2 cursor-pointer justify-center"
@@ -1596,7 +1975,7 @@ export default function CreatePurchaseOrderForm({
                 </button>
                 <button
                   type="button"
-                  onClick={() => setShowAddTerm(false)}
+                  onClick={() => setShowAddPaymentTerm(false)}
                   className="bg-gray-600 text-white px-4 py-3 h-fit  w-full sm:w-40  rounded-lg hover:bg-gray-700 transition text-sm flex items-center justify-center gap-2 cursor-pointer"
                 >
                   Close
