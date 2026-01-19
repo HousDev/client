@@ -1,5 +1,5 @@
-import { useState, useEffect } from 'react';
-import { Plus, Edit2, Trash2, CreditCard, X, Search } from 'lucide-react';
+import { useState, useEffect } from "react";
+import { Plus, Edit2, Trash2, CreditCard, X, Search } from "lucide-react";
 
 interface PaymentTermFormData {
   name: string;
@@ -14,41 +14,41 @@ type PaymentTerm = PaymentTermFormData & { id: string };
 export default function PaymentTermsMaster() {
   const [paymentTerms, setPaymentTerms] = useState<PaymentTerm[]>([]);
   const [loading, setLoading] = useState(true);
-  const [searchTerm, setSearchTerm] = useState('');
+  const [searchTerm, setSearchTerm] = useState("");
   const [showModal, setShowModal] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [formData, setFormData] = useState<PaymentTermFormData>({
-    name: '',
+    name: "",
     days: 0,
-    description: '',
+    description: "",
     advance_percentage: 0,
     is_active: true,
   });
 
-  const KEY_TERMS = 'mock_payment_terms_master_v1';
+  const KEY_TERMS = "mock_payment_terms_master_v1";
 
   const defaultTerms: PaymentTerm[] = [
     {
-      id: 'pt_30',
-      name: '30 Days Credit',
+      id: "pt_30",
+      name: "30 Days Credit",
       days: 30,
-      description: 'Payment within 30 days from invoice date',
+      description: "Payment within 30 days from invoice date",
       advance_percentage: 0,
       is_active: true,
     },
     {
-      id: 'pt_50_adv',
-      name: '50% Advance',
+      id: "pt_50_adv",
+      name: "50% Advance",
       days: 0,
-      description: '50% advance on order, balance on delivery',
+      description: "50% advance on order, balance on delivery",
       advance_percentage: 50,
       is_active: true,
     },
     {
-      id: 'pt_immediate',
-      name: 'Immediate',
+      id: "pt_immediate",
+      name: "Immediate",
       days: 0,
-      description: 'Immediate payment on delivery',
+      description: "Immediate payment on delivery",
       advance_percentage: 0,
       is_active: false,
     },
@@ -69,10 +69,10 @@ export default function PaymentTermsMaster() {
           parsed = defaultTerms;
           localStorage.setItem(KEY_TERMS, JSON.stringify(parsed));
         }
-        parsed.sort((a, b) => (a.name || '').localeCompare(b.name || ''));
+        parsed.sort((a, b) => (a.name || "").localeCompare(b.name || ""));
         setPaymentTerms(parsed);
       } catch (err) {
-        console.error('Error loading payment terms from storage:', err);
+        console.error("Error loading payment terms from storage:", err);
         setPaymentTerms([]);
       } finally {
         setLoading(false);
@@ -82,15 +82,15 @@ export default function PaymentTermsMaster() {
 
   const persistTerms = (terms: PaymentTerm[]) => {
     localStorage.setItem(KEY_TERMS, JSON.stringify(terms));
-    terms.sort((a, b) => (a.name || '').localeCompare(b.name || ''));
+    terms.sort((a, b) => (a.name || "").localeCompare(b.name || ""));
     setPaymentTerms(terms);
   };
 
   const resetForm = () => {
     setFormData({
-      name: '',
+      name: "",
       days: 0,
-      description: '',
+      description: "",
       advance_percentage: 0,
       is_active: true,
     });
@@ -102,21 +102,23 @@ export default function PaymentTermsMaster() {
 
     // basic validation
     if (!formData.name.trim()) {
-      alert('Please enter a name for the payment term.');
+      alert("Please enter a name for the payment term.");
       return;
     }
     if (formData.advance_percentage < 0 || formData.advance_percentage > 100) {
-      alert('Advance percentage must be between 0 and 100.');
+      alert("Advance percentage must be between 0 and 100.");
       return;
     }
 
     if (editingId) {
       // update
       const updated = paymentTerms.map((t) =>
-        t.id === editingId ? { ...t, ...formData, name: formData.name.trim() } : t
+        t.id === editingId
+          ? { ...t, ...formData, name: formData.name.trim() }
+          : t,
       );
       persistTerms(updated);
-      alert('Payment terms updated successfully!');
+      alert("Payment terms updated successfully!");
     } else {
       // create
       const id = `pt_${Date.now().toString(36)}`;
@@ -124,12 +126,12 @@ export default function PaymentTermsMaster() {
         id,
         name: formData.name.trim(),
         days: Number(formData.days || 0),
-        description: formData.description || '',
+        description: formData.description || "",
         advance_percentage: Number(formData.advance_percentage || 0),
         is_active: formData.is_active ?? true,
       };
       persistTerms([...paymentTerms, newTerm]);
-      alert('Payment terms created successfully!');
+      alert("Payment terms created successfully!");
     }
 
     setShowModal(false);
@@ -141,7 +143,7 @@ export default function PaymentTermsMaster() {
     setFormData({
       name: term.name,
       days: term.days,
-      description: term.description || '',
+      description: term.description || "",
       advance_percentage: term.advance_percentage,
       is_active: term.is_active ?? true,
     });
@@ -149,14 +151,16 @@ export default function PaymentTermsMaster() {
   };
 
   const handleDelete = (id: string) => {
-    if (!confirm('Are you sure you want to delete this payment term?')) return;
+    if (!confirm("Are you sure you want to delete this payment term?")) return;
     const updated = paymentTerms.filter((t) => t.id !== id);
     persistTerms(updated);
-    alert('Payment terms deleted successfully!');
+    alert("Payment terms deleted successfully!");
   };
 
   const toggleActive = (id: string, currentStatus?: boolean) => {
-    const updated = paymentTerms.map((t) => (t.id === id ? { ...t, is_active: !currentStatus } : t));
+    const updated = paymentTerms.map((t) =>
+      t.id === id ? { ...t, is_active: !currentStatus } : t,
+    );
     persistTerms(updated);
   };
 
@@ -164,8 +168,8 @@ export default function PaymentTermsMaster() {
     if (!searchTerm) return true;
     const q = searchTerm.toLowerCase();
     return (
-      (term.name || '').toLowerCase().includes(q) ||
-      (term.description || '').toLowerCase().includes(q)
+      (term.name || "").toLowerCase().includes(q) ||
+      (term.description || "").toLowerCase().includes(q)
     );
   });
 
@@ -184,8 +188,12 @@ export default function PaymentTermsMaster() {
     <div className="p-6">
       <div className="flex justify-between items-center mb-6">
         <div>
-          <h1 className="text-3xl font-bold text-gray-800">Payment Terms Master</h1>
-          <p className="text-gray-600 mt-1">Manage payment terms and conditions (demo)</p>
+          <h1 className="text-3xl font-bold text-gray-800">
+            Payment Terms Master
+          </h1>
+          <p className="text-gray-600 mt-1">
+            Manage payment terms and conditions (demo)
+          </p>
         </div>
         <button
           onClick={() => {
@@ -217,12 +225,24 @@ export default function PaymentTermsMaster() {
           <table className="w-full">
             <thead className="bg-gray-50 border-b border-gray-200">
               <tr>
-                <th className="text-left px-6 py-4 text-sm font-semibold text-gray-700">Name</th>
-                <th className="text-left px-6 py-4 text-sm font-semibold text-gray-700">Credit Days</th>
-                <th className="text-left px-6 py-4 text-sm font-semibold text-gray-700">Advance %</th>
-                <th className="text-left px-6 py-4 text-sm font-semibold text-gray-700">Description</th>
-                <th className="text-left px-6 py-4 text-sm font-semibold text-gray-700">Status</th>
-                <th className="text-left px-6 py-4 text-sm font-semibold text-gray-700">Actions</th>
+                <th className="text-left px-6 py-4 text-sm font-semibold text-gray-700">
+                  Name
+                </th>
+                <th className="text-left px-6 py-4 text-sm font-semibold text-gray-700">
+                  Credit Days
+                </th>
+                <th className="text-left px-6 py-4 text-sm font-semibold text-gray-700">
+                  Advance %
+                </th>
+                <th className="text-left px-6 py-4 text-sm font-semibold text-gray-700">
+                  Description
+                </th>
+                <th className="text-left px-6 py-4 text-sm font-semibold text-gray-700">
+                  Status
+                </th>
+                <th className="text-left px-6 py-4 text-sm font-semibold text-gray-700">
+                  Actions
+                </th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-200">
@@ -231,27 +251,36 @@ export default function PaymentTermsMaster() {
                   <td className="px-6 py-4">
                     <div className="flex items-center gap-2">
                       <CreditCard className="w-4 h-4 text-blue-600" />
-                      <span className="font-medium text-gray-800">{term.name}</span>
+                      <span className="font-medium text-gray-800">
+                        {term.name}
+                      </span>
                     </div>
                   </td>
                   <td className="px-6 py-4 text-gray-700">
-                    {term.days > 0 ? `${term.days} days` : 'Immediate'}
+                    {term.days > 0 ? `${term.days} days` : "Immediate"}
                   </td>
                   <td className="px-6 py-4">
                     {term.advance_percentage > 0 ? (
-                      <span className="font-medium text-orange-600">{term.advance_percentage}%</span>
+                      <span className="font-medium text-orange-600">
+                        {term.advance_percentage}%
+                      </span>
                     ) : (
                       <span className="text-gray-500">0%</span>
                     )}
                   </td>
-                  <td className="px-6 py-4 text-gray-700">{term.description || '-'}</td>
+                  <td className="px-6 py-4 text-gray-700">
+                    {term.description || "-"}
+                  </td>
                   <td className="px-6 py-4">
                     <button
                       onClick={() => toggleActive(term.id, term.is_active)}
-                      className={`px-3 py-1 rounded-full text-xs font-medium ${term.is_active ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-700'
-                        }`}
+                      className={`px-3 py-1 rounded-full text-xs font-medium ${
+                        term.is_active
+                          ? "bg-green-100 text-green-700"
+                          : "bg-gray-100 text-gray-700"
+                      }`}
                     >
-                      {term.is_active ? 'ACTIVE' : 'INACTIVE'}
+                      {term.is_active ? "ACTIVE" : "INACTIVE"}
                     </button>
                   </td>
                   <td className="px-6 py-4">
@@ -281,10 +310,12 @@ export default function PaymentTermsMaster() {
         {filteredTerms.length === 0 && (
           <div className="text-center py-12">
             <CreditCard className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-            <h3 className="text-lg font-semibold text-gray-800 mb-2">No payment terms found</h3>
+            <h3 className="text-lg font-semibold text-gray-800 mb-2">
+              No payment terms found
+            </h3>
             <p className="text-gray-600">
               {searchTerm
-                ? 'Try a different search term'
+                ? "Try a different search term"
                 : 'Click "Add Payment Terms" to create your first payment term'}
             </p>
           </div>
@@ -296,7 +327,7 @@ export default function PaymentTermsMaster() {
           <div className="bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-hidden">
             <div className="bg-gradient-to-r from-blue-600 to-blue-700 px-6 py-4 flex justify-between items-center">
               <h2 className="text-2xl font-bold text-white">
-                {editingId ? 'Edit Payment Terms' : 'Add Payment Terms'}
+                {editingId ? "Edit Payment Terms" : "Add Payment Terms"}
               </h2>
               <button
                 onClick={() => {
@@ -309,8 +340,36 @@ export default function PaymentTermsMaster() {
               </button>
             </div>
 
-            <form onSubmit={handleSubmit} className="p-6 overflow-y-auto max-h-[calc(90vh-80px)]">
+            <form
+              onSubmit={handleSubmit}
+              className="p-6 overflow-y-auto max-h-[calc(90vh-80px)]"
+            >
               <div className="space-y-6 mb-6">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Name <span className="text-red-500">*</span>
+                  </label>
+                  <select
+                    value={""}
+                    onChange={(e) => {}}
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    required
+                  >
+                    <option value={""}>Select Category</option>
+                    <option
+                      value={"advance"}
+                      className="w-40 break-words relative"
+                    >
+                      Advance
+                    </option>
+                    <option
+                      value={"advance"}
+                      className="w-40 break-words relative"
+                    >
+                      Quantity
+                    </option>
+                  </select>
+                </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
                     Name <span className="text-red-500">*</span>
@@ -318,7 +377,9 @@ export default function PaymentTermsMaster() {
                   <input
                     type="text"
                     value={formData.name}
-                    onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                    onChange={(e) =>
+                      setFormData({ ...formData, name: e.target.value })
+                    }
                     className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                     placeholder="30 Days Credit"
                     required
@@ -327,25 +388,39 @@ export default function PaymentTermsMaster() {
 
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">Credit Days</label>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Credit Days
+                    </label>
                     <input
                       type="number"
                       value={formData.days}
-                      onChange={(e) => setFormData({ ...formData, days: parseInt(e.target.value) || 0 })}
+                      onChange={(e) =>
+                        setFormData({
+                          ...formData,
+                          days: parseInt(e.target.value) || 0,
+                        })
+                      }
                       className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                       placeholder="30"
                       min="0"
                     />
-                    <p className="text-xs text-gray-500 mt-1">0 = Immediate payment</p>
+                    <p className="text-xs text-gray-500 mt-1">
+                      0 = Immediate payment
+                    </p>
                   </div>
 
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">Advance Percentage</label>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Advance Percentage
+                    </label>
                     <input
                       type="number"
                       value={formData.advance_percentage}
                       onChange={(e) =>
-                        setFormData({ ...formData, advance_percentage: parseFloat(e.target.value) || 0 })
+                        setFormData({
+                          ...formData,
+                          advance_percentage: parseFloat(e.target.value) || 0,
+                        })
                       }
                       className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                       placeholder="50"
@@ -358,10 +433,14 @@ export default function PaymentTermsMaster() {
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Description</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Description
+                  </label>
                   <textarea
                     value={formData.description}
-                    onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                    onChange={(e) =>
+                      setFormData({ ...formData, description: e.target.value })
+                    }
                     className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                     rows={3}
                     placeholder="Payment within 30 days from invoice date"
@@ -373,7 +452,9 @@ export default function PaymentTermsMaster() {
                     <p className="text-sm font-medium text-orange-800">
                       Advance Payment Required: {formData.advance_percentage}%
                     </p>
-                    <p className="text-xs text-orange-600 mt-1">This percentage will be auto-calculated from PO total</p>
+                    <p className="text-xs text-orange-600 mt-1">
+                      This percentage will be auto-calculated from PO total
+                    </p>
                   </div>
                 )}
               </div>
@@ -383,7 +464,7 @@ export default function PaymentTermsMaster() {
                   type="submit"
                   className="flex-1 bg-blue-600 text-white py-3 px-6 rounded-lg hover:bg-blue-700 transition font-medium shadow-sm"
                 >
-                  {editingId ? 'Update Payment Terms' : 'Add Payment Terms'}
+                  {editingId ? "Update Payment Terms" : "Add Payment Terms"}
                 </button>
                 <button
                   type="button"
