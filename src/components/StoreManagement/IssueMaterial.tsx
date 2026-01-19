@@ -541,19 +541,15 @@ export default function IssueMaterial({
                   }))}
                   value={formData.requestId}
                   onChange={async (id) => {
-                    console.log(allMaterialRequest, id, "that");
                     const mr = allMaterialRequest.find(
                       (d: any) => d.request_material_id === id
                     );
-                    console.log(mr, "mr");
                     const materials = [];
                     for (const i of mr.items) {
                       for (const inventoryItem of allInventory) {
                         if (
                           i.request_material_item_id === inventoryItem.item_id
                         ) {
-                          console.log(mr);
-                          console.log(inventoryItem, "dj");
                           const data = {
                             id: Date.now() + Math.random(),
                             materialId: inventoryItem.id,
@@ -568,7 +564,6 @@ export default function IssueMaterial({
                         }
                       }
                     }
-                    console.log(materials);
                     await loadProjectDetails(
                       mr.projectId,
                       mr.buildingId,
@@ -607,6 +602,7 @@ export default function IssueMaterial({
                   onChange={(e: any) =>
                     loadProjectDetails(Number(e.target.value))
                   }
+                  disabled={formData.requestId}
                   className="w-full pl-10 pr-4 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent appearance-none bg-white outline-none"
                   required
                 >
@@ -630,7 +626,7 @@ export default function IssueMaterial({
                   onChange={(e: any) =>
                     handleBuildingChange(Number(e.target.value))
                   }
-                  disabled={!selectedProject}
+                  disabled={!selectedProject || formData.requestId}
                   className="w-full pl-10 pr-4 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent appearance-none bg-white outline-none disabled:bg-gray-100 disabled:cursor-not-allowed"
                   required
                 >
@@ -655,7 +651,7 @@ export default function IssueMaterial({
                   onChange={(e: any) =>
                     handleFloorChange(Number(e.target.value))
                   }
-                  disabled={!selectedBuilding}
+                  disabled={!selectedBuilding || formData.requestId}
                   className="w-full pl-10 pr-4 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent appearance-none bg-white outline-none disabled:bg-gray-100 disabled:cursor-not-allowed"
                   required
                 >
@@ -684,7 +680,8 @@ export default function IssueMaterial({
                   disabled={
                     !selectedFloor ||
                     formData.commonAreaId ||
-                    selectedFloor?.flats?.length === 0
+                    selectedFloor?.flats?.length === 0 ||
+                    formData.requestId
                   }
                   className="w-full pl-10 pr-4 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent appearance-none bg-white outline-none disabled:bg-gray-100 disabled:cursor-not-allowed"
                 >
@@ -711,7 +708,8 @@ export default function IssueMaterial({
                   disabled={
                     !selectedFloor ||
                     formData.flatId ||
-                    selectedFloor?.common_areas?.length === 0
+                    selectedFloor?.common_areas?.length === 0 ||
+                    formData.requestId
                   }
                   className="w-full pl-10 pr-4 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent appearance-none bg-white outline-none disabled:bg-gray-100 disabled:cursor-not-allowed"
                 >
@@ -756,6 +754,7 @@ export default function IssueMaterial({
                 <User className="absolute left-3 top-3 w-4 h-4 text-gray-400" />
                 <input
                   type="text"
+                  disabled={formData.requestId}
                   value={formData.receiverName}
                   onChange={(e) => {
                     if (!/^[A-Za-z\s]*$/.test(e.target.value)) {
@@ -779,6 +778,7 @@ export default function IssueMaterial({
                 <input
                   type="tel"
                   value={formData.receiverNumber}
+                  disabled={formData.requestId}
                   onChange={(e) => {
                     if (!/^\d*$/.test(e.target.value)) {
                       toast.warning("Enter Valid Phone Number.");
@@ -865,17 +865,6 @@ export default function IssueMaterial({
                           <p className="font-medium text-gray-800">
                             {material.materialName}
                           </p>
-                          <div className="flex items-center gap-2 mt-1">
-                            <span className="text-xs px-2 py-1 bg-blue-100 text-blue-700 rounded">
-                              Stock: {material.currentStock} {material.unit}
-                            </span>
-                            {material.currentStock <= material.reorder_qty && (
-                              <span className="text-xs px-2 py-1 bg-yellow-100 text-yellow-700 rounded flex items-center gap-1">
-                                <AlertCircle className="w-3 h-3" />
-                                Low Stock
-                              </span>
-                            )}
-                          </div>
                         </div>
 
                         <div className="col-span-3">
