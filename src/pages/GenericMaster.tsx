@@ -458,7 +458,7 @@ export default function GenericMaster({ tableName, title, description, icon: Ico
             className="px-3 py-2 border border-gray-200 rounded-lg"
             placeholder="Search..."
           />
-          <button onClick={openCreate} className="bg-blue-600 text-white px-4 py-2 rounded-lg flex items-center gap-2">
+          <button onClick={openCreate} className="bg-[#C62828] text-white px-4 py-2 rounded-lg flex items-center gap-2">
             <Plus className="w-4 h-4" /> Add
           </button>
         </div>
@@ -537,7 +537,7 @@ export default function GenericMaster({ tableName, title, description, icon: Ico
                   <button type="button" onClick={() => setShowModal(false)} className="px-4 py-2 border rounded">
                     Cancel
                   </button>
-                  <button type="submit" className="px-4 py-2 bg-blue-600 text-white rounded">
+                  <button type="submit" className="px-4 py-2 bg-[#C62828] text-white rounded">
                     {editing ? "Update" : "Create"}
                   </button>
                 </div>

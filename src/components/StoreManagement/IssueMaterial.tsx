@@ -1,20 +1,26 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 // src/components/MaterialOutForm.tsx
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useRef } from "react";
 import {
   X,
+  Save,
   Package,
-  User,
   Calendar,
   Phone,
-  AlertCircle,
-  Plus,
-  Trash2,
+  User,
   Building,
-  FileText,
   Layers,
   Home,
   DoorOpen,
+  FileText,
+  ClipboardList,
+  ChevronDown,
   MapPin,
+  Truck,
+  Plus,
+  Trash2,
+  AlertCircle,
+  CheckSquare,
 } from "lucide-react";
 import projectApi from "../../lib/projectApi";
 import inventoryTransactionApi from "../../lib/inventoryTransactionApi";
@@ -58,31 +64,8 @@ export default function IssueMaterial({
   const [materialSearch, setMaterialSearch] = useState("");
   const [allProjects, setAllProjects] = useState<any[]>([]);
   const [allServiceVendors, setAllServiceVendors] = useState<any>([]);
-
-  // Vendors list with dropdown
-  const [vendors] = useState<Vendor[]>([
-    {
-      id: 1,
-      name: "John Doe (Contractor)",
-      phone: "9876543210",
-      type: "CONTRACTOR",
-    },
-    {
-      id: 2,
-      name: "ABC Construction",
-      phone: "9876543211",
-      type: "CONTRACTOR",
-    },
-    { id: 3, name: "XYZ Builders", phone: "9876543212", type: "SUBCONTRACTOR" },
-    { id: 4, name: "PQR Suppliers", phone: "9876543213", type: "SUPPLIER" },
-    {
-      id: 5,
-      name: "Site Supervisor - Building A",
-      phone: "9876543214",
-      type: "OTHER",
-    },
-    { id: 6, name: "Maintenance Team", phone: "9876543215", type: "OTHER" },
-  ]);
+  const [allMaterialRequest, setAllMaterialRequest] = useState<any>([]);
+  const formRef = useRef<HTMLDivElement>(null);
 
   const [formData, setFormData] = useState<any>({
     requestId: null,
@@ -104,11 +87,21 @@ export default function IssueMaterial({
   const [selectedFloor, setSelectedFloor] = useState<any>(null);
   const [selectedFlat, setSelectedFlat] = useState<any>(null);
   const [selectedCommonArea, setSelectedCommonArea] = useState<any>(null);
-  const [allMaterialRequest, setAllMaterialRequest] = useState<any>([]);
 
-  const selectedVendor = vendors.find(
-    (vendor) => vendor.id === formData.vendorId
-  );
+  // Handle click outside to close
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (formRef.current && !formRef.current.contains(event.target as Node)) {
+        setActiveFormTab("");
+        resetForm();
+      }
+    };
+
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, []);
 
   const loadProjects = async () => {
     setLoading(true);
@@ -133,12 +126,23 @@ export default function IssueMaterial({
   const loadAllServiceVendors = async () => {
     try {
       const vendorsRes = await vendorApi.getVendors();
-      const filterVenders = vendorsRes.filter(
+      const filterVendors = vendorsRes.filter(
         (vendor) => vendor.category_name === "Service"
       );
-      console.log(filterVenders);
-      setAllServiceVendors(Array.isArray(filterVenders) ? filterVenders : []);
+      setAllServiceVendors(Array.isArray(filterVendors) ? filterVendors : []);
     } catch (err) {
+      toast.error("Something went wrong.");
+    }
+  };
+
+  const loadAllMaterialRequest = async () => {
+    try {
+      const materialRequestRes = await RequestMaterialApi.getAll();
+      setAllMaterialRequest(
+        Array.isArray(materialRequestRes) ? materialRequestRes : []
+      );
+    } catch (error) {
+      console.log(error);
       toast.error("Something went wrong.");
     }
   };
@@ -146,6 +150,7 @@ export default function IssueMaterial({
   useEffect(() => {
     loadProjects();
     loadAllServiceVendors();
+    loadAllMaterialRequest();
   }, []);
 
   // Load project details when project is selected
@@ -161,29 +166,22 @@ export default function IssueMaterial({
       if (projectDetailsRes.success) {
         const project = projectDetailsRes.data;
         setSelectedProject(project);
-        console.log(selectedProject);
 
         const building = project?.buildings?.find(
           (b: any) => b.id === buildingId
         );
-
         setSelectedBuilding(building ? building : null);
 
         const floor = building?.floors?.find((f: any) => f.id === floorId);
-
         setSelectedFloor(floor ? floor : null);
 
         const flat = floor?.flats?.find((f: any) => f.id === flatId);
-
         setSelectedFlat(flat ? flat : null);
 
         const commonArea = floor?.common_areas?.find(
           (ca: any) => ca.id === commonAreaId
         );
-
         setSelectedCommonArea(commonArea ? commonArea : null);
-
-        // Reset all child selections
 
         setFormData((prev: any) => ({
           ...prev,
@@ -289,7 +287,6 @@ export default function IssueMaterial({
 
   // Add material to the list
   const addMaterial = (inventoryItem: any) => {
-    console.log(inventoryItem);
     const existingIndex = formData.materials.findIndex(
       (item: any) => item.materialId === inventoryItem.id
     );
@@ -319,6 +316,7 @@ export default function IssueMaterial({
 
     setShowMaterialSelector(false);
     setMaterialSearch("");
+    toast.success(`${inventoryItem.item_name || inventoryItem.name} added`);
   };
 
   // Update material quantity
@@ -335,6 +333,7 @@ export default function IssueMaterial({
       (item: any) => item.id !== id
     );
     setFormData((prev: any) => ({ ...prev, materials: updatedMaterials }));
+    toast.info("Material removed");
   };
 
   // Filter inventory items for selection
@@ -350,7 +349,7 @@ export default function IssueMaterial({
   const validateMaterials = () => {
     for (const material of formData.materials) {
       if (!material.quantity || parseFloat(material.quantity) <= 0) {
-        alert(`Please enter a valid quantity for ${material.materialName}`);
+        toast.error(`Please enter a valid quantity for ${material.materialName}`);
         return false;
       }
 
@@ -358,7 +357,7 @@ export default function IssueMaterial({
         (item) => item.id === material.materialId
       );
       if (stockItem && parseFloat(material.quantity) > stockItem.quantity) {
-        alert(
+        toast.error(
           `Insufficient stock for ${material.materialName}! Available: ${stockItem.quantity} ${stockItem.unit}`
         );
         return false;
@@ -435,8 +434,6 @@ export default function IssueMaterial({
         })),
       };
 
-      console.log("Material Out:", submissionData);
-
       const response: any =
         await inventoryTransactionApi.createTransactionIssueMaterial(
           submissionData
@@ -461,6 +458,7 @@ export default function IssueMaterial({
 
   const resetForm = () => {
     setFormData({
+      requestId: null,
       projectId: null,
       buildingId: null,
       floorId: null,
@@ -481,59 +479,51 @@ export default function IssueMaterial({
     setMaterialSearch("");
   };
 
-  // Calculate total materials count
-  const totalItems = formData.materials.length;
-
-  const loadAllMaterialRequest = async () => {
-    try {
-      const materialRequestRes = await RequestMaterialApi.getAll();
-      setAllMaterialRequest(
-        Array.isArray(materialRequestRes) ? materialRequestRes : []
-      );
-    } catch (error) {
-      console.log(error);
-      toast.error("Something went wrong.");
-    }
-  };
-  useEffect(() => {
-    loadAllMaterialRequest();
-  }, []);
-
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4 overflow-y-auto">
-      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-3xl my-8">
+    <div className="fixed inset-0 bg-black/60 backdrop-blur-md flex items-center justify-center z-50 p-4 animate-fadeIn">
+      <div 
+        ref={formRef}
+        className="bg-gradient-to-br from-gray-50 to-white rounded-2xl shadow-2xl shadow-gray-900/20 w-full max-w-2xl my-4 border border-gray-200 overflow-hidden"
+      >
         {/* Header */}
-        <div className="bg-gradient-to-r from-blue-600 to-blue-700 px-6 py-4 flex justify-between items-center rounded-t-2xl sticky top-0 z-10">
-          <h2 className="text-[0.9rem] md:text-xl font-bold text-white flex items-center gap-2 ">
-            <Package className="w-5 h-5" />
-            Issue Material to Flat/Area
-            {totalItems > 0 && (
-              <span className="ml-2 bg-white text-blue-600 text-xs font-semibold px-2 py-1 rounded-full">
-                {totalItems} item{totalItems !== 1 ? "s" : ""}
-              </span>
-            )}
-          </h2>
+        <div className="bg-gradient-to-r from-[#40423f] via-[#4a4c49] to-[#5a5d5a] px-6 py-4 flex justify-between items-center border-b border-gray-700/30 relative overflow-hidden">
+          <div className="flex items-center gap-3">
+            <div className="p-2 bg-white/20 rounded-xl backdrop-blur-sm">
+              <Package className="w-5 h-5 text-white" />
+            </div>
+            <div>
+              <h2 className="text-lg font-bold text-white flex items-center gap-2">
+                Issue Material Form
+              </h2>
+              <p className="text-xs text-white/90 font-medium mt-0.5">
+                Issue materials to project locations
+              </p>
+            </div>
+          </div>
           <button
             onClick={() => {
               setActiveFormTab("");
               resetForm();
             }}
-            className="text-white hover:bg-white hover:bg-opacity-20 rounded-lg p-2 transition"
+            className="text-white hover:bg-white/20 rounded-xl p-2 transition-all duration-200 hover:scale-105 active:scale-95"
           >
             <X className="w-5 h-5" />
           </button>
         </div>
 
         {/* Content */}
-        <div className="my-3 px-6 py-3 h-[530px] overflow-y-scroll rounded-b-lg">
-          <form onSubmit={handleSubmit} className="gap-3 grid grid-cols-3">
-            {/* Project Selection */}
-            <div className="col-span-3">
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+        <div className="p-6 max-h-[65vh] overflow-y-auto custom-scrollbar">
+          <form onSubmit={handleSubmit} className="space-y-4">
+            {/* Material Request */}
+            <div className="space-y-1.5">
+              <label className="block text-sm font-semibold text-gray-800 mb-1 flex items-center gap-2">
+                <ClipboardList className="w-4 h-4 text-[#C62828]" />
                 Material Request <span className="text-red-500">*</span>
               </label>
-              <div className="relative">
-                <FileText className="absolute left-3 top-3 w-4 h-4 text-gray-400" />
+              <div className="relative group">
+                <div className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 group-focus-within:text-[#C62828] transition-colors">
+                  <FileText className="w-4 h-4" />
+                </div>
                 <SearchableSelect
                   options={allMaterialRequest.map((i: any) => ({
                     id: i.request_material_id,
@@ -547,14 +537,11 @@ export default function IssueMaterial({
                     const materials = [];
                     for (const i of mr.items) {
                       for (const inventoryItem of allInventory) {
-                        if (
-                          i.request_material_item_id === inventoryItem.item_id
-                        ) {
+                        if (i.request_material_item_id === inventoryItem.item_id) {
                           const data = {
                             id: Date.now() + Math.random(),
                             materialId: inventoryItem.id,
-                            materialName:
-                              inventoryItem.item_name || inventoryItem.name,
+                            materialName: inventoryItem.item_name || inventoryItem.name,
                             quantity: i.approved_quantity,
                             unit: inventoryItem.unit,
                             currentStock: inventoryItem.quantity,
@@ -585,504 +572,611 @@ export default function IssueMaterial({
                       purpose: mr.work,
                       materials: materials,
                     });
+                    toast.success("Material request loaded successfully!");
                   }}
                   placeholder="Select Material Request"
                   required
+                  className="w-full pl-10 pr-4 py-2.5 text-sm border-2 border-gray-200 rounded-xl focus:border-[#C62828] focus:ring-2 focus:ring-[#C62828]/20 bg-white outline-none transition-all duration-200 hover:border-gray-300"
                 />
               </div>
             </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Project <span className="text-red-500">*</span>
-              </label>
-              <div className="relative">
-                <FileText className="absolute left-3 top-3 w-4 h-4 text-gray-400" />
-                <select
-                  value={formData.projectId || ""}
-                  onChange={(e: any) =>
-                    loadProjectDetails(Number(e.target.value))
-                  }
-                  disabled={formData.requestId}
-                  className="w-full pl-10 pr-4 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent appearance-none bg-white outline-none"
-                  required
-                >
-                  <option value="">Select Project</option>
-                  {allProjects.map((project: any) => (
-                    <option key={project.id} value={project.id}>
-                      {project.name}
-                    </option>
-                  ))}
-                </select>
-              </div>
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Building <span className="text-red-500">*</span>
-              </label>
-              <div className="relative">
-                <Building className="absolute left-3 top-3 w-4 h-4 text-gray-400" />
-                <select
-                  value={formData.buildingId || ""}
-                  onChange={(e: any) =>
-                    handleBuildingChange(Number(e.target.value))
-                  }
-                  disabled={!selectedProject || formData.requestId}
-                  className="w-full pl-10 pr-4 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent appearance-none bg-white outline-none disabled:bg-gray-100 disabled:cursor-not-allowed"
-                  required
-                >
-                  <option value="">Select Building</option>
-                  {selectedProject?.buildings?.map((building: any) => (
-                    <option key={building.id} value={building.id}>
-                      {building.building_name}
-                    </option>
-                  ))}
-                </select>
-              </div>
-            </div>
 
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Floor <span className="text-red-500">*</span>
-              </label>
-              <div className="relative">
-                <Layers className="absolute left-3 top-3 w-4 h-4 text-gray-400" />
-                <select
-                  value={formData.floorId || ""}
-                  onChange={(e: any) =>
-                    handleFloorChange(Number(e.target.value))
-                  }
-                  disabled={!selectedBuilding || formData.requestId}
-                  className="w-full pl-10 pr-4 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent appearance-none bg-white outline-none disabled:bg-gray-100 disabled:cursor-not-allowed"
-                  required
-                >
-                  <option value="">Select Floor</option>
-                  {selectedBuilding?.floors?.map((floor: any) => (
-                    <option key={floor.id} value={floor.id}>
-                      {floor.floor_name}
-                    </option>
-                  ))}
-                </select>
-              </div>
-            </div>
-
-            {/* Flat and Common Area Selection */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Flat
-              </label>
-              <div className="relative">
-                <Home className="absolute left-3 top-3 w-4 h-4 text-gray-400" />
-                <select
-                  value={formData.flatId || ""}
-                  onChange={(e: any) =>
-                    handleFlatChange(Number(e.target.value))
-                  }
-                  disabled={
-                    !selectedFloor ||
-                    formData.commonAreaId ||
-                    selectedFloor?.flats?.length === 0 ||
-                    formData.requestId
-                  }
-                  className="w-full pl-10 pr-4 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent appearance-none bg-white outline-none disabled:bg-gray-100 disabled:cursor-not-allowed"
-                >
-                  <option value="">Select Flat</option>
-                  {selectedFloor?.flats?.map((flat: any) => (
-                    <option key={flat.id} value={flat.id}>
-                      {flat.flat_name}
-                    </option>
-                  ))}
-                </select>
-              </div>
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Common Area
-              </label>
-              <div className="relative">
-                <DoorOpen className="absolute left-3 top-3 w-4 h-4 text-gray-400" />
-                <select
-                  value={formData.commonAreaId || ""}
-                  onChange={(e: any) =>
-                    handleCommonAreaChange(Number(e.target.value))
-                  }
-                  disabled={
-                    !selectedFloor ||
-                    formData.flatId ||
-                    selectedFloor?.common_areas?.length === 0 ||
-                    formData.requestId
-                  }
-                  className="w-full pl-10 pr-4 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent appearance-none bg-white outline-none disabled:bg-gray-100 disabled:cursor-not-allowed"
-                >
-                  <option value="">Select Common Area</option>
-                  {selectedFloor?.common_areas?.map((commonArea: any) => (
-                    <option key={commonArea.id} value={commonArea.id}>
-                      {commonArea.common_area_name}
-                    </option>
-                  ))}
-                </select>
-              </div>
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Vendor <span className="text-red-500">*</span>
-              </label>
-              <div className="relative">
-                <User className="absolute left-3 top-3 w-4 h-4 text-gray-400" />
-                <select
-                  value={formData.vendorId || ""}
-                  onChange={(e: any) =>
-                    handleVendorChange(Number(e.target.value))
-                  }
-                  className="w-full pl-10 pr-4 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent appearance-none bg-white outline-none"
-                >
-                  <option value="">Select Vendor</option>
-                  {allServiceVendors.map((vendor: any) => (
-                    <option key={vendor.id} value={vendor.id}>
-                      {vendor.name}
-                    </option>
-                  ))}
-                </select>
-              </div>
-            </div>
-
-            {/* Receiver Information */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Receiver Name <span className="text-red-500">*</span>
-              </label>
-              <div className="relative">
-                <User className="absolute left-3 top-3 w-4 h-4 text-gray-400" />
-                <input
-                  type="text"
-                  disabled={formData.requestId}
-                  value={formData.receiverName}
-                  onChange={(e) => {
-                    if (!/^[A-Za-z\s]*$/.test(e.target.value)) {
-                      toast.warning("Only alphabet allowed.");
-                      return;
+            {/* Project, Building, Floor */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div className="space-y-1.5">
+                <label className="block text-sm font-semibold text-gray-800 mb-1 flex items-center gap-2">
+                  <FileText className="w-4 h-4 text-[#C62828]" />
+                  Project <span className="text-red-500">*</span>
+                </label>
+                <div className="relative group">
+                  <div className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 group-focus-within:text-[#C62828] transition-colors">
+                    <FileText className="w-4 h-4" />
+                  </div>
+                  <select
+                    value={formData.projectId || ""}
+                    onChange={(e: any) =>
+                      loadProjectDetails(Number(e.target.value))
                     }
-                    handleInputChange("receiverName", e.target.value);
-                  }}
-                  className="w-full pl-10 pr-4 py-2 text-sm outline-none border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  placeholder="Enter Receiver Name"
-                  required
-                />
+                    className="w-full pl-10 pr-10 py-2.5 text-sm border-2 border-gray-200 rounded-xl focus:border-[#C62828] focus:ring-2 focus:ring-[#C62828]/20 bg-white outline-none transition-all duration-200 appearance-none hover:border-gray-300"
+                  >
+                    <option value="" className="text-gray-400">Select Project</option>
+                    {allProjects.map((project: any) => (
+                      <option key={project.id} value={project.id}>
+                        {project.name}
+                      </option>
+                    ))}
+                  </select>
+                  <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none">
+                    <ChevronDown className="w-4 h-4 text-gray-400" />
+                  </div>
+                </div>
               </div>
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Receiver Phone Number <span className="text-red-500">*</span>
-              </label>
-              <div className="relative">
-                <Phone className="absolute left-3 top-3 w-4 h-4 text-gray-400" />
-                <input
-                  type="tel"
-                  value={formData.receiverNumber}
-                  disabled={formData.requestId}
-                  onChange={(e) => {
-                    if (!/^\d*$/.test(e.target.value)) {
-                      toast.warning("Enter Valid Phone Number.");
-                      return;
+
+              <div className="space-y-1.5">
+                <label className="block text-sm font-semibold text-gray-800 mb-1 flex items-center gap-2">
+                  <Building className="w-4 h-4 text-[#C62828]" />
+                  Building <span className="text-red-500">*</span>
+                </label>
+                <div className="relative group">
+                  <div className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 group-focus-within:text-[#C62828] transition-colors">
+                    <Building className="w-4 h-4" />
+                  </div>
+                  <select
+                    value={formData.buildingId || ""}
+                    onChange={(e: any) =>
+                      handleBuildingChange(Number(e.target.value))
                     }
-                    if (e.target.value.length > 10) {
-                      toast.warning("Mobile number must be 10 digit.");
-                      return;
-                    }
-                    handleInputChange("receiverNumber", e.target.value);
-                  }}
-                  className="w-full pl-10 pr-4 py-2 text-sm outline-none border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  placeholder="Enter Phone Number"
-                  required
-                />
+                    disabled={!selectedProject}
+                    className="w-full pl-10 pr-10 py-2.5 text-sm border-2 border-gray-200 rounded-xl focus:border-[#C62828] focus:ring-2 focus:ring-[#C62828]/20 bg-white outline-none transition-all duration-200 appearance-none hover:border-gray-300 disabled:bg-gray-100 disabled:cursor-not-allowed"
+                  >
+                    <option value="" className="text-gray-400">Select Building</option>
+                    {selectedProject?.buildings?.map((building: any) => (
+                      <option key={building.id} value={building.id}>
+                        {building.building_name}
+                      </option>
+                    ))}
+                  </select>
+                  <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none">
+                    <ChevronDown className="w-4 h-4 text-gray-400" />
+                  </div>
+                </div>
               </div>
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Issue Date
-              </label>
-              <div className="relative">
-                <Calendar className="absolute left-3 top-3 w-4 h-4 text-gray-400" />
-                <input
-                  type="date"
-                  value={formData.issueDate}
-                  onChange={(e) =>
-                    handleInputChange("issueDate", e.target.value)
-                  }
-                  className="w-full pl-10 pr-4 py-2 text-sm outline-none border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                />
+
+              <div className="space-y-1.5">
+                <label className="block text-sm font-semibold text-gray-800 mb-1 flex items-center gap-2">
+                  <Layers className="w-4 h-4 text-[#C62828]" />
+                  Floor <span className="text-red-500">*</span>
+                </label>
+                <div className="relative group">
+                  <div className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 group-focus-within:text-[#C62828] transition-colors">
+                    <Layers className="w-4 h-4" />
+                  </div>
+                  <select
+                    value={formData.floorId || ""}
+                    onChange={(e: any) =>
+                      handleFloorChange(Number(e.target.value))
+                    }
+                    disabled={!selectedBuilding}
+                    className="w-full pl-10 pr-10 py-2.5 text-sm border-2 border-gray-200 rounded-xl focus:border-[#C62828] focus:ring-2 focus:ring-[#C62828]/20 bg-white outline-none transition-all duration-200 appearance-none hover:border-gray-300 disabled:bg-gray-100 disabled:cursor-not-allowed"
+                  >
+                    <option value="" className="text-gray-400">Select Floor</option>
+                    {selectedBuilding?.floors?.map((floor: any) => (
+                      <option key={floor.id} value={floor.id}>
+                        {floor.floor_name}
+                      </option>
+                    ))}
+                  </select>
+                  <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none">
+                    <ChevronDown className="w-4 h-4 text-gray-400" />
+                  </div>
+                </div>
               </div>
             </div>
 
-            {/* Date and Purpose */}
-            <div className="col-span-2">
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Purpose
-              </label>
-              <input
-                type="text"
-                value={formData.purpose}
-                onChange={(e) => handleInputChange("purpose", e.target.value)}
-                className="w-full px-4 py-2 text-sm outline-none border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                placeholder="Purpose of issue"
-              />
+            {/* Flat, Common Area, Vendor */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div className="space-y-1.5">
+                <label className="block text-sm font-semibold text-gray-800 mb-1 flex items-center gap-2">
+                  <Home className="w-4 h-4 text-[#C62828]" />
+                  Flat
+                </label>
+                <div className="relative group">
+                  <div className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 group-focus-within:text-[#C62828] transition-colors">
+                    <Home className="w-4 h-4" />
+                  </div>
+                  <select
+                    value={formData.flatId || ""}
+                    onChange={(e: any) =>
+                      handleFlatChange(Number(e.target.value))
+                    }
+                    disabled={!selectedFloor || formData.commonAreaId}
+                    className="w-full pl-10 pr-10 py-2.5 text-sm border-2 border-gray-200 rounded-xl focus:border-[#C62828] focus:ring-2 focus:ring-[#C62828]/20 bg-white outline-none transition-all duration-200 appearance-none hover:border-gray-300 disabled:bg-gray-100 disabled:cursor-not-allowed"
+                  >
+                    <option value="" className="text-gray-400">Select Flat</option>
+                    {selectedFloor?.flats?.map((flat: any) => (
+                      <option key={flat.id} value={flat.id}>
+                        {flat.flat_name}
+                      </option>
+                    ))}
+                  </select>
+                  <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none">
+                    <ChevronDown className="w-4 h-4 text-gray-400" />
+                  </div>
+                </div>
+              </div>
+
+              <div className="space-y-1.5">
+                <label className="block text-sm font-semibold text-gray-800 mb-1 flex items-center gap-2">
+                  <DoorOpen className="w-4 h-4 text-[#C62828]" />
+                  Common Area
+                </label>
+                <div className="relative group">
+                  <div className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 group-focus-within:text-[#C62828] transition-colors">
+                    <DoorOpen className="w-4 h-4" />
+                  </div>
+                  <select
+                    value={formData.commonAreaId || ""}
+                    onChange={(e: any) =>
+                      handleCommonAreaChange(Number(e.target.value))
+                    }
+                    disabled={!selectedFloor || formData.flatId}
+                    className="w-full pl-10 pr-10 py-2.5 text-sm border-2 border-gray-200 rounded-xl focus:border-[#C62828] focus:ring-2 focus:ring-[#C62828]/20 bg-white outline-none transition-all duration-200 appearance-none hover:border-gray-300 disabled:bg-gray-100 disabled:cursor-not-allowed"
+                  >
+                    <option value="" className="text-gray-400">Select Area</option>
+                    {selectedFloor?.common_areas?.map((commonArea: any) => (
+                      <option key={commonArea.id} value={commonArea.id}>
+                        {commonArea.common_area_name}
+                      </option>
+                    ))}
+                  </select>
+                  <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none">
+                    <ChevronDown className="w-4 h-4 text-gray-400" />
+                  </div>
+                </div>
+              </div>
+
+              <div className="space-y-1.5">
+                <label className="block text-sm font-semibold text-gray-800 mb-1 flex items-center gap-2">
+                  <Truck className="w-4 h-4 text-[#C62828]" />
+                  Vendor
+                </label>
+                <div className="relative group">
+                  <div className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 group-focus-within:text-[#C62828] transition-colors">
+                    <Truck className="w-4 h-4" />
+                  </div>
+                  <select
+                    value={formData.vendorId || ""}
+                    onChange={(e: any) =>
+                      handleVendorChange(Number(e.target.value))
+                    }
+                    className="w-full pl-10 pr-10 py-2.5 text-sm border-2 border-gray-200 rounded-xl focus:border-[#C62828] focus:ring-2 focus:ring-[#C62828]/20 bg-white outline-none transition-all duration-200 appearance-none hover:border-gray-300"
+                  >
+                    <option value="" className="text-gray-400">Select Vendor</option>
+                    {allServiceVendors.map((vendor: any) => (
+                      <option key={vendor.id} value={vendor.id}>
+                        {vendor.name}
+                      </option>
+                    ))}
+                  </select>
+                  <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none">
+                    <ChevronDown className="w-4 h-4 text-gray-400" />
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Receiver Info */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-1.5">
+                <label className="block text-sm font-semibold text-gray-800 mb-1 flex items-center gap-2">
+                  <User className="w-4 h-4 text-[#C62828]" />
+                  Receiver Name <span className="text-red-500">*</span>
+                </label>
+                <div className="relative group">
+                  <div className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 group-focus-within:text-[#C62828] transition-colors">
+                    <User className="w-4 h-4" />
+                  </div>
+                  <input
+                    type="text"
+                    value={formData.receiverName}
+                    onChange={(e) => {
+                      if (!/^[A-Za-z\s]*$/.test(e.target.value)) {
+                        toast.warning("Only alphabet allowed.");
+                        return;
+                      }
+                      handleInputChange("receiverName", e.target.value);
+                    }}
+                    className="w-full pl-10 pr-4 py-2.5 text-sm border-2 border-gray-200 rounded-xl focus:border-[#C62828] focus:ring-2 focus:ring-[#C62828]/20 outline-none transition-all duration-200 hover:border-gray-300"
+                    placeholder="Receiver Name"
+                    required
+                  />
+                </div>
+              </div>
+
+              <div className="space-y-1.5">
+                <label className="block text-sm font-semibold text-gray-800 mb-1 flex items-center gap-2">
+                  <Phone className="w-4 h-4 text-[#C62828]" />
+                  Phone Number <span className="text-red-500">*</span>
+                </label>
+                <div className="relative group">
+                  <div className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 group-focus-within:text-[#C62828] transition-colors">
+                    <Phone className="w-4 h-4" />
+                  </div>
+                  <input
+                    type="tel"
+                    value={formData.receiverNumber}
+                    onChange={(e) => {
+                      if (!/^\d*$/.test(e.target.value)) {
+                        toast.warning("Enter Valid Phone Number.");
+                        return;
+                      }
+                      if (e.target.value.length > 10) {
+                        toast.warning("Mobile number must be 10 digit.");
+                        return;
+                      }
+                      handleInputChange("receiverNumber", e.target.value);
+                    }}
+                    className="w-full pl-10 pr-4 py-2.5 text-sm border-2 border-gray-200 rounded-xl focus:border-[#C62828] focus:ring-2 focus:ring-[#C62828]/20 outline-none transition-all duration-200 hover:border-gray-300"
+                    placeholder="Phone Number"
+                    required
+                  />
+                </div>
+              </div>
+            </div>
+
+            {/* Date & Purpose */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-1.5">
+                <label className="block text-sm font-semibold text-gray-800 mb-1 flex items-center gap-2">
+                  <Calendar className="w-4 h-4 text-[#C62828]" />
+                  Issue Date
+                </label>
+                <div className="relative group">
+                  <div className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 group-focus-within:text-[#C62828] transition-colors">
+                    <Calendar className="w-4 h-4" />
+                  </div>
+                  <input
+                    type="date"
+                    value={formData.issueDate}
+                    onChange={(e) =>
+                      handleInputChange("issueDate", e.target.value)
+                    }
+                    className="w-full pl-10 pr-4 py-2.5 text-sm border-2 border-gray-200 rounded-xl focus:border-[#C62828] focus:ring-2 focus:ring-[#C62828]/20 outline-none transition-all duration-200 hover:border-gray-300"
+                  />
+                </div>
+              </div>
+
+              <div className="space-y-1.5">
+                <label className="block text-sm font-semibold text-gray-800 mb-1 flex items-center gap-2">
+                  <FileText className="w-4 h-4 text-[#C62828]" />
+                  Purpose
+                </label>
+                <div className="relative group">
+                  <div className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 group-focus-within:text-[#C62828] transition-colors">
+                    <FileText className="w-4 h-4" />
+                  </div>
+                  <input
+                    type="text"
+                    value={formData.purpose}
+                    onChange={(e) => handleInputChange("purpose", e.target.value)}
+                    className="w-full pl-10 pr-4 py-2.5 text-sm border-2 border-gray-200 rounded-xl focus:border-[#C62828] focus:ring-2 focus:ring-[#C62828]/20 outline-none transition-all duration-200 hover:border-gray-300"
+                    placeholder="Purpose"
+                  />
+                </div>
+              </div>
             </div>
 
             {/* Materials Section */}
-            <div className="border-t pt-6 col-span-3">
-              <div className="flex justify-between items-center mb-4">
-                <h3 className="text-lg font-semibold text-gray-800">
-                  Materials
+            <div className="border-2 border-gray-200 rounded-2xl overflow-hidden bg-gradient-to-b from-gray-50 to-white shadow-sm">
+              <div className="bg-gradient-to-r from-gray-100 to-gray-50 px-5 py-3 border-b border-gray-200 flex justify-between items-center">
+                <h3 className="font-bold text-sm text-gray-800 flex items-center gap-2">
+                  <div className="p-1.5 bg-[#C62828]/10 rounded-lg">
+                    <Package className="w-4 h-4 text-[#C62828]" />
+                  </div>
+                  Materials to Issue
+                  <span className="ml-2 text-xs font-medium text-gray-600 bg-white px-2 py-1 rounded-full">
+                    {formData.materials.length} items
+                  </span>
                 </h3>
                 <button
                   type="button"
                   onClick={() => setShowMaterialSelector(true)}
-                  className="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition text-sm flex items-center gap-2"
+                  className="bg-gradient-to-r from-green-600 to-emerald-600 text-white px-3 py-1.5 rounded-xl hover:from-green-700 hover:to-emerald-700 transition-all duration-200 text-xs flex items-center gap-1.5 font-medium shadow-md hover:shadow-lg transform hover:-translate-y-0.5"
                 >
-                  <Plus className="w-4 h-4" /> Add Material
+                  <Plus className="w-3.5 h-3.5" /> Add Material
                 </button>
               </div>
 
               {formData.materials.length === 0 ? (
-                <div className="bg-gray-50 border-2 border-dashed border-gray-300 rounded-lg p-8 text-center">
-                  <Package className="w-12 h-12 text-gray-400 mx-auto mb-3" />
-                  <p className="text-gray-600">No materials added yet</p>
-                  <p className="text-sm text-gray-500 mt-1">
-                    Click "Add Material" to select materials to issue
-                  </p>
+                <div className="p-8 text-center border-2 border-dashed border-gray-300 rounded-xl m-4 bg-gray-50/50">
+                  <Package className="w-10 h-10 text-gray-400 mx-auto mb-3" />
+                  <p className="text-gray-600 font-medium">No materials added</p>
+                  <p className="text-sm text-gray-500 mt-1">Click "Add Material" to select items</p>
                 </div>
               ) : (
-                <div className="space-y-3 overflow-x-auto md:overflow-hidden">
-                  {formData.materials.map((material: any) => (
-                    <div
-                      key={material.id}
-                      className="bg-gray-50 p-4 rounded-lg border border-gray-200 w-[600px] md:w-full"
-                    >
-                      <div className="grid grid-cols-12 gap-3 items-center">
-                        <div className="col-span-4">
-                          <label className="text-xs text-gray-600">
-                            Material
-                          </label>
-                          <p className="font-medium text-gray-800">
-                            {material.materialName}
-                          </p>
-                        </div>
-
-                        <div className="col-span-3">
-                          <label className="text-xs text-gray-600 mb-1 block">
-                            Quantity <span className="text-red-500">*</span>
-                          </label>
-                          <div className="flex items-center gap-2">
-                            <input
-                              type="text"
-                              value={material.quantity}
-                              onChange={(e) => {
-                                if (
-                                  !/^\d*\.?\d*$/.test(e.target.value) ||
-                                  Number(e.target.value) < 0
-                                )
-                                  return;
-                                if (material.currentStock < e.target.value) {
-                                  toast.warning(
-                                    "Entered quantity is exceeding stock quantity."
-                                  );
-                                  return;
-                                }
-                                updateMaterialQuantity(
-                                  material.id,
-                                  e.target.value
-                                );
-                              }}
-                              className="w-24 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                              min="0.01"
-                              step="0.01"
-                              required
-                            />
-                            <span className="text-sm text-gray-600">
-                              {material.unit}
-                            </span>
+                <div className="p-4 space-y-2 max-h-60 overflow-y-auto">
+                  {formData.materials.map((material: any) => {
+                    const isLowStock = material.currentStock <= material.reorder_qty;
+                    return (
+                      <div
+                        key={material.id}
+                        className="bg-white p-3 rounded-xl border border-gray-200 hover:border-gray-300 transition-all duration-200 hover:shadow-sm"
+                      >
+                        <div className="flex justify-between items-center">
+                          <div className="flex-1">
+                            <div className="flex items-center gap-2 mb-1">
+                              <Package className="w-4 h-4 text-gray-600" />
+                              <p className="font-semibold text-gray-800 truncate">
+                                {material.materialName}
+                              </p>
+                            </div>
+                            <div className="flex items-center gap-2">
+                              <span className="px-2 py-1 bg-blue-100 text-blue-700 rounded-lg text-xs font-medium">
+                                Stock: {material.currentStock} {material.unit}
+                              </span>
+                              {isLowStock && (
+                                <span className="px-2 py-1 bg-yellow-100 text-yellow-700 rounded-lg text-xs font-medium flex items-center gap-1">
+                                  <AlertCircle className="w-3 h-3" />
+                                  Low Stock
+                                </span>
+                              )}
+                            </div>
                           </div>
-                          {parseFloat(material.quantity) >
-                            material.currentStock && (
-                            <p className="text-xs text-red-600 mt-1">
-                              Exceeds available stock!
-                            </p>
-                          )}
-                        </div>
-
-                        <div className="col-span-3">
-                          <label className="text-xs text-gray-600 mb-1 block">
-                            In Stock
-                          </label>
-                          <p className="text-sm text-gray-700 font-medium">
-                            {material.currentStock || "0"} {material.unit}
-                          </p>
-                        </div>
-
-                        <div className="col-span-2 flex justify-end">
-                          <button
-                            type="button"
-                            onClick={() => removeMaterial(material.id)}
-                            className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition"
-                            title="Remove"
-                          >
-                            <Trash2 className="w-4 h-4" />
-                          </button>
+                          <div className="flex items-center gap-3">
+                            <div className="relative">
+                              <input
+                                type="text"
+                                value={material.quantity}
+                                onChange={(e) => {
+                                  if (
+                                    !/^\d*\.?\d*$/.test(e.target.value) ||
+                                    Number(e.target.value) < 0
+                                  )
+                                    return;
+                                  if (material.currentStock < Number(e.target.value)) {
+                                    toast.warning("Exceeds stock quantity.");
+                                    return;
+                                  }
+                                  updateMaterialQuantity(material.id, e.target.value);
+                                }}
+                                className="w-24 px-3 py-2 text-sm border-2 border-gray-200 rounded-xl focus:border-[#C62828] focus:ring-2 focus:ring-[#C62828]/20 outline-none transition-all duration-200 hover:border-gray-300"
+                              />
+                              <span className="absolute right-3 top-1/2 -translate-y-1/2 text-sm text-gray-600">
+                                {material.unit}
+                              </span>
+                            </div>
+                            <button
+                              type="button"
+                              onClick={() => removeMaterial(material.id)}
+                              className="p-2 text-red-600 hover:bg-red-50 rounded-xl transition-all duration-200 hover:scale-105"
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </button>
+                          </div>
                         </div>
                       </div>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
               )}
             </div>
 
             {/* Submit Button */}
-            <div className="flex gap-3 pt-6 border-t sticky bottom-0 bg-white col-span-3">
+            <div className="flex gap-3 pt-6 border-t border-gray-200">
               <button
                 type="submit"
                 disabled={loading || formData.materials.length === 0}
-                className="flex-1 bg-blue-600 text-white py-2 px-6 rounded-lg hover:bg-blue-700 transition font-medium shadow-sm disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                className="flex-1 bg-gradient-to-r from-[#C62828] to-red-600 text-white py-3 px-6 rounded-xl hover:from-red-600 hover:to-red-700 transition-all duration-200 font-semibold shadow-lg hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 group transform hover:-translate-y-0.5 active:translate-y-0"
               >
-                {loading ? "Processing..." : "Issue Material"}
+                {loading ? (
+                  <>
+                    <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                    Processing...
+                  </>
+                ) : (
+                  <>
+                    <Save className="w-5 h-5 group-hover:scale-110 transition-transform" />
+                    Issue Material
+                  </>
+                )}
               </button>
               <button
                 type="button"
                 onClick={() => {
                   setActiveFormTab("");
                   resetForm();
+                  toast.info("Form cancelled");
                 }}
-                className="px-6 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition font-medium"
+                className="px-6 py-3 text-sm border-2 border-gray-200 rounded-xl hover:bg-gray-50 hover:border-gray-300 transition-all duration-200 font-medium text-gray-700 hover:text-gray-900"
               >
                 Cancel
               </button>
             </div>
           </form>
         </div>
-      </div>
 
-      {/* Material Selector Modal */}
-      {showMaterialSelector && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[60] p-4">
-          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-4xl max-h-[80vh] overflow-hidden">
-            <div className="bg-gradient-to-r from-green-600 to-green-700 px-6 py-4 flex justify-between items-center">
-              <h3 className="text-xl font-bold text-white">Select Materials</h3>
-              <button
-                onClick={() => {
-                  setShowMaterialSelector(false);
-                  setMaterialSearch("");
-                }}
-                className="text-white hover:bg-white hover:bg-opacity-20 rounded-lg p-2 transition"
-              >
-                <X className="w-5 h-5" />
-              </button>
-            </div>
-
-            <div className="p-4 border-b">
-              <div className="relative">
-                <input
-                  type="text"
-                  placeholder="Search materials by name..."
-                  value={materialSearch}
-                  onChange={(e) => setMaterialSearch(e.target.value)}
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
-                />
-              </div>
-            </div>
-
-            <div className="p-6 overflow-y-auto max-h-[calc(80vh-140px)]">
-              <div className="grid grid-cols-1 gap-3">
-                {filteredInventory.length === 0 ? (
-                  <div className="p-6 text-center text-gray-500">
-                    No materials found
+        {/* Material Selector Modal */}
+        {showMaterialSelector && (
+          <div className="fixed inset-0 bg-black/60 backdrop-blur-md flex items-center justify-center z-[60] p-4 animate-fadeIn">
+            <div className="bg-gradient-to-br from-white to-gray-50 rounded-2xl shadow-2xl shadow-gray-900/20 w-full max-w-md border border-gray-200 overflow-hidden">
+              <div className="bg-gradient-to-r from-green-600 to-emerald-600 px-6 py-4 flex justify-between items-center border-b border-emerald-700/30">
+                <div className="flex items-center gap-3">
+                  <div className="p-2 bg-white/20 rounded-xl backdrop-blur-sm">
+                    <Package className="w-5 h-5 text-white" />
                   </div>
-                ) : (
-                  filteredInventory.map((item) => {
-                    const existingMaterial = formData.materials.find(
-                      (m: any) => m.materialId === item.id
-                    );
-                    const isLowStock = item.quantity <= item.reorder_qty;
-                    return (
-                      <button
-                        key={item.id}
-                        disabled={item.quantity === 0}
-                        onClick={() => addMaterial(item)}
-                        className={`p-4 border rounded-lg cursor-pointer transition ${
-                          existingMaterial
-                            ? "bg-blue-50 border-blue-300"
-                            : "border-gray-200 hover:bg-blue-50 hover:border-blue-300"
-                        }`}
-                      >
-                        <div className="flex justify-between items-start">
-                          <div>
-                            <div className="flex items-center gap-2">
-                              <p className="font-medium text-gray-800">
-                                {item.item_name || item.name}
-                              </p>
-                              {existingMaterial && (
-                                <span className="text-xs px-2 py-1 bg-blue-100 text-blue-700 rounded">
-                                  Added ({existingMaterial.quantity} {item.unit}
-                                  )
-                                </span>
-                              )}
-                              {isLowStock && (
-                                <span className="text-xs px-2 py-1 bg-yellow-100 text-yellow-700 rounded flex items-center gap-1">
-                                  <AlertCircle className="w-3 h-3" />
-                                  Low Stock
-                                </span>
-                              )}
-                            </div>
-                            <p className="text-sm text-gray-600 mt-1">
-                              Available: {item.quantity} {item.unit}
-                            </p>
-                            {item.description && (
-                              <p className="text-xs text-gray-500 mt-1">
-                                {item.description}
-                              </p>
-                            )}
-                          </div>
-                          <div className="text-right">
-                            <div
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                addMaterial(item);
-                              }}
-                              className="px-3 py-1 bg-green-600 text-white rounded hover:bg-green-700 text-sm font-medium"
-                            >
-                              {existingMaterial ? "Add More" : "Add"}
-                            </div>
-                          </div>
-                        </div>
-                      </button>
-                    );
-                  })
-                )}
-              </div>
-            </div>
-
-            <div className="p-4 border-t bg-gray-50">
-              <div className="flex justify-between items-center">
-                <div className="text-sm text-gray-600">
-                  {formData.materials.length > 0 && (
-                    <span>
-                      {formData.materials.length} item
-                      {formData.materials.length !== 1 ? "s" : ""} selected
-                    </span>
-                  )}
+                  <div>
+                    <h3 className="text-lg font-bold text-white">Select Material</h3>
+                    <p className="text-xs text-white/90 font-medium mt-0.5">
+                      Choose materials from inventory
+                    </p>
+                  </div>
                 </div>
                 <button
-                  type="button"
                   onClick={() => {
                     setShowMaterialSelector(false);
                     setMaterialSearch("");
                   }}
-                  className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition"
+                  className="text-white hover:bg-white/20 rounded-xl p-2 transition-all duration-200"
                 >
-                  Done
+                  <X className="w-5 h-5" />
                 </button>
+              </div>
+
+              <div className="p-4 border-b">
+                <div className="relative group">
+                  <div className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 group-focus-within:text-green-600 transition-colors">
+                    <FileText className="w-4 h-4" />
+                  </div>
+                  <input
+                    type="text"
+                    placeholder="Search material by name or description..."
+                    value={materialSearch}
+                    onChange={(e) => setMaterialSearch(e.target.value)}
+                    className="w-full pl-10 pr-4 py-2.5 text-sm border-2 border-gray-200 rounded-xl focus:border-green-500 focus:ring-2 focus:ring-green-500/20 outline-none transition-all duration-200 hover:border-gray-300"
+                  />
+                </div>
+              </div>
+
+              <div className="p-4 max-h-96 overflow-y-auto">
+                <div className="space-y-2">
+                  {filteredInventory.length === 0 ? (
+                    <div className="p-8 text-center border-2 border-dashed border-gray-300 rounded-xl bg-gray-50/50">
+                      <Package className="w-10 h-10 text-gray-400 mx-auto mb-3" />
+                      <p className="text-gray-600 font-medium">No materials found</p>
+                      <p className="text-sm text-gray-500 mt-1">Try a different search term</p>
+                    </div>
+                  ) : (
+                    filteredInventory.map((item) => {
+                      const existingMaterial = formData.materials.find(
+                        (m: any) => m.materialId === item.id
+                      );
+                      const isLowStock = item.quantity <= item.reorder_qty;
+                      const isOutOfStock = item.quantity === 0;
+                      
+                      return (
+                        <button
+                          type="button"
+                          disabled={isOutOfStock}
+                          key={item.id}
+                          onClick={() => {
+                            addMaterial(item);
+                          }}
+                          className={`w-full p-4 text-left border-2 rounded-xl transition-all duration-200 hover:shadow-md ${
+                            existingMaterial
+                              ? "bg-blue-50 border-blue-300 hover:border-blue-400"
+                              : "border-gray-200 hover:border-gray-300 hover:bg-gray-50"
+                          } ${isOutOfStock ? "opacity-50 cursor-not-allowed" : ""}`}
+                        >
+                          <div className="flex justify-between items-center">
+                            <div className="flex-1">
+                              <div className="flex items-center gap-2 mb-1">
+                                <Package className={`w-4 h-4 ${
+                                  isOutOfStock ? "text-gray-400" : 
+                                  isLowStock ? "text-yellow-600" : "text-green-600"
+                                }`} />
+                                <div className="font-semibold text-gray-800 truncate">
+                                  {item.item_name || item.name}
+                                </div>
+                                {existingMaterial && (
+                                  <span className="px-2 py-0.5 bg-blue-100 text-blue-700 rounded-full text-xs font-medium">
+                                    Added
+                                  </span>
+                                )}
+                              </div>
+                              <div className="flex items-center gap-2">
+                                <span className="px-2 py-0.5 bg-gray-100 text-gray-700 rounded text-xs font-medium">
+                                  Stock: {item.quantity} {item.unit}
+                                </span>
+                                {isLowStock && !isOutOfStock && (
+                                  <span className="px-2 py-0.5 bg-yellow-100 text-yellow-700 rounded text-xs font-medium">
+                                    Low Stock
+                                  </span>
+                                )}
+                                {isOutOfStock && (
+                                  <span className="px-2 py-0.5 bg-red-100 text-red-700 rounded text-xs font-medium">
+                                    Out of Stock
+                                  </span>
+                                )}
+                              </div>
+                            </div>
+                            <div className={`px-3 py-1.5 rounded-lg text-xs font-medium ${
+                              existingMaterial
+                                ? "bg-green-600 text-white"
+                                : isOutOfStock
+                                ? "bg-gray-200 text-gray-600"
+                                : "bg-emerald-600 text-white"
+                            }`}>
+                              {existingMaterial ? "Add More" : "Add"}
+                            </div>
+                          </div>
+                        </button>
+                      );
+                    })
+                  )}
+                </div>
+              </div>
+
+              <div className="p-4 border-t bg-gradient-to-r from-gray-50 to-gray-100">
+                <div className="flex justify-between items-center">
+                  <div className="text-sm text-gray-600">
+                    {formData.materials.length > 0 && (
+                      <span className="font-medium">{formData.materials.length} materials selected</span>
+                    )}
+                  </div>
+                  <div className="flex gap-2">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setShowMaterialSelector(false);
+                        setMaterialSearch("");
+                        toast.info("Material selection closed");
+                      }}
+                      className="px-4 py-2 text-sm border-2 border-gray-200 rounded-xl hover:bg-gray-50 hover:border-gray-300 transition-all duration-200 font-medium text-gray-700"
+                    >
+                      Close
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setShowMaterialSelector(false);
+                        setMaterialSearch("");
+                      }}
+                      className="px-4 py-2 bg-gradient-to-r from-blue-600 to-blue-700 text-white rounded-xl hover:from-blue-700 hover:to-blue-800 transition-all duration-200 text-sm font-medium shadow-md hover:shadow-lg"
+                    >
+                      Done
+                    </button>
+                  </div>
+                </div>
               </div>
             </div>
           </div>
-        </div>
-      )}
+        )}
+
+        {/* Add some custom styles for scrollbar */}
+        <style jsx>{`
+          .custom-scrollbar::-webkit-scrollbar {
+            width: 6px;
+          }
+          .custom-scrollbar::-webkit-scrollbar-track {
+            background: #f1f1f1;
+            border-radius: 3px;
+          }
+          .custom-scrollbar::-webkit-scrollbar-thumb {
+            background: #c62828;
+            border-radius: 3px;
+          }
+          .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+            background: #b71c1c;
+          }
+          @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+          }
+          .animate-fadeIn {
+            animation: fadeIn 0.3s ease-out;
+          }
+        `}</style>
+      </div>
     </div>
   );
 }

@@ -675,7 +675,7 @@ export default function ConstructionProjectWizardForm({
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-2 sm:p-4 overflow-y-auto">
       <div className="bg-white rounded-xl shadow-xl w-full max-w-4xl my-4 sm:my-8 border border-gray-200 mx-2 sm:mx-4">
         {/* Header */}
-        <div className="bg-gradient-to-r from-blue-600 to-blue-700 px-4 sm:px-6 py-3 sm:py-4 flex justify-between items-center rounded-t-xl">
+        <div className="bg-[#C62828] px-4 sm:px-6 py-3 sm:py-4 flex justify-between items-center rounded-t-xl">
           <div className="flex items-center gap-2 sm:gap-3">
             <div className="p-2 bg-white/10 rounded-lg">
               <Building2 className="w-5 h-5 sm:w-6 sm:h-6 text-white" />

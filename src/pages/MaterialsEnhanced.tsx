@@ -1,635 +1,666 @@
-import { useState, useEffect } from "react";
-import {
-  Package,
-  Calendar,
-  CheckCircle,
-  AlertCircle,
-  Clock,
-  Truck,
-  FileText,
-  X,
-  Save,
-  UserRound,
-  Phone,
-  ChevronDown,
-  ChevronRight,
-} from "lucide-react";
-import { useAuth } from "../contexts/AuthContext";
-import { toast } from "sonner";
-import poApi from "../lib/poApi";
-import po_trackingApi from "../lib/po_tracking";
-import vendorApi from "../lib/vendorApi";
-import ItemsApi from "../lib/itemsApi";
-import { api } from "../lib/Api";
-import projectApi from "../lib/projectApi";
+/* eslint-disable @typescript-eslint/no-unused-vars */
+/* eslint-disable @typescript-eslint/no-explicit-any */
+// import { useState, useEffect } from "react";
+// import {
+//   Package,
+//   Calendar,
+//   CheckCircle,
+//   AlertCircle,
+//   Clock,
+//   Truck,
+//   FileText,
+//   X,
+//   Save,
+//   UserRound,
+//   Phone,
+//   ChevronDown,
+//   ChevronRight,
+// } from "lucide-react";
+// import { useAuth } from "../contexts/AuthContext";
+// import { toast } from "sonner";
+// import poApi from "../lib/poApi";
+// import po_trackingApi from "../lib/po_tracking";
+// import vendorApi from "../lib/vendorApi";
+// import ItemsApi from "../lib/itemsApi";
+// import { api } from "../lib/Api";
+// import projectApi from "../lib/projectApi";
 
-// Types
-type PORef = {
-  id: string;
-  po_number?: string;
-  vendors?: { name?: string };
-  projects?: { name?: string };
-};
+// // Types
+// type PORef = {
+//   id: string;
+//   po_number?: string;
+//   vendors?: { name?: string };
+//   projects?: { name?: string };
+// };
 
-type Material = {
-  id: string;
-  po_id: string;
-  item_id?: string;
-  item_description?: string;
-  quantity_ordered: number;
-  quantity_received: number;
-  quantity_pending: number;
-  status?: "pending" | "partial" | "completed" | "cancelled";
-  received_date?: string | null;
-  received_by?: string | null;
-  notes?: string | null;
-  created_at?: string;
-  purchase_orders?: PORef;
-};
+// type Material = {
+//   id: string;
+//   po_id: string;
+//   item_id?: string;
+//   item_description?: string;
+//   quantity_ordered: number;
+//   quantity_received: number;
+//   quantity_pending: number;
+//   status?: "pending" | "partial" | "completed" | "cancelled";
+//   received_date?: string | null;
+//   received_by?: string | null;
+//   notes?: string | null;
+//   created_at?: string;
+//   purchase_orders?: PORef;
+// };
 
-type POMaterial = {
-  id: string;
-  item_id?: string;
-  item_name?: string;
-  hsn_code?: string;
-  quantity_ordered: number;
-  quantity_received: number;
-  quantity_pending: number;
-  status?: string;
-  unit?: string;
-  item?: any;
-};
+// type POMaterial = {
+//   id: string;
+//   item_id?: string;
+//   item_name?: string;
+//   hsn_code?: string;
+//   quantity_ordered: number;
+//   quantity_received: number;
+//   quantity_pending: number;
+//   status?: string;
+//   unit?: string;
+//   item?: any;
+// };
 
-type POData = {
-  id: string;
-  po_number: string;
-  vendor: {
-    id: string;
-    name: string;
-  };
-  project: string;
-  amount: string;
-  po_status: string;
-  material_status: string;
-  payment_status: string;
-  balance_amount: string;
-  po_date: string;
-  vendor_id: string;
-  purchase_order?: any;
-  materials: POMaterial[];
-  expanded: boolean;
-  total_ordered: number;
-  total_received: number;
-  total_pending: number;
-  overall_status: string;
-};
+// type POData = {
+//   id: string;
+//   po_number: string;
+//   vendor: {
+//     id: string;
+//     name: string;
+//   };
+//   project: string;
+//   amount: string;
+//   po_status: string;
+//   material_status: string;
+//   payment_status: string;
+//   balance_amount: string;
+//   po_date: string;
+//   vendor_id: string;
+//   purchase_order?: any;
+//   materials: POMaterial[];
+//   expanded: boolean;
+//   total_ordered: number;
+//   total_received: number;
+//   total_pending: number;
+//   overall_status: string;
+// };
 
-export default function MaterialsEnhanced() {
-  const { user } = useAuth();
-  const [poData, setPoData] = useState<POData[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [selectedMaterial, setSelectedMaterial] = useState<any>(null);
-  const [showReceiveModal, setShowReceiveModal] = useState(false);
-  const [receiveQuantity, setReceiveQuantity] = useState<number>(0);
-  const [receiveNotes, setReceiveNotes] = useState<string>("");
-  const [showModel, setShowModel] = useState<boolean>(false);
-  const [allProjects, setAllProjects] = useState<any>([]);
+// export default function MaterialsEnhanced() {
+//   const { user } = useAuth();
+//   const [poData, setPoData] = useState<POData[]>([]);
+//   const [loading, setLoading] = useState(true);
+//   const [selectedMaterial, setSelectedMaterial] = useState<any>(null);
+//   const [showReceiveModal, setShowReceiveModal] = useState(false);
+//   const [receiveQuantity, setReceiveQuantity] = useState<number>(0);
+//   const [receiveNotes, setReceiveNotes] = useState<string>("");
+//   const [showModel, setShowModel] = useState<boolean>(false);
+//   const [allProjects, setAllProjects] = useState<any>([]);
 
-  const loadAllPOs = async () => {
-    try {
-      const posRes: any = await poApi.getPOs();
-      const poMaterialTrackRes: any = await po_trackingApi.getTrackings();
-      const vendorsRes: any = await vendorApi.getVendors();
-      const itemsRes: any = await ItemsApi.getItems();
-      const projectsData: any = await projectApi.getProjects();
-      if (projectsData.success) {
-        setAllProjects(
-          Array.isArray(projectsData.data) ? projectsData.data : []
-        );
-      }
-      const poWithVendors = posRes.map((po: any) => {
-        const vendorData = vendorsRes.find((v: any) => v.id === po.vendor_id);
-        return { ...po, vendor: vendorData };
-      });
+//   const loadAllPOs = async () => {
+//     try {
+//       const posRes: any = await poApi.getPOs();
+//       const poMaterialTrackRes: any = await po_trackingApi.getTrackings();
+//       const vendorsRes: any = await vendorApi.getVendors();
+//       const itemsRes: any = await ItemsApi.getItems();
+//       const projectsData: any = await projectApi.getProjects();
+//       if (projectsData.success) {
+//         setAllProjects(
+//           Array.isArray(projectsData.data) ? projectsData.data : []
+//         );
+//       }
+//       const poWithVendors = posRes.map((po: any) => {
+//         const vendorData = vendorsRes.find((v: any) => v.id === po.vendor_id);
+//         return { ...po, vendor: vendorData };
+//       });
 
-      const idsSet = new Set(posRes.map((item: any) => item.id));
-      const filteredPoMaterialTracking = poMaterialTrackRes.filter(
-        (item: any) => idsSet.has(item.po_id)
-      );
+//       const idsSet = new Set(posRes.map((item: any) => item.id));
+//       const filteredPoMaterialTracking = poMaterialTrackRes.filter(
+//         (item: any) => idsSet.has(item.po_id)
+//       );
 
-      // Group materials by PO
-      const poMap = new Map<string, POData>();
+//       // Group materials by PO
+//       const poMap = new Map<string, POData>();
 
-      poWithVendors.forEach((po: any) => {
-        const proData = Array.isArray(projectsData.data)
-          ? projectsData.data
-          : [];
+//       poWithVendors.forEach((po: any) => {
+//         const proData = Array.isArray(projectsData.data)
+//           ? projectsData.data
+//           : [];
 
-        const project = proData.find(
-          (project: any) => project.id === Number(po.project_id)
-        );
-        console.log(po);
+//         const project = proData.find(
+//           (project: any) => project.id === Number(po.project_id)
+//         );
+//         console.log(po);
 
-        poMap.set(po.id, {
-          id: po.id,
-          po_number: po.po_number,
-          vendor: po.vendor,
-          project: project.name,
-          amount: po.grand_total,
-          po_status: po.status,
-          material_status: po.material_status,
-          payment_status: po.payment_status,
-          balance_amount: po.balance_amount,
-          po_date: new Date(po.created_at).toLocaleDateString(),
-          vendor_id: po.vendor_id,
-          purchase_order: po,
-          materials: [],
-          expanded: false,
-          total_ordered: 0,
-          total_received: 0,
-          total_pending: 0,
-          overall_status: "pending",
-        });
-      });
+//         poMap.set(po.id, {
+//           id: po.id,
+//           po_number: po.po_number,
+//           vendor: po.vendor,
+//           project: project.name,
+//           amount: po.grand_total,
+//           po_status: po.status,
+//           material_status: po.material_status,
+//           payment_status: po.payment_status,
+//           balance_amount: po.balance_amount,
+//           po_date: new Date(po.created_at).toLocaleDateString(),
+//           vendor_id: po.vendor_id,
+//           purchase_order: po,
+//           materials: [],
+//           expanded: false,
+//           total_ordered: 0,
+//           total_received: 0,
+//           total_pending: 0,
+//           overall_status: "pending",
+//         });
+//       });
 
-      filteredPoMaterialTracking.forEach((mt: any) => {
-        const po = poMap.get(mt.po_id);
-        if (po) {
-          const itemData = itemsRes.find(
-            (i: any) => i.id === Number(mt.item_id)
-          );
+//       filteredPoMaterialTracking.forEach((mt: any) => {
+//         const po = poMap.get(mt.po_id);
+//         if (po) {
+//           const itemData = itemsRes.find(
+//             (i: any) => i.id === Number(mt.item_id)
+//           );
 
-          const material: POMaterial = {
-            id: mt.id,
-            item_id: mt.item_id,
-            item_name: itemData?.item_name,
-            hsn_code: itemData?.hsn_code,
-            quantity_ordered: Number(mt.quantity_ordered || 0),
-            quantity_received: Number(mt.quantity_received || 0),
-            quantity_pending: Number(mt.quantity_pending || 0),
-            status: mt.status || "pending",
-            unit: itemData?.unit,
-            item: itemData,
-          };
+//           const material: POMaterial = {
+//             id: mt.id,
+//             item_id: mt.item_id,
+//             item_name: itemData?.item_name,
+//             hsn_code: itemData?.hsn_code,
+//             quantity_ordered: Number(mt.quantity_ordered || 0),
+//             quantity_received: Number(mt.quantity_received || 0),
+//             quantity_pending: Number(mt.quantity_pending || 0),
+//             status: mt.status || "pending",
+//             unit: itemData?.unit,
+//             item: itemData,
+//           };
 
-          po.materials.push(material);
+//           po.materials.push(material);
 
-          // Update PO totals
-          po.total_ordered += material.quantity_ordered;
-          po.total_received += material.quantity_received;
-          po.total_pending += material.quantity_pending;
-        }
-      });
+//           // Update PO totals
+//           po.total_ordered += material.quantity_ordered;
+//           po.total_received += material.quantity_received;
+//           po.total_pending += material.quantity_pending;
+//         }
+//       });
 
-      // Calculate overall status for each PO
-      poMap.forEach((po) => {
-        if (po.materials.length === 0) {
-          po.overall_status = "pending";
-        } else if (po.materials.every((m) => m.status === "completed")) {
-          po.overall_status = "completed";
-        } else if (
-          po.materials.some(
-            (m) => m.status === "partial" || m.status === "completed"
-          )
-        ) {
-          po.overall_status = "partial";
-        } else {
-          po.overall_status = "pending";
-        }
-      });
+//       // Calculate overall status for each PO
+//       poMap.forEach((po) => {
+//         if (po.materials.length === 0) {
+//           po.overall_status = "pending";
+//         } else if (po.materials.every((m) => m.status === "completed")) {
+//           po.overall_status = "completed";
+//         } else if (
+//           po.materials.some(
+//             (m) => m.status === "partial" || m.status === "completed"
+//           )
+//         ) {
+//           po.overall_status = "partial";
+//         } else {
+//           po.overall_status = "pending";
+//         }
+//       });
 
-      const poDataArray = Array.from(poMap.values());
-      setPoData(poDataArray);
-      setLoading(false);
-    } catch (error) {
-      toast.error("Something Went Wrong.");
-      setLoading(false);
-    }
-  };
+//       const poDataArray = Array.from(poMap.values());
+//       setPoData(poDataArray);
+//       setLoading(false);
+//     } catch (error) {
+//       toast.error("Something Went Wrong.");
+//       setLoading(false);
+//     }
+//   };
 
-  const loadProjects = async () => {
-    try {
-      const data: any = await projectApi.getProjects();
-      if (data.success) {
-        setAllProjects(data.data);
-        return;
-      }
-      setAllProjects([]);
-    } catch (err) {
-      console.warn("loadProjects failed", err);
-      setAllProjects([]);
-    }
-  };
+//   const loadProjects = async () => {
+//     try {
+//       const data: any = await projectApi.getProjects();
+//       if (data.success) {
+//         setAllProjects(data.data);
+//         return;
+//       }
+//       setAllProjects([]);
+//     } catch (err) {
+//       console.warn("loadProjects failed", err);
+//       setAllProjects([]);
+//     }
+//   };
 
-  useEffect(() => {
-    loadAllPOs();
-    loadProjects();
-  }, []);
+//   useEffect(() => {
+//     loadAllPOs();
+//     loadProjects();
+//   }, []);
 
-  const togglePOExpand = (poId: string) => {
-    setPoData((prev) =>
-      prev.map((po) =>
-        po.id === poId ? { ...po, expanded: !po.expanded } : po
-      )
-    );
-  };
+//   const togglePOExpand = (poId: string) => {
+//     setPoData((prev) =>
+//       prev.map((po) =>
+//         po.id === poId ? { ...po, expanded: !po.expanded } : po
+//       )
+//     );
+//   };
 
-  const expandAllPOs = () => {
-    setPoData((prev) => prev.map((po) => ({ ...po, expanded: true })));
-  };
+//   const expandAllPOs = () => {
+//     setPoData((prev) => prev.map((po) => ({ ...po, expanded: true })));
+//   };
 
-  const collapseAllPOs = () => {
-    setPoData((prev) => prev.map((po) => ({ ...po, expanded: false })));
-  };
+//   const collapseAllPOs = () => {
+//     setPoData((prev) => prev.map((po) => ({ ...po, expanded: false })));
+//   };
 
-  const getStatusColor = (status?: string) => {
-    const styles: Record<string, string> = {
-      pending: "bg-red-100 text-red-700",
-      partial: "bg-yellow-100 text-yellow-700",
-      approved: "bg-orange-100 text-orange-700",
-      completed: "bg-green-100 text-green-700",
-      authorize: "bg-green-100 text-green-700",
-      cancelled: "bg-red-100 text-red-700",
-    };
-    return (status && styles[status]) || "bg-gray-100 text-gray-700";
-  };
+//   const getStatusColor = (status?: string) => {
+//     const styles: Record<string, string> = {
+//       pending: "bg-red-100 text-red-700",
+//       partial: "bg-yellow-100 text-yellow-700",
+//       approved: "bg-orange-100 text-orange-700",
+//       completed: "bg-green-100 text-green-700",
+//       authorize: "bg-green-100 text-green-700",
+//       cancelled: "bg-red-100 text-red-700",
+//     };
+//     return (status && styles[status]) || "bg-gray-100 text-gray-700";
+//   };
 
-  const getStatusIcon = (status?: string) => {
-    switch (status) {
-      case "completed":
-        return <CheckCircle className="w-5 h-5 text-green-600" />;
-      case "partial":
-        return <Clock className="w-5 h-5 text-yellow-600" />;
-      case "pending":
-        return <AlertCircle className="w-5 h-5 text-gray-600" />;
-      default:
-        return <Package className="w-5 h-5 text-gray-600" />;
-    }
-  };
+//   const getStatusIcon = (status?: string) => {
+//     switch (status) {
+//       case "completed":
+//         return <CheckCircle className="w-5 h-5 text-green-600" />;
+//       case "partial":
+//         return <Clock className="w-5 h-5 text-yellow-600" />;
+//       case "pending":
+//         return <AlertCircle className="w-5 h-5 text-gray-600" />;
+//       default:
+//         return <Package className="w-5 h-5 text-gray-600" />;
+//     }
+//   };
 
-  const calculatePercentage = (received: number, ordered: number) => {
-    return ordered > 0 ? Math.round((received * 100) / ordered) : 0;
-  };
+//   const calculatePercentage = (received: number, ordered: number) => {
+//     return ordered > 0 ? Math.round((received * 100) / ordered) : 0;
+//   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!selectedMaterial) return;
+//   const handleSubmit = async (e: React.FormEvent) => {
+//     e.preventDefault();
+//     if (!selectedMaterial) return;
 
-    try {
-      // Your existing validation and submission logic
-      // ... (keep your existing handleSubmit code)
-    } catch (error: any) {
-      console.error("Create transaction error:", error);
-      toast.error(error?.response?.data?.message || "Something went wrong");
-    }
-  };
+//     try {
+//       // Your existing validation and submission logic
+//       // ... (keep your existing handleSubmit code)
+//     } catch (error: any) {
+//       console.error("Create transaction error:", error);
+//       toast.error(error?.response?.data?.message || "Something went wrong");
+//     }
+//   };
 
-  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      setSelectedMaterial((prev: any) => ({ ...prev, challan_image: file }));
-    }
-  };
+//   const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+//     const file = e.target.files?.[0];
+//     if (file) {
+//       setSelectedMaterial((prev: any) => ({ ...prev, challan_image: file }));
+//     }
+//   };
 
-  const handleReceiveMaterial = (po: POData, material: POMaterial) => {
-    setSelectedMaterial({
-      ...material,
-      purchase_order: po.purchase_order,
-    });
-    setShowModel(true);
-  };
-  const formatCurrency = (amount?: number) => {
-    return new Intl.NumberFormat("en-IN", {
-      style: "currency",
-      currency: "INR",
-    }).format(amount || 0);
-  };
+//   const handleReceiveMaterial = (po: POData, material: POMaterial) => {
+//     setSelectedMaterial({
+//       ...material,
+//       purchase_order: po.purchase_order,
+//     });
+//     setShowModel(true);
+//   };
+//   const formatCurrency = (amount?: number) => {
+//     return new Intl.NumberFormat("en-IN", {
+//       style: "currency",
+//       currency: "INR",
+//     }).format(amount || 0);
+//   };
 
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center h-96">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
-          <p className="text-gray-600">Loading materials...</p>
-        </div>
-      </div>
-    );
-  }
+//   if (loading) {
+//     return (
+//       <div className="flex items-center justify-center h-96">
+//         <div className="text-center">
+//           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+//           <p className="text-gray-600">Loading materials...</p>
+//         </div>
+//       </div>
+//     );
+//   }
 
-  return (
-    <div className="p-6">
-      <div className="mb-6">
-        <h1 className="text-3xl font-bold text-gray-800">Material Tracking</h1>
-        <p className="text-gray-600 mt-1">
-          Track material receipts and deliveries
-        </p>
-      </div>
+//   return (
+//     <div className="p-6">
+//       <div className="mb-6">
+//         <h1 className="text-3xl font-bold text-gray-800">Material Tracking</h1>
+//         <p className="text-gray-600 mt-1">
+//           Track material receipts and deliveries
+//         </p>
+//       </div>
 
-      {/* Summary Cards */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-6 mb-6">
-        <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm text-gray-600 mb-1">Total POs</p>
-              <p className="text-3xl font-bold text-gray-800">
-                {poData.length}
-              </p>
-            </div>
-            <Package className="w-12 h-12 text-blue-500 opacity-20" />
-          </div>
-        </div>
+//       {/* Summary Cards */}
+//       <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-6 mb-6">
+//         <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
+//           <div className="flex items-center justify-between">
+//             <div>
+//               <p className="text-sm text-gray-600 mb-1">Total POs</p>
+//               <p className="text-3xl font-bold text-gray-800">
+//                 {poData.length}
+//               </p>
+//             </div>
+//             <Package className="w-12 h-12 text-blue-500 opacity-20" />
+//           </div>
+//         </div>
 
-        <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm text-gray-600 mb-1">Pending POs</p>
-              <p className="text-3xl font-bold text-gray-800">
-                {poData.filter((po) => po.overall_status === "pending").length}
-              </p>
-            </div>
-            <Clock className="w-12 h-12 text-gray-500 opacity-20" />
-          </div>
-        </div>
+//         <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
+//           <div className="flex items-center justify-between">
+//             <div>
+//               <p className="text-sm text-gray-600 mb-1">Pending POs</p>
+//               <p className="text-3xl font-bold text-gray-800">
+//                 {poData.filter((po) => po.overall_status === "pending").length}
+//               </p>
+//             </div>
+//             <Clock className="w-12 h-12 text-gray-500 opacity-20" />
+//           </div>
+//         </div>
 
-        <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm text-gray-600 mb-1">Partial POs</p>
-              <p className="text-3xl font-bold text-yellow-600">
-                {poData.filter((po) => po.overall_status === "partial").length}
-              </p>
-            </div>
-            <Truck className="w-12 h-12 text-yellow-500 opacity-20" />
-          </div>
-        </div>
+//         <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
+//           <div className="flex items-center justify-between">
+//             <div>
+//               <p className="text-sm text-gray-600 mb-1">Partial POs</p>
+//               <p className="text-3xl font-bold text-yellow-600">
+//                 {poData.filter((po) => po.overall_status === "partial").length}
+//               </p>
+//             </div>
+//             <Truck className="w-12 h-12 text-yellow-500 opacity-20" />
+//           </div>
+//         </div>
 
-        <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm text-gray-600 mb-1">Completed POs</p>
-              <p className="text-3xl font-bold text-green-600">
-                {
-                  poData.filter((po) => po.overall_status === "completed")
-                    .length
-                }
-              </p>
-            </div>
-            <CheckCircle className="w-12 h-12 text-green-500 opacity-20" />
-          </div>
-        </div>
-      </div>
+//         <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
+//           <div className="flex items-center justify-between">
+//             <div>
+//               <p className="text-sm text-gray-600 mb-1">Completed POs</p>
+//               <p className="text-3xl font-bold text-green-600">
+//                 {
+//                   poData.filter((po) => po.overall_status === "completed")
+//                     .length
+//                 }
+//               </p>
+//             </div>
+//             <CheckCircle className="w-12 h-12 text-green-500 opacity-20" />
+//           </div>
+//         </div>
+//       </div>
 
-      {/* POs List with Accordion */}
-      <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
-        <div className="overflow-x-auto">
-          <table className="w-full">
-            <thead className="bg-gray-50 border-b border-gray-200">
-              <tr>
-                <th className="text-left px-6 py-4 text-sm font-semibold text-gray-700 w-12">
-                  {/* Expand/collapse column */}
-                </th>
-                <th className="text-left px-6 py-4 text-sm font-semibold text-gray-700">
-                  PO Number
-                </th>
-                <th className="text-left px-6 py-4 text-sm font-semibold text-gray-700">
-                  Vendor
-                </th>
-                <th className="text-left px-6 py-4 text-sm font-semibold text-gray-700">
-                  Project
-                </th>
-                <th className="text-left px-6 py-4 text-sm font-semibold text-gray-700">
-                  Amount
-                </th>
-                <th className="text-left px-6 py-4 text-sm font-semibold text-gray-700">
-                  PO Status
-                </th>
-                <th className="text-left px-6 py-4 text-sm font-semibold text-gray-700">
-                  Material
-                </th>
-                <th className="text-left px-6 py-4 text-sm font-semibold text-gray-700">
-                  Payment
-                </th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-gray-200">
-              {poData.map((po) => {
-                const overallPercentage = calculatePercentage(
-                  po.total_received,
-                  po.total_ordered
-                );
+//       {/* POs List with Accordion */}
+//       <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+//         <div className="overflow-x-auto">
+//           <table className="w-full">
+//             <thead className="bg-gray-50 border-b border-gray-200">
+//               <tr>
+//                 <th className="text-left px-6 py-4 text-sm font-semibold text-gray-700 w-12">
+//                   {/* Expand/collapse column */}
+//                 </th>
+//                 <th className="text-left px-6 py-4 text-sm font-semibold text-gray-700">
+//                   PO Number
+//                 </th>
+//                 <th className="text-left px-6 py-4 text-sm font-semibold text-gray-700">
+//                   Vendor
+//                 </th>
+//                 <th className="text-left px-6 py-4 text-sm font-semibold text-gray-700">
+//                   Project
+//                 </th>
+//                 <th className="text-left px-6 py-4 text-sm font-semibold text-gray-700">
+//                   Amount
+//                 </th>
+//                 <th className="text-left px-6 py-4 text-sm font-semibold text-gray-700">
+//                   PO Status
+//                 </th>
+//                 <th className="text-left px-6 py-4 text-sm font-semibold text-gray-700">
+//                   Material
+//                 </th>
+//                 <th className="text-left px-6 py-4 text-sm font-semibold text-gray-700">
+//                   Payment
+//                 </th>
+//               </tr>
+//             </thead>
+//             <tbody className="divide-y divide-gray-200">
+//               {poData.map((po) => {
+//                 const overallPercentage = calculatePercentage(
+//                   po.total_received,
+//                   po.total_ordered
+//                 );
 
-                return (
-                  <>
-                    {/* PO Summary Row */}
-                    <tr
-                      key={po.id}
-                      className="hover:bg-gray-50 transition bg-blue-50/30 cursor-pointer"
-                      onClick={() => togglePOExpand(po.id)}
-                    >
-                      <td className="px-6 py-4">
-                        <button className="p-1 hover:bg-gray-200 rounded">
-                          {po.expanded ? (
-                            <ChevronDown className="w-5 h-5 text-gray-600" />
-                          ) : (
-                            <ChevronRight className="w-5 h-5 text-gray-600" />
-                          )}
-                        </button>
-                      </td>
-                      <td className="px-6 py-4 flex">
-                        <div className="flex items-center mr-3">
-                          <FileText className="w-5 h-5 text-blue-600 hover:text-blue-700" />
-                        </div>
-                        <div>
-                          <span className="font-medium text-blue-600">
-                            {po.po_number}
-                          </span>
-                          <p className="text-xs text-gray-500">
-                            {po.po_date
-                              ? new Date(po.po_date).toLocaleDateString()
-                              : ""}
-                          </p>
-                        </div>
-                      </td>
-                      <td className="px-6 py-4 text-gray-700">
-                        {po.vendor?.name || "--"}
-                      </td>
-                      <td className="px-6 py-4 font-medium text-gray-800">
-                        {po.project || "--"}
-                      </td>
-                      <td className="px-6 py-4 font-medium text-gray-800">
-                        {po.amount || "--"}
-                      </td>
-                      <td className="px-6 py-4">
-                        <span
-                          className={`px-3 py-1 rounded-full text-xs font-medium ${getStatusColor(
-                            po.po_status
-                          )}`}
-                        >
-                          {po.po_status?.toUpperCase()}
-                        </span>
-                      </td>
-                      <td className="px-6 py-4">
-                        <span
-                          className={`px-3 py-1 rounded-full text-xs font-medium ${getStatusColor(
-                            po.material_status
-                          )}`}
-                        >
-                          {po.material_status?.toUpperCase() || "PENDING"}
-                        </span>
-                      </td>
-                      <td className="px-6 py-4">
-                        <span
-                          className={`px-3 py-1 rounded-full text-xs font-medium ${getStatusColor(
-                            po.payment_status
-                          )}`}
-                        >
-                          {po.payment_status?.toUpperCase() || "PENDING"}
-                        </span>
-                        {Number(po.balance_amount)! > 0 && (
-                          <p className="text-xs text-gray-600 mt-1">
-                            Bal: {formatCurrency(Number(po.balance_amount))}
-                          </p>
-                        )}
-                      </td>
-                    </tr>
+//                 return (
+//                   <>
+//                     {/* PO Summary Row */}
+//                     <tr
+//                       key={po.id}
+//                       className="hover:bg-gray-50 transition bg-blue-50/30 cursor-pointer"
+//                       onClick={() => togglePOExpand(po.id)}
+//                     >
+//                       <td className="px-6 py-4">
+//                         <button className="p-1 hover:bg-gray-200 rounded">
+//                           {po.expanded ? (
+//                             <ChevronDown className="w-5 h-5 text-gray-600" />
+//                           ) : (
+//                             <ChevronRight className="w-5 h-5 text-gray-600" />
+//                           )}
+//                         </button>
+//                       </td>
+//                       <td className="px-6 py-4 flex">
+//                         <div className="flex items-center mr-3">
+//                           <FileText className="w-5 h-5 text-blue-600 hover:text-blue-700" />
+//                         </div>
+//                         <div>
+//                           <span className="font-medium text-blue-600">
+//                             {po.po_number}
+//                           </span>
+//                           <p className="text-xs text-gray-500">
+//                             {po.po_date
+//                               ? new Date(po.po_date).toLocaleDateString()
+//                               : ""}
+//                           </p>
+//                         </div>
+//                       </td>
+//                       <td className="px-6 py-4 text-gray-700">
+//                         {po.vendor?.name || "--"}
+//                       </td>
+//                       <td className="px-6 py-4 font-medium text-gray-800">
+//                         {po.project || "--"}
+//                       </td>
+//                       <td className="px-6 py-4 font-medium text-gray-800">
+//                         {po.amount || "--"}
+//                       </td>
+//                       <td className="px-6 py-4">
+//                         <span
+//                           className={`px-3 py-1 rounded-full text-xs font-medium ${getStatusColor(
+//                             po.po_status
+//                           )}`}
+//                         >
+//                           {po.po_status?.toUpperCase()}
+//                         </span>
+//                       </td>
+//                       <td className="px-6 py-4">
+//                         <span
+//                           className={`px-3 py-1 rounded-full text-xs font-medium ${getStatusColor(
+//                             po.material_status
+//                           )}`}
+//                         >
+//                           {po.material_status?.toUpperCase() || "PENDING"}
+//                         </span>
+//                       </td>
+//                       <td className="px-6 py-4">
+//                         <span
+//                           className={`px-3 py-1 rounded-full text-xs font-medium ${getStatusColor(
+//                             po.payment_status
+//                           )}`}
+//                         >
+//                           {po.payment_status?.toUpperCase() || "PENDING"}
+//                         </span>
+//                         {Number(po.balance_amount)! > 0 && (
+//                           <p className="text-xs text-gray-600 mt-1">
+//                             Bal: {formatCurrency(Number(po.balance_amount))}
+//                           </p>
+//                         )}
+//                       </td>
+//                     </tr>
 
-                    {/* Expanded Items Row */}
-                    {po.expanded && po.materials.length > 0 && (
-                      <tr className="bg-gray-50">
-                        <td colSpan={10} className="p-0">
-                          <div className="px-6 py-4 border-t border-gray-200">
-                            <h4 className="text-sm font-semibold text-gray-700 mb-3">
-                              Items in PO {po.po_number}
-                            </h4>
-                            <div className="overflow-x-auto">
-                              <table className="w-full bg-white rounded-lg border border-gray-200">
-                                <thead className="bg-gray-100">
-                                  <tr>
-                                    <th className="text-left px-4 py-3 text-sm font-medium text-gray-700">
-                                      Item
-                                    </th>
-                                    <th className="text-left px-4 py-3 text-sm font-medium text-gray-700">
-                                      HSN Code
-                                    </th>
-                                    <th className="text-left px-4 py-3 text-sm font-medium text-gray-700">
-                                      Ordered
-                                    </th>
-                                    <th className="text-left px-4 py-3 text-sm font-medium text-gray-700">
-                                      Received
-                                    </th>
-                                    <th className="text-left px-4 py-3 text-sm font-medium text-gray-700">
-                                      Pending
-                                    </th>
-                                    <th className="text-left px-4 py-3 text-sm font-medium text-gray-700">
-                                      Progress
-                                    </th>
-                                    <th className="text-left px-4 py-3 text-sm font-medium text-gray-700">
-                                      Status
-                                    </th>
-                                  </tr>
-                                </thead>
-                                <tbody className="divide-y divide-gray-200">
-                                  {po.materials.map((material) => {
-                                    const materialPercentage =
-                                      calculatePercentage(
-                                        material.quantity_received,
-                                        material.quantity_ordered
-                                      );
+//                     {/* Expanded Items Row */}
+//                     {po.expanded && po.materials.length > 0 && (
+//                       <tr className="bg-gray-50">
+//                         <td colSpan={10} className="p-0">
+//                           <div className="px-6 py-4 border-t border-gray-200">
+//                             <h4 className="text-sm font-semibold text-gray-700 mb-3">
+//                               Items in PO {po.po_number}
+//                             </h4>
+//                             <div className="overflow-x-auto">
+//                               <table className="w-full bg-white rounded-lg border border-gray-200">
+//                                 <thead className="bg-gray-100">
+//                                   <tr>
+//                                     <th className="text-left px-4 py-3 text-sm font-medium text-gray-700">
+//                                       Item
+//                                     </th>
+//                                     <th className="text-left px-4 py-3 text-sm font-medium text-gray-700">
+//                                       HSN Code
+//                                     </th>
+//                                     <th className="text-left px-4 py-3 text-sm font-medium text-gray-700">
+//                                       Ordered
+//                                     </th>
+//                                     <th className="text-left px-4 py-3 text-sm font-medium text-gray-700">
+//                                       Received
+//                                     </th>
+//                                     <th className="text-left px-4 py-3 text-sm font-medium text-gray-700">
+//                                       Pending
+//                                     </th>
+//                                     <th className="text-left px-4 py-3 text-sm font-medium text-gray-700">
+//                                       Progress
+//                                     </th>
+//                                     <th className="text-left px-4 py-3 text-sm font-medium text-gray-700">
+//                                       Status
+//                                     </th>
+//                                   </tr>
+//                                 </thead>
+//                                 <tbody className="divide-y divide-gray-200">
+//                                   {po.materials.map((material) => {
+//                                     const materialPercentage =
+//                                       calculatePercentage(
+//                                         material.quantity_received,
+//                                         material.quantity_ordered
+//                                       );
 
-                                    return (
-                                      <tr
-                                        key={material.id}
-                                        className="hover:bg-gray-50"
-                                      >
-                                        <td className="px-4 py-3">
-                                          <div className="font-medium text-gray-800">
-                                            {material.item_name || "Unknown"}
-                                          </div>
-                                          <div className="text-xs text-gray-500">
-                                            Unit: {material.unit || "N/A"}
-                                          </div>
-                                        </td>
-                                        <td className="px-4 py-3 text-gray-700">
-                                          {material.hsn_code || "-"}
-                                        </td>
-                                        <td className="px-4 py-3 font-medium text-gray-800">
-                                          {material.quantity_ordered}
-                                        </td>
-                                        <td className="px-4 py-3 font-medium text-green-600">
-                                          {material.quantity_received}
-                                        </td>
-                                        <td className="px-4 py-3 font-medium text-orange-600">
-                                          {material.quantity_pending}
-                                        </td>
-                                        <td className="px-4 py-3">
-                                          <div className="w-full bg-gray-200 rounded-full h-2">
-                                            <div
-                                              className="bg-blue-600 h-2 rounded-full transition-all"
-                                              style={{
-                                                width: `${materialPercentage}%`,
-                                              }}
-                                            />
-                                          </div>
-                                          <p className="text-xs text-gray-600 mt-1">
-                                            {materialPercentage}%
-                                          </p>
-                                        </td>
-                                        <td className="px-4 py-3">
-                                          <span
-                                            className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(
-                                              material.status
-                                            )}`}
-                                          >
-                                            {material.status?.toUpperCase() ||
-                                              "PENDING"}
-                                          </span>
-                                        </td>
-                                      </tr>
-                                    );
-                                  })}
-                                </tbody>
-                              </table>
-                            </div>
-                          </div>
-                        </td>
-                      </tr>
-                    )}
+//                                     return (
+//                                       <tr
+//                                         key={material.id}
+//                                         className="hover:bg-gray-50"
+//                                       >
+//                                         <td className="px-4 py-3">
+//                                           <div className="font-medium text-gray-800">
+//                                             {material.item_name || "Unknown"}
+//                                           </div>
+//                                           <div className="text-xs text-gray-500">
+//                                             Unit: {material.unit || "N/A"}
+//                                           </div>
+//                                         </td>
+//                                         <td className="px-4 py-3 text-gray-700">
+//                                           {material.hsn_code || "-"}
+//                                         </td>
+//                                         <td className="px-4 py-3 font-medium text-gray-800">
+//                                           {material.quantity_ordered}
+//                                         </td>
+//                                         <td className="px-4 py-3 font-medium text-green-600">
+//                                           {material.quantity_received}
+//                                         </td>
+//                                         <td className="px-4 py-3 font-medium text-orange-600">
+//                                           {material.quantity_pending}
+//                                         </td>
+//                                         <td className="px-4 py-3">
+//                                           <div className="w-full bg-gray-200 rounded-full h-2">
+//                                             <div
+//                                               className="bg-blue-600 h-2 rounded-full transition-all"
+//                                               style={{
+//                                                 width: `${materialPercentage}%`,
+//                                               }}
+//                                             />
+//                                           </div>
+//                                           <p className="text-xs text-gray-600 mt-1">
+//                                             {materialPercentage}%
+//                                           </p>
+//                                         </td>
+//                                         <td className="px-4 py-3">
+//                                           <span
+//                                             className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(
+//                                               material.status
+//                                             )}`}
+//                                           >
+//                                             {material.status?.toUpperCase() ||
+//                                               "PENDING"}
+//                                           </span>
+//                                         </td>
+//                                       </tr>
+//                                     );
+//                                   })}
+//                                 </tbody>
+//                               </table>
+//                             </div>
+//                           </div>
+//                         </td>
+//                       </tr>
+//                     )}
 
-                    {/* Show message if no materials */}
-                    {po.expanded && po.materials.length === 0 && (
-                      <tr className="bg-gray-50">
-                        <td colSpan={10} className="p-0">
-                          <div className="px-6 py-8 border-t border-gray-200 text-center">
-                            <Package className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-                            <p className="text-gray-600">
-                              No materials found for this purchase order
-                            </p>
-                          </div>
-                        </td>
-                      </tr>
-                    )}
-                  </>
-                );
-              })}
-            </tbody>
-          </table>
+//                     {/* Show message if no materials */}
+//                     {po.expanded && po.materials.length === 0 && (
+//                       <tr className="bg-gray-50">
+//                         <td colSpan={10} className="p-0">
+//                           <div className="px-6 py-8 border-t border-gray-200 text-center">
+//                             <Package className="w-12 h-12 text-gray-400 mx-auto mb-4" />
+//                             <p className="text-gray-600">
+//                               No materials found for this purchase order
+//                             </p>
+//                           </div>
+//                         </td>
+//                       </tr>
+//                     )}
+//                   </>
+//                 );
+//               })}
+//             </tbody>
+//           </table>
 
-          {poData.length === 0 && (
-            <div className="text-center py-12">
-              <Package className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-              <h3 className="text-lg font-semibold text-gray-800 mb-2">
-                No purchase orders to track
-              </h3>
-              <p className="text-gray-600">
-                Authorized purchase orders will appear here
-              </p>
-            </div>
-          )}
-        </div>
-      </div>
-    </div>
-  );
-}
+//           {poData.length === 0 && (
+//             <div className="text-center py-12">
+//               <Package className="w-12 h-12 text-gray-400 mx-auto mb-4" />
+//               <h3 className="text-lg font-semibold text-gray-800 mb-2">
+//                 No purchase orders to track
+//               </h3>
+//               <p className="text-gray-600">
+//                 Authorized purchase orders will appear here
+//               </p>
+//             </div>
+//           )}
+//         </div>
+//       </div>
+//     </div>
+//   );
+// }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 // import { useState, useEffect } from "react";
 // import {
@@ -1556,3 +1587,800 @@ export default function MaterialsEnhanced() {
 //     </div>
 //   );
 // }
+
+
+
+
+
+
+import React, { useState, useEffect } from "react";
+import {
+  Package,
+  Calendar,
+  CheckCircle,
+  AlertCircle,
+  Clock,
+  Truck,
+  FileText,
+  ChevronDown,
+  ChevronRight,
+  Trash2,
+  AlertTriangle,
+  Loader2,
+  CheckSquare,
+  Square,
+} from "lucide-react";
+import { useAuth } from "../contexts/AuthContext";
+import { toast } from "sonner";
+import poApi from "../lib/poApi";
+import po_trackingApi from "../lib/po_tracking";
+import vendorApi from "../lib/vendorApi";
+import ItemsApi from "../lib/itemsApi";
+import projectApi from "../lib/projectApi";
+
+// Types
+type PORef = {
+  id: string;
+  po_number?: string;
+  vendors?: { name?: string };
+  projects?: { name?: string };
+};
+
+type Material = {
+  id: string;
+  po_id: string;
+  item_id?: string;
+  item_description?: string;
+  quantity_ordered: number;
+  quantity_received: number;
+  quantity_pending: number;
+  status?: "pending" | "partial" | "completed" | "cancelled";
+  received_date?: string | null;
+  received_by?: string | null;
+  notes?: string | null;
+  created_at?: string;
+  purchase_orders?: PORef;
+};
+
+type POMaterial = {
+  id: string;
+  item_id?: string;
+  item_name?: string;
+  hsn_code?: string;
+  quantity_ordered: number;
+  quantity_received: number;
+  quantity_pending: number;
+  status?: string;
+  unit?: string;
+  item?: any;
+};
+
+type POData = {
+  id: string;
+  po_number: string;
+  vendor: {
+    id: string;
+    name: string;
+  };
+  project: string;
+  amount: string;
+  po_status: string;
+  material_status: string;
+  payment_status: string;
+  balance_amount: string;
+  po_date: string;
+  vendor_id: string;
+  purchase_order?: any;
+  materials: POMaterial[];
+  expanded: boolean;
+  total_ordered: number;
+  total_received: number;
+  total_pending: number;
+  overall_status: string;
+};
+
+export default function MaterialsEnhanced() {
+  const { user } = useAuth();
+  const [poData, setPoData] = useState<POData[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [submitting, setSubmitting] = useState(false);
+
+  // Bulk selection
+  const [selectedPOs, setSelectedPOs] = useState<string[]>([]);
+  const [selectAll, setSelectAll] = useState(false);
+
+  // Column search states
+  const [searchPONumber, setSearchPONumber] = useState("");
+  const [searchVendor, setSearchVendor] = useState("");
+  const [searchProject, setSearchProject] = useState("");
+  const [searchStatus, setSearchStatus] = useState("");
+
+  const loadAllPOs = async () => {
+    try {
+      const posRes: any = await poApi.getPOs();
+      const poMaterialTrackRes: any = await po_trackingApi.getTrackings();
+      const vendorsRes: any = await vendorApi.getVendors();
+      const itemsRes: any = await ItemsApi.getItems();
+      const projectsData: any = await projectApi.getProjects();
+      
+      const poWithVendors = posRes.map((po: any) => {
+        const vendorData = vendorsRes.find((v: any) => v.id === po.vendor_id);
+        return { ...po, vendor: vendorData };
+      });
+
+      const idsSet = new Set(posRes.map((item: any) => item.id));
+      const filteredPoMaterialTracking = poMaterialTrackRes.filter(
+        (item: any) => idsSet.has(item.po_id)
+      );
+
+      // Group materials by PO
+      const poMap = new Map<string, POData>();
+
+      poWithVendors.forEach((po: any) => {
+        const proData = Array.isArray(projectsData.data)
+          ? projectsData.data
+          : [];
+
+        const project = proData.find(
+          (project: any) => project.id === Number(po.project_id)
+        );
+
+        poMap.set(po.id, {
+          id: po.id,
+          po_number: po.po_number,
+          vendor: po.vendor,
+          project: project?.name || "--",
+          amount: po.grand_total,
+          po_status: po.status,
+          material_status: po.material_status,
+          payment_status: po.payment_status,
+          balance_amount: po.balance_amount,
+          po_date: new Date(po.created_at).toLocaleDateString(),
+          vendor_id: po.vendor_id,
+          purchase_order: po,
+          materials: [],
+          expanded: false,
+          total_ordered: 0,
+          total_received: 0,
+          total_pending: 0,
+          overall_status: "pending",
+        });
+      });
+
+      filteredPoMaterialTracking.forEach((mt: any) => {
+        const po = poMap.get(mt.po_id);
+        if (po) {
+          const itemData = itemsRes.find(
+            (i: any) => i.id === Number(mt.item_id)
+          );
+
+          const material: POMaterial = {
+            id: mt.id,
+            item_id: mt.item_id,
+            item_name: itemData?.item_name,
+            hsn_code: itemData?.hsn_code,
+            quantity_ordered: Number(mt.quantity_ordered || 0),
+            quantity_received: Number(mt.quantity_received || 0),
+            quantity_pending: Number(mt.quantity_pending || 0),
+            status: mt.status || "pending",
+            unit: itemData?.unit,
+            item: itemData,
+          };
+
+          po.materials.push(material);
+
+          // Update PO totals
+          po.total_ordered += material.quantity_ordered;
+          po.total_received += material.quantity_received;
+          po.total_pending += material.quantity_pending;
+        }
+      });
+
+      // Calculate overall status for each PO
+      poMap.forEach((po) => {
+        if (po.materials.length === 0) {
+          po.overall_status = "pending";
+        } else if (po.materials.every((m) => m.status === "completed")) {
+          po.overall_status = "completed";
+        } else if (
+          po.materials.some(
+            (m) => m.status === "partial" || m.status === "completed"
+          )
+        ) {
+          po.overall_status = "partial";
+        } else {
+          po.overall_status = "pending";
+        }
+      });
+
+      const poDataArray = Array.from(poMap.values());
+      setPoData(poDataArray);
+      setLoading(false);
+      setSelectedPOs([]);
+      setSelectAll(false);
+    } catch (error) {
+      toast.error("Something Went Wrong.");
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    loadAllPOs();
+  }, []);
+
+  const togglePOExpand = (poId: string) => {
+    setPoData((prev) =>
+      prev.map((po) =>
+        po.id === poId ? { ...po, expanded: !po.expanded } : po
+      )
+    );
+  };
+
+  const getStatusColor = (status?: string) => {
+    const styles: Record<string, string> = {
+      pending: "bg-red-100 text-red-800",
+      partial: "bg-yellow-100 text-yellow-800",
+      approved: "bg-orange-100 text-orange-800",
+      completed: "bg-green-100 text-green-800",
+      authorize: "bg-green-100 text-green-800",
+      cancelled: "bg-red-100 text-red-800",
+    };
+    return (status && styles[status]) || "bg-gray-100 text-gray-800";
+  };
+
+  const calculatePercentage = (received: number, ordered: number) => {
+    return ordered > 0 ? Math.round((received * 100) / ordered) : 0;
+  };
+
+  // Handle PO selection
+  const togglePOSelection = (poId: string) => {
+    setSelectedPOs(prev => 
+      prev.includes(poId) 
+        ? prev.filter(id => id !== poId)
+        : [...prev, poId]
+    );
+  };
+
+  // Handle select all
+  const handleSelectAll = () => {
+    if (selectAll) {
+      setSelectedPOs([]);
+    } else {
+      setSelectedPOs(filteredPOs.map(po => po.id));
+    }
+    setSelectAll(!selectAll);
+  };
+
+  // Filter function
+  const filteredPOs = poData.filter((po) => {
+    const matchesPONumber = searchPONumber === "" || 
+      (po.po_number || "").toLowerCase().includes(searchPONumber.toLowerCase());
+    
+    const matchesVendor = searchVendor === "" || 
+      (po.vendor?.name || "").toLowerCase().includes(searchVendor.toLowerCase());
+    
+    const matchesProject = searchProject === "" || 
+      (po.project || "").toLowerCase().includes(searchProject.toLowerCase());
+    
+    const matchesStatus = searchStatus === "" || 
+      (po.overall_status || "").toLowerCase().includes(searchStatus.toLowerCase());
+    
+    return matchesPONumber && matchesVendor && matchesProject && matchesStatus;
+  });
+
+  // Bulk delete POs
+  const handleBulkDelete = async () => {
+    if (selectedPOs.length === 0) {
+      toast.error("Please select at least one PO to delete.");
+      return;
+    }
+
+    if (!window.confirm(`Are you sure you want to delete ${selectedPOs.length} purchase order(s)?\n\nThis action cannot be undone and will permanently delete the selected POs.`)) {
+      return;
+    }
+
+    try {
+      setSubmitting(true);
+      let successCount = 0;
+      let errorCount = 0;
+
+      for (const poId of selectedPOs) {
+        try {
+          const response = await poApi.deletePO(poId);
+          if (response) {
+            successCount++;
+          } else {
+            errorCount++;
+          }
+        } catch (error) {
+          errorCount++;
+          console.error(`Error deleting PO ${poId}:`, error);
+        }
+      }
+
+      if (successCount > 0) {
+        toast.success(`Successfully deleted ${successCount} purchase order(s).`);
+      }
+      if (errorCount > 0) {
+        toast.error(`Failed to delete ${errorCount} purchase order(s).`);
+      }
+
+      loadAllPOs(); // Refresh the list
+      setSelectedPOs([]);
+      setSelectAll(false);
+    } catch (error) {
+      console.error("Error in bulk delete:", error);
+      toast.error("Failed to delete purchase orders.");
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  const formatCurrency = (amount?: number) => {
+    return new Intl.NumberFormat("en-IN", {
+      style: "currency",
+      currency: "INR",
+    }).format(amount || 0);
+  };
+
+  if (loading) {
+    return (
+      <div className="p-6 bg-gray-50 min-h-screen">
+        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-12 text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
+          <p className="text-gray-600 mt-4">Loading materials...</p>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="p-0 bg-gray-50 min-h-screen">
+      {/* Header - Simple */}
+      
+
+      {/* Delete Button (Appears when checkboxes are selected) */}
+      {selectedPOs.length > 0 && (
+        <div className="mb-6">
+          <div className="bg-gradient-to-r from-red-50 to-rose-50 border border-red-200 rounded-xl shadow-sm p-4">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="bg-red-100 p-2 rounded-lg">
+                  <Trash2 className="w-5 h-5 text-red-600" />
+                </div>
+                <div>
+                  <p className="font-medium text-gray-800">
+                    {selectedPOs.length} purchase order{selectedPOs.length > 1 ? 's' : ''} selected
+                  </p>
+                  <p className="text-sm text-gray-600">
+                    Click delete to remove selected items
+                  </p>
+                </div>
+              </div>
+              <button
+                onClick={handleBulkDelete}
+                disabled={submitting}
+                className="flex items-center gap-2 bg-gradient-to-r from-red-600 to-rose-600 text-white px-4 py-2.5 rounded-xl hover:from-red-700 hover:to-rose-700 transition-all duration-200 font-medium shadow-md hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {submitting ? (
+                  <>
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                    Deleting...
+                  </>
+                ) : (
+                  <>
+                    <Trash2 className="w-4 h-4" />
+                    Delete ({selectedPOs.length})
+                  </>
+                )}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Summary Cards */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-6 mb-6">
+        <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm text-gray-600 mb-1">Total POs</p>
+              <p className="text-3xl font-bold text-gray-800">
+                {poData.length}
+              </p>
+            </div>
+            <Package className="w-12 h-12 text-blue-500 opacity-20" />
+          </div>
+        </div>
+
+        <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm text-gray-600 mb-1">Pending POs</p>
+              <p className="text-3xl font-bold text-gray-800">
+                {poData.filter((po) => po.overall_status === "pending").length}
+              </p>
+            </div>
+            <Clock className="w-12 h-12 text-gray-500 opacity-20" />
+          </div>
+        </div>
+
+        <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm text-gray-600 mb-1">Partial POs</p>
+              <p className="text-3xl font-bold text-yellow-600">
+                {poData.filter((po) => po.overall_status === "partial").length}
+              </p>
+            </div>
+            <Truck className="w-12 h-12 text-yellow-500 opacity-20" />
+          </div>
+        </div>
+
+        <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm text-gray-600 mb-1">Completed POs</p>
+              <p className="text-3xl font-bold text-green-600">
+                {
+                  poData.filter((po) => po.overall_status === "completed")
+                    .length
+                }
+              </p>
+            </div>
+            <CheckCircle className="w-12 h-12 text-green-500 opacity-20" />
+          </div>
+        </div>
+      </div>
+
+      {/* Table */}
+      <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+        <div className="overflow-x-auto">
+          <table className="w-full">
+            <thead className="bg-gray-200 border-b border-gray-200">
+              <tr>
+                <th className="px-6 py-3 text-left w-12">
+                  <div className="flex items-center">
+                    <button
+                      onClick={handleSelectAll}
+                      className="p-1 hover:bg-gray-300 rounded transition-colors"
+                    >
+                      {selectAll ? (
+                        <CheckSquare className="w-5 h-5 text-blue-600" />
+                      ) : (
+                        <Square className="w-5 h-5 text-gray-500" />
+                      )}
+                    </button>
+                  </div>
+                </th>
+                <th className="px-6 py-3 text-left">
+                  <div className="text-xs font-semibold text-gray-700 uppercase tracking-wider mb-2">
+                    PO Number
+                  </div>
+                  <input
+                    type="text"
+                    placeholder="Search PO..."
+                    value={searchPONumber}
+                    onChange={(e) => setSearchPONumber(e.target.value)}
+                    className="w-full px-3 py-1.5 text-sm border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  />
+                </th>
+                <th className="px-6 py-3 text-left">
+                  <div className="text-xs font-semibold text-gray-700 uppercase tracking-wider mb-2">
+                    Vendor
+                  </div>
+                  <input
+                    type="text"
+                    placeholder="Search vendor..."
+                    value={searchVendor}
+                    onChange={(e) => setSearchVendor(e.target.value)}
+                    className="w-full px-3 py-1.5 text-sm border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  />
+                </th>
+                <th className="px-6 py-3 text-left">
+                  <div className="text-xs font-semibold text-gray-700 uppercase tracking-wider mb-2">
+                    Project
+                  </div>
+                  <input
+                    type="text"
+                    placeholder="Search project..."
+                    value={searchProject}
+                    onChange={(e) => setSearchProject(e.target.value)}
+                    className="w-full px-3 py-1.5 text-sm border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  />
+                </th>
+                <th className="px-6 py-3 text-left">
+                  <div className="text-xs font-semibold text-gray-700 uppercase tracking-wider">
+                    Amount
+                  </div>
+                </th>
+                <th className="px-6 py-3 text-left">
+                  <div className="text-xs font-semibold text-gray-700 uppercase tracking-wider">
+                    PO Status
+                  </div>
+                </th>
+                <th className="px-6 py-3 text-left">
+                  <div className="text-xs font-semibold text-gray-700 uppercase tracking-wider mb-2">
+                    Material Status
+                  </div>
+                  <input
+                    type="text"
+                    placeholder="Search status..."
+                    value={searchStatus}
+                    onChange={(e) => setSearchStatus(e.target.value)}
+                    className="w-full px-3 py-1.5 text-sm border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  />
+                </th>
+                <th className="px-6 py-3 text-left">
+                  <div className="text-xs font-semibold text-gray-700 uppercase tracking-wider">
+                    Payment Status
+                  </div>
+                </th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-gray-200">
+              {filteredPOs.length === 0 ? (
+                <tr>
+                  <td colSpan={8} className="px-6 py-12 text-center">
+                    <Package className="w-16 h-16 text-gray-300 mx-auto mb-4" />
+                    <p className="text-gray-600 text-lg font-medium">No purchase orders found</p>
+                    <p className="text-gray-500 text-sm mt-2">
+                      Try adjusting your search
+                    </p>
+                  </td>
+                </tr>
+              ) : (
+                filteredPOs.map((po, index) => {
+                  const overallPercentage = calculatePercentage(
+                    po.total_received,
+                    po.total_ordered
+                  );
+                  const isSelected = selectedPOs.includes(po.id);
+
+                  return (
+                    <>
+                      {/* PO Summary Row */}
+                      <tr
+                        key={po.id}
+                        className={`hover:bg-gray-50 transition ${
+                          index % 2 === 0 ? "bg-white" : "bg-gray-50/50"
+                        } ${isSelected ? 'bg-blue-50 border-l-4 border-blue-500' : ''}`}
+                      >
+                        <td className="px-6 py-4">
+                          <div className="flex items-center gap-2">
+                            <button
+                              onClick={() => togglePOSelection(po.id)}
+                              className="p-1 hover:bg-gray-200 rounded transition-colors"
+                            >
+                              {isSelected ? (
+                                <CheckSquare className="w-5 h-5 text-blue-600" />
+                              ) : (
+                                <Square className="w-5 h-5 text-gray-400" />
+                              )}
+                            </button>
+                            <button 
+                              onClick={() => togglePOExpand(po.id)}
+                              className="p-1 hover:bg-gray-200 rounded transition-colors"
+                            >
+                              {po.expanded ? (
+                                <ChevronDown className="w-5 h-5 text-gray-600" />
+                              ) : (
+                                <ChevronRight className="w-5 h-5 text-gray-600" />
+                              )}
+                            </button>
+                          </div>
+                        </td>
+                        <td className="px-6 py-4">
+                          <div className="flex items-center gap-3">
+                            <div className="bg-[#C62828] w-10 h-10 rounded-full flex items-center justify-center text-white font-semibold text-sm">
+                              {po.po_number.charAt(0)}
+                            </div>
+                            <div>
+                              <span className="font-semibold text-gray-900">
+                                {po.po_number}
+                              </span>
+                              <p className="text-xs text-gray-500">
+                                {po.po_date}
+                              </p>
+                            </div>
+                          </div>
+                        </td>
+                        <td className="px-6 py-4">
+                          <div className="flex items-center gap-2">
+                            <span className="text-gray-900">{po.vendor?.name || "--"}</span>
+                          </div>
+                        </td>
+                        <td className="px-6 py-4 font-medium text-gray-900">
+                          {po.project || "--"}
+                        </td>
+                        <td className="px-6 py-4 font-bold text-gray-900">
+                          {formatCurrency(Number(po.amount))}
+                        </td>
+                        <td className="px-6 py-4">
+                          <span
+                            className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-medium ${getStatusColor(
+                              po.po_status
+                            )}`}
+                          >
+                            {po.po_status?.toUpperCase()}
+                          </span>
+                        </td>
+                        <td className="px-6 py-4">
+                          <div className="space-y-1">
+                            <span
+                              className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-medium ${getStatusColor(
+                                po.material_status
+                              )}`}
+                            >
+                              {po.material_status?.toUpperCase() || "PENDING"}
+                            </span>
+                            {po.total_ordered > 0 && (
+                              <div className="text-xs text-gray-600">
+                                <div className="flex justify-between mb-1">
+                                  <span>Progress</span>
+                                  <span>{overallPercentage}%</span>
+                                </div>
+                                <div className="w-full bg-gray-200 rounded-full h-1">
+                                  <div
+                                    className="bg-blue-600 h-1 rounded-full"
+                                    style={{ width: `${overallPercentage}%` }}
+                                  />
+                                </div>
+                              </div>
+                            )}
+                          </div>
+                        </td>
+                        <td className="px-6 py-4">
+                          <div className="space-y-1">
+                            <span
+                              className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-medium ${getStatusColor(
+                                po.payment_status
+                              )}`}
+                            >
+                              {po.payment_status?.toUpperCase() || "PENDING"}
+                            </span>
+                            {Number(po.balance_amount) > 0 && (
+                              <p className="text-xs text-gray-600">
+                                Balance: {formatCurrency(Number(po.balance_amount))}
+                              </p>
+                            )}
+                          </div>
+                        </td>
+                      </tr>
+
+                      {/* Expanded Items Row */}
+                      {po.expanded && po.materials.length > 0 && (
+                        <tr className="bg-gray-50">
+                          <td colSpan={10} className="p-0">
+                            <div className="px-6 py-4 border-t border-gray-200">
+                              <h4 className="text-sm font-semibold text-gray-700 mb-3 flex items-center gap-2">
+                                <FileText className="w-4 h-4" />
+                                Items in PO {po.po_number}
+                              </h4>
+                              <div className="overflow-x-auto">
+                                <table className="w-full bg-white rounded-lg border border-gray-200">
+                                  <thead className="bg-gray-100">
+                                    <tr>
+                                      <th className="text-left px-4 py-3 text-sm font-medium text-gray-700">
+                                        Item
+                                      </th>
+                                      <th className="text-left px-4 py-3 text-sm font-medium text-gray-700">
+                                        HSN Code
+                                      </th>
+                                      <th className="text-left px-4 py-3 text-sm font-medium text-gray-700">
+                                        Ordered
+                                      </th>
+                                      <th className="text-left px-4 py-3 text-sm font-medium text-gray-700">
+                                        Received
+                                      </th>
+                                      <th className="text-left px-4 py-3 text-sm font-medium text-gray-700">
+                                        Pending
+                                      </th>
+                                      <th className="text-left px-4 py-3 text-sm font-medium text-gray-700">
+                                        Progress
+                                      </th>
+                                      <th className="text-left px-4 py-3 text-sm font-medium text-gray-700">
+                                        Status
+                                      </th>
+                                    </tr>
+                                  </thead>
+                                  <tbody className="divide-y divide-gray-200">
+                                    {po.materials.map((material, idx) => {
+                                      const materialPercentage =
+                                        calculatePercentage(
+                                          material.quantity_received,
+                                          material.quantity_ordered
+                                        );
+
+                                      return (
+                                        <tr
+                                          key={material.id}
+                                          className={`hover:bg-gray-50 ${
+                                            idx % 2 === 0 ? "bg-white" : "bg-gray-50/50"
+                                          }`}
+                                        >
+                                          <td className="px-4 py-3">
+                                            <div className="font-medium text-gray-800">
+                                              {material.item_name || "Unknown"}
+                                            </div>
+                                            <div className="text-xs text-gray-500">
+                                              Unit: {material.unit || "N/A"}
+                                            </div>
+                                          </td>
+                                          <td className="px-4 py-3 text-gray-700">
+                                            {material.hsn_code || "-"}
+                                          </td>
+                                          <td className="px-4 py-3 font-medium text-gray-800">
+                                            {material.quantity_ordered}
+                                          </td>
+                                          <td className="px-4 py-3 font-medium text-green-600">
+                                            {material.quantity_received}
+                                          </td>
+                                          <td className="px-4 py-3 font-medium text-orange-600">
+                                            {material.quantity_pending > 0 ? (
+                                              <span className="flex items-center gap-1">
+                                                <AlertTriangle className="w-3 h-3" />
+                                                {material.quantity_pending}
+                                              </span>
+                                            ) : (
+                                              material.quantity_pending
+                                            )}
+                                          </td>
+                                          <td className="px-4 py-3">
+                                            <div className="w-full bg-gray-200 rounded-full h-2">
+                                              <div
+                                                className="bg-blue-600 h-2 rounded-full transition-all"
+                                                style={{
+                                                  width: `${materialPercentage}%`,
+                                                }}
+                                              />
+                                            </div>
+                                            <p className="text-xs text-gray-600 mt-1">
+                                              {materialPercentage}%
+                                            </p>
+                                          </td>
+                                          <td className="px-4 py-3">
+                                            <span
+                                              className={`px-3 py-1 rounded-full text-xs font-medium ${getStatusColor(
+                                                material.status
+                                              )}`}
+                                            >
+                                              {material.status?.toUpperCase() ||
+                                                "PENDING"}
+                                            </span>
+                                          </td>
+                                        </tr>
+                                      );
+                                    })}
+                                  </tbody>
+                                </table>
+                              </div>
+                            </div>
+                          </td>
+                        </tr>
+                      )}
+
+                      {/* Show message if no materials */}
+                      {po.expanded && po.materials.length === 0 && (
+                        <tr className="bg-gray-50">
+                          <td colSpan={10} className="p-0">
+                            <div className="px-6 py-8 border-t border-gray-200 text-center">
+                              <Package className="w-12 h-12 text-gray-400 mx-auto mb-4" />
+                              <p className="text-gray-600">
+                                No materials found for this purchase order
+                              </p>
+                            </div>
+                          </td>
+                        </tr>
+                      )}
+                    </>
+                  );
+                })
+              )}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  );
+}
