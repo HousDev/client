@@ -17,6 +17,7 @@ import StoreManagement from "./pages/StoreManagement";
 import { Buffer } from "buffer";
 import { Toaster } from "sonner";
 import MaterialRequests from "./pages/MaterialRequests";
+import UsersManagement from "./components/users/UsersManagement"; // यहाँ बदलाव
 
 function AppContent() {
   const { user, loading } = useAuth();
@@ -63,9 +64,10 @@ function AppContent() {
         return <Reports />;
       case "masters":
         return <Masters />;
+      case "users":
+        return <UsersManagement/>; // यहाँ बदलाव
       case "permissions":
         return <Permissions />;
-
       default:
         return <Dashboard />;
     }
