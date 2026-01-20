@@ -239,7 +239,7 @@ export default function Masters() {
   return (
     <div className="p-6 bg-gray-50 min-h-screen">
       {/* Header */}
-      <div className="mb-6">
+      {/* <div className="mb-6">
         <div className="bg-gradient-to-r from-[#40423f] via-[#4a4c49] to-[#5a5d5a] rounded-xl shadow-md p-5">
           <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
             <div className="flex items-center gap-3">
@@ -258,7 +258,7 @@ export default function Masters() {
             </div>
           </div>
         </div>
-      </div>
+      </div> */}
 
       {/* Tab Navigation */}
       <div className="bg-white rounded-xl shadow-sm border border-gray-200 mb-6 overflow-hidden">

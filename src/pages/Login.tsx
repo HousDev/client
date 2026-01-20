@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 // import { useState } from 'react';
 // import { useAuth } from '../contexts/AuthContext';
 // import { Building2, UserCircle, Users, Zap } from 'lucide-react';
@@ -188,6 +189,8 @@
 //   );
 // }
 
+
+
 // src/components/Login.tsx
 import { useState } from "react";
 import { useAuth } from "../contexts/AuthContext";
@@ -218,11 +221,12 @@ export default function Login() {
       setLoading(false);
     }
   };
+
   return (
     <div className="min-h-screen bg-gradient-to-r from-[#d32f2f] to-[#b71c1c] flex items-center justify-center p-4">
       <div className="w-full max-w-md">
         <div
-          className="bg-white rounded-2xl shadow-2xl p-8 border-2 border-transparent"
+          className="bg-white rounded-2xl shadow-2xl p-6 sm:p-8 md:p-8 border-2 border-transparent"
           style={{ boxShadow: "0 10px 30px rgba(2,6,23,0.45)" }}
         >
           {/* Logo block */}
@@ -231,17 +235,17 @@ export default function Login() {
               <img
                 src={Logo}
                 alt="Nayash Group"
-                className="h-20 sm:h-20 md:h-20 object-contain"
+                className="h-16 sm:h-18 md:h-20 object-contain"
                 style={{ filter: "drop-shadow(0 6px 18px rgba(0,0,0,0.12))" }}
               />
             </div>
           </div>
 
-          <p className="text-center text-gray-600 mb-6">
+          <p className="text-center text-gray-600 mb-6 text-sm sm:text-base">
             Vendor & Purchase Management System
           </p>
 
-          <form onSubmit={handleSubmit} className="space-y-5">
+          <form onSubmit={handleSubmit} className="space-y-4 sm:space-y-5">
             <div>
               <label
                 htmlFor="email"
@@ -254,7 +258,7 @@ export default function Login() {
                 type="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                className="w-full px-4 py-3 border border-gray-200 rounded-lg focus:outline-none transition placeholder:text-gray-400
+                className="w-full px-3 py-2.5 sm:px-4 sm:py-3 border border-gray-200 rounded-lg focus:outline-none transition placeholder:text-gray-400 text-sm sm:text-base
                   focus:ring-2 focus:ring-red-400 focus:border-transparent"
                 placeholder="Enter your email"
                 required
@@ -273,7 +277,7 @@ export default function Login() {
                 type="password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                className="w-full px-4 py-3 border border-gray-200 rounded-lg focus:outline-none transition placeholder:text-gray-400
+                className="w-full px-3 py-2.5 sm:px-4 sm:py-3 border border-gray-200 rounded-lg focus:outline-none transition placeholder:text-gray-400 text-sm sm:text-base
                   focus:ring-2 focus:ring-red-400 focus:border-transparent"
                 placeholder="Enter your password"
                 required
@@ -281,7 +285,7 @@ export default function Login() {
             </div>
 
             {error && (
-              <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg text-sm">
+              <div className="bg-red-50 border border-red-200 text-red-700 px-3 py-2.5 sm:px-4 sm:py-3 rounded-lg text-xs sm:text-sm">
                 {error}
               </div>
             )}
@@ -289,7 +293,7 @@ export default function Login() {
             <button
               type="submit"
               disabled={loading}
-              className="w-full py-3 px-4 rounded-lg font-medium text-white shadow-md
+              className="w-full py-2.5 sm:py-3 px-4 rounded-lg font-medium text-white shadow-md text-sm sm:text-base
                 bg-gradient-to-r from-[#d32f2f] to-[#b71c1c] hover:from-[#e03b3b] hover:to-[#9a1414] transition-transform transform active:scale-95 disabled:opacity-60 disabled:cursor-not-allowed"
             >
               {loading ? "Please wait..." : "Sign In"}
@@ -308,7 +312,7 @@ export default function Login() {
           </div>
         </div>
 
-        <p className="text-center text-white text-sm mt-6 opacity-80">
+        <p className="text-center text-white text-xs sm:text-sm mt-4 sm:mt-6 opacity-80 px-2">
           Manage vendors, purchase orders, payments, and services in one place
         </p>
       </div>
