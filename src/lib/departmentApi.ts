@@ -1,8 +1,6 @@
-// src/lib/departmentsApi.ts
-import axios from 'axios';
+// 
 import { api } from './Api';
 
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:4000/api';
 
 // Or if you want to keep it separate, re-export all interfaces
 export interface Department {
@@ -101,7 +99,7 @@ export const departmentsApi = {
   // Get all departments
   async getAll(): Promise<Department[]> {
     try {
-      const response = await api.get(`${API_BASE_URL}/departments`);
+      const response = await api.get(`/departments`);
       return response.data;
     } catch (error: any) {
       console.error('Error fetching departments:', error);
@@ -123,7 +121,7 @@ export const departmentsApi = {
       if (filters?.sort_by) params.sort_by = filters.sort_by;
       if (filters?.sort_order) params.sort_order = filters.sort_order;
 
-      const response = await api.get(`${API_BASE_URL}/departments/paginated`, { params });
+      const response = await api.get(`/departments/paginated`, { params });
       return response.data;
     } catch (error: any) {
       console.error('Error fetching paginated departments:', error);
@@ -134,7 +132,7 @@ export const departmentsApi = {
   // Get department statistics
   async getStats(): Promise<DepartmentStats> {
     try {
-      const response = await api.get(`${API_BASE_URL}/departments/stats`);
+      const response = await api.get(`/departments/stats`);
       return response.data;
     } catch (error: any) {
       console.error('Error fetching department stats:', error);
@@ -145,7 +143,7 @@ export const departmentsApi = {
   // Get available managers
   async getManagers(): Promise<Manager[]> {
     try {
-      const response = await api.get(`${API_BASE_URL}/departments/managers`);
+      const response = await api.get(`/departments/managers`);
       return response.data;
     } catch (error: any) {
       console.error('Error fetching managers:', error);
@@ -156,7 +154,7 @@ export const departmentsApi = {
   // Get active departments only
   async getActive(): Promise<Department[]> {
     try {
-      const response = await api.get(`${API_BASE_URL}/departments/active`);
+      const response = await api.get(`$/departments/active`);
       return response.data;
     } catch (error: any) {
       console.error('Error fetching active departments:', error);
@@ -167,7 +165,7 @@ export const departmentsApi = {
   // Create new department
   async create(department: Omit<Department, 'id'>): Promise<Department> {
     try {
-      const response = await api.post(`${API_BASE_URL}/departments`, department);
+      const response = await api.post(`/departments`, department);
       return response.data;
     } catch (error: any) {
       console.error('Error creating department:', error);
@@ -178,7 +176,7 @@ export const departmentsApi = {
   // Update department
   async update(id: string, department: Partial<Department>): Promise<Department> {
     try {
-      const response = await api.put(`${API_BASE_URL}/departments/${id}`, department);
+      const response = await api.put(`/departments/${id}`, department);
       return response.data;
     } catch (error: any) {
       console.error('Error updating department:', error);
@@ -189,7 +187,7 @@ export const departmentsApi = {
   // Delete department
   async delete(id: string): Promise<void> {
     try {
-      await api.delete(`${API_BASE_URL}/departments/${id}`);
+      await api.delete(`$/departments/${id}`);
     } catch (error: any) {
       console.error('Error deleting department:', error);
       throw new Error(error.response?.data?.message || 'Failed to delete department');
@@ -199,7 +197,7 @@ export const departmentsApi = {
   // Assign manager to department
   async assignManager(departmentId: string, managerId: string): Promise<Department> {
     try {
-      const response = await api.put(`${API_BASE_URL}/departments/${departmentId}/manager`, { managerId });
+      const response = await api.put(`$/departments/${departmentId}/manager`, { managerId });
       return response.data;
     } catch (error: any) {
       console.error('Error assigning manager:', error);
@@ -210,7 +208,7 @@ export const departmentsApi = {
   // Remove manager from department
   async removeManager(departmentId: string): Promise<Department> {
     try {
-      const response = await api.delete(`${API_BASE_URL}/departments/${departmentId}/manager`);
+      const response = await api.delete(`$/departments/${departmentId}/manager`);
       return response.data;
     } catch (error: any) {
       console.error('Error removing manager:', error);
@@ -221,7 +219,7 @@ export const departmentsApi = {
   // Toggle department active status
   async toggleActive(departmentId: string): Promise<Department> {
     try {
-      const response = await api.patch(`${API_BASE_URL}/departments/${departmentId}/toggle-active`);
+      const response = await api.patch(`$/departments/${departmentId}/toggle-active`);
       return response.data;
     } catch (error: any) {
       console.error('Error toggling department status:', error);
@@ -241,7 +239,7 @@ export const departmentsApi = {
 // import axios from 'axios';
 // import { api } from './Api';
 
-// const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:4000/api';
+// const  = import.meta.env.VITE_ || 'http://localhost:4000/api';
 
 // export interface Department {
 //   id: string;
@@ -257,7 +255,7 @@ export const departmentsApi = {
 //   // Get all departments
 //   async getAll(): Promise<Department[]> {
 //     try {
-//       const response = await api.get(`${API_BASE_URL}/departments`);
+//       const response = await api.get(`$/departments`);
 //       console.log(response)
 //       return response.data;
 //     } catch (error: any) {
@@ -269,7 +267,7 @@ export const departmentsApi = {
 //   // Get active departments only
 //   async getActive(): Promise<Department[]> {
 //     try {
-//       const response = await api.get(`${API_BASE_URL}/departments/active`);
+//       const response = await api.get(`$/departments/active`);
 //       return response.data;
 //     } catch (error: any) {
 //       console.error('Error fetching active departments:', error);
@@ -280,7 +278,7 @@ export const departmentsApi = {
 //   // Create new department
 //   async create(department: Omit<Department, 'id'>): Promise<Department> {
 //     try {
-//       const response = await axios.post(`${API_BASE_URL}/departments`, department);
+//       const response = await axios.post(`$/departments`, department);
 //       return response.data;
 //     } catch (error: any) {
 //       console.error('Error creating department:', error);
@@ -291,7 +289,7 @@ export const departmentsApi = {
 //   // Update department
 //   async update(id: string, department: Partial<Department>): Promise<Department> {
 //     try {
-//       const response = await axios.put(`${API_BASE_URL}/departments/${id}`, department);
+//       const response = await axios.put(`$/departments/${id}`, department);
 //       return response.data;
 //     } catch (error: any) {
 //       console.error('Error updating department:', error);
@@ -302,7 +300,7 @@ export const departmentsApi = {
 //   // Delete departmenta
 //   async delete(id: string): Promise<void> {
 //     try {
-//       await axios.delete(`${API_BASE_URL}/departments/${id}`);
+//       await axios.delete(`$/departments/${id}`);
 //     } catch (error: any) {
 //       console.error('Error deleting department:', error);
 //       throw new Error(error.response?.data?.message || 'Failed to delete department');
