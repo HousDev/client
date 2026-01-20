@@ -1260,6 +1260,7 @@ import {
   Settings,
   Tag,
   Users,
+  Truck,
 } from "lucide-react";
 
 /* ---------------------------
@@ -2101,7 +2102,10 @@ const categoryOptions = poTypes.length
       {showModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-2xl shadow-2xl w-full max-w-4xl max-h-[90vh] overflow-hidden">
-            <div className="bg-[#C62828] px-6 py-4 flex justify-between items-center">
+            <div className="bg-gradient-to-r from-[#40423f] via-[#373836]  px-6 py-4 flex justify-between items-center">
+               <div className="p-2 bg-white/20 rounded-xl backdrop-blur-sm">
+                            <Truck className="w-5 h-5 text-white" />
+                          </div>
               <h2 className="text-2xl font-bold text-white">
                 {editingId ? "Edit Vendor" : "Add New Vendor"}
               </h2>
