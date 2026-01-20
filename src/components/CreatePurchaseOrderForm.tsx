@@ -1,6 +1,6 @@
 // src/components/PurchaseOrdersPro.tsx
 import React, { useEffect, useState, useRef, SetStateAction } from "react";
-import { Plus, X, Trash2, Package, Save } from "lucide-react";
+import { Plus, X, Trash2, Package, Save, FileText, Info, Box, Building2, Calculator, Calendar, CreditCard, Tag, Truck, User } from "lucide-react";
 import { useAuth } from "../contexts/AuthContext";
 import poApi from "../lib/poApi";
 import poTypeApi from "../lib/poTypeApi";
@@ -879,449 +879,592 @@ export default function CreatePurchaseOrderForm({
       {/* Create Modal (with SearchableSelects) */}
       <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4 overflow-y-auto">
         <div className="bg-white rounded-2xl shadow-2xl w-full max-w-4xl my-8">
-          <div className="bg-[#C62828] px-6 py-4 flex justify-between items-center sticky top-0 rounded-t-2xl">
-            <h2 className="text-2xl font-bold text-white">
-              Create Purchase Order
-            </h2>
-            <button
-              onClick={() => {
-                setShowCreatePro(false);
-                setPoPaymentTerms([]);
-                resetForm();
-              }}
-              className="text-white hover:bg-white hover:bg-opacity-20 rounded-lg p-2 transition"
-            >
-              <X className="w-6 h-6" />
-            </button>
+          {/* Header */}
+<div className="bg-gradient-to-r from-[#4b4e4b] via-[#5a5d5a] to-[#6b6e6b]
+  px-6 py-4 flex justify-between items-center
+  rounded-t-2xl border-b border-white/10
+  backdrop-blur-md"
+>
+  <div className="flex items-center gap-3">
+    <div className="p-2 bg-white/20 rounded-xl backdrop-blur-sm">
+      <Package className="w-5 h-5 text-white" />
+    </div>
+
+    <div>
+      <h2 className="text-lg font-bold text-white leading-tight">
+        Create Purchase Order
+      </h2>
+      <p className="text-xs text-white/80 mt-0.5">
+        Manage and create purchase orders
+      </p>
+    </div>
+  </div>
+
+  <button
+    onClick={() => {
+      setShowCreatePro(false);
+      setPoPaymentTerms([]);
+      resetForm();
+    }}
+    className="text-white hover:bg-white/20 rounded-xl p-2 transition-all duration-200 hover:scale-105 active:scale-95"
+  >
+    <X className="w-5 h-5" />
+  </button>
+</div>
+
+
+         <form onSubmit={handleSubmit} className="p-4 md:p-6 space-y-6 max-h-[calc(100vh-180px)] overflow-y-auto custom-scrollbar">
+  {/* Header Section */}
+ 
+
+  {/* Basic Details - 3 Column Grid (UNCHANGED STRUCTURE) */}
+  <div className="mb-6">
+    <h4 className="text-sm font-semibold text-gray-800 mb-4 flex items-center gap-2">
+      <Info className="w-4 h-4 text-blue-600" />
+      Basic Information
+    </h4>
+    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+      {/* Vendor Selection */}
+      <div className="space-y-1.5">
+        <label className="block text-xs font-semibold text-gray-700 mb-1 flex items-center gap-1.5">
+          <User className="w-3 h-3 text-blue-600" />
+          <span>Vendor</span>
+          <span className="text-red-500">*</span>
+        </label>
+        <div className="relative group">
+          <div className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 group-focus-within:text-blue-600 transition-colors">
+            <User className="w-3.5 h-3.5" />
           </div>
+          <SearchableSelect
+            options={vendors.map((v) => ({
+              id: v.id,
+              name: v.name || v.vendor_name || v.display || "",
+            }))}
+            value={formData.vendor_id}
+            onChange={(id) => {
+              loadTerms(id);
+              const interState =
+                vendors.find((d) => d.id === id).office_state !== "Maharashtra";
+              setFormData({
+                ...formData,
+                vendor_id: id,
+                is_interstate: interState,
+              });
+            }}
+            placeholder="Select Vendor"
+            required
+            className="w-full pl-10 pr-4 py-2 text-sm border border-gray-300 rounded-xl focus:border-blue-600 focus:ring-2 focus:ring-blue-600/20 outline-none transition-all duration-200 hover:border-gray-400"
+            dropdownClassName="text-sm"
+          />
+        </div>
+      </div>
 
-          <form
-            onSubmit={handleSubmit}
-            className="p-6 max-h-[calc(100vh-200px)] overflow-y-auto"
+      {/* Project Selection */}
+      <div className="space-y-1.5">
+        <label className="block text-xs font-semibold text-gray-700 mb-1 flex items-center gap-1.5">
+          <Building2 className="w-3 h-3 text-green-600" />
+          <span>Project</span>
+          <span className="text-red-500">*</span>
+        </label>
+        <div className="relative group">
+          <div className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 group-focus-within:text-green-600 transition-colors">
+            <Building2 className="w-3.5 h-3.5" />
+          </div>
+          <SearchableSelect
+            options={projects.map((p) => ({
+              id: p.id,
+              name: p.name || p.project_name || "",
+            }))}
+            value={formData.project_id}
+            onChange={(id) =>
+              setFormData({ ...formData, project_id: id })
+            }
+            placeholder="Select Project"
+            required
+            className="w-full pl-10 pr-4 py-2 text-sm border border-gray-300 rounded-xl focus:border-green-600 focus:ring-2 focus:ring-green-600/20 outline-none transition-all duration-200 hover:border-gray-400"
+            dropdownClassName="text-sm"
+          />
+        </div>
+      </div>
+
+      {/* PO Type Selection */}
+      <div className="space-y-1.5">
+        <label className="block text-xs font-semibold text-gray-700 mb-1 flex items-center gap-1.5">
+          <Tag className="w-3 h-3 text-purple-600" />
+          <span>PO Type</span>
+          <span className="text-red-500">*</span>
+        </label>
+        <div className="relative group">
+          <div className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 group-focus-within:text-purple-600 transition-colors">
+            <Tag className="w-3.5 h-3.5" />
+          </div>
+          <SearchableSelect
+            options={poTypes.map((t: any) => ({
+              id: t.id,
+              name: t.name,
+            }))}
+            value={formData.po_type_id}
+            onChange={(id) => handlePOTypeChange(id)}
+            placeholder={poTypesLoading ? "Loading types..." : "Select Type"}
+            required
+            disabled={poTypesLoading}
+            className="w-full pl-10 pr-4 py-2 text-sm border border-gray-300 rounded-xl focus:border-purple-600 focus:ring-2 focus:ring-purple-600/20 outline-none transition-all duration-200 hover:border-gray-400 disabled:bg-gray-50 disabled:cursor-not-allowed"
+            dropdownClassName="text-sm"
+          />
+        </div>
+      </div>
+
+      {/* PO Date */}
+      <div className="space-y-1.5">
+        <label className="block text-xs font-semibold text-gray-700 mb-1 flex items-center gap-1.5">
+          <Calendar className="w-3 h-3 text-amber-600" />
+          <span>PO Date</span>
+          <span className="text-red-500">*</span>
+        </label>
+        <div className="relative group">
+          <div className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 group-focus-within:text-amber-600 transition-colors">
+            <Calendar className="w-3.5 h-3.5" />
+          </div>
+          <input
+            type="date"
+            value={formData.po_date}
+            onChange={(e) =>
+              setFormData({ ...formData, po_date: e.target.value })
+            }
+            className="w-full pl-10 pr-4 py-2 text-sm border border-gray-300 rounded-xl focus:border-amber-600 focus:ring-2 focus:ring-amber-600/20 outline-none transition-all duration-200 hover:border-gray-400"
+            required
+          />
+        </div>
+      </div>
+
+      {/* Delivery Date */}
+      <div className="space-y-1.5">
+        <label className="block text-xs font-semibold text-gray-700 mb-1 flex items-center gap-1.5">
+          <Truck className="w-3 h-3 text-indigo-600" />
+          <span>Delivery Date</span>
+          <span className="text-red-500">*</span>
+        </label>
+        <div className="relative group">
+          <div className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 group-focus-within:text-indigo-600 transition-colors">
+            <Truck className="w-3.5 h-3.5" />
+          </div>
+          <input
+            type="date"
+            value={formData.delivery_date}
+            onChange={(e) =>
+              setFormData({
+                ...formData,
+                delivery_date: e.target.value,
+              })
+            }
+            className="w-full pl-10 pr-4 py-2 text-sm border border-gray-300 rounded-xl focus:border-indigo-600 focus:ring-2 focus:ring-indigo-600/20 outline-none transition-all duration-200 hover:border-gray-400"
+          />
+        </div>
+      </div>
+
+      {/* Payment Due Date */}
+      <div className="space-y-1.5">
+        <label className="block text-xs font-semibold text-gray-700 mb-1 flex items-center gap-1.5">
+          <CreditCard className="w-3 h-3 text-red-600" />
+          <span>Payment Due Date</span>
+          <span className="text-red-500">*</span>
+        </label>
+        <div className="relative group">
+          <div className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 group-focus-within:text-red-600 transition-colors">
+            <CreditCard className="w-3.5 h-3.5" />
+          </div>
+          <input
+            type="date"
+            value={formData.due_date}
+            onChange={(e) =>
+              setFormData({
+                ...formData,
+                due_date: e.target.value,
+              })
+            }
+            className="w-full pl-10 pr-4 py-2 text-sm border border-gray-300 rounded-xl focus:border-red-600 focus:ring-2 focus:ring-red-600/20 outline-none transition-all duration-200 hover:border-gray-400"
+          />
+        </div>
+      </div>
+    </div>
+  </div>
+
+  {/* Items Section - COMPACT */}
+  <div className="space-y-4">
+    <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
+      <div className="flex items-center gap-2">
+        <div className="p-1.5 bg-blue-100 rounded-lg">
+          <Package className="w-4 h-4 text-blue-600" />
+        </div>
+        <h4 className="text-sm font-semibold text-gray-800">Items</h4>
+        {formData.items.length > 0 && (
+          <span className="text-xs font-medium text-gray-600 bg-gray-100 px-2 py-1 rounded-full">
+            {formData.items.length} items
+          </span>
+        )}
+      </div>
+      <button
+        type="button"
+        onClick={() => {
+          if (formData.vendor_id === "") {
+            toast.warning("Select Vendor First.");
+            return;
+          }
+          setShowItemSelector(true);
+          setItemSelectorSearch("");
+        }}
+        className="bg-gradient-to-r from-green-600 to-green-700 text-white px-3 py-2 rounded-xl hover:from-green-700 hover:to-green-800 transition-all duration-200 text-sm font-medium flex items-center gap-2 group w-full sm:w-auto justify-center"
+      >
+        <Plus className="w-4 h-4 group-hover:scale-110 transition-transform" />
+        Add Item from Master
+      </button>
+    </div>
+
+    {formData.items.length === 0 ? (
+      <div className="bg-gradient-to-b from-gray-50/50 to-white/50 border-2 border-dashed border-gray-300 rounded-xl p-6 text-center group hover:border-blue-300 transition-all duration-300">
+        <div className="p-3 bg-blue-50 rounded-xl inline-block mb-3">
+          <Package className="w-8 h-8 text-blue-400" />
+        </div>
+        <p className="text-sm font-semibold text-gray-700 mb-1">
+          No items added yet
+        </p>
+        <p className="text-xs text-gray-500">
+          Click "Add Item from Master" to start
+        </p>
+      </div>
+    ) : (
+      <div className="space-y-3">
+        {formData.items.map((item, index) => (
+          <div
+            key={item.id}
+            className="bg-gradient-to-b from-gray-50/30 to-white/30 p-4 rounded-xl border border-gray-300 hover:border-gray-400 transition-all duration-200"
           >
-            {/* Basic Details */}
-            <div className="mb-6">
-              <h3 className="text-lg font-semibold text-gray-800 mb-4">
-                Basic Details
-              </h3>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Vendor <span className="text-red-500">*</span>
-                  </label>
+            <div className="grid grid-cols-12 gap-3 items-center">
+              {/* Item Details - 3 columns */}
+              <div className="col-span-4 md:col-span-3">
+                <div className="flex items-center gap-2">
+                  <div className="p-1.5 bg-blue-100 rounded-lg flex-shrink-0">
+                    <Box className="w-4 h-4 text-blue-600" />
+                  </div>
+                  <div>
+                    <p className="font-semibold text-sm text-gray-800 break-words">
+                      {item.item_name}
+                    </p>
+                    <div className="flex flex-wrap gap-1 mt-1">
+                      <span className="text-xs text-gray-500">
+                        Code: {item.item_code}
+                      </span>
+                      <span className="text-xs text-gray-500">
+                        | HSN: {item.hsn_code}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              </div>
 
-                  {/* SearchableSelect for Vendor */}
-                  <SearchableSelect
-                    options={vendors.map((v) => ({
-                      id: v.id,
-                      name: v.name || v.vendor_name || v.display || "",
-                    }))}
-                    value={formData.vendor_id}
-                    onChange={(id) => {
-                      loadTerms(id);
-                      const interState =
-                        vendors.find((d) => d.id === id).office_state !==
-                        "Maharashtra";
-                      setFormData({
-                        ...formData,
-                        vendor_id: id,
-                        is_interstate: interState,
-                      });
+              {/* Quantity - 2 columns */}
+              <div className="col-span-3 md:col-span-2">
+                <label className="text-xs text-gray-600 mb-1 block">Qty</label>
+                <div className="flex items-center gap-2">
+                  <input
+                    type="text"
+                    value={item.quantity}
+                    onChange={(e) => {
+                      if (
+                        !/^\d*\.?\d*$/.test(e.target.value) ||
+                        Number(e.target.value) < 0
+                      )
+                        return;
+                      handleItemChange(
+                        index,
+                        "quantity",
+                        parseFloat(e.target.value) || 0,
+                      );
                     }}
-                    placeholder="Select Vendor"
-                    required
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Project <span className="text-red-500">*</span>
-                  </label>
-
-                  {/* SearchableSelect for Project */}
-                  <SearchableSelect
-                    options={projects.map((p) => ({
-                      id: p.id,
-                      name: p.name || p.project_name || "",
-                    }))}
-                    value={formData.project_id}
-                    onChange={(id) =>
-                      setFormData({ ...formData, project_id: id })
-                    }
-                    placeholder="Select Project"
-                    required
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    PO Type <span className="text-red-500">*</span>
-                  </label>
-
-                  {/* SearchableSelect for PO Type (disabled while loading) */}
-                  <SearchableSelect
-                    options={poTypes.map((t: any) => ({
-                      id: t.id,
-                      name: t.name,
-                    }))}
-                    value={formData.po_type_id}
-                    onChange={(id) => handlePOTypeChange(id)}
-                    placeholder={
-                      poTypesLoading ? "Loading types..." : "Select Type"
-                    }
-                    required
-                    disabled={poTypesLoading}
-                  />
-                </div>
-
-                {/* the rest fields unchanged */}
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    PO Date <span className="text-red-500">*</span>
-                  </label>
-                  <input
-                    type="date"
-                    value={formData.po_date}
-                    onChange={(e) =>
-                      setFormData({ ...formData, po_date: e.target.value })
-                    }
-                    className="w-full px-4 py-1 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                    required
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Delivery Date <span className="text-red-500">*</span>
-                  </label>
-                  <input
-                    type="date"
-                    value={formData.delivery_date}
-                    onChange={(e) =>
-                      setFormData({
-                        ...formData,
-                        delivery_date: e.target.value,
-                      })
-                    }
-                    className="w-full px-4 py-1 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Payment Due Date <span className="text-red-500">*</span>
-                  </label>
-                  <input
-                    type="date"
-                    value={formData.due_date}
-                    onChange={(e) =>
-                      setFormData({
-                        ...formData,
-                        due_date: e.target.value,
-                      })
-                    }
-                    className="w-full px-4 py-1 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    className="w-full px-3 py-1.5 text-sm border border-gray-300 rounded-lg focus:border-blue-600 focus:ring-1 focus:ring-blue-600/20 outline-none transition-all duration-200 hover:border-gray-400 text-gray-800"
+                    min="0"
+                    step="0.01"
                   />
                 </div>
               </div>
-            </div>
 
-            {/* Items section */}
-            <div className="mb-6">
-              <div className="flex justify-between items-center mb-4">
-                <h3 className="text-lg font-semibold text-gray-800">Items</h3>
-                <button
-                  type="button"
-                  onClick={() => {
-                    if (formData.vendor_id === "") {
-                      toast.warning("Select Vendor First.");
-                      return;
-                    }
-                    setShowItemSelector(true);
-                    setItemSelectorSearch("");
-                  }}
-                  className="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition text-sm flex items-center gap-2"
-                >
-                  <Plus className="w-4 h-4" /> Add Item from Master
-                </button>
+              {/* Unit - 1 column */}
+              <div className="col-span-2 md:col-span-1">
+                <label className="text-xs text-gray-600 mb-1 block">Unit</label>
+                <p className="text-sm text-gray-700">{item.unit}</p>
               </div>
 
-              {formData.items.length === 0 ? (
-                <div className="bg-gray-50 border-2 border-dashed border-gray-300 rounded-lg p-8 text-center">
-                  <Package className="w-12 h-12 text-gray-400 mx-auto mb-3" />
-                  <p className="text-gray-600">No items added yet</p>
-                  <p className="text-sm text-gray-500 mt-1">
-                    Click "Add Item from Master" to start
+              {/* Rate - 2 columns */}
+              <div className="col-span-3 md:col-span-2">
+                <label className="text-xs text-gray-600 mb-1 block">Rate</label>
+                <div className="flex items-center gap-2">
+                  <span className="text-sm text-gray-600">₹</span>
+                  <input
+                    type="text"
+                    value={item.rate}
+                    onChange={(e) => {
+                      if (
+                        !/^\d*\.?\d*$/.test(e.target.value) ||
+                        Number(e.target.value) < 0
+                      )
+                        return;
+                      handleItemChange(
+                        index,
+                        "rate",
+                        parseFloat(e.target.value) || 0,
+                      );
+                    }}
+                    className="w-full px-3 py-1.5 text-sm border border-gray-300 rounded-lg focus:border-green-600 focus:ring-1 focus:ring-green-600/20 outline-none transition-all duration-200 hover:border-gray-400 text-gray-800"
+                    min="0"
+                    step="0.01"
+                  />
+                </div>
+              </div>
+
+              {/* Amount - 1 column */}
+              <div className="col-span-3 md:col-span-2">
+                <label className="text-xs text-gray-600 mb-1 block">Amount</label>
+                <div>
+                  <p className="font-semibold text-sm text-gray-800">
+                    {formatCurrency(item.amount)}
+                  </p>
+                  <p className="text-xs text-gray-500 mt-0.5">
+                    {formData.is_interstate ? (
+                      <>IGST: {item.igst_rate}%</>
+                    ) : (
+                      <>
+                        CGST: {item.cgst_rate}% | SGST: {item.sgst_rate}%
+                      </>
+                    )}
                   </p>
                 </div>
-              ) : (
-                <div className="space-y-3">
-                  {formData.items.map((item, index) => (
-                    <div
-                      key={item.id}
-                      className="bg-gray-50 p-4 rounded-lg border border-gray-200"
-                    >
-                      <div className="grid grid-cols-12 gap-3 items-start">
-                        <div className="col-span-3">
-                          <label className="text-xs text-gray-600">Item</label>
-                          <p className="font-medium text-gray-800">
-                            {item.item_name}
-                          </p>
-                          <p className="text-xs text-gray-500">
-                            {item.item_code}
-                          </p>
-                        </div>
-                        <div className="col-span-1">
-                          <label className="text-xs text-gray-600">HSN</label>
-                          <p className="text-sm text-gray-700">
-                            {item.hsn_code}
-                          </p>
-                        </div>
-                        <div className="col-span-2">
-                          <label className="text-xs text-gray-600">Qty</label>
-                          <input
-                            type="text"
-                            value={item.quantity}
-                            onChange={(e) => {
-                              if (
-                                !/^\d*\.?\d*$/.test(e.target.value) ||
-                                Number(e.target.value) < 0
-                              )
-                                return;
-                              handleItemChange(
-                                index,
-                                "quantity",
-                                parseFloat(e.target.value) || 0,
-                              );
-                            }}
-                            className="w-full px-2 py-1 border border-gray-300 rounded text-sm"
-                            min="0"
-                            step="0.01"
-                          />
-                        </div>
-                        <div className="col-span-1">
-                          <label className="text-xs text-gray-600">Unit</label>
-                          <p className="text-sm text-gray-700">{item.unit}</p>
-                        </div>
-                        <div className="col-span-2">
-                          <label className="text-xs text-gray-600">Rate</label>
-                          <input
-                            type="text"
-                            value={item.rate}
-                            onChange={(e) => {
-                              if (
-                                !/^\d*\.?\d*$/.test(e.target.value) ||
-                                Number(e.target.value) < 0
-                              )
-                                return;
-                              handleItemChange(
-                                index,
-                                "rate",
-                                parseFloat(e.target.value) || 0,
-                              );
-                            }}
-                            className="w-full px-2 py-1 border border-gray-300 rounded text-sm"
-                            min="0"
-                            step="0.01"
-                          />
-                        </div>
-                        <div className="col-span-2">
-                          <label className="text-xs text-gray-600">
-                            Amount
-                          </label>
-                          <p className="font-medium text-gray-800">
-                            {formatCurrency(item.amount)}
-                          </p>
-                          <p className="text-xs text-gray-500">
-                            {formData.is_interstate ? (
-                              <>IGST: {item.igst_rate}%</>
-                            ) : (
-                              <>
-                                CGST: {item.cgst_rate}% | SGST: {item.sgst_rate}
-                                %
-                              </>
-                            )}
-                          </p>
-                        </div>
-                        <div className="col-span-1 flex justify-end pt-5">
-                          <button
-                            type="button"
-                            onClick={() => removeItem(index)}
-                            className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition"
-                          >
-                            <Trash2 className="w-4 h-4" />
-                          </button>
-                        </div>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
+              </div>
 
-            {/* calculation summary unchanged */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-              <div className="col-span-2"></div>
-              <div className="bg-gray-50 p-4 rounded-lg border border-gray-200">
-                <div className="flex justify-between text-sm text-gray-600">
-                  <div>Subtotal</div>
-                  <div>{formatCurrency(formData.subtotal)}</div>
-                </div>
-                <div className="flex justify-between text-sm text-gray-600 mt-2">
-                  <div>Discount ({formData.discount_percentage}%)</div>
-                  <div>{formatCurrency(formData.discount_amount)}</div>
-                </div>
-                <div className="flex justify-between text-sm text-gray-600 mt-2">
-                  <div>Taxable</div>
-                  <div>{formatCurrency(formData.taxable_amount)}</div>
-                </div>
-                <div className="flex justify-between text-sm text-gray-600 mt-2">
-                  <div>Total GST</div>
-                  <div>{formatCurrency(formData.total_gst_amount)}</div>
-                </div>
-                <div className="flex justify-between text-lg font-semibold text-gray-800 mt-3">
-                  <div>Grand Total</div>
-                  <div>{formatCurrency(formData.grand_total)}</div>
-                </div>
+              {/* Delete Button - 1 column */}
+              <div className="col-span-1 flex justify-end">
+                <button
+                  type="button"
+                  onClick={() => removeItem(index)}
+                  className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-all duration-200 hover:scale-105"
+                  title="Remove"
+                >
+                  <Trash2 className="w-4 h-4" />
+                </button>
               </div>
             </div>
+          </div>
+        ))}
+      </div>
+    )}
+  </div>
 
-            <div className="pb-6">
-              {
-                <div>
-                  {poPaymentTerms.length > 0 && (
-                    <div>
-                      <h1 className="font-semibold">
-                        Payment Terms & Conditions
-                      </h1>
-                      <div>
-                        <h1 className="font-semibold">Payment</h1>
-                      </div>
-                    </div>
-                  )}
-                  <div className="py-3">
-                    <ul className="px-6 list-disc">
-                      {poPaymentTerms.map((d, indx: number) => {
-                        return (
-                          <li className="mb-3" key={indx}>
-                            <p>
-                              {d.content
-                                .replace("${percent}", d.percent)
-                                .replace(
-                                  "${materialPercent}",
-                                  d.materialPercent,
-                                )
-                                .replace("${days}", d.days)}
-                            </p>
+  {/* Rest of your form remains the same... */}
+  {/* Calculation Summary */}
+  <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+    <div className="col-span-2"></div>
+    <div className="bg-gradient-to-b from-gray-50/30 to-white/30 p-4 rounded-xl border border-gray-300">
+      <div className="space-y-2">
+        <div className="flex justify-between items-center">
+          <span className="text-xs text-gray-600">Subtotal</span>
+          <span className="text-sm font-medium text-gray-800">
+            {formatCurrency(formData.subtotal)}
+          </span>
+        </div>
+        <div className="flex justify-between items-center pt-2 border-t border-gray-200">
+          <span className="text-xs text-gray-600">
+            Discount ({formData.discount_percentage}%)
+          </span>
+          <span className="text-sm font-medium text-gray-800">
+            {formatCurrency(formData.discount_amount)}
+          </span>
+        </div>
+        <div className="flex justify-between items-center">
+          <span className="text-xs text-gray-600">Taxable</span>
+          <span className="text-sm font-medium text-gray-800">
+            {formatCurrency(formData.taxable_amount)}
+          </span>
+        </div>
+        <div className="flex justify-between items-center">
+          <span className="text-xs text-gray-600">Total GST</span>
+          <span className="text-sm font-medium text-gray-800">
+            {formatCurrency(formData.total_gst_amount)}
+          </span>
+        </div>
+        <div className="flex justify-between items-center pt-3 border-t border-gray-300">
+          <span className="text-sm font-semibold text-gray-800">Grand Total</span>
+          <span className="text-lg font-bold text-blue-700">
+            {formatCurrency(formData.grand_total)}
+          </span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  {/* Terms & Conditions */}
+  <div className="pb-6">
+    {poPaymentTerms.length > 0 && (
+      <div className="mb-6">
+        <div className="flex items-center gap-2 mb-3">
+          <div className="p-1.5 bg-green-100 rounded-lg">
+            <CreditCard className="w-4 h-4 text-green-600" />
+          </div>
+          <h4 className="text-sm font-semibold text-gray-800">Payment Terms</h4>
+        </div>
+        <div className="bg-gradient-to-b from-gray-50/30 to-white/30 p-4 rounded-xl border border-gray-300">
+          <ul className="space-y-2">
+            {poPaymentTerms.map((d, indx: number) => (
+              <li key={indx} className="flex items-start gap-2">
+                <div className="w-1.5 h-1.5 bg-green-500 rounded-full mt-1.5 flex-shrink-0"></div>
+                <p className="text-xs text-gray-700 flex-1">
+                  {d.content
+                    .replace("${percent}", d.percent)
+                    .replace("${materialPercent}", d.materialPercent)
+                    .replace("${days}", d.days)}
+                </p>
+              </li>
+            ))}
+          </ul>
+        </div>
+      </div>
+    )}
+
+    {(extraTerms.length > 0 || terms.find((d) => d.content.find((dd: any) => dd.is_default))) && (
+      <div className="mb-6">
+        <div className="flex items-center gap-2 mb-3">
+          <div className="p-1.5 bg-amber-100 rounded-lg">
+            <FileText className="w-4 h-4 text-amber-600" />
+          </div>
+          <h4 className="text-sm font-semibold text-gray-800">Terms & Conditions</h4>
+        </div>
+        <div className="bg-gradient-to-b from-gray-50/30 to-white/30 p-4 rounded-xl border border-gray-300">
+          <div className="space-y-4">
+            {terms.map((d, indx: number) => {
+              const extraTCData = extraTerms.filter(
+                (ed: any) => ed.category === d.category && ed.is_default,
+              ) || [];
+              if (
+                d.content.find((d: any) => d.is_default) ||
+                extraTCData.length > 0
+              ) {
+                return (
+                  <div key={indx} className="space-y-2">
+                    <h5 className="text-xs font-semibold text-gray-700">
+                      {d.category.charAt(0).toUpperCase() + d.category.slice(1)}
+                    </h5>
+                    <ul className="space-y-1.5 ml-3">
+                      {d.content.map((term: any, idx: number) => (
+                        term.is_default && (
+                          <li key={idx} className="flex items-start gap-2">
+                            <div className="w-1.5 h-1.5 bg-amber-500 rounded-full mt-1 flex-shrink-0"></div>
+                            <p className="text-xs text-gray-700 flex-1">{term.content}</p>
                           </li>
-                        );
-                      })}
+                        )
+                      ))}
+                      {extraTCData.map((etc: any) => (
+                        etc.is_default && (
+                          <li key={etc.content} className="flex items-start gap-2">
+                            <div className="w-1.5 h-1.5 bg-amber-500 rounded-full mt-1 flex-shrink-0"></div>
+                            <p className="text-xs text-gray-700 flex-1">{etc.content}</p>
+                          </li>
+                        )
+                      ))}
                     </ul>
                   </div>
-                </div>
+                );
               }
+              return null;
+            })}
+          </div>
+        </div>
+      </div>
+    )}
 
-              <div className="flex items-center pt-3">
-                <button
-                  onClick={() => {
-                    if (formData.vendor_id) setShowAddPaymentTerm(true);
-                    else toast.warning("Select Vendor.");
-                  }}
-                  type="button"
-                  className="ml-2 text-sm font-medium text-blue-700 pb-6"
-                >
-                  Add Payment Terms & Conditions
-                </button>
-              </div>
-            </div>
-            <div className="pb-6">
-              {
-                <div>
-                  {extraTerms.length > 0 ||
-                    (terms.find((d) =>
-                      d.content.find((dd: any) => dd.is_default),
-                    ) && <h1 className="font-semibold">Terms & Conditions</h1>)}
-                  <div className="py-3">
-                    <ul className="px-6 list-decimal">
-                      {terms.map((d, indx: number) => {
-                        const extraTCData =
-                          extraTerms.filter(
-                            (ed: any) =>
-                              ed.category === d.category && ed.is_default,
-                          ) || [];
-                        if (
-                          d.content.find((d: any) => d.is_default) ||
-                          extraTCData.length > 0
-                        ) {
-                          return (
-                            <li className="mb-3" key={indx}>
-                              <div>
-                                <h1 className="font-semibold">
-                                  {d.category.charAt(0).toUpperCase() +
-                                    d.category.slice(1) || ""}
-                                </h1>
-                              </div>
-                              <ul className=" ml-3 list-disc">
-                                {d.content.map((term: any, idx: number) => {
-                                  return (
-                                    term.is_default && (
-                                      <li key={idx}>{term.content}</li>
-                                    )
-                                  );
-                                })}
-                                {extraTCData.map((etc: any) => {
-                                  return (
-                                    etc.is_default && (
-                                      <li key={etc.content}>{etc.content}</li>
-                                    )
-                                  );
-                                })}
-                              </ul>
-                            </li>
-                          );
-                        } else {
-                          return;
-                        }
-                      })}
-                    </ul>
-                  </div>
-                </div>
-              }
+    {/* Add Terms Buttons */}
+    <div className="flex flex-wrap gap-2 pt-3">
+      <button
+        onClick={() => {
+          if (formData.vendor_id) setShowAddPaymentTerm(true);
+          else toast.warning("Select Vendor.");
+        }}
+        type="button"
+        className="text-xs font-medium text-blue-700 hover:text-blue-800 px-3 py-2 hover:bg-blue-50 rounded-lg transition-all duration-200 flex items-center gap-2"
+      >
+        <Plus className="w-3 h-3" />
+        Add Payment Terms & Conditions
+      </button>
+      <button
+        onClick={() => {
+          if (formData.vendor_id) setShowTermsConditions(true);
+          else toast.warning("Select Vendor.");
+        }}
+        type="button"
+        className="text-xs font-medium text-blue-700 hover:text-blue-800 px-3 py-2 hover:bg-blue-50 rounded-lg transition-all duration-200 flex items-center gap-2"
+      >
+        <Plus className="w-3 h-3" />
+        Add Terms & Conditions
+      </button>
+    </div>
+  </div>
 
-              <div className="flex items-center pt-3">
-                <button
-                  onClick={() => {
-                    if (formData.vendor_id) setShowTermsConditions(true);
-                    else toast.warning("Select Vendor.");
-                  }}
-                  type="button"
-                  className="ml-2 text-sm font-medium text-blue-700 pb-6"
-                >
-                  Add Terms & Conditions
-                </button>
-              </div>
-            </div>
+  {/* Form Actions */}
+  <div className="flex flex-col sm:flex-row gap-3 pt-6 border-t border-gray-300 sticky bottom-0 bg-white/95 backdrop-blur-sm -mx-4 md:-mx-6 px-4 md:px-6 pb-4">
+    <button
+      type="submit"
+      disabled={formData.items.length === 0}
+      className="flex-1 bg-gradient-to-r from-red-600 to-red-700 text-white py-3 px-6 rounded-xl hover:from-blue-700 hover:to-blue-800 transition-all duration-200 font-semibold text-sm shadow-lg hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 group"
+    >
+      <FileText className="w-4 h-4 group-hover:scale-110 transition-transform" />
+      Create Purchase Order
+    </button>
+    <button
+      type="button"
+      onClick={() => {
+        setShowCreatePro(false);
+        setPoPaymentTerms([]);
+        resetForm();
+      }}
+      className="px-6 py-3 text-sm border border-gray-300 rounded-xl hover:bg-gray-50/50 hover:border-gray-400 transition-all duration-200 font-medium text-gray-700"
+    >
+      Cancel
+    </button>
+  </div>
+</form>
 
-            <div className="flex gap-3 pt-6 border-t sticky bottom-0 bg-white">
-              <button
-                type="submit"
-                disabled={formData.items.length === 0}
-                className="flex-1 bg-blue-600 text-white py-2 px-6 rounded-lg hover:bg-blue-700 transition font-medium shadow-sm disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                Create Purchase Order
-              </button>
-              <button
-                type="button"
-                onClick={() => {
-                  setShowCreatePro(false);
-                  setPoPaymentTerms([]);
-                  resetForm();
-                }}
-                className="px-6 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition font-medium"
-              >
-                Cancel
-              </button>
-            </div>
-          </form>
+{/* Custom scrollbar styles */}
+<style jsx>{`
+  .custom-scrollbar::-webkit-scrollbar {
+    width: 6px;
+  }
+  .custom-scrollbar::-webkit-scrollbar-track {
+    background: #f1f1f1;
+    border-radius: 3px;
+  }
+  .custom-scrollbar::-webkit-scrollbar-thumb {
+    background: #3b82f6;
+    border-radius: 3px;
+  }
+  .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+    background: #2563eb;
+  }
+`}</style>
+
+{/* Custom scrollbar styles */}
+<style >{`
+  .custom-scrollbar::-webkit-scrollbar {
+    width: 6px;
+  }
+  .custom-scrollbar::-webkit-scrollbar-track {
+    background: #f1f1f1;
+    border-radius: 3px;
+  }
+  .custom-scrollbar::-webkit-scrollbar-thumb {
+    background: #3b82f6;
+    border-radius: 3px;
+  }
+  .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+    background: #2563eb;
+  }
+`}</style>
         </div>
       </div>
 

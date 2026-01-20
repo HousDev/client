@@ -1140,7 +1140,7 @@ export default function ServiceOrders() {
   }
 
   return (
-    <div className="p-6 px-3 md:px-6">
+    <div className="p-2 px-3 md:px-6 -mt-4">
       {/* Header with Actions */}
       <div className="flex justify-between items-center mb-6 px-3">
         <button
@@ -1156,7 +1156,7 @@ export default function ServiceOrders() {
       </div>
 
       {/* Bulk Actions Bar */}
-      <div className="mb-6 flex flex-col md:flex-row md:items-center justify-between gap-4 px-3">
+      <div className="mb-1 flex flex-col md:flex-row md:items-center justify-between gap-4 px-3">
         <div className="flex gap-2 md:gap-3 flex-wrap">
           {selectedItems.size > 0 && (
             <div className="flex gap-2 flex-wrap">

@@ -218,14 +218,18 @@
 // export default MaterialOutTransactions;
 
 
-
-
-import { Eye, Package, Filter, Trash2, X } from "lucide-react";
+import { Eye, Package, Filter, Trash2, X, Calendar } from "lucide-react";
 import { useEffect, useState } from "react";
+import DatePicker from "react-datepicker";
+import { registerLocale } from "react-datepicker";
+import { enGB } from 'date-fns/locale/en-GB';
+import "react-datepicker/dist/react-datepicker.css";
 import inventoryTransactionApi from "../../lib/inventoryTransactionApi";
 import poApi from "../../lib/poApi";
 import vendorApi from "../../lib/vendorApi";
 import ViewTransaction from "../StoreManagement/ViewTransaction";
+
+registerLocale('en-GB', enGB);
 
 const MaterialOutTransactions = (loadTableData: any) => {
   const [filteredTransactions, setFilteredTransactions] = useState<any>([]);
@@ -246,17 +250,21 @@ const MaterialOutTransactions = (loadTableData: any) => {
   const [searchContact, setSearchContact] = useState("");
   const [searchPhone, setSearchPhone] = useState("");
   const [searchLocation, setSearchLocation] = useState("");
+  const [searchDate, setSearchDate] = useState("");
   const [searchPurpose, setSearchPurpose] = useState("");
-  
-  // Filter states
-  const [filterFromDate, setFilterFromDate] = useState("");
-  const [filterToDate, setFilterToDate] = useState("");
+  const [searchTransType, setSearchTransType] = useState("");
+
+  // Date filter states
+  const [startDate, setStartDate] = useState<Date | null>(null);
+  const [endDate, setEndDate] = useState<Date | null>(null);
   const [ignoreDate, setIgnoreDate] = useState(false);
 
   const getTransactionTypeColor = (type: string) => {
     const colors: Record<string, string> = {
       CREDIT: "bg-green-100 text-green-700",
       DEBIT: "bg-red-100 text-red-700",
+      OUTWARD: "bg-red-100 text-red-700",
+      INWARD: "bg-green-100 text-green-700",
     };
     return colors[type] || "bg-gray-100 text-gray-700";
   };
@@ -336,34 +344,45 @@ const MaterialOutTransactions = (loadTableData: any) => {
       );
     }
 
+    if (searchDate) {
+      filtered = filtered.filter((transaction: any) =>
+        (transaction.receiving_date || "").includes(searchDate)
+      );
+    }
+
     if (searchPurpose) {
       filtered = filtered.filter((transaction: any) =>
         (transaction.remark || "").toLowerCase().includes(searchPurpose.toLowerCase())
       );
     }
 
-    // Date filters
+    if (searchTransType) {
+      filtered = filtered.filter((transaction: any) =>
+        (transaction.trasaction_type || "").toLowerCase().includes(searchTransType.toLowerCase())
+      );
+    }
+
+    // Date filters with react-datepicker
     if (!ignoreDate) {
-      if (filterFromDate) {
+      if (startDate) {
         filtered = filtered.filter((transaction: any) => {
           const transactionDate = new Date(transaction.receiving_date);
-          const fromDate = new Date(filterFromDate);
-          return transactionDate >= fromDate;
+          return transactionDate >= startDate;
         });
       }
 
-      if (filterToDate) {
+      if (endDate) {
         filtered = filtered.filter((transaction: any) => {
           const transactionDate = new Date(transaction.receiving_date);
-          const toDate = new Date(filterToDate);
-          toDate.setHours(23, 59, 59, 999);
-          return transactionDate <= toDate;
+          const adjustedEndDate = new Date(endDate);
+          adjustedEndDate.setHours(23, 59, 59, 999);
+          return transactionDate <= adjustedEndDate;
         });
       }
     }
 
     setFilteredTransactions(filtered);
-  }, [searchContact, searchPhone, searchLocation, searchPurpose, filterFromDate, filterToDate, ignoreDate, transactions]);
+  }, [searchContact, searchPhone, searchLocation, searchDate, searchPurpose, searchTransType, startDate, endDate, ignoreDate, transactions]);
 
   // Checkbox handlers
   const handleSelectAll = () => {
@@ -412,8 +431,8 @@ const MaterialOutTransactions = (loadTableData: any) => {
   };
 
   const resetFilters = () => {
-    setFilterFromDate("");
-    setFilterToDate("");
+    setStartDate(null);
+    setEndDate(null);
     setIgnoreDate(false);
   };
 
@@ -422,106 +441,172 @@ const MaterialOutTransactions = (loadTableData: any) => {
   };
 
   return (
-    <div>
-      {/* Header with Actions */}
-      <div className="mb-4 flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-        <div className="flex gap-3">
-          <button
-            onClick={() => setShowFilterSidebar(true)}
-            className="bg-white border border-gray-300 text-gray-700 px-4 py-2 rounded-lg hover:bg-gray-50 transition-all flex items-center gap-2 font-medium shadow-sm text-sm"
-          >
-            <Filter className="w-4 h-4" />
-            Filters
-          </button>
-          {selectedItems.size > 0 && (
-            <button
-              onClick={handleBulkDelete}
-              className="bg-red-600 text-white px-5 py-2.5 rounded-lg hover:bg-red-700 transition-all flex items-center gap-2 font-medium shadow-sm"
-            >
-              <Trash2 className="w-5 h-5" />
-              Delete ({selectedItems.size})
-            </button>
-          )}
+    <div className="p-3 md:p-4 bg-gray-50 min-h-screen">
+      {/* Delete Button (Appears when checkboxes are selected) */}
+      {selectedItems.size > 0 && (
+        <div className="mb-4">
+          <div className="bg-gradient-to-r from-red-50 to-rose-50 border border-red-200 rounded-xl shadow-sm p-3">
+            <div className="flex flex-col md:flex-row md:items-center justify-between gap-3">
+              <div className="flex items-center gap-3">
+                <div className="bg-red-100 p-2 rounded-lg">
+                  <Trash2 className="w-4 h-4 text-red-600" />
+                </div>
+                <div>
+                  <p className="font-medium text-gray-800 text-sm">
+                    {selectedItems.size} transaction{selectedItems.size > 1 ? 's' : ''} selected
+                  </p>
+                  <p className="text-xs text-gray-600">
+                    Click delete to remove selected items
+                  </p>
+                </div>
+              </div>
+              <button
+                onClick={handleBulkDelete}
+                className="flex items-center gap-2 bg-gradient-to-r from-red-600 to-rose-600 text-white px-4 py-2 rounded-xl hover:from-red-700 hover:to-rose-700 transition-all duration-200 font-medium shadow-md hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed text-sm"
+              >
+                <Trash2 className="w-3 h-3" />
+                Delete ({selectedItems.size})
+              </button>
+            </div>
+          </div>
         </div>
-      </div>
+      )}
+
+      {/* Header with Actions */}
+      <div className="-mb-5 flex flex-col md:flex-row md:items-center justify-between gap-3"></div>
 
       {/* Main Table */}
       <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
         <div className="overflow-x-auto">
-          <table className="w-full">
+          <table className="w-full min-w-[1000px]">
             <thead className="bg-gray-200 border-b border-gray-200">
               <tr>
-                <th className="px-6 py-3 text-center w-16">
+                <th className="px-2 md:px-4 py-2 text-center w-10">
                   <input
                     type="checkbox"
                     checked={selectAll}
                     onChange={handleSelectAll}
-                    className="w-4 h-4 text-[#C62828] border-gray-300 rounded focus:ring-[#C62828]"
+                    className="w-3 h-3 md:w-4 md:h-4 text-[#C62828] border-gray-300 rounded focus:ring-[#C62828]"
                   />
                 </th>
-                <th className="px-6 py-3 text-left">
-                  <div className="text-xs font-semibold text-gray-700 uppercase tracking-wider mb-2">
+                <th className="px-2 md:px-4 py-2 text-left">
+                  <div className="text-[10px] md:text-xs font-semibold text-gray-700 uppercase tracking-wider">
                     Contact Person
                   </div>
+                </th>
+                <th className="px-2 md:px-4 py-2 text-left">
+                  <div className="text-[10px] md:text-xs font-semibold text-gray-700 uppercase tracking-wider">
+                    Phone Number
+                  </div>
+                </th>
+                <th className="px-2 md:px-4 py-2 text-left">
+                  <div className="text-[10px] md:text-xs font-semibold text-gray-700 uppercase tracking-wider">
+                    Delivery Location
+                  </div>
+                </th>
+                <th className="px-2 md:px-4 py-2 text-left">
+                  <div className="text-[10px] md:text-xs font-semibold text-gray-700 uppercase tracking-wider">
+                    Issue Date
+                  </div>
+                </th>
+                <th className="px-2 md:px-4 py-2 text-left">
+                  <div className="text-[10px] md:text-xs font-semibold text-gray-700 uppercase tracking-wider">
+                    Purpose
+                  </div>
+                </th>
+                <th className="px-2 md:px-4 py-2 text-left">
+                  <div className="text-[10px] md:text-xs font-semibold text-gray-700 uppercase tracking-wider">
+                    Trans. Type
+                  </div>
+                </th>
+                <th className="px-2 md:px-4 py-2 text-left">
+                  <div className="text-[10px] md:text-xs font-semibold text-gray-700 uppercase tracking-wider">
+                    Action
+                  </div>
+                </th>
+              </tr>
+              
+              {/* Search Row */}
+              <tr className="bg-gray-50 border-b border-gray-200">
+                <td className="px-2 md:px-4 py-1"></td>
+                
+                {/* Contact Person Column */}
+                <td className="px-2 md:px-4 py-1">
                   <input
                     type="text"
                     placeholder="Search contact..."
                     value={searchContact}
                     onChange={(e) => setSearchContact(e.target.value)}
-                    className="w-full px-3 py-1.5 text-sm border border-gray-300 rounded-md focus:ring-2 focus:ring-[#C62828] focus:border-transparent"
+                    className="w-full px-2 py-1 text-[10px] md:text-xs border border-gray-300 rounded focus:ring-1 focus:ring-[#C62828] focus:border-transparent"
                   />
-                </th>
-                <th className="px-6 py-3 text-left">
-                  <div className="text-xs font-semibold text-gray-700 uppercase tracking-wider mb-2">
-                    Phone Number
-                  </div>
+                </td>
+                
+                {/* Phone Number Column */}
+                <td className="px-2 md:px-4 py-1">
                   <input
                     type="text"
                     placeholder="Search phone..."
                     value={searchPhone}
                     onChange={(e) => setSearchPhone(e.target.value)}
-                    className="w-full px-3 py-1.5 text-sm border border-gray-300 rounded-md focus:ring-2 focus:ring-[#C62828] focus:border-transparent"
+                    className="w-full px-2 py-1 text-[10px] md:text-xs border border-gray-300 rounded focus:ring-1 focus:ring-[#C62828] focus:border-transparent"
                   />
-                </th>
-                <th className="px-6 py-3 text-left">
-                  <div className="text-xs font-semibold text-gray-700 uppercase tracking-wider mb-2">
-                    Delivery Location
-                  </div>
+                </td>
+                
+                {/* Delivery Location Column */}
+                <td className="px-2 md:px-4 py-1">
                   <input
                     type="text"
                     placeholder="Search location..."
                     value={searchLocation}
                     onChange={(e) => setSearchLocation(e.target.value)}
-                    className="w-full px-3 py-1.5 text-sm border border-gray-300 rounded-md focus:ring-2 focus:ring-[#C62828] focus:border-transparent"
+                    className="w-full px-2 py-1 text-[10px] md:text-xs border border-gray-300 rounded focus:ring-1 focus:ring-[#C62828] focus:border-transparent"
                   />
-                </th>
-                <th className="px-6 py-3 text-left">
-                  <div className="text-xs font-semibold text-gray-700 uppercase tracking-wider mb-2">
-                    Issue Date
-                  </div>
-                </th>
-                <th className="px-6 py-3 text-left">
-                  <div className="text-xs font-semibold text-gray-700 uppercase tracking-wider mb-2">
-                    Purpose
-                  </div>
+                </td>
+                
+                {/* Issue Date Column */}
+                <td className="px-2 md:px-4 py-1">
+                  <input
+                    type="text"
+                    placeholder="Search date..."
+                    value={searchDate}
+                    onChange={(e) => setSearchDate(e.target.value)}
+                    className="w-full px-2 py-1 text-[10px] md:text-xs border border-gray-300 rounded focus:ring-1 focus:ring-[#C62828] focus:border-transparent"
+                  />
+                </td>
+                
+                {/* Purpose Column */}
+                <td className="px-2 md:px-4 py-1">
                   <input
                     type="text"
                     placeholder="Search purpose..."
                     value={searchPurpose}
                     onChange={(e) => setSearchPurpose(e.target.value)}
-                    className="w-full px-3 py-1.5 text-sm border border-gray-300 rounded-md focus:ring-2 focus:ring-[#C62828] focus:border-transparent"
+                    className="w-full px-2 py-1 text-[10px] md:text-xs border border-gray-300 rounded focus:ring-1 focus:ring-[#C62828] focus:border-transparent"
                   />
-                </th>
-                <th className="px-6 py-3 text-left">
-                  <div className="text-xs font-semibold text-gray-700 uppercase tracking-wider mb-2">
-                    Trans. Type
-                  </div>
-                </th>
-                <th className="px-6 py-3 text-left">
-                  <div className="text-xs font-semibold text-gray-700 uppercase tracking-wider">
-                    Action
-                  </div>
-                </th>
+                </td>
+                
+                {/* Transaction Type Column */}
+                <td className="px-2 md:px-4 py-1">
+                  <input
+                    type="text"
+                    placeholder="Search type..."
+                    value={searchTransType}
+                    onChange={(e) => setSearchTransType(e.target.value)}
+                    className="w-full px-2 py-1 text-[10px] md:text-xs border border-gray-300 rounded focus:ring-1 focus:ring-[#C62828] focus:border-transparent"
+                  />
+                </td>
+                
+                {/* Action Column - Filter icon */}
+                <td className="px-2 md:px-4 py-1 text-center">
+                  <button
+                    onClick={() => setShowFilterSidebar(true)}
+                    className="inline-flex items-center px-2 py-1 border border-gray-300 rounded hover:bg-gray-50 transition text-[10px] md:text-xs font-medium text-gray-700"
+                    title="Advanced Filters"
+                  >
+                    <Filter className="w-2.5 h-2.5 md:w-3 md:h-3 mr-0.5" />
+                    Filters
+                  </button>
+                </td>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-200">
@@ -534,62 +619,64 @@ const MaterialOutTransactions = (loadTableData: any) => {
                       isSelected ? "bg-blue-50" : ""
                     }`}
                   >
-                    <td className="px-6 py-4 text-center">
+                    <td className="px-2 md:px-4 py-2 text-center">
                       <input
                         type="checkbox"
                         checked={isSelected}
                         onChange={() => handleSelectItem(transaction.id)}
-                        className="w-4 h-4 text-[#C62828] border-gray-300 rounded focus:ring-[#C62828]"
+                        className="w-3 h-3 md:w-4 md:h-4 text-[#C62828] border-gray-300 rounded focus:ring-[#C62828]"
                       />
                     </td>
-                    <td className="px-6 py-4">
+                    <td className="px-2 md:px-4 py-2">
                       <button
                         onClick={() => {
                           setSelectedTransaction(transaction);
                           setIsOpen(true);
                         }}
-                        className="font-bold hover:underline cursor-pointer text-blue-600"
+                        className="font-bold hover:underline cursor-pointer text-blue-600 text-xs md:text-sm truncate block max-w-[120px]"
+                        title={transaction.receiver_name || "N/A"}
                       >
                         {transaction.receiver_name || "N/A"}
                       </button>
                     </td>
-                    <td className="px-6 py-4">
-                      <div className="text-gray-800">
+                    <td className="px-2 md:px-4 py-2">
+                      <div className="text-gray-800 text-xs md:text-sm truncate max-w-[120px]" title={transaction.receiver_phone || "N/A"}>
                         {transaction.receiver_phone || "N/A"}
                       </div>
                     </td>
-                    <td className="px-6 py-4">
-                      <div className="">
+                    <td className="px-2 md:px-4 py-2">
+                      <div className="text-xs md:text-sm truncate max-w-[120px]" title={transaction.delivery_location || "N/A"}>
                         {transaction.delivery_location || "N/A"}
                       </div>
                     </td>
-                    <td className="px-6 py-4">
-                      <div className="text-gray-800">
+                    <td className="px-2 md:px-4 py-2">
+                      <div className="text-gray-800 text-xs md:text-sm whitespace-nowrap">
                         {transaction.receiving_date ?? "N/A"}
                       </div>
                     </td>
-                    <td className="px-6 py-4">
-                      <div className="text-gray-800">
+                    <td className="px-2 md:px-4 py-2">
+                      <div className="text-gray-800 text-xs md:text-sm truncate max-w-[120px]" title={transaction.remark ?? "N/A"}>
                         {transaction.remark ?? "N/A"}
                       </div>
                     </td>
-                    <td className="px-6 py-4">
+                    <td className="px-2 md:px-4 py-2">
                       <span
-                        className={`px-3 py-1 rounded-full text-xs font-medium ${getTransactionTypeColor(
+                        className={`px-1.5 py-0.5 rounded-full text-[10px] font-medium ${getTransactionTypeColor(
                           transaction.trasaction_type
-                        )}`}
+                        )} truncate`}
+                        title={transaction.trasaction_type}
                       >
                         {transaction.trasaction_type}
                       </span>
                     </td>
-                    <td className="px-6 py-4">
+                    <td className="px-2 md:px-4 py-2">
                       <button
                         onClick={() => {
                           setSelectedTransaction(transaction);
                           setIsOpen(true);
                         }}
                         className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition"
-                        title={transaction.remark}
+                        title="View Details"
                       >
                         <Eye className="w-4 h-4" />
                       </button>
@@ -597,36 +684,44 @@ const MaterialOutTransactions = (loadTableData: any) => {
                   </tr>
                 );
               })}
+              
+              {filteredTransactions.length === 0 && (
+                <tr>
+                  <td colSpan={8} className="px-4 py-8 text-center">
+                    <Package className="w-12 h-12 md:w-16 md:h-16 text-gray-300 mx-auto mb-3" />
+                    <p className="text-gray-600 text-sm md:text-lg font-medium">No Transactions Found</p>
+                    <p className="text-gray-500 text-xs md:text-sm mt-1">
+                      {searchContact || searchPhone || searchLocation || searchPurpose
+                        ? "Try a different search term"
+                        : "No material out transactions available"}
+                    </p>
+                  </td>
+                </tr>
+              )}
             </tbody>
           </table>
-
-          {filteredTransactions.length === 0 && (
-            <div className="text-center py-12">
-              <Package className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-              <h3 className="text-lg font-semibold text-gray-800 mb-2">
-                No Transactions Found
-              </h3>
-              <p className="text-gray-600">
-                {searchContact || searchPhone || searchLocation || searchPurpose
-                  ? "Try a different search term"
-                  : "No inventory transactions available"}
-              </p>
-            </div>
-          )}
         </div>
       </div>
 
-      {/* Filter Sidebar */}
+      {/* Updated Filter Sidebar with react-datepicker */}
       {showFilterSidebar && (
         <div className="fixed inset-0 z-50 overflow-hidden">
           <div className="absolute inset-0 bg-black bg-opacity-50" onClick={() => setShowFilterSidebar(false)}></div>
           <div className="absolute inset-y-0 right-0 max-w-md w-full bg-white shadow-2xl flex flex-col">
-            <div className="bg-[#C62828] px-6 py-4 flex justify-between items-center">
-              <h2 className="text-xl font-bold text-white">Filters</h2>
+            <div className="bg-gradient-to-r from-[#C62828] to-[#D32F2F] px-6 py-4 flex justify-between items-center">
+              <div className="flex items-center gap-3">
+                <div className="p-2 bg-white/20 rounded-lg">
+                  <Calendar className="w-5 h-5 text-white" />
+                </div>
+                <div>
+                  <h2 className="text-xl font-bold text-white">Date Filters</h2>
+                  <p className="text-sm text-white/80">Select a date range to filter transactions</p>
+                </div>
+              </div>
               <div className="flex items-center gap-3">
                 <button
                   onClick={resetFilters}
-                  className="text-white text-sm hover:bg-white hover:bg-opacity-20 px-3 py-1.5 rounded transition"
+                  className="text-white text-sm hover:bg-white hover:bg-opacity-20 px-3 py-1.5 rounded transition font-medium"
                 >
                   Reset
                 </button>
@@ -640,64 +735,135 @@ const MaterialOutTransactions = (loadTableData: any) => {
             </div>
 
             <div className="flex-1 overflow-y-auto p-6 space-y-6">
+              {/* Date Range Selection */}
+              <div className="space-y-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {/* From Date Picker */}
+                  <div className="space-y-2">
+                    <label className="block text-sm font-semibold text-gray-700 flex items-center gap-2">
+                      <Calendar className="w-4 h-4 text-[#C62828]" />
+                      From Date
+                    </label>
+                    <div className="relative">
+                      <DatePicker
+                        selected={startDate}
+                        onChange={(date: Date | null) => setStartDate(date)}
+                        selectsStart
+                        startDate={startDate}
+                        endDate={endDate}
+                        maxDate={endDate || new Date()}
+                        placeholderText="Select start date"
+                        className="w-full pl-10 pr-4 py-2.5 text-sm border border-gray-300 rounded-lg focus:border-[#C62828] focus:ring-2 focus:ring-[#C62828]/20 outline-none transition-all"
+                        dateFormat="dd/MM/yyyy"
+                        locale="en-GB"
+                        isClearable
+                        showMonthDropdown
+                        showYearDropdown
+                        dropdownMode="select"
+                      />
+                      <div className="absolute left-3 top-1/2 transform -translate-y-1/2">
+                        <Calendar className="w-4 h-4 text-gray-500" />
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* To Date Picker */}
+                  <div className="space-y-2">
+                    <label className="block text-sm font-semibold text-gray-700 flex items-center gap-2">
+                      <Calendar className="w-4 h-4 text-[#C62828]" />
+                      To Date
+                    </label>
+                    <div className="relative">
+                      <DatePicker
+                        selected={endDate}
+                        onChange={(date: Date | null) => setEndDate(date)}
+                        selectsEnd
+                        startDate={startDate}
+                        endDate={endDate}
+                        minDate={startDate || undefined}
+                        maxDate={new Date()}
+                        placeholderText="Select end date"
+                        className="w-full pl-10 pr-4 py-2.5 text-sm border border-gray-300 rounded-lg focus:border-[#C62828] focus:ring-2 focus:ring-[#C62828]/20 outline-none transition-all"
+                        dateFormat="dd/MM/yyyy"
+                        locale="en-GB"
+                        isClearable
+                        showMonthDropdown
+                        showYearDropdown
+                        dropdownMode="select"
+                      />
+                      <div className="absolute left-3 top-1/2 transform -translate-y-1/2">
+                        <Calendar className="w-4 h-4 text-gray-500" />
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Date Range Summary */}
+                {(startDate || endDate) && (
+                  <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="text-sm font-medium text-gray-800">Selected Range:</p>
+                        <p className="text-xs text-gray-600">
+                          {startDate ? startDate.toLocaleDateString('en-GB') : 'Any'} 
+                          {" → "}
+                          {endDate ? endDate.toLocaleDateString('en-GB') : 'Any'}
+                        </p>
+                      </div>
+                      <button
+                        onClick={resetFilters}
+                        className="text-xs text-red-600 hover:text-red-800 font-medium"
+                      >
+                        Clear Dates
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* Ignore Date Checkbox */}
               <div className="border-t pt-4">
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  From Date
-                </label>
-                <input
-                  type="date"
-                  value={filterFromDate}
-                  onChange={(e) => setFilterFromDate(e.target.value)}
-                  disabled={ignoreDate}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#C62828] focus:border-transparent disabled:bg-gray-100 disabled:cursor-not-allowed"
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  To Date
-                </label>
-                <input
-                  type="date"
-                  value={filterToDate}
-                  onChange={(e) => setFilterToDate(e.target.value)}
-                  disabled={ignoreDate}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#C62828] focus:border-transparent disabled:bg-gray-100 disabled:cursor-not-allowed"
-                />
-              </div>
-
-              <div className="flex items-center gap-2">
-                <input
-                  type="checkbox"
-                  id="ignoreDate"
-                  checked={ignoreDate}
-                  onChange={(e) => {
-                    setIgnoreDate(e.target.checked);
-                    if (e.target.checked) {
-                      setFilterFromDate("");
-                      setFilterToDate("");
-                    }
-                  }}
-                  className="w-4 h-4 text-[#C62828] border-gray-300 rounded focus:ring-[#C62828]"
-                />
-                <label htmlFor="ignoreDate" className="text-sm text-gray-700 cursor-pointer">
-                  Ignore Date
-                </label>
+                <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
+                  <input
+                    type="checkbox"
+                    id="ignoreDate"
+                    checked={ignoreDate}
+                    onChange={(e) => {
+                      setIgnoreDate(e.target.checked);
+                      if (e.target.checked) {
+                        setStartDate(null);
+                        setEndDate(null);
+                      }
+                    }}
+                    className="w-5 h-5 text-[#C62828] border-gray-300 rounded focus:ring-[#C62828]"
+                  />
+                  <div className="flex-1">
+                    <label htmlFor="ignoreDate" className="text-sm font-medium text-gray-700 cursor-pointer block">
+                      Ignore Date Filters
+                    </label>
+                    <p className="text-xs text-gray-500">
+                      When checked, all dates will be shown regardless of selected range
+                    </p>
+                  </div>
+                </div>
               </div>
             </div>
 
+            {/* Footer Buttons */}
             <div className="border-t p-4 flex gap-3">
               <button
                 onClick={resetFilters}
-                className="flex-1 px-4 py-2.5 border border-gray-300 rounded-lg hover:bg-gray-50 transition font-medium text-gray-700"
+                className="flex-1 px-4 py-2.5 border border-gray-300 rounded-lg hover:bg-gray-50 transition font-medium text-gray-700 flex items-center justify-center gap-2"
               >
-                Reset
+                <X className="w-4 h-4" />
+                Reset All
               </button>
               <button
                 onClick={applyFilters}
-                className="flex-1 bg-[#C62828] text-white px-4 py-2.5 rounded-lg hover:shadow-lg transition font-medium"
+                className="flex-1 bg-gradient-to-r from-[#C62828] to-[#D32F2F] text-white px-4 py-2.5 rounded-lg hover:shadow-lg transition font-medium flex items-center justify-center gap-2"
               >
-                Apply
+                <Filter className="w-4 h-4" />
+                Apply Filters
               </button>
             </div>
           </div>

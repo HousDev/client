@@ -1261,7 +1261,16 @@ import {
   Tag,
   Users,
   Truck,
+  Calendar, // ADD THIS IMPORT
 } from "lucide-react";
+
+// ADD THESE DATE PICKER IMPORTS
+import DatePicker from "react-datepicker";
+import { registerLocale } from "react-datepicker";
+import { enGB } from 'date-fns/locale/en-GB';
+import "react-datepicker/dist/react-datepicker.css";
+
+registerLocale('en-GB', enGB);
 
 /* ---------------------------
    Mock Components & Utilities
@@ -1720,19 +1729,13 @@ const categoryOptions = poTypes.length
     (cat || "").toLowerCase().includes("service");
 
   return (
-    <div className="p-0 bg-gray-50 min-h-screen">
+    <div className="p-0 -mt-4 bg-gray-50 min-h-screen">
       {/* Header */}
       <div className="mb-2">
         <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
         
           <div className="flex gap-3">
-            <button
-              onClick={() => setShowFilterSidebar(true)}
-              className="bg-white border border-gray-300 text-gray-700 px-5 py-2.5 rounded-lg hover:bg-gray-50 transition-all flex items-center gap-2 font-medium shadow-sm"
-            >
-              <Filter className="w-5 h-5" />
-              Filters
-            </button>
+           
             <button
               onClick={() => {
                 resetForm();
@@ -1748,6 +1751,7 @@ const categoryOptions = poTypes.length
       </div>
 
       {/* Table */}
+       {/* Table */}
       {loading ? (
         <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-12 text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
@@ -1756,214 +1760,258 @@ const categoryOptions = poTypes.length
       ) : (
         <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
           <div className="overflow-x-auto">
-            <table className="w-full">
-              <thead className="bg-gray-200 border-b border-gray-200">
-                <tr>
-                  <th className="px-4 py-3 text-left">
-      <input
-        type="checkbox"
-        checked={selectedVendors.size === filteredVendors.length && filteredVendors.length > 0}
-        onChange={handleSelectAll}
-        className="w-4 h-4 text-blue-600 rounded focus:ring-blue-500"
-      />
-    </th>
-                  <th className="px-6 py-3 text-left">
-                    <div className="text-xs font-semibold text-gray-700 uppercase tracking-wider mb-2">
-                      Name
-                    </div>
-                    <input
-                      type="text"
-                      placeholder="Search name..."
-                      value={searchName}
-                      onChange={(e) => setSearchName(e.target.value)}
-                      className="w-full px-3 py-1.5 text-sm border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                    />
-                  </th>
-                  <th className="px-6 py-3 text-left">
-                    <div className="text-xs font-semibold text-gray-700 uppercase tracking-wider mb-2">
-                      Contact
-                    </div>
-                    <input
-                      type="text"
-                      placeholder="Search contact..."
-                      value={searchContact}
-                      onChange={(e) => setSearchContact(e.target.value)}
-                      className="w-full px-3 py-1.5 text-sm border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                    />
-                  </th>
-                  <th className="px-6 py-3 text-left">
-                    <div className="text-xs font-semibold text-gray-700 uppercase tracking-wider mb-2">
-                      Location
-                    </div>
-                    <input
-                      type="text"
-                      placeholder="Search location..."
-                      value={searchLocation}
-                      onChange={(e) => setSearchLocation(e.target.value)}
-                      className="w-full px-3 py-1.5 text-sm border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                    />
-                  </th>
-                  <th className="px-6 py-3 text-left">
-                    <div className="text-xs font-semibold text-gray-700 uppercase tracking-wider mb-2">
-                      Category
-                    </div>
-                    <input
-                      type="text"
-                      placeholder="Search category..."
-                      value={searchCategory}
-                      onChange={(e) => setSearchCategory(e.target.value)}
-                      className="w-full px-3 py-1.5 text-sm border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                    />
-                  </th>
-                  <th className="px-6 py-3 text-left">
-                    <div className="text-xs font-semibold text-gray-700 uppercase tracking-wider mb-2">
-                      GST/PAN
-                    </div>
-                    <input
-                      type="text"
-                      placeholder="Search GST/PAN..."
-                      value={searchPAN}
-                      onChange={(e) => setSearchPAN(e.target.value)}
-                      className="w-full px-3 py-1.5 text-sm border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                    />
-                  </th>
-                  <th className="px-6 py-3 text-center">
-                    <div className="text-xs font-semibold text-gray-700 uppercase tracking-wider">
-                      Actions
-                    </div>
-                  </th>
-                </tr>
-              </thead>
-            <tbody className="divide-y divide-gray-200">
-  {filteredVendors.length === 0 ? (
+           <table className="w-full min-w-[800px]">
+  <thead className="bg-gray-200 border-b border-gray-200">
+    {/* Header Row */}
     <tr>
-      <td colSpan={7} className="px-6 py-12 text-center"> {/* Changed colSpan from 6 to 7 */}
-        <Building2 className="w-16 h-16 text-gray-300 mx-auto mb-4" />
-        <p className="text-gray-600 text-lg font-medium">No vendors found</p>
-        <p className="text-gray-500 text-sm mt-2">
-          Try adjusting your search or filters
-        </p>
+      <th className="px-3 md:px-4 py-2 text-left">
+        <input
+          type="checkbox"
+          checked={selectedVendors.size === filteredVendors.length && filteredVendors.length > 0}
+          onChange={handleSelectAll}
+          className="w-3.5 h-3.5 md:w-4 md:h-4 text-blue-600 rounded focus:ring-blue-500"
+        />
+      </th>
+      <th className="px-3 md:px-4 py-2 text-left">
+        <div className="text-[10px] md:text-xs font-semibold text-gray-700 uppercase tracking-wider">
+          Name
+        </div>
+      </th>
+      <th className="px-3 md:px-4 py-2 text-left">
+        <div className="text-[10px] md:text-xs font-semibold text-gray-700 uppercase tracking-wider">
+          Contact
+        </div>
+      </th>
+      <th className="px-3 md:px-4 py-2 text-left">
+        <div className="text-[10px] md:text-xs font-semibold text-gray-700 uppercase tracking-wider">
+          Location
+        </div>
+      </th>
+      <th className="px-3 md:px-4 py-2 text-left">
+        <div className="text-[10px] md:text-xs font-semibold text-gray-700 uppercase tracking-wider">
+          Category
+        </div>
+      </th>
+      <th className="px-3 md:px-4 py-2 text-left">
+        <div className="text-[10px] md:text-xs font-semibold text-gray-700 uppercase tracking-wider">
+          GST/PAN
+        </div>
+      </th>
+      <th className="px-3 md:px-4 py-2 text-left">
+        <div className="text-[10px] md:text-xs font-semibold text-gray-700 uppercase tracking-wider">
+          Actions
+        </div>
+      </th>
+    </tr>
+    
+    {/* Search Row - Separate Row Below Headers */}
+    <tr className="bg-gray-50 border-b border-gray-200">
+      <td className="px-3 md:px-4 py-1"></td>
+      
+      {/* Name Column Search */}
+      <td className="px-3 md:px-4 py-1">
+        <input
+          type="text"
+          placeholder="Search..."
+          value={searchName}
+          onChange={(e) => setSearchName(e.target.value)}
+          className="w-full px-2 py-1 text-[9px] md:text-xs border border-gray-300 rounded focus:ring-1 focus:ring-blue-500 focus:border-transparent"
+        />
+      </td>
+      
+      {/* Contact Column Search */}
+      <td className="px-3 md:px-4 py-1">
+        <input
+          type="text"
+          placeholder="Search..."
+          value={searchContact}
+          onChange={(e) => setSearchContact(e.target.value)}
+          className="w-full px-2 py-1 text-[9px] md:text-xs border border-gray-300 rounded focus:ring-1 focus:ring-blue-500 focus:border-transparent"
+        />
+      </td>
+      
+      {/* Location Column Search */}
+      <td className="px-3 md:px-4 py-1">
+        <input
+          type="text"
+          placeholder="Search..."
+          value={searchLocation}
+          onChange={(e) => setSearchLocation(e.target.value)}
+          className="w-full px-2 py-1 text-[9px] md:text-xs border border-gray-300 rounded focus:ring-1 focus:ring-blue-500 focus:border-transparent"
+        />
+      </td>
+      
+      {/* Category Column Search */}
+      <td className="px-3 md:px-4 py-1">
+        <input
+          type="text"
+          placeholder="Search..."
+          value={searchCategory}
+          onChange={(e) => setSearchCategory(e.target.value)}
+          className="w-full px-2 py-1 text-[9px] md:text-xs border border-gray-300 rounded focus:ring-1 focus:ring-blue-500 focus:border-transparent"
+        />
+      </td>
+      
+      {/* GST/PAN Column Search */}
+      <td className="px-3 md:px-4 py-1">
+        <input
+          type="text"
+          placeholder="Search..."
+          value={searchPAN}
+          onChange={(e) => setSearchPAN(e.target.value)}
+          className="w-full px-2 py-1 text-[9px] md:text-xs border border-gray-300 rounded focus:ring-1 focus:ring-blue-500 focus:border-transparent"
+        />
+      </td>
+      
+      {/* Actions Column - Filter Button */}
+      <td className="px-3 md:px-4 py-1 text-center">
+        <button
+          onClick={() => setShowFilterSidebar(true)}
+          className="inline-flex items-center px-2 py-1 border border-gray-300 rounded hover:bg-gray-50 transition text-[9px] md:text-xs font-medium text-gray-700"
+          title="Advanced Filters"
+        >
+          <Filter className="w-3 h-3 mr-0.5" />
+          Filters
+        </button>
       </td>
     </tr>
-  ) : (
-    filteredVendors.map((vendor, index) => (
-      <tr
-        key={vendor.id}
-        className={`hover:bg-gray-50 transition ${
-          index % 2 === 0 ? "bg-white" : "bg-gray-50/50"
-        }`}
-      >
-        {/* ADD THIS CHECKBOX CELL AT THE BEGINNING */}
-        <td className="px-4 py-4">
-          <input
-            type="checkbox"
-            checked={selectedVendors.has(vendor.id)}
-            onChange={() => handleCheckboxChange(vendor.id)}
-            className="w-4 h-4 text-blue-600 rounded focus:ring-blue-500"
-          />
-        </td>
-        
-        {/* KEEP ALL YOUR EXISTING CELLS AS THEY ARE - STARTING FROM THIS ONE */}
-        <td className="px-6 py-4">
-          <div className="flex items-center gap-3">
-            <div className=" bg-[#C62828] w-10 h-10 rounded-full flex items-center justify-center text-white font-semibold text-sm">
-              {vendor.name.charAt(0).toUpperCase()}
-            </div>
-            <div>
-              <p className="font-semibold text-gray-900">{vendor.name}</p>
-              {vendor.sub_item_id && (
-                <p className="text-xs text-gray-500">ID: {vendor.sub_item_id}</p>
-              )}
-            </div>
-          </div>
-        </td>
-        <td className="px-6 py-4">
-          <div className="space-y-1">
-            <div className="flex items-center gap-2 text-sm text-gray-900">
-              <User className="w-4 h-4 text-gray-400" />
-              {vendor.contact_person_name || "-"}
-            </div>
-            {vendor.contact_person_phone && (
-              <div className="flex items-center gap-2 text-sm text-gray-600">
-                <Phone className="w-3.5 h-3.5 text-gray-400" />
-                {vendor.phone_country_code} {vendor.contact_person_phone}
-              </div>
-            )}
-            {vendor.contact_person_email && (
-              <div className="flex items-center gap-2 text-sm text-gray-600">
-                <Mail className="w-3.5 h-3.5 text-gray-400" />
-                {vendor.contact_person_email}
-              </div>
-            )}
-          </div>
-        </td>
-        <td className="px-6 py-4">
-          <div className="flex items-center gap-2">
-            <MapPin className="w-4 h-4 text-gray-400" />
-            <span className="text-sm text-gray-900">
-              {[vendor.office_city, vendor.office_state]
-                .filter(Boolean)
-                .join(", ") || "-"}
-            </span>
-          </div>
-        </td>
-        <td className="px-6 py-4">
-          <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-purple-100 text-purple-800">
-            {getCategoryName(vendor.category_name)}
-          </span>
-        </td>
-        <td className="px-6 py-4">
-          <div className="space-y-1">
-            {vendor.gst_number && (
-              <div className="flex items-center gap-1.5">
-                <FileText className="w-3.5 h-3.5 text-gray-400" />
-                <span className="text-xs text-gray-600">GST: {vendor.gst_number}</span>
-              </div>
-            )}
-            {vendor.pan_number && (
-              <div className="flex items-center gap-1.5">
-                <FileText className="w-3.5 h-3.5 text-gray-400" />
-                <span className="text-xs text-gray-600">PAN: {vendor.pan_number}</span>
-              </div>
-            )}
-            {!vendor.gst_number && !vendor.pan_number && "-"}
-          </div>
-        </td>
-        <td className="px-6 py-4">
-          <div className="flex items-center justify-center gap-2">
-            <button
-              onClick={() => handleEdit(vendor)}
-              className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition"
-              title="Edit vendor"
-            >
-              <Edit2 className="w-4 h-4" />
-            </button>
-            <button
-              onClick={() => handleDelete(vendor.id)}
-              className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition"
-              title="Delete vendor"
-            >
-              <Trash2 className="w-4 h-4" />
-            </button>
-          </div>
+  </thead>
+  
+  <tbody className="divide-y divide-gray-200">
+    {filteredVendors.length === 0 ? (
+      <tr>
+        <td colSpan={7} className="px-6 py-12 text-center">
+          <Building2 className="w-12 h-12 md:w-16 md:h-16 text-gray-300 mx-auto mb-3" />
+          <p className="text-gray-600 text-sm md:text-lg font-medium">No vendors found</p>
+          <p className="text-gray-500 text-xs md:text-sm mt-2">
+            Try adjusting your search or filters
+          </p>
         </td>
       </tr>
-    ))
-  )}
-</tbody>
-            </table>
+    ) : (
+      filteredVendors.map((vendor, index) => (
+        <tr
+          key={vendor.id}
+          className={`hover:bg-gray-50 transition ${index % 2 === 0 ? "bg-white" : "bg-gray-50/50"}`}
+        >
+          <td className="px-3 md:px-4 py-3">
+            <input
+              type="checkbox"
+              checked={selectedVendors.has(vendor.id)}
+              onChange={() => handleCheckboxChange(vendor.id)}
+              className="w-3.5 h-3.5 md:w-4 md:h-4 text-blue-600 rounded focus:ring-blue-500"
+            />
+          </td>
+          
+          <td className="px-3 md:px-4 py-3">
+            <div className="flex items-center gap-2 md:gap-3">
+              <div className="bg-[#C62828] w-8 h-8 md:w-10 md:h-10 rounded-full flex items-center justify-center text-white font-semibold text-xs md:text-sm">
+                {vendor.name.charAt(0).toUpperCase()}
+              </div>
+              <div>
+                <p className="font-semibold text-gray-900 text-xs md:text-sm">{vendor.name}</p>
+                {vendor.sub_item_id && (
+                  <p className="text-[10px] md:text-xs text-gray-500">ID: {vendor.sub_item_id}</p>
+                )}
+              </div>
+            </div>
+          </td>
+          <td className="px-3 md:px-4 py-3">
+            <div className="space-y-1">
+              <div className="flex items-center gap-1.5 md:gap-2 text-xs md:text-sm text-gray-900">
+                <User className="w-3 h-3 md:w-4 md:h-4 text-gray-400" />
+                {vendor.contact_person_name || "-"}
+              </div>
+              {vendor.contact_person_phone && (
+                <div className="flex items-center gap-1.5 md:gap-2 text-[11px] md:text-sm text-gray-600">
+                  <Phone className="w-2.5 h-2.5 md:w-3.5 md:h-3.5 text-gray-400" />
+                  {vendor.phone_country_code} {vendor.contact_person_phone}
+                </div>
+              )}
+              {vendor.contact_person_email && (
+                <div className="flex items-center gap-1.5 md:gap-2 text-[11px] md:text-sm text-gray-600">
+                  <Mail className="w-2.5 h-2.5 md:w-3.5 md:h-3.5 text-gray-400" />
+                  <span className="truncate max-w-[120px]">{vendor.contact_person_email}</span>
+                </div>
+              )}
+            </div>
+          </td>
+          <td className="px-3 md:px-4 py-3">
+            <div className="flex items-center gap-1.5 md:gap-2">
+              <MapPin className="w-3 h-3 md:w-4 md:h-4 text-gray-400" />
+              <span className="text-xs md:text-sm text-gray-900 truncate max-w-[100px]">
+                {[vendor.office_city, vendor.office_state]
+                  .filter(Boolean)
+                  .join(", ") || "-"}
+              </span>
+            </div>
+          </td>
+          <td className="px-3 md:px-4 py-3">
+            <span className="inline-flex items-center px-2 py-0.5 md:px-3 md:py-1 rounded-full text-[10px] md:text-xs font-medium bg-purple-100 text-purple-800">
+              {getCategoryName(vendor.category_name)}
+            </span>
+          </td>
+          <td className="px-3 md:px-4 py-3">
+            <div className="space-y-1">
+              {vendor.gst_number && (
+                <div className="flex items-center gap-1 md:gap-1.5">
+                  <FileText className="w-2.5 h-2.5 md:w-3.5 md:h-3.5 text-gray-400" />
+                  <span className="text-[10px] md:text-xs text-gray-600 truncate max-w-[80px]">GST: {vendor.gst_number}</span>
+                </div>
+              )}
+              {vendor.pan_number && (
+                <div className="flex items-center gap-1 md:gap-1.5">
+                  <FileText className="w-2.5 h-2.5 md:w-3.5 md:h-3.5 text-gray-400" />
+                  <span className="text-[10px] md:text-xs text-gray-600 truncate max-w-[80px]">PAN: {vendor.pan_number}</span>
+                </div>
+              )}
+              {!vendor.gst_number && !vendor.pan_number && "-"}
+            </div>
+          </td>
+          <td className="px-3 md:px-4 py-3">
+            <div className="flex items-center justify-center gap-1.5 md:gap-2">
+              <button
+                onClick={() => handleEdit(vendor)}
+                className="p-1.5 md:p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition"
+                title="Edit vendor"
+              >
+                <Edit2 className="w-3.5 h-3.5 md:w-4 md:h-4" />
+              </button>
+              <button
+                onClick={() => handleDelete(vendor.id)}
+                className="p-1.5 md:p-2 text-red-600 hover:bg-red-50 rounded-lg transition"
+                title="Delete vendor"
+              >
+                <Trash2 className="w-3.5 h-3.5 md:w-4 md:h-4" />
+              </button>
+            </div>
+          </td>
+        </tr>
+      ))
+    )}
+  </tbody>
+</table>
           </div>
         </div>
       )}
 
       {/* Filter Sidebar */}
+           {/* Filter Sidebar with Date Picker */}
       {showFilterSidebar && (
         <div className="fixed inset-0 z-50 overflow-hidden">
           <div className="absolute inset-0 bg-black bg-opacity-50" onClick={() => setShowFilterSidebar(false)}></div>
           <div className="absolute inset-y-0 right-0 max-w-md w-full bg-white shadow-2xl flex flex-col">
             {/* Sidebar Header */}
             <div className="bg-[#C62828] text-white px-6 py-4 flex justify-between items-center">
-              <h2 className="text-xl font-bold text-white">Filters</h2>
+              <div className="flex items-center gap-3">
+                <div className="p-2 bg-white/20 rounded-lg">
+                  <Calendar className="w-5 h-5 text-white" />
+                </div>
+                <div>
+                  <h2 className="text-xl font-bold text-white">Filters</h2>
+                  <p className="text-sm text-white/80">Filter vendors by various criteria</p>
+                </div>
+              </div>
               <div className="flex items-center gap-3">
                 <button
                   onClick={resetFilters}
@@ -1975,7 +2023,7 @@ const categoryOptions = poTypes.length
                   onClick={() => setShowFilterSidebar(false)}
                   className="text-white hover:bg-white hover:bg-opacity-20 rounded-lg p-1.5 transition"
                 >
-                  <X className= " text-white w-5 h-5" />
+                  <X className="w-5 h-5" />
                 </button>
               </div>
             </div>
@@ -2033,30 +2081,109 @@ const categoryOptions = poTypes.length
                 />
               </div>
 
+              {/* Date Picker Section */}
               <div className="border-t pt-4">
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  From Date
-                </label>
-                <input
-                  type="date"
-                  value={filterFromDate}
-                  onChange={(e) => setFilterFromDate(e.target.value)}
-                  disabled={ignoreDate}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent disabled:bg-gray-100 disabled:cursor-not-allowed"
-                />
-              </div>
+                <div className="space-y-4">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {/* From Date Picker */}
+                    <div className="space-y-2">
+                      <label className="block text-sm font-semibold text-gray-700 flex items-center gap-2">
+                        <Calendar className="w-4 h-4 text-[#C62828]" />
+                        From Date
+                      </label>
+                      <div className="relative">
+                        <DatePicker
+                          selected={filterFromDate ? new Date(filterFromDate) : null}
+                          onChange={(date: Date | null) => {
+                            if (date) {
+                              setFilterFromDate(date.toISOString().split('T')[0]);
+                            } else {
+                              setFilterFromDate("");
+                            }
+                          }}
+                          selectsStart
+                          startDate={filterFromDate ? new Date(filterFromDate) : null}
+                          endDate={filterToDate ? new Date(filterToDate) : null}
+                          maxDate={filterToDate ? new Date(filterToDate) : new Date()}
+                          placeholderText="Select start date"
+                          className="w-full pl-10 pr-4 py-2.5 text-sm border border-gray-300 rounded-lg focus:border-[#C62828] focus:ring-2 focus:ring-[#C62828]/20 outline-none transition-all"
+                          dateFormat="dd/MM/yyyy"
+                          locale="en-GB"
+                          isClearable
+                          showMonthDropdown
+                          showYearDropdown
+                          dropdownMode="select"
+                          disabled={ignoreDate}
+                        />
+                        <div className="absolute left-3 top-1/2 transform -translate-y-1/2">
+                          <Calendar className="w-4 h-4 text-gray-500" />
+                        </div>
+                      </div>
+                    </div>
 
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  To Date
-                </label>
-                <input
-                  type="date"
-                  value={filterToDate}
-                  onChange={(e) => setFilterToDate(e.target.value)}
-                  disabled={ignoreDate}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent disabled:bg-gray-100 disabled:cursor-not-allowed"
-                />
+                    {/* To Date Picker */}
+                    <div className="space-y-2">
+                      <label className="block text-sm font-semibold text-gray-700 flex items-center gap-2">
+                        <Calendar className="w-4 h-4 text-[#C62828]" />
+                        To Date
+                      </label>
+                      <div className="relative">
+                        <DatePicker
+                          selected={filterToDate ? new Date(filterToDate) : null}
+                          onChange={(date: Date | null) => {
+                            if (date) {
+                              setFilterToDate(date.toISOString().split('T')[0]);
+                            } else {
+                              setFilterToDate("");
+                            }
+                          }}
+                          selectsEnd
+                          startDate={filterFromDate ? new Date(filterFromDate) : null}
+                          endDate={filterToDate ? new Date(filterToDate) : null}
+                          minDate={filterFromDate ? new Date(filterFromDate) : undefined}
+                          maxDate={new Date()}
+                          placeholderText="Select end date"
+                          className="w-full pl-10 pr-4 py-2.5 text-sm border border-gray-300 rounded-lg focus:border-[#C62828] focus:ring-2 focus:ring-[#C62828]/20 outline-none transition-all"
+                          dateFormat="dd/MM/yyyy"
+                          locale="en-GB"
+                          isClearable
+                          showMonthDropdown
+                          showYearDropdown
+                          dropdownMode="select"
+                          disabled={ignoreDate}
+                        />
+                        <div className="absolute left-3 top-1/2 transform -translate-y-1/2">
+                          <Calendar className="w-4 h-4 text-gray-500" />
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Date Range Summary */}
+                  {(filterFromDate || filterToDate) && (
+                    <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <p className="text-sm font-medium text-gray-800">Selected Range:</p>
+                          <p className="text-xs text-gray-600">
+                            {filterFromDate || 'Any'} 
+                            {" → "}
+                            {filterToDate || 'Any'}
+                          </p>
+                        </div>
+                        <button
+                          onClick={() => {
+                            setFilterFromDate("");
+                            setFilterToDate("");
+                          }}
+                          className="text-xs text-red-600 hover:text-red-800 font-medium"
+                        >
+                          Clear Dates
+                        </button>
+                      </div>
+                    </div>
+                  )}
+                </div>
               </div>
 
               <div className="flex items-center gap-2">
@@ -2102,7 +2229,7 @@ const categoryOptions = poTypes.length
       {showModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-2xl shadow-2xl w-full max-w-4xl max-h-[90vh] overflow-hidden">
-            <div className="bg-gradient-to-r from-[#40423f] via-[#373836]  px-6 py-4 flex justify-between items-center">
+            <div className="bg-gradient-to-r from-[#40423f] via-[#373836] to-[#5a5d5a]side px-6 py-4 flex justify-between items-center">
                <div className="p-2 bg-white/20 rounded-xl backdrop-blur-sm">
                             <Truck className="w-5 h-5 text-white" />
                           </div>
@@ -2833,8 +2960,8 @@ const categoryOptions = poTypes.length
     <button
       type="submit"
       disabled={submitting}
-      className="w-48 bg-gradient-to-r from-blue-600 to-blue-700 text-white py-1.5 px-3 rounded // Changed from flex-1 to w-48 (fixed width)
-      hover:from-blue-700 hover:to-blue-800 transition-all duration-150 font-medium 
+      className="w-48 bg-red-700 text-white py-1.5 px-3 rounded // Changed from flex-1 to w-48 (fixed width)
+      hover:from-red-700 hover:to-red-800 transition-all duration-150 font-medium 
       shadow-xs hover:shadow-sm disabled:opacity-50 disabled:cursor-not-allowed 
       flex items-center justify-center gap-1 text-xs"
     >
