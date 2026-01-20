@@ -737,33 +737,24 @@
 // }
 
 
-
-
 // src/components/MaterialOutForm.tsx
 import React, { useState, useEffect, useRef } from "react";
 import {
   X,
-  Save,
   Package,
   User,
   Calendar,
   Phone,
   MapPin,
   AlertCircle,
-  Users,
   Plus,
   Trash2,
   Truck,
-  Building,
   ChevronDown,
-  Upload,
-  Smile,
-  Box,
-  Warehouse,
   ClipboardCheck,
   Layers,
   Search,
-  CheckCircle,
+  Box,
 } from "lucide-react";
 import inventoryTransactionApi from "../../lib/inventoryTransactionApi";
 import projectApi from "../../lib/projectApi";
@@ -774,13 +765,6 @@ interface MaterialOutFormProps {
   allInventory: any[];
   loadAllData: () => void;
   setLoadTableData: any;
-}
-
-interface Vendor {
-  id: number;
-  name: string;
-  phone: string;
-  type: "CONTRACTOR" | "SUBCONTRACTOR" | "SUPPLIER" | "OTHER";
 }
 
 interface MaterialItem {
@@ -815,43 +799,19 @@ export default function MaterialOutForm({
   loadAllData,
   setLoadTableData,
 }: MaterialOutFormProps) {
-  console.log("allInventory from material out", allInventory);
   const [loading, setLoading] = useState(false);
   const [showMaterialSelector, setShowMaterialSelector] = useState(false);
   const [materialSearch, setMaterialSearch] = useState("");
   const formRef = useRef<HTMLDivElement>(null);
   const selectorRef = useRef<HTMLDivElement>(null);
 
-  const [vendors] = useState<Vendor[]>([
-    {
-      id: 1,
-      name: "John Doe (Contractor)",
-      phone: "9876543210",
-      type: "CONTRACTOR",
-    },
-    {
-      id: 2,
-      name: "ABC Construction",
-      phone: "9876543211",
-      type: "CONTRACTOR",
-    },
-    { id: 3, name: "XYZ Builders", phone: "9876543212", type: "SUBCONTRACTOR" },
-    { id: 4, name: "PQR Suppliers", phone: "9876543213", type: "SUPPLIER" },
-    {
-      id: 5,
-      name: "Site Supervisor - Building A",
-      phone: "9876543214",
-      type: "OTHER",
-    },
-    { id: 6, name: "Maintenance Team", phone: "9876543215", type: "OTHER" },
-  ]);
   const [allProjects, setAllProjects] = useState<any>([]);
 
   const [formData, setFormData] = useState<MaterialOutFormData>({
     receiver_name: "",
     receiver_phone: "",
     delivery_location: "",
-    receiving_date: "",
+    receiving_date: new Date().toISOString().split("T")[0],
     remark: "",
     vendorId: 0,
     vendorName: "",
@@ -866,13 +826,22 @@ export default function MaterialOutForm({
   // Handle click outside to close
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
-      if (formRef.current && !formRef.current.contains(event.target as Node)) {
-        setActiveFormTab("");
-        resetForm();
-      }
-      if (showMaterialSelector && selectorRef.current && !selectorRef.current.contains(event.target as Node)) {
+      if (
+        showMaterialSelector &&
+        selectorRef.current &&
+        !selectorRef.current.contains(event.target as Node) &&
+        !(event.target as HTMLElement).closest('[data-material-selector="true"]')
+      ) {
         setShowMaterialSelector(false);
         setMaterialSearch("");
+      }
+      if (
+        !showMaterialSelector &&
+        formRef.current &&
+        !formRef.current.contains(event.target as Node)
+      ) {
+        setActiveFormTab("");
+        resetForm();
       }
     };
 
@@ -880,7 +849,7 @@ export default function MaterialOutForm({
     return () => {
       document.removeEventListener("mousedown", handleClickOutside);
     };
-  }, [showMaterialSelector]);
+  }, [showMaterialSelector, setActiveFormTab]);
 
   const loadProjects = async () => {
     setLoading(true);
@@ -888,18 +857,17 @@ export default function MaterialOutForm({
       const data: any = await projectApi.getProjects();
       if (data.success) {
         setAllProjects(data.data);
-        setLoading(false);
         return;
       }
       setAllProjects([]);
     } catch (err) {
-      console.warn("loadProjects failed, using fallback demo data", err);
+      console.warn("loadProjects failed", err);
       setAllProjects([]);
     } finally {
       setLoading(false);
     }
   };
-  
+
   useEffect(() => {
     loadProjects();
   }, []);
@@ -913,9 +881,12 @@ export default function MaterialOutForm({
 
   // Add material to the list
   const addMaterial = (inventoryItem: any) => {
+    // Use the correct ID property
+    const materialId = inventoryItem.id || inventoryItem.item_id;
+    
     // Check if material already exists in the list
     const existingIndex = formData.materials.findIndex(
-      (item) => item.materialId === inventoryItem.id
+      (item) => item.materialId === materialId
     );
 
     if (existingIndex !== -1) {
@@ -929,8 +900,8 @@ export default function MaterialOutForm({
     } else {
       // Add new material
       const newMaterial: MaterialItem = {
-        id: Date.now() + Math.random(), // Temporary ID
-        materialId: inventoryItem.item_id,
+        id: Date.now() + Math.random(),
+        materialId: materialId,
         materialName: inventoryItem.item_name || inventoryItem.name,
         quantity: "1",
         unit: inventoryItem.unit,
@@ -971,46 +942,17 @@ export default function MaterialOutForm({
 
   // Filter inventory items for selection
   const filteredInventory = allInventory.filter((item) => {
+    if (!item) return false;
     const searchTerm = materialSearch.toLowerCase();
-    return (
-      (item.item_name || "").toLowerCase().includes(searchTerm) ||
-      (item.description || "").toLowerCase().includes(searchTerm)
-    );
+    const itemName = (item.item_name || item.name || "").toLowerCase();
+    const description = (item.description || "").toLowerCase();
+    return itemName.includes(searchTerm) || description.includes(searchTerm);
   });
-
-  // Check if all materials have valid quantities
-  const validateMaterials = () => {
-    for (const material of formData.materials) {
-      if (!material.quantity || parseFloat(material.quantity) <= 0) {
-        toast.error(
-          `Please enter a valid quantity for ${material.materialName}`,
-          {
-            description: "Quantity must be greater than 0"
-          }
-        );
-        return false;
-      }
-
-      const stockItem = allInventory.find(
-        (item) => item.id === material.materialId
-      );
-      if (stockItem && parseFloat(material.quantity) > stockItem.quantity) {
-        toast.error(
-          `Insufficient stock for ${material.materialName}!`,
-          {
-            description: `Available: ${stockItem.quantity} ${stockItem.unit}`
-          }
-        );
-        return false;
-      }
-    }
-    return true;
-  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    // Validation with toast notifications
+    // Validation
     if (!formData.receiver_name || formData.receiver_name.length < 3) {
       toast.error("Please enter valid receiver name", {
         description: "Receiver name must be at least 3 characters long"
@@ -1046,14 +988,35 @@ export default function MaterialOutForm({
       return;
     }
 
-    if (!validateMaterials()) {
-      return;
+    // Validate materials
+    for (const material of formData.materials) {
+      if (!material.quantity || parseFloat(material.quantity) <= 0) {
+        toast.error(
+          `Please enter a valid quantity for ${material.materialName}`,
+          {
+            description: "Quantity must be greater than 0"
+          }
+        );
+        return;
+      }
+
+      const stockItem = allInventory.find(
+        (item) => (item.id || item.item_id) === material.materialId
+      );
+      if (stockItem && parseFloat(material.quantity) > stockItem.quantity) {
+        toast.error(
+          `Insufficient stock for ${material.materialName}!`,
+          {
+            description: `Available: ${stockItem.quantity} ${stockItem.unit}`
+          }
+        );
+        return;
+      }
     }
 
     try {
       setLoading(true);
       
-      // Show loading toast
       const loadingToast = toast.loading("Processing material issue...");
 
       // Prepare data for API call
@@ -1071,12 +1034,8 @@ export default function MaterialOutForm({
         })),
       };
 
-      // Simulate API call - replace with actual API call
-      await new Promise(resolve => setTimeout(resolve, 1500)); // Simulate delay
-      
       const result = await inventoryTransactionApi.createTransactionOut(submissionData);
       
-      // Update loading toast to success
       toast.success("Materials issued successfully!", {
         description: `${formData.materials.length} materials issued to ${formData.receiver_name}`
       });
@@ -1115,37 +1074,35 @@ export default function MaterialOutForm({
   };
 
   // Calculate total materials count
-  const totalItems = formData.materials.length;
   const totalQuantity = formData.materials.reduce(
     (sum, item) => sum + (parseFloat(item.quantity) || 0),
     0
   );
 
   return (
-    <div className="fixed inset-0 bg-gray-900/70 backdrop-blur-md flex items-center justify-center z-50 p-4 animate-fadeIn">
+    <div className="fixed inset-0 bg-gray-900/70 backdrop-blur-md flex items-center justify-center z-50 p-2 md:p-4">
       <div 
         ref={formRef}
-        className="bg-gradient-to-br from-gray-50 to-white rounded-2xl shadow-2xl shadow-gray-900/30 w-full max-w-2xl my-4 border border-gray-300/50 overflow-hidden"
+        className="bg-gradient-to-br from-gray-50 to-white rounded-2xl shadow-2xl shadow-gray-900/30 w-full max-w-2xl my-4 border border-gray-300/50 overflow-hidden max-h-[95vh] flex flex-col"
       >
-        {/* Header with new color scheme */}
-        <div className="bg-gradient-to-r from-[#40423f] via-[#4a4c49] to-[#5a5d5a] px-6 py-4 flex justify-between items-center border-b border-gray-700/30 relative overflow-hidden">
-          {/* Decorative elements */}
+        {/* Header */}
+        <div className="bg-gradient-to-r from-[#40423f] via-[#4a4c49] to-[#5a5d5a] px-4 md:px-6 py-4 flex justify-between items-center border-b border-gray-700/30 relative overflow-hidden flex-shrink-0">
           <div className="absolute inset-0 bg-gradient-to-r from-gray-900/10 via-transparent to-gray-900/10"></div>
           <div className="absolute -right-10 top-0 bottom-0 w-40 bg-gradient-to-l from-[#b52124]/20 to-transparent -skew-x-12"></div>
           
           <div className="flex items-center gap-3 relative z-10">
             <div className="p-2.5 bg-white/10 backdrop-blur-sm rounded-2xl border border-gray-400/30">
-              <Truck className="w-5 h-5 text-gray-100" />
+              <Truck className="w-4 h-4 md:w-5 md:h-5 text-gray-100" />
             </div>
             <div>
               <div className="flex items-baseline gap-2">
-                <h2 className="text-xl font-bold text-white">
+                <h2 className="text-lg md:text-xl font-bold text-white">
                   Material Out
                 </h2>
-                
               </div>
-              <p className="text-xs text-gray-300/80 font-medium mt-1 flex items-center gap-1">
-Monitor materials issued for site work and project usage.              </p>
+              <p className="text-xs text-gray-300/80 font-medium mt-1 hidden md:flex items-center gap-1">
+                Monitor materials issued for site work and project usage.
+              </p>
             </div>
           </div>
           <button
@@ -1155,15 +1112,15 @@ Monitor materials issued for site work and project usage.              </p>
             }}
             className="text-gray-200 hover:bg-gray-700/40 rounded-xl p-2 transition-all duration-200 hover:scale-105 active:scale-95 relative z-10"
           >
-            <X className="w-5 h-5" />
+            <X className="w-4 h-4 md:w-5 md:h-5" />
           </button>
         </div>
 
         {/* Content */}
-        <div className="p-6 max-h-[65vh] overflow-y-auto custom-scrollbar">
+        <div className="p-4 md:p-6 overflow-y-auto custom-scrollbar flex-grow">
           <form onSubmit={handleSubmit} className="space-y-4">
             {/* Contact Person, Phone & Delivery Location */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
               <div className="space-y-1.5">
                 <label className="block text-sm font-semibold text-[#40423f] mb-1 flex items-center gap-2">
                   <User className="w-4 h-4 text-[#b52124]" />
@@ -1248,7 +1205,7 @@ Monitor materials issued for site work and project usage.              </p>
                   >
                     <option value="" className="text-gray-500">Select delivery location</option>
                     {allProjects.map((project: any) => (
-                      <option key={project.id} value={project.loaction} className="py-2 text-[#40423f]">
+                      <option key={project.id} value={project.location || project.loaction} className="py-2 text-[#40423f]">
                         {project.name} - ({project.location})
                       </option>
                     ))}
@@ -1306,7 +1263,7 @@ Monitor materials issued for site work and project usage.              </p>
 
             {/* Materials Section */}
             <div className="border-t border-gray-300 pt-4">
-              <div className="flex justify-between items-center mb-3">
+              <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 mb-3">
                 <div className="flex items-center gap-2">
                   <div className="p-1.5 bg-[#b52124]/10 rounded-lg">
                     <Layers className="w-4 h-4 text-[#b52124]" />
@@ -1323,7 +1280,8 @@ Monitor materials issued for site work and project usage.              </p>
                 <button
                   type="button"
                   onClick={() => setShowMaterialSelector(true)}
-                  className="bg-gradient-to-r from-[#b52124] to-[#d43538] text-white px-4 py-2.5 rounded-xl hover:from-[#d43538] hover:to-[#b52124] transition-all duration-200 text-sm font-medium flex items-center gap-2 group transform hover:-translate-y-0.5"
+                  data-material-selector="true"
+                  className="bg-gradient-to-r from-[#b52124] to-[#d43538] text-white px-4 py-2.5 rounded-xl hover:from-[#d43538] hover:to-[#b52124] transition-all duration-200 text-sm font-medium flex items-center gap-2 group w-full sm:w-auto justify-center"
                 >
                   <Plus className="w-4 h-4 group-hover:scale-110 transition-transform" /> 
                   Add Material
@@ -1331,9 +1289,9 @@ Monitor materials issued for site work and project usage.              </p>
               </div>
 
               {formData.materials.length === 0 ? (
-                <div className="bg-gradient-to-b from-gray-50/50 to-white/50 border-2 border-dashed border-gray-300 rounded-2xl p-8 text-center group hover:border-[#b52124]/30 transition-all duration-300">
+                <div className="bg-gradient-to-b from-gray-50/50 to-white/50 border-2 border-dashed border-gray-300 rounded-2xl p-6 text-center group hover:border-[#b52124]/30 transition-all duration-300">
                   <div className="p-4 bg-[#b52124]/5 rounded-2xl inline-block mb-4">
-                    <Package className="w-12 h-12 text-[#b52124]/60" />
+                    <Package className="w-10 h-10 md:w-12 md:h-12 text-[#b52124]/60" />
                   </div>
                   <p className="text-sm font-semibold text-[#40423f] mb-1">
                     No materials added yet
@@ -1357,11 +1315,11 @@ Monitor materials issued for site work and project usage.              </p>
                               <div className={`p-2 rounded-lg ${isLowStock ? 'bg-amber-100' : 'bg-[#b52124]/10'}`}>
                                 <Box className={`w-4 h-4 ${isLowStock ? 'text-amber-600' : 'text-[#b52124]'}`} />
                               </div>
-                              <div>
-                                <p className="font-semibold text-sm text-[#40423f]">
+                              <div className="flex-1">
+                                <p className="font-semibold text-sm text-[#40423f] break-words">
                                   {material.materialName}
                                 </p>
-                                <div className="flex items-center gap-2 mt-1">
+                                <div className="flex flex-wrap items-center gap-2 mt-1">
                                   <span className="text-xs px-2 py-0.5 bg-gray-100 text-[#5a5d5a] rounded-full font-medium">
                                     Stock: {material.currentStock} {material.unit}
                                   </span>
@@ -1377,14 +1335,14 @@ Monitor materials issued for site work and project usage.              </p>
                             <button
                               type="button"
                               onClick={() => removeMaterial(material.id)}
-                              className="p-1.5 text-[#b52124] hover:bg-[#b52124]/10 rounded-xl transition-all duration-200 hover:scale-105"
+                              className="p-1.5 text-[#b52124] hover:bg-[#b52124]/10 rounded-xl transition-all duration-200 hover:scale-105 flex-shrink-0 ml-2"
                               title="Remove"
                             >
                               <Trash2 className="w-4 h-4" />
                             </button>
                           </div>
                           
-                          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                             <div className="space-y-1.5">
                               <label className="text-xs text-[#5a5d5a] font-medium flex items-center gap-1">
                                 <span>In Stock</span>
@@ -1451,11 +1409,11 @@ Monitor materials issued for site work and project usage.              </p>
             </div>
 
             {/* Submit Button */}
-            <div className="flex gap-3 pt-6 border-t border-gray-300">
+            <div className="flex flex-col sm:flex-row gap-3 pt-6 border-t border-gray-300">
               <button
                 type="submit"
                 disabled={loading || formData.materials.length === 0}
-                className="flex-1 bg-gradient-to-r from-[#b52124] to-[#d43538] text-white py-3 px-6 rounded-xl hover:from-[#d43538] hover:to-[#b52124] transition-all duration-200 font-semibold shadow-lg hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 group transform hover:-translate-y-0.5 active:translate-y-0 border border-[#b52124]/30"
+                className="flex-1 bg-gradient-to-r from-[#b52124] to-[#d43538] text-white py-3 px-6 rounded-xl hover:from-[#d43538] hover:to-[#b52124] transition-all duration-200 font-semibold shadow-lg hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 group"
               >
                 {loading ? (
                   <>
@@ -1482,27 +1440,24 @@ Monitor materials issued for site work and project usage.              </p>
             </div>
           </form>
         </div>
-
-        {/* Footer with brand message */}
-       
       </div>
 
       {/* Material Selector Modal */}
       {showMaterialSelector && (
-        <div className="fixed inset-0 bg-gray-900/70 backdrop-blur-md flex items-center justify-center z-[60] p-4 animate-fadeIn">
+        <div className="fixed inset-0 bg-gray-900/70 backdrop-blur-md flex items-center justify-center z-[60] p-2 md:p-4">
           <div 
             ref={selectorRef}
-            className="bg-gradient-to-br from-gray-50 to-white rounded-2xl shadow-2xl shadow-gray-900/30 w-full max-w-md border border-gray-300/50 overflow-hidden"
+            className="bg-gradient-to-br from-gray-50 to-white rounded-2xl shadow-2xl shadow-gray-900/30 w-full max-w-md border border-gray-300/50 overflow-hidden max-h-[90vh] flex flex-col"
           >
             {/* Header */}
-            <div className="bg-gradient-to-r from-[#40423f] via-[#4a4c49] to-[#5a5d5a] px-6 py-4 flex justify-between items-center border-b border-gray-700/30">
+            <div className="bg-gradient-to-r from-[#40423f] via-[#4a4c49] to-[#5a5d5a] px-4 md:px-6 py-4 flex justify-between items-center border-b border-gray-700/30">
               <div className="flex items-center gap-3">
                 <div className="p-2 bg-white/10 rounded-xl">
-                  <Package className="w-5 h-5 text-gray-100" />
+                  <Package className="w-4 h-4 md:w-5 md:h-5 text-gray-100" />
                 </div>
                 <div>
-                  <h3 className="font-bold text-white">Select Material</h3>
-                  <p className="text-xs text-gray-300/80">Choose from available inventory</p>
+                  <h3 className="font-bold text-white text-sm md:text-base">Select Material</h3>
+                  <p className="text-xs text-gray-300/80 hidden md:block">Choose from available inventory</p>
                 </div>
               </div>
               <button
@@ -1512,7 +1467,7 @@ Monitor materials issued for site work and project usage.              </p>
                 }}
                 className="text-gray-200 hover:bg-gray-700/40 rounded-xl p-2 transition-all duration-200"
               >
-                <X className="w-5 h-5" />
+                <X className="w-4 h-4 md:w-5 md:h-5" />
               </button>
             </div>
 
@@ -1524,7 +1479,7 @@ Monitor materials issued for site work and project usage.              </p>
                 </div>
                 <input
                   type="text"
-                  placeholder="Search material by name or description..."
+                  placeholder="Search material..."
                   value={materialSearch}
                   onChange={(e) => setMaterialSearch(e.target.value)}
                   className="w-full pl-10 pr-4 py-2.5 text-sm border border-gray-300 rounded-xl focus:border-[#b52124] focus:ring-2 focus:ring-[#b52124]/20 outline-none transition-all duration-200 hover:border-gray-400 bg-white/50 text-[#40423f]"
@@ -1533,7 +1488,7 @@ Monitor materials issued for site work and project usage.              </p>
             </div>
 
             {/* Material List */}
-            <div className="p-2 overflow-y-auto max-h-[50vh]">
+            <div className="p-2 overflow-y-auto flex-grow">
               <div className="space-y-2">
                 {filteredInventory.length === 0 ? (
                   <div className="p-8 text-center">
@@ -1549,8 +1504,9 @@ Monitor materials issued for site work and project usage.              </p>
                   </div>
                 ) : (
                   filteredInventory.map((item) => {
+                    if (!item) return null;
                     const existingMaterial = formData.materials.find(
-                      (m) => m.materialId === item.id
+                      (m) => m.materialId === (item.id || item.item_id)
                     );
                     const isLowStock = item.quantity <= item.reorder_qty && item.quantity > 0;
                     const outOfStock = item.quantity === 0;
@@ -1559,25 +1515,26 @@ Monitor materials issued for site work and project usage.              </p>
                       <button
                         type="button"
                         disabled={item.quantity === 0}
-                        key={item.id}
+                        key={item.id || item.item_id}
                         onClick={() => addMaterial(item)}
-                        className={`w-full p-4 text-left border rounded-2xl transition-all duration-200 ${
+                        data-material-selector="true"
+                        className={`w-full p-3 md:p-4 text-left border rounded-2xl transition-all duration-200 ${
                           existingMaterial
                             ? "bg-[#b52124]/5 border-[#b52124]/30"
                             : "border-gray-300 hover:border-gray-400 hover:bg-gray-50/50"
                         } ${item.quantity === 0 ? "opacity-50 cursor-not-allowed" : ""}`}
                       >
-                        <div className="flex justify-between items-center">
-                          <div className="text-left">
+                        <div className="flex justify-between items-start gap-2">
+                          <div className="text-left flex-1">
                             <div className="flex items-center gap-2 mb-1">
-                              <div className={`p-1.5 rounded-lg ${isLowStock ? 'bg-amber-100' : 'bg-[#b52124]/10'}`}>
+                              <div className={`p-1.5 rounded-lg ${isLowStock ? 'bg-amber-100' : 'bg-[#b52124]/10'} flex-shrink-0`}>
                                 <Box className={`w-3 h-3 ${isLowStock ? 'text-amber-600' : 'text-[#b52124]'}`} />
                               </div>
                               <div className="font-medium text-sm text-[#40423f] truncate">
                                 {item.item_name || item.name}
                               </div>
                             </div>
-                            <div className="flex items-center gap-3">
+                            <div className="flex flex-wrap items-center gap-2">
                               <span className="text-xs text-[#5a5d5a]">
                                 Stock: {item.quantity} {item.unit}
                               </span>
@@ -1593,8 +1550,8 @@ Monitor materials issued for site work and project usage.              </p>
                               )}
                             </div>
                           </div>
-                          <div>
-                            <span className={`px-3 py-1.5 rounded-lg text-xs font-medium ${
+                          <div className="flex-shrink-0">
+                            <span className={`px-2 md:px-3 py-1.5 rounded-lg text-xs font-medium ${
                               existingMaterial
                                 ? "bg-[#b52124] text-white"
                                 : "bg-[#b52124]/10 text-[#b52124]"
@@ -1611,7 +1568,7 @@ Monitor materials issued for site work and project usage.              </p>
             </div>
 
             {/* Footer */}
-            <div className="p-4 border-t border-gray-300 bg-gradient-to-r from-gray-50/50 to-transparent">
+            <div className="p-4 border-t border-gray-300 bg-gradient-to-r from-gray-50/50 to-transparent flex-shrink-0">
               <div className="flex justify-between items-center">
                 <div className="text-xs text-[#5a5d5a]">
                   {formData.materials.length > 0 && (
@@ -1634,7 +1591,7 @@ Monitor materials issued for site work and project usage.              </p>
         </div>
       )}
 
-      {/* Add some custom styles for scrollbar */}
+      {/* Custom scrollbar styles */}
       <style jsx>{`
         .custom-scrollbar::-webkit-scrollbar {
           width: 6px;
@@ -1649,13 +1606,6 @@ Monitor materials issued for site work and project usage.              </p>
         }
         .custom-scrollbar::-webkit-scrollbar-thumb:hover {
           background: #d43538;
-        }
-        @keyframes fadeIn {
-          from { opacity: 0; transform: translateY(10px); }
-          to { opacity: 1; transform: translateY(0); }
-        }
-        .animate-fadeIn {
-          animation: fadeIn 0.3s ease-out;
         }
       `}</style>
     </div>

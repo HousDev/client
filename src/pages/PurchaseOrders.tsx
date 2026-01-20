@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 // src/components/PurchaseOrders.tsx
 import axios from "axios";
 import { useState, useEffect } from "react";
@@ -16,6 +17,10 @@ import {
   IndianRupee,
   FileDown,
   Loader2,
+  Truck,
+  Upload,
+  User,
+  Filter,
 } from "lucide-react";
 import { useAuth } from "../contexts/AuthContext";
 import vendorApi from "../lib/vendorApi";
@@ -813,14 +818,9 @@ export default function PurchaseOrders() {
 
   // --- Render main UI ---
   return (
-    <div className="p-6">
-      <div className="flex justify-between items-center mb-6">
-        <div>
-          <h1 className="text-3xl font-bold text-gray-800">Purchase Orders</h1>
-          <p className="text-gray-600 mt-1">
-            Manage purchase orders and track materials
-          </p>
-        </div>
+    <div className="p-1 -mt-5">
+      <div className="flex justify-between items-center mb-2">
+       
         {can("create_pos") && (
           <button
             onClick={() => setShowCreatePro(true)}
@@ -838,514 +838,699 @@ export default function PurchaseOrders() {
         )}
       </div>
 
-      <div className="bg-white rounded-xl shadow-sm border border-gray-200 mb-6 overflow-hidden">
-        <div className="flex border-b border-gray-200">
-          <button
-            onClick={() => setActiveTab("tracking")}
-            className={`flex-1 px-6 py-4 font-medium transition ${
-              activeTab === "tracking"
-                ? "text-blue-600 border-b-2 border-blue-600 bg-blue-50"
-                : "text-gray-600 hover:text-gray-800 hover:bg-gray-50"
-            }`}
-          >
-            <div className="flex items-center justify-center gap-2">
-              <Package className="w-5 h-5" />
-              <span>PO Tracking</span>
-            </div>
-          </button>
-          <button
-            onClick={() => setActiveTab("management")}
-            className={`flex-1 px-6 py-4 font-medium transition ${
-              activeTab === "management"
-                ? "text-blue-600 border-b-2 border-blue-600 bg-blue-50"
-                : "text-gray-600 hover:text-gray-800 hover:bg-gray-50"
-            }`}
-          >
-            <div className="flex items-center justify-center gap-2">
-              <FileText className="w-5 h-5" />
-              <span>PO Management</span>
-            </div>
-          </button>
-        </div>
+     <div className="bg-white rounded-lg border border-gray-200 mb-4 overflow-hidden">
+  <div className="flex">
+    
+    <button
+      onClick={() => setActiveTab("tracking")}
+      className={`flex-1 flex items-center justify-center gap-1.5
+        px-3 py-2 text-xs md:text-sm font-medium transition
+        ${activeTab === "tracking"
+          ? "text-blue-600 bg-blue-50 border-b-2 border-blue-600"
+          : "text-gray-600 hover:bg-gray-50"
+        }`}
+    >
+      <Package className="w-4 h-4" />
+      <span className="whitespace-nowrap">PO Tracking</span>
+    </button>
+
+    <button
+      onClick={() => setActiveTab("management")}
+      className={`flex-1 flex items-center justify-center gap-1.5
+        px-3 py-2 text-xs md:text-sm font-medium transition
+        ${activeTab === "management"
+          ? "text-blue-600 bg-blue-50 border-b-2 border-blue-600"
+          : "text-gray-600 hover:bg-gray-50"
+        }`}
+    >
+      <FileText className="w-4 h-4" />
+      <span className="whitespace-nowrap">PO Management</span>
+    </button>
+
+  </div>
+</div>
+
+
+      
+
+     {activeTab === "tracking" && (
+  <div className="space-y-6">
+    {/* PO Overview */}
+    <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+     
+      <div className="overflow-x-auto">
+        <table className="w-full min-w-[800px]">
+          <thead className="bg-gray-200 border-b border-gray-200">
+            {/* Header Row */}
+            <tr>
+              <th className="px-3 md:px-4 py-2 text-left">
+                <div className="text-[10px] md:text-xs font-semibold text-gray-700 uppercase tracking-wider">
+                  PO Number
+                </div>
+              </th>
+              <th className="px-3 md:px-4 py-2 text-left">
+                <div className="text-[10px] md:text-xs font-semibold text-gray-700 uppercase tracking-wider">
+                  Vendor
+                </div>
+              </th>
+              <th className="px-3 md:px-4 py-2 text-left">
+                <div className="text-[10px] md:text-xs font-semibold text-gray-700 uppercase tracking-wider">
+                  Project
+                </div>
+              </th>
+              <th className="px-3 md:px-4 py-2 text-left">
+                <div className="text-[10px] md:text-xs font-semibold text-gray-700 uppercase tracking-wider">
+                  Amount
+                </div>
+              </th>
+              <th className="px-3 md:px-4 py-2 text-left">
+                <div className="text-[10px] md:text-xs font-semibold text-gray-700 uppercase tracking-wider">
+                  PO Status
+                </div>
+              </th>
+              <th className="px-3 md:px-4 py-2 text-left">
+                <div className="text-[10px] md:text-xs font-semibold text-gray-700 uppercase tracking-wider">
+                  Material
+                </div>
+              </th>
+              <th className="px-3 md:px-4 py-2 text-left">
+                <div className="text-[10px] md:text-xs font-semibold text-gray-700 uppercase tracking-wider">
+                  Payment
+                </div>
+              </th>
+              <th className="px-3 md:px-4 py-2 text-left">
+                <div className="text-[10px] md:text-xs font-semibold text-gray-700 uppercase tracking-wider">
+                  Actions
+                </div>
+              </th>
+            </tr>
+            
+            {/* Search Row - Separate Row Below Headers */}
+            <tr className="bg-gray-50 border-b border-gray-200">
+              {/* PO Number Column Search */}
+              <td className="px-3 md:px-4 py-1">
+                <input
+                  type="text"
+                  placeholder="Search..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="w-full px-2 py-1 text-[9px] md:text-xs border border-gray-300 rounded focus:ring-1 focus:ring-blue-500 focus:border-transparent"
+                />
+              </td>
+              
+              {/* Vendor Column Search */}
+              <td className="px-3 md:px-4 py-1">
+                <input
+                  type="text"
+                  placeholder="Search..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="w-full px-2 py-1 text-[9px] md:text-xs border border-gray-300 rounded focus:ring-1 focus:ring-blue-500 focus:border-transparent"
+                />
+              </td>
+              
+              {/* Project Column Search */}
+              <td className="px-3 md:px-4 py-1">
+                <input
+                  type="text"
+                  placeholder="Search..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="w-full px-2 py-1 text-[9px] md:text-xs border border-gray-300 rounded focus:ring-1 focus:ring-blue-500 focus:border-transparent"
+                />
+              </td>
+              
+              {/* Amount Column Search */}
+              <td className="px-3 md:px-4 py-1">
+                <input
+                  type="text"
+                  placeholder="Search..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="w-full px-2 py-1 text-[9px] md:text-xs border border-gray-300 rounded focus:ring-1 focus:ring-blue-500 focus:border-transparent"
+                />
+              </td>
+              
+              {/* PO Status Column Search */}
+              <td className="px-3 md:px-4 py-1">
+                <input
+                  type="text"
+                  placeholder="Search..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="w-full px-2 py-1 text-[9px] md:text-xs border border-gray-300 rounded focus:ring-1 focus:ring-blue-500 focus:border-transparent"
+                />
+              </td>
+              
+              {/* Material Column Search */}
+              <td className="px-3 md:px-4 py-1">
+                <input
+                  type="text"
+                  placeholder="Search..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="w-full px-2 py-1 text-[9px] md:text-xs border border-gray-300 rounded focus:ring-1 focus:ring-blue-500 focus:border-transparent"
+                />
+              </td>
+              
+              {/* Payment Column Search */}
+              <td className="px-3 md:px-4 py-1">
+                <input
+                  type="text"
+                  placeholder="Search..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="w-full px-2 py-1 text-[9px] md:text-xs border border-gray-300 rounded focus:ring-1 focus:ring-blue-500 focus:border-transparent"
+                />
+              </td>
+              
+              {/* Actions Column - Empty or Filter Button */}
+              <td className="px-3 md:px-4 py-1 text-center">
+                <button
+                  onClick={() => {/* Add filter functionality */}}
+                  className="inline-flex items-center px-2 py-1 border border-gray-300 rounded hover:bg-gray-50 transition text-[9px] md:text-xs font-medium text-gray-700"
+                  title="Filters"
+                >
+                  <Filter className="w-3 h-3 mr-0.5" />
+                  Filters
+                </button>
+              </td>
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-gray-200">
+            {filteredPOs.map((po: any) => (
+              <tr key={po.id} className="hover:bg-gray-50 transition">
+                <td className="px-3 md:px-4 py-3">
+                  <span className="font-medium text-blue-600 text-xs md:text-sm">
+                    {po.po_number}
+                  </span>
+                  <p className="text-[10px] md:text-xs text-gray-500 mt-0.5">
+                    {po.po_date
+                      ? new Date(po.po_date).toLocaleDateString()
+                      : ""}
+                  </p>
+                </td>
+                <td className="px-3 md:px-4 py-3 text-gray-700 text-xs md:text-sm truncate max-w-[120px]">
+                  {po.vendors?.name || "N/A"}
+                </td>
+                <td className="px-3 md:px-4 py-3 text-gray-700 text-xs md:text-sm truncate max-w-[120px]">
+                  {po.projects?.name || "N/A"}
+                </td>
+                <td className="px-3 md:px-4 py-3">
+                  <span className="font-semibold text-gray-800 text-xs md:text-sm">
+                    {formatCurrency(po.grand_total)}
+                  </span>
+                </td>
+                <td className="px-3 md:px-4 py-3">
+                  <span
+                    className={`px-2 py-0.5 md:px-3 md:py-1 rounded-full text-[10px] md:text-xs font-medium ${getStatusColor(
+                      po.status
+                    )}`}
+                  >
+                    {po.status?.toUpperCase()}
+                  </span>
+                </td>
+                <td className="px-3 md:px-4 py-3">
+                  <span
+                    className={`px-2 py-0.5 md:px-3 md:py-1 rounded-full text-[10px] md:text-xs font-medium ${
+                      po.material_status === "completed"
+                        ? "bg-green-100 text-green-700"
+                        : po.material_status === "partial"
+                        ? "bg-yellow-100 text-yellow-700"
+                        : "bg-red-100 text-red-700"
+                    }`}
+                  >
+                    {po.material_status?.toUpperCase() || "PENDING"}
+                  </span>
+                </td>
+                <td className="px-3 md:px-4 py-3">
+                  <span
+                    className={`px-2 py-0.5 md:px-3 md:py-1 rounded-full text-[10px] md:text-xs font-medium ${getPaymentStatusColor(
+                      po.payment_status
+                    )}`}
+                  >
+                    {po.payment_status?.toUpperCase() || "PENDING"}
+                  </span>
+                  {po.balance_amount! > 0 && (
+                    <p className="text-[10px] md:text-xs text-gray-600 mt-0.5">
+                      Bal: {formatCurrency(po.balance_amount)}
+                    </p>
+                  )}
+                </td>
+                <td className="px-3 md:px-4 py-3">
+                  <div className="flex items-center justify-center gap-1.5 md:gap-2">
+                    <button
+                      onClick={() => handleView(po)}
+                      className="p-1.5 md:p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition"
+                      title="View Details"
+                    >
+                      <FileText className="w-3.5 h-3.5 md:w-4 md:h-4" />
+                    </button>
+                  </div>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
       </div>
+    </div>
+  </div>
+)}
 
-      <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-4 mb-6">
-        <div className="relative">
-          <Search className="absolute left-4 top-3.5 text-gray-400 w-5 h-5" />
-          <input
-            type="text"
-            placeholder={
-              activeTab === "tracking"
-                ? "Search materials or PO number..."
-                : "Search POs..."
-            }
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="w-full pl-12 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-          />
-        </div>
-      </div>
+     {activeTab === "management" && (
+  <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+    <div className="overflow-x-auto">
+      <table className="w-full min-w-[800px]">
+        <thead className="bg-gray-200 border-b border-gray-200">
+          {/* Header Row */}
+          <tr>
+            <th className="px-3 md:px-4 py-2 text-left">
+              <div className="text-[10px] md:text-xs font-semibold text-gray-700 uppercase tracking-wider">
+                PO Number
+              </div>
+            </th>
+            <th className="px-3 md:px-4 py-2 text-left">
+              <div className="text-[10px] md:text-xs font-semibold text-gray-700 uppercase tracking-wider">
+                Vendor
+              </div>
+            </th>
+            <th className="px-3 md:px-4 py-2 text-left">
+              <div className="text-[10px] md:text-xs font-semibold text-gray-700 uppercase tracking-wider">
+                Project
+              </div>
+            </th>
+            <th className="px-3 md:px-4 py-2 text-left">
+              <div className="text-[10px] md:text-xs font-semibold text-gray-700 uppercase tracking-wider">
+                Type
+              </div>
+            </th>
+            <th className="px-3 md:px-4 py-2 text-left">
+              <div className="text-[10px] md:text-xs font-semibold text-gray-700 uppercase tracking-wider">
+                Date
+              </div>
+            </th>
+            <th className="px-3 md:px-4 py-2 text-left">
+              <div className="text-[10px] md:text-xs font-semibold text-gray-700 uppercase tracking-wider">
+                Amount
+              </div>
+            </th>
+            <th className="px-3 md:px-4 py-2 text-left">
+              <div className="text-[10px] md:text-xs font-semibold text-gray-700 uppercase tracking-wider">
+                Status
+              </div>
+            </th>
+            <th className="px-3 md:px-4 py-2 text-left">
+              <div className="text-[10px] md:text-xs font-semibold text-gray-700 uppercase tracking-wider">
+                Actions
+              </div>
+            </th>
+          </tr>
+          
+          {/* Search Row - Separate Row Below Headers */}
+          <tr className="bg-gray-50 border-b border-gray-200">
+            {/* PO Number Column Search */}
+            <td className="px-3 md:px-4 py-1">
+              <input
+                type="text"
+                placeholder="Search..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="w-full px-2 py-1 text-[9px] md:text-xs border border-gray-300 rounded focus:ring-1 focus:ring-blue-500 focus:border-transparent"
+              />
+            </td>
+            
+            {/* Vendor Column Search */}
+            <td className="px-3 md:px-4 py-1">
+              <input
+                type="text"
+                placeholder="Search..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="w-full px-2 py-1 text-[9px] md:text-xs border border-gray-300 rounded focus:ring-1 focus:ring-blue-500 focus:border-transparent"
+              />
+            </td>
+            
+            {/* Project Column Search */}
+            <td className="px-3 md:px-4 py-1">
+              <input
+                type="text"
+                placeholder="Search..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="w-full px-2 py-1 text-[9px] md:text-xs border border-gray-300 rounded focus:ring-1 focus:ring-blue-500 focus:border-transparent"
+              />
+            </td>
+            
+            {/* Type Column Search */}
+            <td className="px-3 md:px-4 py-1">
+              <input
+                type="text"
+                placeholder="Search..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="w-full px-2 py-1 text-[9px] md:text-xs border border-gray-300 rounded focus:ring-1 focus:ring-blue-500 focus:border-transparent"
+              />
+            </td>
+            
+            {/* Date Column Search */}
+            <td className="px-3 md:px-4 py-1">
+              <input
+                type="text"
+                placeholder="Search..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="w-full px-2 py-1 text-[9px] md:text-xs border border-gray-300 rounded focus:ring-1 focus:ring-blue-500 focus:border-transparent"
+              />
+            </td>
+            
+            {/* Amount Column Search */}
+            <td className="px-3 md:px-4 py-1">
+              <input
+                type="text"
+                placeholder="Search..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="w-full px-2 py-1 text-[9px] md:text-xs border border-gray-300 rounded focus:ring-1 focus:ring-blue-500 focus:border-transparent"
+              />
+            </td>
+            
+            {/* Status Column Search */}
+            <td className="px-3 md:px-4 py-1">
+              <input
+                type="text"
+                placeholder="Search..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="w-full px-2 py-1 text-[9px] md:text-xs border border-gray-300 rounded focus:ring-1 focus:ring-blue-500 focus:border-transparent"
+              />
+            </td>
+            
+            {/* Actions Column - Empty or Filter Button */}
+            <td className="px-3 md:px-4 py-1 text-center">
+              <button
+                onClick={() => {/* Add filter functionality */}}
+                className="inline-flex items-center px-2 py-1 border border-gray-300 rounded hover:bg-gray-50 transition text-[9px] md:text-xs font-medium text-gray-700"
+                title="Filters"
+              >
+                <Filter className="w-3 h-3 mr-0.5" />
+                Filters
+              </button>
+            </td>
+          </tr>
+        </thead>
+        <tbody className="divide-y divide-gray-200">
+          {filteredPOs.map((po: any) => (
+            <tr key={po.id} className="hover:bg-gray-50 transition">
+              <td className="px-3 md:px-4 py-3">
+                <span className="font-medium text-blue-600 text-xs md:text-sm">
+                  {po.po_number}
+                </span>
+              </td>
+              <td className="px-3 md:px-4 py-3 text-gray-700 text-xs md:text-sm truncate max-w-[120px]">
+                {po.vendors?.name || "N/A"}
+              </td>
+              <td className="px-3 md:px-4 py-3 text-gray-700 text-xs md:text-sm truncate max-w-[120px]">
+                {po.projects?.name || "N/A"}
+              </td>
+              <td className="px-3 md:px-4 py-3 text-gray-700 text-xs md:text-sm truncate max-w-[80px]">
+                {po.po_types?.name || "N/A"}
+              </td>
+              <td className="px-3 md:px-4 py-3 text-gray-700 text-xs md:text-sm whitespace-nowrap">
+                {po.po_date
+                  ? new Date(po.po_date).toLocaleDateString()
+                  : ""}
+              </td>
+              <td className="px-3 md:px-4 py-3">
+                <span className="font-semibold text-gray-800 text-xs md:text-sm">
+                  {formatCurrency(po.grand_total)}
+                </span>
+              </td>
+              <td className="px-3 md:px-4 py-3">
+                <span
+                  className={`px-2 py-0.5 md:px-3 md:py-1 rounded-full text-[10px] md:text-xs font-medium ${getStatusColor(
+                    po.status
+                  )}`}
+                >
+                  {po.status?.toUpperCase()}
+                </span>
+              </td>
+              <td className="px-3 md:px-4 py-3">
+                <div className="flex items-center justify-center gap-1.5 md:gap-2">
+                  <button
+                    onClick={() => {
+                      viewPoPdf(po.id, "download");
+                      setPdfUrl(po.id);
+                    }}
+                    disabled={pdfLoading}
+                    className="p-1.5 md:p-2 text-black hover:bg-blue-50 rounded-lg transition"
+                    title="Download PDF"
+                  >
+                    {pdfLoading && pdfUrl === po.id ? (
+                      <Loader2 className="w-3.5 h-3.5 md:w-4 md:h-4 animate-spin" />
+                    ) : (
+                      <FileDown className="w-3.5 h-3.5 md:w-4 md:h-4" />
+                    )}
+                  </button>
+                  <button
+                    onClick={() => {
+                      viewPoPdf(po.id);
+                    }}
+                    className="p-1.5 md:p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition"
+                    title="View PDF"
+                  >
+                    <FileText className="w-3.5 h-3.5 md:w-4 md:h-4" />
+                  </button>
+                  {can("edit_pos") && po.status === "draft" && (
+                    <button
+                      onClick={async () => {
+                        if (!allPurchaseOrderItems) {
+                          toast.success("wait data is loading");
+                          return;
+                        }
+                        const itemsList = allPurchaseOrderItems.filter(
+                          (d: any) => d.po_id === po.id
+                        );
+                        const result = itemsList.map((item: any) => {
+                          let materialTrackingId = null;
 
-      {activeTab === "tracking" && (
-        <div className="space-y-6">
-          {/* PO Overview */}
-          <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
-            <div className="px-6 py-4 bg-gray-50 border-b border-gray-200">
-              <h2 className="text-lg font-semibold text-gray-800">
-                Purchase Orders Overview
-              </h2>
-            </div>
-            <div className="overflow-x-auto">
-              <table className="w-full">
-                <thead className="bg-gray-50 border-b border-gray-200">
-                  <tr>
-                    <th className="text-left px-6 py-4 text-sm font-semibold text-gray-700">
-                      PO Number
-                    </th>
-                    <th className="text-left px-6 py-4 text-sm font-semibold text-gray-700">
-                      Vendor
-                    </th>
-                    <th className="text-left px-6 py-4 text-sm font-semibold text-gray-700">
-                      Project
-                    </th>
-                    <th className="text-left px-6 py-4 text-sm font-semibold text-gray-700">
-                      Amount
-                    </th>
-                    <th className="text-left px-6 py-4 text-sm font-semibold text-gray-700">
-                      PO Status
-                    </th>
-                    <th className="text-left px-6 py-4 text-sm font-semibold text-gray-700">
-                      Material
-                    </th>
-                    <th className="text-left px-6 py-4 text-sm font-semibold text-gray-700">
-                      Payment
-                    </th>
-                    <th className="text-left px-6 py-4 text-sm font-semibold text-gray-700">
-                      Actions
-                    </th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-gray-200">
-                  {filteredPOs.map((po: any) => (
-                    <tr key={po.id} className="hover:bg-gray-50 transition">
-                      <td className="px-6 py-4">
-                        <span className="font-medium text-blue-600">
-                          {po.po_number}
-                        </span>
-                        <p className="text-xs text-gray-500">
-                          {po.po_date
-                            ? new Date(po.po_date).toLocaleDateString()
-                            : ""}
-                        </p>
-                      </td>
-                      <td className="px-6 py-4 text-gray-700">
-                        {po.vendors?.name || "N/A"}
-                      </td>
-                      <td className="px-6 py-4 text-gray-700">
-                        {po.projects?.name || "N/A"}
-                      </td>
-                      <td className="px-6 py-4">
-                        <span className="font-semibold text-gray-800">
-                          {formatCurrency(po.grand_total)}
-                        </span>
-                      </td>
-                      <td className="px-6 py-4">
-                        <span
-                          className={`px-3 py-1 rounded-full text-xs font-medium ${getStatusColor(
-                            po.status
-                          )}`}
-                        >
-                          {po.status?.toUpperCase()}
-                        </span>
-                      </td>
-                      <td className="px-6 py-4">
-                        <span
-                          className={`px-3 py-1 rounded-full text-xs font-medium ${
-                            po.material_status === "completed"
-                              ? "bg-green-100 text-green-700"
-                              : po.material_status === "partial"
-                              ? "bg-yellow-100 text-yellow-700"
-                              : "bg-red-100 text-red-700"
-                          }`}
-                        >
-                          {po.material_status?.toUpperCase() || "PENDING"}
-                        </span>
-                      </td>
-                      <td className="px-6 py-4">
-                        <span
-                          className={`px-3 py-1 rounded-full text-xs font-medium ${getPaymentStatusColor(
-                            po.payment_status
-                          )}`}
-                        >
-                          {po.payment_status?.toUpperCase() || "PENDING"}
-                        </span>
-                        {po.balance_amount! > 0 && (
-                          <p className="text-xs text-gray-600 mt-1">
-                            Bal: {formatCurrency(po.balance_amount)}
-                          </p>
-                        )}
-                      </td>
-                      <td className="px-6 py-4">
-                        <div className="flex gap-2">
-                          <button
-                            onClick={() => handleView(po)}
-                            className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition"
-                            title="View Details"
-                          >
-                            <FileText className="w-4 h-4" />
-                          </button>
-                        </div>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          </div>
-        </div>
-      )}
+                          for (let i = 0; i < filteredTracking.length; i++) {
+                            if (
+                              String(filteredTracking[i].item_id) ===
+                                String(item.item_id) &&
+                              String(filteredTracking[i].po_id) ===
+                                String(item.po_id)
+                            ) {
+                              materialTrackingId = filteredTracking[i].id;
+                              break;
+                            }
+                          }
 
-      {activeTab === "management" && (
-        <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
-          <div className="overflow-x-auto">
-            <table className="w-full">
-              <thead className="bg-gray-50 border-b border-gray-200">
-                <tr>
-                  <th className="text-left px-6 py-4 text-sm font-semibold text-gray-700">
-                    PO Number
-                  </th>
-                  <th className="text-left px-6 py-4 text-sm font-semibold text-gray-700">
-                    Vendor
-                  </th>
-                  <th className="text-left px-6 py-4 text-sm font-semibold text-gray-700">
-                    Project
-                  </th>
-                  <th className="text-left px-6 py-4 text-sm font-semibold text-gray-700">
-                    Type
-                  </th>
-                  <th className="text-left px-6 py-4 text-sm font-semibold text-gray-700">
-                    Date
-                  </th>
-                  <th className="text-left px-6 py-4 text-sm font-semibold text-gray-700">
-                    Amount
-                  </th>
-                  <th className="text-left px-6 py-4 text-sm font-semibold text-gray-700">
-                    Status
-                  </th>
-                  <th className="text-left px-6 py-4 text-sm font-semibold text-gray-700">
-                    Actions
-                  </th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-200">
-                {filteredPOs.map((po: any) => (
-                  <tr key={po.id} className="hover:bg-gray-50 transition">
-                    <td className="px-6 py-4">
-                      <span className="font-medium text-blue-600">
-                        {po.po_number}
-                      </span>
-                    </td>
-                    <td className="px-6 py-4 text-gray-700">
-                      {po.vendors?.name || "N/A"}
-                    </td>
-                    <td className="px-6 py-4 text-gray-700">
-                      {po.projects?.name || "N/A"}
-                    </td>
-                    <td className="px-6 py-4 text-gray-700">
-                      {po.po_types?.name || "N/A"}
-                    </td>
-                    <td className="px-6 py-4 text-gray-700">
-                      {po.po_date
-                        ? new Date(po.po_date).toLocaleDateString()
-                        : ""}
-                    </td>
-                    <td className="px-6 py-4">
-                      <span className="font-semibold text-gray-800">
-                        {formatCurrency(po.grand_total)}
-                      </span>
-                    </td>
-                    <td className="px-6 py-4">
-                      <span
-                        className={`px-3 py-1 rounded-full text-xs font-medium ${getStatusColor(
-                          po.status
-                        )}`}
-                      >
-                        {po.status?.toUpperCase()}
-                      </span>
-                    </td>
-                    <td className="px-6 py-4">
-                      <div className="flex gap-2">
-                        <button
-                          onClick={() => {
-                            viewPoPdf(po.id, "download");
-                            setPdfUrl(po.id);
-                          }}
-                          disabled={pdfLoading}
-                          className="p-2 text-black hover:bg-blue-50 rounded-lg transition"
-                          title="View"
-                        >
-                          {pdfLoading && pdfUrl === po.id ? (
-                            <Loader2 className="w-4 h-4 animate-spin" />
-                          ) : (
-                            <FileDown className="w-4 h-4 " />
-                          )}
-                        </button>
-                        <button
-                          onClick={() => {
-                            viewPoPdf(po.id);
-                          }}
-                          className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition"
-                          title="View"
-                        >
-                          <FileText className="w-4 h-4" />
-                        </button>
-                        {can("edit_pos") && po.status === "draft" && (
-                          <button
-                            onClick={async () => {
-                              if (!allPurchaseOrderItems) {
-                                toast.success("wait data is loading");
-                                return;
-                              }
-                              const itemsList = allPurchaseOrderItems.filter(
-                                (d: any) => d.po_id === po.id
-                              );
-                              const result = itemsList.map((item: any) => {
-                                let materialTrackingId = null;
+                          return {
+                            ...item,
+                            materialTrackingId: materialTrackingId,
+                          };
+                        });
 
-                                for (
-                                  let i = 0;
-                                  i < filteredTracking.length;
-                                  i++
-                                ) {
-                                  if (
-                                    String(filteredTracking[i].item_id) ===
-                                      String(item.item_id) &&
-                                    String(filteredTracking[i].po_id) ===
-                                      String(item.po_id)
-                                  ) {
-                                    materialTrackingId = filteredTracking[i].id; // ONLY ONE VALUE
-                                    break;
-                                  }
-                                }
+                        const vendorTerms: any =
+                          (await TermsConditionsApi.getByIdVendorTC(
+                            po.vendor_id
+                          )) || [];
 
-                                return {
-                                  ...item,
-                                  materialTrackingId: materialTrackingId,
-                                };
-                              });
+                        const selected_terms_idsData = JSON.parse(
+                          po.selected_terms_ids
+                        );
 
-                              const vendorTerms: any =
-                                (await TermsConditionsApi.getByIdVendorTC(
-                                  po.vendor_id
-                                )) || [];
+                        const terms_and_conditionsData =
+                          JSON.parse(po.terms_and_conditions) || [];
 
-                              const selected_terms_idsData = JSON.parse(
-                                po.selected_terms_ids
-                              );
+                        const terms = vendorTerms.filter((term: any) =>
+                          selected_terms_idsData.includes(term.id)
+                        ) || [];
 
-                              const terms_and_conditionsData =
-                                JSON.parse(po.terms_and_conditions) || [];
+                        terms_and_conditionsData.forEach(
+                          (element: any) => {
+                            terms.push(element);
+                          }
+                        );
 
-                              const terms =
-                                vendorTerms.filter((term: any) =>
-                                  selected_terms_idsData.includes(term.id)
-                                ) || [];
+                        const formatedTerms: any = Object.values(
+                          terms.reduce((acc: any, item: any) => {
+                            const key = item.category;
 
-                              terms_and_conditionsData.forEach(
-                                (element: any) => {
-                                  terms.push(element);
-                                }
-                              );
-
-                              console.log(terms, "this is terms");
-
-                              const formatedTerms: any = Object.values(
-                                terms.reduce((acc: any, item: any) => {
-                                  const key = item.category;
-
-                                  if (!acc[key]) {
-                                    acc[key] = {
-                                      id: item.id,
-                                      vendor_id: item.vendor_id,
-                                      category: item.category,
-                                      content: [],
-                                      is_active: item.is_active,
-                                    };
-                                  }
-                                  console.log(item);
-                                  acc[key].content.push({
-                                    category: item.category,
-                                    content: item.content,
-                                    is_default: Boolean(true),
-                                    term_id: item.id,
-                                  });
-                                  acc[key].isActive = false;
-
-                                  return acc;
-                                }, {})
-                              );
-
-                              console.log(
-                                formatedTerms,
-                                "this is form update po"
-                              );
-
-                              const data = {
-                                poId: po.id,
-                                advance_amount: po.advance_amount,
-                                cgst_amount: po.cgst_amount,
-                                delivery_date: po.delivery_date.slice(0, 10),
-                                due_date: po.due_date,
-                                discount_amount: po.discount_amount,
-                                discount_percentage: po.discount_percentage,
-                                grand_total: po.grand_total,
-                                igst_amount: po.igst_amount,
-                                is_interstate: Boolean(po.is_interstate),
-                                items: result,
-                                notes: po.notes ?? "",
-                                payment_terms_id: po.payment_terms_id ?? "",
-                                po_date: po.po_date.slice(0, 10) ?? "",
-                                po_number: po.po_number ?? "",
-                                po_type_id: Number(po.po_type_id),
-                                project_id: Number(po.project_id),
-                                selected_terms_ids: po.selected_terms_ids,
-                                sgst_amount: po.sgst_amount ?? 0,
-                                subtotal: po.subtotal ?? 0,
-                                taxable_amount: po.taxable_amount ?? 0,
-                                terms_and_conditions: formatedTerms ?? [],
-                                total_gst_amount: po.total_gst_amount ?? 0,
-                                vendor_id: Number(po.vendor_id),
+                            if (!acc[key]) {
+                              acc[key] = {
+                                id: item.id,
+                                vendor_id: item.vendor_id,
+                                category: item.category,
+                                content: [],
+                                is_active: item.is_active,
                               };
+                            }
+                            acc[key].content.push({
+                              category: item.category,
+                              content: item.content,
+                              is_default: Boolean(true),
+                              term_id: item.id,
+                            });
+                            acc[key].isActive = false;
 
-                              setSelectedPOForUpdate(data);
-                              setShowEditModal(true);
-                            }}
-                            className="p-2 text-yellow-600 hover:bg-yellow-50 rounded-lg transition"
-                            title="Edit"
-                          >
-                            <Edit2 className="w-4 h-4" />
-                          </button>
-                        )}
+                            return acc;
+                          }, {})
+                        );
 
-                        {can("delete_pos") && po.status === "draft" && (
+                        const data = {
+                          poId: po.id,
+                          advance_amount: po.advance_amount,
+                          cgst_amount: po.cgst_amount,
+                          delivery_date: po.delivery_date.slice(0, 10),
+                          due_date: po.due_date,
+                          discount_amount: po.discount_amount,
+                          discount_percentage: po.discount_percentage,
+                          grand_total: po.grand_total,
+                          igst_amount: po.igst_amount,
+                          is_interstate: Boolean(po.is_interstate),
+                          items: result,
+                          notes: po.notes ?? "",
+                          payment_terms_id: po.payment_terms_id ?? "",
+                          po_date: po.po_date.slice(0, 10) ?? "",
+                          po_number: po.po_number ?? "",
+                          po_type_id: Number(po.po_type_id),
+                          project_id: Number(po.project_id),
+                          selected_terms_ids: po.selected_terms_ids,
+                          sgst_amount: po.sgst_amount ?? 0,
+                          subtotal: po.subtotal ?? 0,
+                          taxable_amount: po.taxable_amount ?? 0,
+                          terms_and_conditions: formatedTerms ?? [],
+                          total_gst_amount: po.total_gst_amount ?? 0,
+                          vendor_id: Number(po.vendor_id),
+                        };
+
+                        setSelectedPOForUpdate(data);
+                        setShowEditModal(true);
+                      }}
+                      className="p-1.5 md:p-2 text-yellow-600 hover:bg-yellow-50 rounded-lg transition"
+                      title="Edit"
+                    >
+                      <Edit2 className="w-3.5 h-3.5 md:w-4 md:h-4" />
+                    </button>
+                  )}
+
+                  {can("delete_pos") && po.status === "draft" && (
+                    <button
+                      onClick={() => {
+                        handleDelete(po.id);
+                      }}
+                      className="p-1.5 md:p-2 text-red-600 hover:bg-red-50 rounded-lg transition"
+                      title="Delete"
+                    >
+                      <Trash2 className="w-3.5 h-3.5 md:w-4 md:h-4" />
+                    </button>
+                  )}
+                  {can("make_payments") &&
+                    po.balance_amount! > 0 &&
+                    po.status === "authorize" && (
+                      <button
+                        onClick={() => {
+                          setSelectedPO(po);
+                          setShowPaymentModal(true);
+                        }}
+                        className="p-1.5 md:p-2 text-green-600 hover:bg-green-50 rounded-lg transition"
+                        title="Make Payment"
+                      >
+                        <IndianRupee className="w-3.5 h-3.5 md:w-4 md:h-4" />
+                      </button>
+                    )}
+                  <div className="relative">
+                    {showApprovalButtons === po.id && (
+                      <div className="absolute -top-16 space-x-3 bg-white flex right-2 shadow-xl px-6 py-3 rounded-md border border-slate-300">
+                        {can("approve_pos") && po.status === "draft" && (
                           <button
-                            onClick={() => {
-                              handleDelete(po.id);
-                            }}
-                            className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition"
-                            title="Delete"
+                            onClick={() =>
+                              updatePurchaseOrderStatus(po.id, "approved")
+                            }
+                            className="p-2 px-6 text-white bg-green-600 hover:bg-green-500 rounded-lg transition flex items-center text-xs"
+                            title="Approve"
                           >
-                            <Trash2 className="w-4 h-4" />
+                            <Check size={20} className="w-4 h-4 mr-2" />
+                            Approve
                           </button>
                         )}
-                        {can("make_payments") &&
-                          po.balance_amount! > 0 &&
-                          po.status === "authorize" && (
+
+                        {can("authorize_pos") &&
+                          po.status === "approved" && (
                             <button
                               onClick={() => {
-                                setSelectedPO(po);
-                                setShowPaymentModal(true);
+                                updatePurchaseOrderStatus(
+                                  po.id,
+                                  "authorize"
+                                );
                               }}
-                              className="p-2 text-green-600 hover:bg-green-50 rounded-lg transition"
-                              title="Make Payment"
+                              className="p-2 px-6 text-white bg-green-600 hover:bg-green-500 rounded-lg transition flex items-center text-xs"
+                              title="Authorize"
                             >
-                              <IndianRupee className="w-4 h-4" />
+                              <Check className="w-4 h-4" /> Authorize
                             </button>
                           )}
-                        <div className="relative">
-                          {showApprovalButtons === po.id && (
-                            <div className="absolute -top-16 space-x-3 bg-white flex right-2 shadow-xl px-6 py-3 rounded-md border border-slate-300">
-                              {can("approve_pos") && po.status === "draft" && (
-                                <button
-                                  onClick={() =>
-                                    updatePurchaseOrderStatus(po.id, "approved")
-                                  }
-                                  className="p-2 px-6 text-white bg-green-600  hover:bg-green-500 rounded-lg transition flex items-center"
-                                  title="Approve"
-                                >
-                                  {/* <CheckCircle className="w-4 h-4" />  */}
-                                  <Check size={20} className="w-4 h-4 mr-2" />
-                                  Approve
-                                </button>
-                              )}
-
-                              {can("authorize_pos") &&
-                                po.status === "approved" && (
-                                  <button
-                                    onClick={() => {
-                                      updatePurchaseOrderStatus(
-                                        po.id,
-                                        "authorize"
-                                      );
-                                    }}
-                                    className="p-2 px-6 text-white bg-green-600  hover:bg-green-500 rounded-lg transition flex items-center"
-                                    title="Make Payment"
-                                  >
-                                    <Check className="w-4 h-4" /> Authorize
-                                  </button>
-                                )}
-                              {(can("approve_pos") || can("authorize_pos")) &&
-                                (po.status === "draft" ||
-                                  po.status === "approved") && (
-                                  <button
-                                    onClick={() =>
-                                      updatePurchaseOrderStatus(
-                                        po.id,
-                                        "rejected"
-                                      )
-                                    }
-                                    className="p-2 px-6 text-white bg-red-600 hover:bg-red-500 rounded-lg transition flex items-center"
-                                    title="Reject"
-                                  >
-                                    <XCircle className="w-4 h-4 mr-2" /> Reject
-                                  </button>
-                                )}
-                            </div>
+                        {(can("approve_pos") || can("authorize_pos")) &&
+                          (po.status === "draft" ||
+                            po.status === "approved") && (
+                            <button
+                              onClick={() =>
+                                updatePurchaseOrderStatus(
+                                  po.id,
+                                  "rejected"
+                                )
+                              }
+                              className="p-2 px-6 text-white bg-red-600 hover:bg-red-500 rounded-lg transition flex items-center text-xs"
+                              title="Reject"
+                            >
+                              <XCircle className="w-4 h-4 mr-2" /> Reject
+                            </button>
                           )}
-                          {can("edit_pos") &&
-                            po.status !== "authorize" &&
-                            po.status !== "rejected" && (
-                              <button
-                                onClick={() => {
-                                  if (showApprovalButtons === po.id) {
-                                    setShowApprovalButtons(null);
-                                  } else {
-                                    setShowApprovalButtons(po.id);
-                                  }
-                                }}
-                                className="p-2 text-green-600 hover:bg-green-100 rounded-lg transition"
-                                title={`${
-                                  (po.status === "approved" && "Authorize") ||
-                                  (po.status === "draft" && "Approve")
-                                }`}
-                              >
-                                <FileCheck2 className="w-4 h-4" />
-                              </button>
-                            )}
-                        </div>
                       </div>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+                    )}
+                    {can("edit_pos") &&
+                      po.status !== "authorize" &&
+                      po.status !== "rejected" && (
+                        <button
+                          onClick={() => {
+                            if (showApprovalButtons === po.id) {
+                              setShowApprovalButtons(null);
+                            } else {
+                              setShowApprovalButtons(po.id);
+                            }
+                          }}
+                          className="p-1.5 md:p-2 text-green-600 hover:bg-green-100 rounded-lg transition"
+                          title={`${
+                            (po.status === "approved" && "Authorize") ||
+                            (po.status === "draft" && "Approve")
+                          }`}
+                        >
+                          <FileCheck2 className="w-3.5 h-3.5 md:w-4 md:h-4" />
+                        </button>
+                      )}
+                  </div>
+                </div>
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
 
-          {filteredPOs.length === 0 && (
-            <div className="text-center py-12">
-              <FileText className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-              <h3 className="text-lg font-semibold text-gray-800 mb-2">
-                No purchase orders found
-              </h3>
-              <p className="text-gray-600">
-                {searchTerm
-                  ? "Try a different search term"
-                  : 'Click "Create PO" to get started'}
-              </p>
-            </div>
-          )}
-        </div>
-      )}
+    {filteredPOs.length === 0 && (
+      <div className="text-center py-12">
+        <FileText className="w-12 h-12 md:w-16 md:h-16 text-gray-300 mx-auto mb-3" />
+        <p className="text-gray-600 text-sm md:text-lg font-medium">No purchase orders found</p>
+        <p className="text-gray-500 text-xs md:text-sm mt-2">
+          {searchTerm
+            ? "Try a different search term"
+            : 'Click "Create PO" to get started'}
+        </p>
+      </div>
+    )}
+  </div>
+)}
 
       {/* View Modal */}
       {showViewModal && (
@@ -1557,39 +1742,199 @@ export default function PurchaseOrders() {
                 <X className="w-5 h-5" />
               </button>
             </div>
-            <form onSubmit={handlePayment} className="p-6 space-y-4">
-              <div>
-                <label className="block text-sm text-gray-600 mb-1">
-                  Amount
-                </label>
-                <input
-                  type="number"
-                  step="0.01"
-                  value={paymentAmount}
-                  onChange={(e) => setPaymentAmount(Number(e.target.value))}
-                  className="w-full border px-3 py-2 rounded"
-                />
-                <p className="text-xs text-gray-500 mt-1">
-                  Balance: {formatCurrency(selectedPO.balance_amount)}
-                </p>
-              </div>
+           <form onSubmit={updateMaterialQuantity} className="space-y-4 md:space-y-6">
+  {/* Header Section */}
+  <div className="bg-gradient-to-r from-blue-50 to-blue-100 px-4 py-3 rounded-xl border border-blue-200 mb-4">
+    <div className="flex items-center gap-3">
+      <div className="p-2 bg-blue-100 rounded-lg border border-blue-300">
+        <Truck className="w-4 h-4 text-blue-600" />
+      </div>
+      <div>
+        <h3 className="font-bold text-blue-800 text-sm">Material Transfer</h3>
+        <p className="text-xs text-blue-600/80 mt-0.5">
+          Transfer materials between vendors and store management
+        </p>
+      </div>
+    </div>
+  </div>
 
-              <div className="flex justify-end gap-2">
-                <button
-                  type="button"
-                  onClick={() => setShowPaymentModal(false)}
-                  className="px-4 py-2 rounded border"
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  className="px-4 py-2 rounded bg-green-600 text-white"
-                >
-                  Record Payment
-                </button>
-              </div>
-            </form>
+  {/* From Vendor Selection */}
+  <div className="space-y-1.5">
+    <label className="block text-xs font-semibold text-gray-700 mb-1 flex items-center gap-1.5">
+      <User className="w-3 h-3 text-blue-600" />
+      <span>From Vendor</span>
+      <span className="text-red-500">*</span>
+    </label>
+    <div className="relative group">
+      <div className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 group-focus-within:text-blue-600 transition-colors">
+        <User className="w-3.5 h-3.5" />
+      </div>
+      <SearchableSelect
+        options={vendors.map((v: any) => ({
+          id: v.id,
+          name: v.name || v.vendor_name || v.display || "",
+        }))}
+        value={from}
+        onChange={(id) => {
+          setFrom(id);
+        }}
+        placeholder="Select Vendor"
+        required
+        className="pl-10 pr-4 py-2 text-sm border border-gray-300 rounded-xl focus:border-blue-600 focus:ring-2 focus:ring-blue-600/20 outline-none transition-all duration-200 hover:border-gray-400"
+        dropdownClassName="text-sm"
+      />
+    </div>
+  </div>
+
+  {/* To Store Management Employee Selection */}
+  <div className="space-y-1.5">
+    <label className="block text-xs font-semibold text-gray-700 mb-1 flex items-center gap-1.5">
+      <User className="w-3 h-3 text-green-600" />
+      <span>To Store Manager</span>
+      <span className="text-red-500">*</span>
+    </label>
+    <div className="relative group">
+      <div className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 group-focus-within:text-green-600 transition-colors">
+        <User className="w-3.5 h-3.5" />
+      </div>
+      <SearchableSelect
+        options={allStoreManagementEmployee.map((v: any) => ({
+          id: v.id,
+          name: v.full_name || v.vendor_name || v.display || "",
+        }))}
+        value={to}
+        onChange={(id) => {
+          setTo(id);
+        }}
+        placeholder="Select Store Manager"
+        required
+        className="pl-10 pr-4 py-2 text-sm border border-gray-300 rounded-xl focus:border-green-600 focus:ring-2 focus:ring-green-600/20 outline-none transition-all duration-200 hover:border-gray-400"
+        dropdownClassName="text-sm"
+      />
+    </div>
+  </div>
+
+  {/* Material Quantity Received */}
+  <div className="space-y-1.5">
+    <label className="block text-xs font-semibold text-gray-700 mb-1 flex items-center gap-1.5">
+      <Package className="w-3 h-3 text-purple-600" />
+      <span>Material Quantity Received</span>
+      <span className="text-red-500">*</span>
+    </label>
+    <div className="relative group">
+      <div className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 group-focus-within:text-purple-600 transition-colors">
+        <Package className="w-3.5 h-3.5" />
+      </div>
+      <input
+        type="number"
+        min={0}
+        step="0.01"
+        value={materialQuantity}
+        onChange={(e) => setMaterialQuantity(Number(e.target.value))}
+        className="w-full pl-10 pr-4 py-2 text-sm border border-gray-300 rounded-xl focus:border-purple-600 focus:ring-2 focus:ring-purple-600/20 outline-none transition-all duration-200 hover:border-gray-400 bg-white"
+        placeholder="Enter quantity"
+        required
+      />
+    </div>
+    <p className="text-xs text-gray-500 mt-1">
+      Enter the exact quantity received from vendor
+    </p>
+  </div>
+
+  {/* Challan Number */}
+  <div className="space-y-1.5">
+    <label className="block text-xs font-semibold text-gray-700 mb-1 flex items-center gap-1.5">
+      <FileText className="w-3 h-3 text-amber-600" />
+      <span>Challan Number</span>
+    </label>
+    <div className="relative group">
+      <div className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 group-focus-within:text-amber-600 transition-colors">
+        <FileText className="w-3.5 h-3.5" />
+      </div>
+      <input
+        type="text"
+        value={challanNumber}
+        onChange={(e) => setChallanNumber(e.target.value)}
+        className="w-full pl-10 pr-4 py-2 text-sm border border-gray-300 rounded-xl focus:border-amber-600 focus:ring-2 focus:ring-amber-600/20 outline-none transition-all duration-200 hover:border-gray-400 bg-white"
+        placeholder="Enter challan number"
+      />
+    </div>
+  </div>
+
+  {/* Upload Challan Photo */}
+  <div className="space-y-1.5">
+    <label className="block text-xs font-semibold text-gray-700 mb-1 flex items-center gap-1.5">
+      <Upload className="w-3 h-3 text-indigo-600" />
+      <span>Upload Challan Photo</span>
+    </label>
+    <div className="relative group">
+      <label className="flex flex-col items-center justify-center w-full border-2 border-dashed border-gray-300 rounded-xl p-4 cursor-pointer hover:border-indigo-400 hover:bg-indigo-50/50 transition-all duration-200 group">
+        <div className="flex flex-col items-center justify-center pt-2 pb-3">
+          <Upload className="w-6 h-6 text-indigo-400 mb-2 group-hover:text-indigo-600" />
+          <p className="text-xs font-medium text-gray-600 mb-1">
+            {challanImage ? challanImage.name : "Click to upload challan photo"}
+          </p>
+          <p className="text-xs text-gray-500">
+            Supports: JPG, PNG, WEBP (Max 5MB)
+          </p>
+        </div>
+        <input
+          type="file"
+          accept="image/*"
+          onChange={(e) => {
+            if (e.target.files?.[0]) {
+              const file = e.target.files[0];
+              if (file.size > 5 * 1024 * 1024) {
+                toast.error("File too large", {
+                  description: "Maximum file size is 5MB"
+                });
+                return;
+              }
+              setChallanImage(file);
+            }
+          }}
+          className="hidden"
+        />
+      </label>
+    </div>
+    {challanImage && (
+      <div className="mt-2 flex items-center justify-between bg-green-50 border border-green-200 rounded-lg p-2">
+        <div className="flex items-center gap-2">
+          <FileText className="w-4 h-4 text-green-600" />
+          <span className="text-xs font-medium text-green-800 truncate">
+            {challanImage.name}
+          </span>
+        </div>
+        <button
+          type="button"
+          onClick={() => setChallanImage(null)}
+          className="text-xs text-red-600 hover:text-red-800 font-medium"
+        >
+          Remove
+        </button>
+      </div>
+    )}
+  </div>
+
+  {/* Form Actions */}
+  <div className="flex flex-col sm:flex-row gap-2 pt-4 border-t border-gray-200">
+    <button
+      type="submit"
+      disabled={materialQuantity <= 0 || !from || !to}
+      className="flex-1 bg-gradient-to-r from-blue-600 to-blue-700 text-white py-2.5 px-4 rounded-xl hover:from-blue-700 hover:to-blue-800 transition-all duration-200 font-medium text-sm shadow-sm hover:shadow disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 group"
+    >
+      <Save className="w-4 h-4 group-hover:scale-110 transition-transform" />
+      Save Changes
+    </button>
+    <button
+      type="button"
+      onClick={() => setShowUpdateMaterialQuantity(false)}
+      className="px-4 py-2.5 text-sm border border-gray-300 rounded-xl hover:bg-gray-50/50 hover:border-gray-400 transition-all duration-200 font-medium text-gray-700"
+    >
+      Cancel
+    </button>
+  </div>
+</form>
           </div>
         </div>
       )}

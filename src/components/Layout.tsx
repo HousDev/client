@@ -660,20 +660,26 @@
 //   );
 // }
 /* eslint-disable @typescript-eslint/no-explicit-any */
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { ReactNode, useState, useMemo, useEffect, useRef } from "react";
 import { useAuth } from "../contexts/AuthContext";
 import Logo from "../assets/images/Nayash Logo.png";
 import { FaBell, FaTimes, FaSignOutAlt, FaCog } from "react-icons/fa";
 import { MdBusiness, MdDashboard, MdLocalShipping, MdDescription, MdConstruction, MdWarehouse, MdInventory2, MdRequestQuote, MdPayment, MdNotifications, MdAssessment, MdSettings, MdSecurity } from "react-icons/md";
-import { Menu, ChevronRight, Clock } from "lucide-react";
+import { Menu, ChevronRight, Clock, PackagePlus, PackageMinus, UserCheck } from "lucide-react";
 import NotificationsApi from "../lib/notificationApi";
 import { toast } from "sonner";
 import RequestMaterial from "./materialRequest/RequestMaterial";
+import MaterialInForm from "./StoreManagement/MaterialInForm";
+import MaterialOutForm from "./StoreManagement/MaterialOutForm";
+import IssueMaterial from "./StoreManagement/IssueMaterial";
 
 interface LayoutProps {
   children: ReactNode;
   activeTab: string;
   onTabChange: (tab: string) => void;
+  activeFormTab?: string;
+  setActiveFormTab?: (tab: string) => void;
 }
 
 interface NotificationType {
@@ -685,7 +691,13 @@ interface NotificationType {
   created_at: string;
 }
 
-export default function Layout({ children, activeTab, onTabChange }: LayoutProps) {
+export default function Layout({ 
+  children, 
+  activeTab, 
+  onTabChange,
+  activeFormTab = "",
+  setActiveFormTab = () => {},
+}: LayoutProps) {
   const { profile, user, signOut, loading: authLoading } = useAuth();
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
@@ -696,6 +708,9 @@ export default function Layout({ children, activeTab, onTabChange }: LayoutProps
   const [notifications, setNotifications] = useState<NotificationType[]>([]);
   const [unreadCount, setUnreadCount] = useState(0);
   const [showRequestMaterial, setShowRequestMaterial] = useState<boolean>(false);
+  
+  // Local state for forms if not provided via props
+  const [localActiveFormTab, setLocalActiveFormTab] = useState<string>("");
 
   const profileRef = useRef<HTMLDivElement>(null);
   const notifRef = useRef<HTMLDivElement>(null);
@@ -774,6 +789,10 @@ export default function Layout({ children, activeTab, onTabChange }: LayoutProps
       value: ["manage_permissions"],
     },
   ];
+
+  // Determine which activeFormTab to use
+  const currentActiveFormTab = activeFormTab !== undefined ? activeFormTab : localActiveFormTab;
+  const currentSetActiveFormTab = setActiveFormTab || setLocalActiveFormTab;
 
   // Get current active menu label for header
   const activeMenuLabel = useMemo(() => {
@@ -911,6 +930,34 @@ export default function Layout({ children, activeTab, onTabChange }: LayoutProps
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
+
+  // Check permission function
+  const can = (permission: string) => {
+    const role =
+      (profile as any)?.role_name ??
+      (profile as any)?.role ??
+      (user as any)?.role ??
+      null;
+    if (role === "admin") return true;
+    const perms: Record<string, boolean> | null =
+      (profile as any)?.permissions ?? null;
+    if (perms && typeof perms === "object") {
+      return Boolean(perms[permission]);
+    }
+    return false;
+  };
+
+  // Handle material form button click
+  const handleMaterialButtonClick = (formType: string) => {
+    currentSetActiveFormTab(formType);
+  };
+
+  // Reset form tab when changing tabs
+  useEffect(() => {
+    if (activeTab !== "store-management") {
+      currentSetActiveFormTab("");
+    }
+  }, [activeTab, currentSetActiveFormTab]);
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -1094,6 +1141,45 @@ export default function Layout({ children, activeTab, onTabChange }: LayoutProps
                     <p className="text-xs text-gray-500">Nayash Group Management</p>
                   </div>
                 </div>
+
+                {/* Store Management Buttons - Only show when activeTab is "store-management" */}
+                {activeTab === "store-management" && can("create_inventory") && (
+                  <div className="hidden md:flex items-center gap-2 ml-4 border-l border-gray-300 pl-4">
+                    <button
+                      onClick={() => handleMaterialButtonClick("in")}
+                      className={`px-4 py-2 rounded-lg font-medium transition-all flex items-center gap-2 ${
+                        currentActiveFormTab === "in"
+                          ? "bg-[#C62828] text-white shadow-sm"
+                          : "bg-white border border-gray-300 text-gray-700 hover:bg-gray-50"
+                      }`}
+                    >
+                      <PackagePlus className="w-5 h-5" />
+                      Material In
+                    </button>
+                    <button
+                      onClick={() => handleMaterialButtonClick("out")}
+                      className={`px-4 py-2 rounded-lg font-medium transition-all flex items-center gap-2 ${
+                        currentActiveFormTab === "out"
+                          ? "bg-[#C62828] text-white shadow-sm"
+                          : "bg-white border border-gray-300 text-gray-700 hover:bg-gray-50"
+                      }`}
+                    >
+                      <PackageMinus className="w-5 h-5" />
+                      Material Out
+                    </button>
+                    <button
+                      onClick={() => handleMaterialButtonClick("issue")}
+                      className={`px-4 py-2 rounded-lg font-medium transition-all flex items-center gap-2 ${
+                        currentActiveFormTab === "issue"
+                          ? "bg-[#C62828] text-white shadow-sm"
+                          : "bg-white border border-gray-300 text-gray-700 hover:bg-gray-50"
+                      }`}
+                    >
+                      <UserCheck className="w-5 h-5" />
+                      Issue Material
+                    </button>
+                  </div>
+                )}
               </div>
 
               {/* Right Side */}
@@ -1267,8 +1353,38 @@ export default function Layout({ children, activeTab, onTabChange }: LayoutProps
           </div>
         </header>
 
-        {/* Main Content Area */}
+        {/* Main Content Area with Forms */}
         <main className="p-6">
+          {/* Render Material Forms when in Store Management tab */}
+          {/* {activeTab === "store-management" && (
+            <>
+              {currentActiveFormTab === "in" && (
+                <MaterialInForm
+                  setLoadTableData={() => {}} // You need to pass proper function from parent
+                  setActiveFormTab={currentSetActiveFormTab}
+                  loadAllData={() => {}} // You need to pass proper function from parent
+                />
+              )}
+              {currentActiveFormTab === "out" && (
+                <MaterialOutForm
+                  setLoadTableData={() => {}}
+                  setActiveFormTab={currentSetActiveFormTab}
+                  allInventory={[]} // You need to pass inventory data from parent
+                  loadAllData={() => {}}
+                />
+              )}
+              {currentActiveFormTab === "issue" && (
+                <IssueMaterial
+                  setLoadTableData={() => {}}
+                  setActiveFormTab={currentSetActiveFormTab}
+                  allInventory={[]} // You need to pass inventory data from parent
+                  loadAllData={() => {}}
+                />
+              )}
+            </>
+          )} */}
+          
+          {/* Render children (StoreManagement component) */}
           {children}
         </main>
       </div>

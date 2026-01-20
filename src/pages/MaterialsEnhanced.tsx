@@ -2385,8 +2385,6 @@
 //   );
 // }
 
-
-
 import React, { useState, useEffect } from "react";
 import {
   Package,
@@ -2488,7 +2486,9 @@ export default function MaterialsEnhanced() {
   const [searchVendor, setSearchVendor] = useState("");
   const [searchProject, setSearchProject] = useState("");
   const [searchStatus, setSearchStatus] = useState("");
-
+const [searchAmount, setSearchAmount] = useState("");
+const [searchPOStatus, setSearchPOStatus] = useState("");
+const [searchPaymentStatus, setSearchPaymentStatus] = useState("");
   const loadAllPOs = async () => {
     try {
       const posRes: any = await poApi.getPOs();
@@ -2646,21 +2646,33 @@ export default function MaterialsEnhanced() {
   };
 
   // Filter function
-  const filteredPOs = poData.filter((po) => {
-    const matchesPONumber = searchPONumber === "" || 
-      (po.po_number || "").toLowerCase().includes(searchPONumber.toLowerCase());
-    
-    const matchesVendor = searchVendor === "" || 
-      (po.vendor?.name || "").toLowerCase().includes(searchVendor.toLowerCase());
-    
-    const matchesProject = searchProject === "" || 
-      (po.project || "").toLowerCase().includes(searchProject.toLowerCase());
-    
-    const matchesStatus = searchStatus === "" || 
-      (po.overall_status || "").toLowerCase().includes(searchStatus.toLowerCase());
-    
-    return matchesPONumber && matchesVendor && matchesProject && matchesStatus;
-  });
+  // Update the filter function
+const filteredPOs = poData.filter((po) => {
+  const matchesPONumber = searchPONumber === "" || 
+    (po.po_number || "").toLowerCase().includes(searchPONumber.toLowerCase());
+  
+  const matchesVendor = searchVendor === "" || 
+    (po.vendor?.name || "").toLowerCase().includes(searchVendor.toLowerCase());
+  
+  const matchesProject = searchProject === "" || 
+    (po.project || "").toLowerCase().includes(searchProject.toLowerCase());
+  
+  const matchesStatus = searchStatus === "" || 
+    (po.overall_status || "").toLowerCase().includes(searchStatus.toLowerCase());
+  
+  // New filters
+  const matchesAmount = searchAmount === "" || 
+    formatCurrency(Number(po.amount)).toLowerCase().includes(searchAmount.toLowerCase());
+  
+  const matchesPOStatus = searchPOStatus === "" || 
+    (po.po_status || "").toLowerCase().includes(searchPOStatus.toLowerCase());
+  
+  const matchesPaymentStatus = searchPaymentStatus === "" || 
+    (po.payment_status || "").toLowerCase().includes(searchPaymentStatus.toLowerCase());
+  
+  return matchesPONumber && matchesVendor && matchesProject && matchesStatus && 
+         matchesAmount && matchesPOStatus && matchesPaymentStatus;
+});
 
   // Bulk delete POs
   const handleBulkDelete = async () => {
@@ -2729,21 +2741,21 @@ export default function MaterialsEnhanced() {
   }
 
   return (
-    <div className="p-3 md:p-6 bg-gray-50 min-h-screen">
+    <div className="p-3 md:p-0 -mt-3.5 bg-gray-50 min-h-screen">
       {/* Delete Button (Appears when checkboxes are selected) */}
       {selectedPOs.length > 0 && (
-        <div className="mb-6">
-          <div className="bg-gradient-to-r from-red-50 to-rose-50 border border-red-200 rounded-xl shadow-sm p-4">
+        <div className="mb-4">
+          <div className="bg-gradient-to-r from-red-50 to-rose-50 border border-red-200 rounded-xl shadow-sm p-3">
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-3">
               <div className="flex items-center gap-3">
                 <div className="bg-red-100 p-2 rounded-lg">
-                  <Trash2 className="w-5 h-5 text-red-600" />
+                  <Trash2 className="w-4 h-4 text-red-600" />
                 </div>
                 <div>
-                  <p className="font-medium text-gray-800">
+                  <p className="font-medium text-gray-800 text-sm">
                     {selectedPOs.length} purchase order{selectedPOs.length > 1 ? 's' : ''} selected
                   </p>
-                  <p className="text-sm text-gray-600">
+                  <p className="text-xs text-gray-600">
                     Click delete to remove selected items
                   </p>
                 </div>
@@ -2751,16 +2763,16 @@ export default function MaterialsEnhanced() {
               <button
                 onClick={handleBulkDelete}
                 disabled={submitting}
-                className="flex items-center gap-2 bg-gradient-to-r from-red-600 to-rose-600 text-white px-4 py-2.5 rounded-xl hover:from-red-700 hover:to-rose-700 transition-all duration-200 font-medium shadow-md hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
+                className="flex items-center gap-2 bg-gradient-to-r from-red-600 to-rose-600 text-white px-4 py-2 rounded-xl hover:from-red-700 hover:to-rose-700 transition-all duration-200 font-medium shadow-md hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed text-sm"
               >
                 {submitting ? (
                   <>
-                    <Loader2 className="w-4 h-4 animate-spin" />
+                    <Loader2 className="w-3 h-3 animate-spin" />
                     Deleting...
                   </>
                 ) : (
                   <>
-                    <Trash2 className="w-4 h-4" />
+                    <Trash2 className="w-3 h-3" />
                     Delete ({selectedPOs.length})
                   </>
                 )}
@@ -2771,167 +2783,186 @@ export default function MaterialsEnhanced() {
       )}
 
       {/* Summary Cards - Responsive */}
-      <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-4 gap-3 md:gap-6 mb-6">
-        <div className="bg-white p-4 md:p-6 rounded-xl shadow-sm border border-gray-200">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-xs md:text-sm text-gray-600 mb-1">Total POs</p>
-              <p className="text-xl md:text-3xl font-bold text-gray-800">
-                {poData.length}
-              </p>
-            </div>
-            <Package className="w-8 h-8 md:w-12 md:h-12 text-blue-500 opacity-20" />
-          </div>
-        </div>
+     <div className="grid grid-cols-2 md:grid-cols-4 gap-2 mb-2">
+  {/* Total POs */}
+  <div className="bg-white px-2.5 py-2 rounded-lg border border-gray-200 flex items-center justify-between">
+    <div>
+      <p className="text-[11px] text-gray-500 leading-none">Total POs</p>
+      <p className="text-sm font-semibold text-gray-800">
+        {poData.length}
+      </p>
+    </div>
+    <Package className="w-5 h-5 text-blue-500/30" />
+  </div>
 
-        <div className="bg-white p-4 md:p-6 rounded-xl shadow-sm border border-gray-200">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-xs md:text-sm text-gray-600 mb-1">Pending POs</p>
-              <p className="text-xl md:text-3xl font-bold text-gray-800">
-                {poData.filter((po) => po.overall_status === "pending").length}
-              </p>
-            </div>
-            <Clock className="w-8 h-8 md:w-12 md:h-12 text-gray-500 opacity-20" />
-          </div>
-        </div>
+  {/* Pending */}
+  <div className="bg-white px-2.5 py-2 rounded-lg border border-gray-200 flex items-center justify-between">
+    <div>
+      <p className="text-[11px] text-gray-500 leading-none">Pending</p>
+      <p className="text-sm font-semibold text-gray-800">
+        {poData.filter(po => po.overall_status === "pending").length}
+      </p>
+    </div>
+    <Clock className="w-5 h-5 text-gray-400/40" />
+  </div>
 
-        <div className="bg-white p-4 md:p-6 rounded-xl shadow-sm border border-gray-200">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-xs md:text-sm text-gray-600 mb-1">Partial POs</p>
-              <p className="text-xl md:text-3xl font-bold text-yellow-600">
-                {poData.filter((po) => po.overall_status === "partial").length}
-              </p>
-            </div>
-            <Truck className="w-8 h-8 md:w-12 md:h-12 text-yellow-500 opacity-20" />
-          </div>
-        </div>
+  {/* Partial */}
+  <div className="bg-white px-2.5 py-2 rounded-lg border border-gray-200 flex items-center justify-between">
+    <div>
+      <p className="text-[11px] text-gray-500 leading-none">Partial</p>
+      <p className="text-sm font-semibold text-yellow-600">
+        {poData.filter(po => po.overall_status === "partial").length}
+      </p>
+    </div>
+    <Truck className="w-5 h-5 text-yellow-500/40" />
+  </div>
 
-        <div className="bg-white p-4 md:p-6 rounded-xl shadow-sm border border-gray-200">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-xs md:text-sm text-gray-600 mb-1">Completed POs</p>
-              <p className="text-xl md:text-3xl font-bold text-green-600">
-                {
-                  poData.filter((po) => po.overall_status === "completed")
-                    .length
-                }
-              </p>
-            </div>
-            <CheckCircle className="w-8 h-8 md:w-12 md:h-12 text-green-500 opacity-20" />
-          </div>
-        </div>
-      </div>
+  {/* Completed */}
+  <div className="bg-white px-2.5 py-2 rounded-lg border border-gray-200 flex items-center justify-between">
+    <div>
+      <p className="text-[11px] text-gray-500 leading-none">Completed</p>
+      <p className="text-sm font-semibold text-green-600">
+        {poData.filter(po => po.overall_status === "completed").length}
+      </p>
+    </div>
+    <CheckCircle className="w-5 h-5 text-green-500/40" />
+  </div>
+</div>
+
 
       {/* Table */}
       <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
         <div className="overflow-x-auto">
-          <table className="w-full min-w-[1200px]">
+          <table className="w-full min-w-[1000px]">
             <thead className="bg-gray-200 border-b border-gray-200">
               <tr>
-                <th className="px-3 md:px-6 py-3 text-left w-8">
-                  <div className="flex items-center">
+                <th className="px-3 py-2 text-center w-6">
+                  <div className="flex items-center justify-center">
                     <button
                       onClick={handleSelectAll}
-                      className="p-1 hover:bg-gray-300 rounded transition-colors"
+                      className="p-0.5 hover:bg-gray-300 rounded transition-colors"
                     >
                       {selectAll ? (
-                        <CheckSquare className="w-4 h-4 md:w-5 md:h-5 text-blue-600" />
+                        <CheckSquare className="w-3 h-3 md:w-4 md:h-4 text-blue-600" />
                       ) : (
-                        <Square className="w-4 h-4 md:w-5 md:h-5 text-gray-500" />
+                        <Square className="w-3 h-3 md:w-4 md:h-4 text-gray-500" />
                       )}
                     </button>
                   </div>
                 </th>
-                <th className="px-3 md:px-6 py-3 text-left">
+                <th className="px-3 py-2 text-left">
                   <div className="text-xs font-semibold text-gray-700 uppercase tracking-wider">
                     PO Number
                   </div>
                 </th>
-                <th className="px-3 md:px-6 py-3 text-left">
+                <th className="px-3 py-2 text-left">
                   <div className="text-xs font-semibold text-gray-700 uppercase tracking-wider">
                     Vendor
                   </div>
                 </th>
-                <th className="px-3 md:px-6 py-3 text-left">
+                <th className="px-3 py-2 text-left">
                   <div className="text-xs font-semibold text-gray-700 uppercase tracking-wider">
                     Project
                   </div>
                 </th>
-                <th className="px-3 md:px-6 py-3 text-left">
+                <th className="px-3 py-2 text-left">
                   <div className="text-xs font-semibold text-gray-700 uppercase tracking-wider">
                     Amount
                   </div>
                 </th>
-                <th className="px-3 md:px-6 py-3 text-left">
+                <th className="px-3 py-2 text-left">
                   <div className="text-xs font-semibold text-gray-700 uppercase tracking-wider">
                     PO Status
                   </div>
                 </th>
-                <th className="px-3 md:px-6 py-3 text-left">
+                <th className="px-3 py-2 text-left">
                   <div className="text-xs font-semibold text-gray-700 uppercase tracking-wider">
                     Material Status
                   </div>
                 </th>
-                <th className="px-3 md:px-6 py-3 text-left">
+                <th className="px-3 py-2 text-left">
                   <div className="text-xs font-semibold text-gray-700 uppercase tracking-wider">
                     Payment Status
                   </div>
                 </th>
               </tr>
               
-              {/* Search Row - moved to first row after header */}
-              <tr className="bg-gray-50 border-b border-gray-200">
-                <td className="px-3 md:px-6 py-3"></td>
-                <td className="px-3 md:px-6 py-3">
-                  <input
-                    type="text"
-                    placeholder="Search PO..."
-                    value={searchPONumber}
-                    onChange={(e) => setSearchPONumber(e.target.value)}
-                    className="w-full px-2 md:px-3 py-1.5 text-xs md:text-sm border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  />
-                </td>
-                <td className="px-3 md:px-6 py-3">
-                  <input
-                    type="text"
-                    placeholder="Search vendor..."
-                    value={searchVendor}
-                    onChange={(e) => setSearchVendor(e.target.value)}
-                    className="w-full px-2 md:px-3 py-1.5 text-xs md:text-sm border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  />
-                </td>
-                <td className="px-3 md:px-6 py-3">
-                  <input
-                    type="text"
-                    placeholder="Search project..."
-                    value={searchProject}
-                    onChange={(e) => setSearchProject(e.target.value)}
-                    className="w-full px-2 md:px-3 py-1.5 text-xs md:text-sm border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  />
-                </td>
-                <td className="px-3 md:px-6 py-3"></td>
-                <td className="px-3 md:px-6 py-3"></td>
-                <td className="px-3 md:px-6 py-3">
-                  <input
-                    type="text"
-                    placeholder="Search status..."
-                    value={searchStatus}
-                    onChange={(e) => setSearchStatus(e.target.value)}
-                    className="w-full px-2 md:px-3 py-1.5 text-xs md:text-sm border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  />
-                </td>
-                <td className="px-3 md:px-6 py-3"></td>
-              </tr>
+              {/* Search Row - Compact height */}
+             {/* Search Row - Compact height */}
+<tr className="bg-gray-50 border-b border-gray-200">
+  <td className="px-3 py-1.5"></td>
+  <td className="px-3 py-1.5">
+    <input
+      type="text"
+      placeholder="Search PO..."
+      value={searchPONumber}
+      onChange={(e) => setSearchPONumber(e.target.value)}
+      className="w-full px-2 py-1 text-xs border border-gray-300 rounded-md focus:ring-1 focus:ring-blue-500 focus:border-transparent"
+    />
+  </td>
+  <td className="px-3 py-1.5">
+    <input
+      type="text"
+      placeholder="Search vendor..."
+      value={searchVendor}
+      onChange={(e) => setSearchVendor(e.target.value)}
+      className="w-full px-2 py-1 text-xs border border-gray-300 rounded-md focus:ring-1 focus:ring-blue-500 focus:border-transparent"
+    />
+  </td>
+  <td className="px-3 py-1.5">
+    <input
+      type="text"
+      placeholder="Search project..."
+      value={searchProject}
+      onChange={(e) => setSearchProject(e.target.value)}
+      className="w-full px-2 py-1 text-xs border border-gray-300 rounded-md focus:ring-1 focus:ring-blue-500 focus:border-transparent"
+    />
+  </td>
+  <td className="px-3 py-1.5">
+    <input
+      type="text"
+      placeholder="Search amount..."
+      value={searchAmount}
+      onChange={(e) => setSearchAmount(e.target.value)}
+      className="w-full px-2 py-1 text-xs border border-gray-300 rounded-md focus:ring-1 focus:ring-blue-500 focus:border-transparent"
+    />
+  </td>
+  <td className="px-3 py-1.5">
+    <input
+      type="text"
+      placeholder="Search PO status..."
+      value={searchPOStatus}
+      onChange={(e) => setSearchPOStatus(e.target.value)}
+      className="w-full px-2 py-1 text-xs border border-gray-300 rounded-md focus:ring-1 focus:ring-blue-500 focus:border-transparent"
+    />
+  </td>
+  <td className="px-3 py-1.5">
+    <input
+      type="text"
+      placeholder="Search status..."
+      value={searchStatus}
+      onChange={(e) => setSearchStatus(e.target.value)}
+      className="w-full px-2 py-1 text-xs border border-gray-300 rounded-md focus:ring-1 focus:ring-blue-500 focus:border-transparent"
+    />
+  </td>
+  <td className="px-3 py-1.5">
+    <input
+      type="text"
+      placeholder="Search payment..."
+      value={searchPaymentStatus}
+      onChange={(e) => setSearchPaymentStatus(e.target.value)}
+      className="w-full px-2 py-1 text-xs border border-gray-300 rounded-md focus:ring-1 focus:ring-blue-500 focus:border-transparent"
+    />
+  </td>
+</tr>
             </thead>
             <tbody className="divide-y divide-gray-200">
               {filteredPOs.length === 0 ? (
                 <tr>
-                  <td colSpan={8} className="px-3 md:px-6 py-12 text-center">
-                    <Package className="w-12 h-12 md:w-16 md:h-16 text-gray-300 mx-auto mb-4" />
-                    <p className="text-gray-600 text-base md:text-lg font-medium">No purchase orders found</p>
-                    <p className="text-gray-500 text-xs md:text-sm mt-2">
+                  <td colSpan={8} className="px-3 py-8 text-center">
+                    <Package className="w-10 h-10 md:w-12 md:h-12 text-gray-300 mx-auto mb-3" />
+                    <p className="text-gray-600 text-sm font-medium">No purchase orders found</p>
+                    <p className="text-gray-500 text-xs mt-1">
                       Try adjusting your search
                     </p>
                   </td>
@@ -2952,16 +2983,16 @@ export default function MaterialsEnhanced() {
                           index % 2 === 0 ? "bg-white" : "bg-gray-50/50"
                         } ${isSelected ? 'bg-blue-50 border-l-4 border-blue-500' : ''}`}
                       >
-                        <td className="px-3 md:px-6 py-4">
-                          <div className="flex items-center gap-1 md:gap-2">
+                        <td className="px-3 py-2">
+                          <div className="flex items-center gap-1 justify-center">
                             <button
                               onClick={() => togglePOSelection(po.id)}
                               className="p-0.5 hover:bg-gray-200 rounded transition-colors"
                             >
                               {isSelected ? (
-                                <CheckSquare className="w-4 h-4 text-blue-600" />
+                                <CheckSquare className="w-3 h-3 text-blue-600" />
                               ) : (
-                                <Square className="w-4 h-4 text-gray-400" />
+                                <Square className="w-3 h-3 text-gray-400" />
                               )}
                             </button>
                             <button 
@@ -2969,60 +3000,68 @@ export default function MaterialsEnhanced() {
                               className="p-0.5 hover:bg-gray-200 rounded transition-colors"
                             >
                               {po.expanded ? (
-                                <ChevronDown className="w-4 h-4 text-gray-600" />
+                                <ChevronDown className="w-3 h-3 text-gray-600" />
                               ) : (
-                                <ChevronRight className="w-4 h-4 text-gray-600" />
+                                <ChevronRight className="w-3 h-3 text-gray-600" />
                               )}
                             </button>
                           </div>
                         </td>
-                        <td className="px-3 md:px-6 py-4">
-                          <div className="flex items-center gap-2 md:gap-3">
-                            <div className="bg-[#C62828] w-8 h-8 md:w-10 md:h-10 rounded-full flex items-center justify-center text-white font-semibold text-xs md:text-sm">
+                        <td className="px-3 py-2">
+                          <div className="flex items-center gap-2">
+                            <div className="bg-[#C62828] w-6 h-6 md:w-7 md:h-7 rounded-full flex items-center justify-center text-white font-semibold text-xs">
                               {po.po_number.charAt(0)}
                             </div>
-                            <div>
-                              <span className="font-semibold text-gray-900 text-sm md:text-base">
+                            <div className="min-w-0">
+                              <span className="font-semibold text-gray-900 text-xs truncate block max-w-[120px]">
                                 {po.po_number}
                               </span>
-                              <p className="text-xs text-gray-500">
+                              <p className="text-[10px] text-gray-500 whitespace-nowrap">
                                 {po.po_date}
                               </p>
                             </div>
                           </div>
                         </td>
-                        <td className="px-3 md:px-6 py-4">
-                          <div className="flex items-center gap-2">
-                            <span className="text-gray-900 text-sm md:text-base">{po.vendor?.name || "--"}</span>
+                        <td className="px-3 py-2">
+                          <div className="min-w-0">
+                            <span className="text-gray-900 text-xs truncate block max-w-[120px]" title={po.vendor?.name || "--"}>
+                              {po.vendor?.name || "--"}
+                            </span>
                           </div>
                         </td>
-                        <td className="px-3 md:px-6 py-4 font-medium text-gray-900 text-sm md:text-base">
-                          {po.project || "--"}
+                        <td className="px-3 py-2">
+                          <div className="min-w-0">
+                            <span className="font-medium text-gray-900 text-xs truncate block max-w-[120px]" title={po.project || "--"}>
+                              {po.project || "--"}
+                            </span>
+                          </div>
                         </td>
-                        <td className="px-3 md:px-6 py-4 font-bold text-gray-900 text-sm md:text-base">
-                          {formatCurrency(Number(po.amount))}
+                        <td className="px-3 py-2">
+                          <span className="font-bold text-gray-900 text-xs whitespace-nowrap">
+                            {formatCurrency(Number(po.amount))}
+                          </span>
                         </td>
-                        <td className="px-3 md:px-6 py-4">
+                        <td className="px-3 py-2">
                           <span
-                            className={`inline-flex items-center px-2 py-0.5 md:px-3 md:py-1 rounded-full text-xs font-medium ${getStatusColor(
+                            className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-medium ${getStatusColor(
                               po.po_status
-                            )}`}
+                            )} whitespace-nowrap`}
                           >
                             {po.po_status?.toUpperCase()}
                           </span>
                         </td>
-                        <td className="px-3 md:px-6 py-4">
-                          <div className="space-y-1">
+                        <td className="px-3 py-2">
+                          <div className="space-y-0.5 min-w-0">
                             <span
-                              className={`inline-flex items-center px-2 py-0.5 md:px-3 md:py-1 rounded-full text-xs font-medium ${getStatusColor(
+                              className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-medium ${getStatusColor(
                                 po.material_status
-                              )}`}
+                              )} truncate`}
                             >
                               {po.material_status?.toUpperCase() || "PENDING"}
                             </span>
                             {po.total_ordered > 0 && (
-                              <div className="text-xs text-gray-600">
-                                <div className="flex justify-between mb-0.5 md:mb-1">
+                              <div className="text-[10px] text-gray-600">
+                                <div className="flex justify-between mb-0.5">
                                   <span>Progress</span>
                                   <span>{overallPercentage}%</span>
                                 </div>
@@ -3036,20 +3075,20 @@ export default function MaterialsEnhanced() {
                             )}
                           </div>
                         </td>
-                        <td className="px-3 md:px-6 py-4">
-                          <div className="space-y-0.5 md:space-y-1">
-                            <div className="flex flex-col md:flex-row md:items-center gap-1 md:gap-2">
+                        <td className="px-3 py-2">
+                          <div className="space-y-0.5 min-w-0">
+                            <div className="flex items-center gap-1">
                               <span
-                                className={`inline-flex items-center px-2 py-0.5 md:px-3 md:py-1 rounded-full text-xs font-medium ${getStatusColor(
+                                className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-medium ${getStatusColor(
                                   po.payment_status
-                                )}`}
+                                )} truncate`}
                               >
                                 {po.payment_status?.toUpperCase() || "PENDING"}
                               </span>
                               {Number(po.balance_amount) > 0 && (
-                                <p className="text-xs text-gray-600 whitespace-nowrap">
-                                  Balance: {formatCurrency(Number(po.balance_amount))}
-                                </p>
+                                <span className="text-[10px] text-gray-600 whitespace-nowrap" title={`Balance: ${formatCurrency(Number(po.balance_amount))}`}>
+                                  Bal: {formatCurrency(Number(po.balance_amount)).replace('₹', '₹ ')}
+                                </span>
                               )}
                             </div>
                           </div>
@@ -3060,34 +3099,34 @@ export default function MaterialsEnhanced() {
                       {po.expanded && po.materials.length > 0 && (
                         <tr className="bg-gray-50">
                           <td colSpan={10} className="p-0">
-                            <div className="px-3 md:px-6 py-4 border-t border-gray-200">
-                              <h4 className="text-xs md:text-sm font-semibold text-gray-700 mb-3 flex items-center gap-2">
-                                <FileText className="w-3 h-3 md:w-4 md:h-4" />
+                            <div className="px-3 py-2 border-t border-gray-200">
+                              <h4 className="text-xs font-semibold text-gray-700 mb-2 flex items-center gap-1">
+                                <FileText className="w-3 h-3" />
                                 Items in PO {po.po_number}
                               </h4>
                               <div className="overflow-x-auto">
                                 <table className="w-full bg-white rounded-lg border border-gray-200 min-w-[600px]">
                                   <thead className="bg-gray-100">
                                     <tr>
-                                      <th className="text-left px-3 md:px-4 py-2 md:py-3 text-xs md:text-sm font-medium text-gray-700">
+                                      <th className="text-left px-2 py-1.5 text-[10px] md:text-xs font-medium text-gray-700">
                                         Item
                                       </th>
-                                      <th className="text-left px-3 md:px-4 py-2 md:py-3 text-xs md:text-sm font-medium text-gray-700">
+                                      <th className="text-left px-2 py-1.5 text-[10px] md:text-xs font-medium text-gray-700">
                                         HSN Code
                                       </th>
-                                      <th className="text-left px-3 md:px-4 py-2 md:py-3 text-xs md:text-sm font-medium text-gray-700">
+                                      <th className="text-left px-2 py-1.5 text-[10px] md:text-xs font-medium text-gray-700">
                                         Ordered
                                       </th>
-                                      <th className="text-left px-3 md:px-4 py-2 md:py-3 text-xs md:text-sm font-medium text-gray-700">
+                                      <th className="text-left px-2 py-1.5 text-[10px] md:text-xs font-medium text-gray-700">
                                         Received
                                       </th>
-                                      <th className="text-left px-3 md:px-4 py-2 md:py-3 text-xs md:text-sm font-medium text-gray-700">
+                                      <th className="text-left px-2 py-1.5 text-[10px] md:text-xs font-medium text-gray-700">
                                         Pending
                                       </th>
-                                      <th className="text-left px-3 md:px-4 py-2 md:py-3 text-xs md:text-sm font-medium text-gray-700">
+                                      <th className="text-left px-2 py-1.5 text-[10px] md:text-xs font-medium text-gray-700">
                                         Progress
                                       </th>
-                                      <th className="text-left px-3 md:px-4 py-2 md:py-3 text-xs md:text-sm font-medium text-gray-700">
+                                      <th className="text-left px-2 py-1.5 text-[10px] md:text-xs font-medium text-gray-700">
                                         Status
                                       </th>
                                     </tr>
@@ -3107,51 +3146,51 @@ export default function MaterialsEnhanced() {
                                             idx % 2 === 0 ? "bg-white" : "bg-gray-50/50"
                                           }`}
                                         >
-                                          <td className="px-3 md:px-4 py-2 md:py-3">
-                                            <div className="font-medium text-gray-800 text-xs md:text-sm">
+                                          <td className="px-2 py-1.5">
+                                            <div className="font-medium text-gray-800 text-xs truncate max-w-[150px]" title={material.item_name || "Unknown"}>
                                               {material.item_name || "Unknown"}
                                             </div>
-                                            <div className="text-xs text-gray-500">
+                                            <div className="text-[10px] text-gray-500">
                                               Unit: {material.unit || "N/A"}
                                             </div>
                                           </td>
-                                          <td className="px-3 md:px-4 py-2 md:py-3 text-gray-700 text-xs md:text-sm">
+                                          <td className="px-2 py-1.5 text-gray-700 text-xs">
                                             {material.hsn_code || "-"}
                                           </td>
-                                          <td className="px-3 md:px-4 py-2 md:py-3 font-medium text-gray-800 text-xs md:text-sm">
+                                          <td className="px-2 py-1.5 font-medium text-gray-800 text-xs">
                                             {material.quantity_ordered}
                                           </td>
-                                          <td className="px-3 md:px-4 py-2 md:py-3 font-medium text-green-600 text-xs md:text-sm">
+                                          <td className="px-2 py-1.5 font-medium text-green-600 text-xs">
                                             {material.quantity_received}
                                           </td>
-                                          <td className="px-3 md:px-4 py-2 md:py-3 font-medium text-orange-600 text-xs md:text-sm">
+                                          <td className="px-2 py-1.5 font-medium text-orange-600 text-xs">
                                             {material.quantity_pending > 0 ? (
-                                              <span className="flex items-center gap-1">
-                                                <AlertTriangle className="w-3 h-3" />
+                                              <span className="flex items-center gap-0.5">
+                                                <AlertTriangle className="w-2.5 h-2.5" />
                                                 {material.quantity_pending}
                                               </span>
                                             ) : (
                                               material.quantity_pending
                                             )}
                                           </td>
-                                          <td className="px-3 md:px-4 py-2 md:py-3">
-                                            <div className="w-full bg-gray-200 rounded-full h-1.5 md:h-2">
+                                          <td className="px-2 py-1.5">
+                                            <div className="w-full bg-gray-200 rounded-full h-1.5">
                                               <div
-                                                className="bg-blue-600 h-1.5 md:h-2 rounded-full transition-all"
+                                                className="bg-blue-600 h-1.5 rounded-full transition-all"
                                                 style={{
                                                   width: `${materialPercentage}%`,
                                                 }}
                                               />
                                             </div>
-                                            <p className="text-xs text-gray-600 mt-0.5 md:mt-1">
+                                            <p className="text-[10px] text-gray-600 mt-0.5">
                                               {materialPercentage}%
                                             </p>
                                           </td>
-                                          <td className="px-3 md:px-4 py-2 md:py-3">
+                                          <td className="px-2 py-1.5">
                                             <span
-                                              className={`px-2 py-0.5 md:px-3 md:py-1 rounded-full text-xs font-medium ${getStatusColor(
+                                              className={`px-2 py-0.5 rounded-full text-[10px] font-medium ${getStatusColor(
                                                 material.status
-                                              )}`}
+                                              )} whitespace-nowrap`}
                                             >
                                               {material.status?.toUpperCase() ||
                                                 "PENDING"}
@@ -3172,9 +3211,9 @@ export default function MaterialsEnhanced() {
                       {po.expanded && po.materials.length === 0 && (
                         <tr className="bg-gray-50">
                           <td colSpan={10} className="p-0">
-                            <div className="px-3 md:px-6 py-6 md:py-8 border-t border-gray-200 text-center">
-                              <Package className="w-8 h-8 md:w-12 md:h-12 text-gray-400 mx-auto mb-3 md:mb-4" />
-                              <p className="text-gray-600 text-sm md:text-base">
+                            <div className="px-3 py-4 border-t border-gray-200 text-center">
+                              <Package className="w-6 h-6 md:w-8 md:h-8 text-gray-400 mx-auto mb-2" />
+                              <p className="text-gray-600 text-xs">
                                 No materials found for this purchase order
                               </p>
                             </div>
