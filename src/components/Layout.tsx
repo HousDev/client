@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 // src/components/Layout.tsx
 // import { ReactNode, useState, useMemo, useEffect } from "react";
 // import { useAuth } from "../contexts/AuthContext";
@@ -783,6 +782,12 @@ export default function Layout({
       value: ["manage_users", "manage_roles"],
     },
     {
+      id: "users",
+      label: "Users",
+      icon: MdAccountCircle,
+      value: ["manage_users"],
+    },
+    {
       id: "permissions",
       label: "Permissions",
       icon: MdSecurity,
@@ -908,7 +913,7 @@ export default function Layout({
     if (diffMins < 60) return `${diffMins} min ago`;
     if (diffHours < 24) return `${diffHours} hour${diffHours > 1 ? 's' : ''} ago`;
     if (diffDays < 7) return `${diffDays} day${diffDays > 1 ? 's' : ''} ago`;
-    
+
     return date.toLocaleDateString('en-US', {
       month: 'short',
       day: 'numeric',
@@ -963,33 +968,33 @@ export default function Layout({
     <div className="min-h-screen bg-gray-50">
       {/* Mobile Sidebar Overlay */}
       {mobileSidebarOpen && (
-        <div 
+        <div
           className="lg:hidden fixed inset-0 bg-black/50 z-40"
           onClick={() => setMobileSidebarOpen(false)}
         />
       )}
 
       {/* Sidebar */}
-      <aside 
+      <aside
         className={`fixed top-0 left-0 z-40 h-screen transition-all duration-300 ease-in-out
           ${sidebarOpen ? 'w-56' : 'w-20'}
           ${mobileSidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}
           bg-[#2D2D2D] border-r border-gray-700 flex flex-col shadow-lg`}
       >
         {/* Logo Section */}
-       <div className={`h-20 border-b border-gray-700 flex items-center ${sidebarOpen ? 'justify-start px-4' : 'justify-center'} transition-all bg-[#2D2D2D]`}>
+        <div className={`h-20 border-b border-gray-700 flex items-center ${sidebarOpen ? 'justify-start px-4' : 'justify-center'} transition-all bg-[#2D2D2D]`}>
           {sidebarOpen ? (
-            <img 
-              src={Logo} 
-              alt="Nayash Group" 
-              className="h-16 w-auto object-contain brightness-0 invert" 
+            <img
+              src={Logo}
+              alt="Nayash Group"
+              className="h-16 w-auto object-contain brightness-0 invert"
               style={{ filter: 'brightness(0) invert(1)' }}
             />
           ) : (
-            <img 
-              src={Logo} 
-              alt="N" 
-              className="h-10 w-10 object-contain brightness-0 invert" 
+            <img
+              src={Logo}
+              alt="N"
+              className="h-10 w-10 object-contain brightness-0 invert"
               style={{ filter: 'brightness(0) invert(1)' }}
             />
           )}
@@ -1032,7 +1037,7 @@ export default function Layout({
                 const Icon = item.icon;
                 const isActive = activeTab === item.id;
                 const hasPermission = item.value.some((d) => userMenus.includes(d)) || userMenus.includes("full_access");
-                
+
                 if (!hasPermission) return null;
 
                 return (
@@ -1043,8 +1048,8 @@ export default function Layout({
                       setSidebarOpen(true);
                     }}
                     className={`w-full flex items-center justify-center p-3 rounded-lg transition-all group relative
-                      ${isActive 
-                        ? 'bg-[#C62828] text-white shadow-lg' 
+                      ${isActive
+                        ? 'bg-[#C62828] text-white shadow-lg'
                         : 'text-gray-400 hover:bg-[#3D3D3D] hover:text-white'
                       }`}
                     title={item.label}
@@ -1064,7 +1069,7 @@ export default function Layout({
                 const Icon = item.icon;
                 const isActive = activeTab === item.id;
                 const hasPermission = item.value.some((d) => userMenus.includes(d)) || userMenus.includes("full_access");
-                
+
                 if (!hasPermission) return null;
 
                 return (
@@ -1075,8 +1080,8 @@ export default function Layout({
                       setMobileSidebarOpen(false);
                     }}
                     className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-all
-                      ${isActive 
-                        ? 'bg-[#C62828] text-white shadow-lg' 
+                      ${isActive
+                        ? 'bg-[#C62828] text-white shadow-lg'
                         : 'text-gray-400 hover:bg-[#3D3D3D] hover:text-white'
                       }`}
                   >
@@ -1234,9 +1239,8 @@ export default function Layout({
                           notifications.map((n) => (
                             <div
                               key={n.id}
-                              className={`p-4 border-b border-gray-100 hover:bg-gray-50 transition cursor-pointer ${
-                                !n.seen ? "bg-red-50/40" : ""
-                              }`}
+                              className={`p-4 border-b border-gray-100 hover:bg-gray-50 transition cursor-pointer ${!n.seen ? "bg-red-50/40" : ""
+                                }`}
                             >
                               <div className="flex items-start gap-3">
                                 <div className="w-10 h-10 rounded-full bg-[#C62828] flex items-center justify-center text-white font-semibold shadow-sm flex-shrink-0">
