@@ -22,9 +22,9 @@ export interface UserProfile {
 
 /* ----- base URL ----- */
 // ✅ FIXED: Correct API base URL
-const BASE = "http://localhost:4000/api";
+// const BASE = "http://localhost:4000/api";
 // या production के लिए:
-// const BASE = "https://your-domain.com/api";
+const BASE = "https://nayashgroup.in/api";
 
 /* ----- token helpers ----- */
 export function getToken(): string | null {
