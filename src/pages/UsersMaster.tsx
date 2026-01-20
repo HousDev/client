@@ -1126,10 +1126,10 @@ export default function UsersMaster() {
         // Load departments
         try {
           setLoadingDepartments(true);
-          const departmentsData = await departmentsApi.getAll();
+          const departmentsData: any = await departmentsApi.getAll();
 
           if (mounted) {
-            setDepartments(departmentsData);
+            setDepartments(departmentsData.data || []);
           }
         } catch (deptErr: any) {
           console.error("Failed to load departments:", deptErr);
