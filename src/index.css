@@ -1,7 +1,7 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
-@import "react-datepicker/dist/react-datepicker.css";
+/* @import "react-datepicker/dist/react-datepicker.css"; */
 @layer components {
   .btn-primary {
     @apply py-3 px-4 rounded-lg font-medium text-white shadow-md
