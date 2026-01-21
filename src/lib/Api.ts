@@ -79,7 +79,7 @@ api.interceptors.request.use(
     }
     return config;
   },
-  (err) => Promise.reject(err)
+  (err) => Promise.reject(err),
 );
 
 /* ----- response interceptor: central error handling (optional) ----- */
@@ -94,7 +94,7 @@ api.interceptors.response.use(
       // }
     }
     return Promise.reject(error);
-  }
+  },
 );
 
 /* ----- helper to unwrap axios response or throw meaningful error ----- */
@@ -120,6 +120,9 @@ export const UsersApi = {
   get: async (id: string): Promise<UserProfile> => {
     return unwrap<UserProfile>(api.get(`/users/${id}`));
   },
+  getByRole: async (role: string): Promise<UserProfile> => {
+    return unwrap<UserProfile>(api.get(`/users/role/${role}`));
+  },
 
   create: async (payload: any): Promise<UserProfile> => {
     return unwrap<UserProfile>(api.post("/users", payload));
@@ -140,7 +143,7 @@ export const UsersApi = {
   // auth
   login: async (
     email: string,
-    password: string
+    password: string,
   ): Promise<{ token: string; user: UserProfile }> => {
     const { data } = await api.post("/auth/login", { email, password });
     return data as { token: string; user: UserProfile };

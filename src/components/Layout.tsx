@@ -143,7 +143,6 @@
 //   },
 // ];
 
-
 //   const handleSignOut = async () => {
 //     try {
 //       await signOut();
@@ -664,11 +663,27 @@ import { ReactNode, useState, useMemo, useEffect, useRef } from "react";
 import { useAuth } from "../contexts/AuthContext";
 import Logo from "../assets/images/Nayash Logo.png";
 import { FaBell, FaTimes, FaSignOutAlt, FaCog } from "react-icons/fa";
-import { MdBusiness, MdDashboard, MdLocalShipping, MdDescription, MdConstruction, MdWarehouse, MdInventory2, MdRequestQuote, MdPayment, MdNotifications, MdAssessment, MdSettings, MdSecurity } from "react-icons/md";
+import {
+  MdBusiness,
+  MdDashboard,
+  MdLocalShipping,
+  MdDescription,
+  MdConstruction,
+  MdWarehouse,
+  MdInventory2,
+  MdRequestQuote,
+  MdPayment,
+  MdNotifications,
+  MdChecklist,
+  MdAssessment,
+  MdSettings,
+  MdSecurity,
+} from "react-icons/md";
 import { Menu, ChevronRight, Clock } from "lucide-react";
 import NotificationsApi from "../lib/notificationApi";
 import { toast } from "sonner";
 import RequestMaterial from "./materialRequest/RequestMaterial";
+import { BsPerson } from "react-icons/bs";
 
 interface LayoutProps {
   children: ReactNode;
@@ -685,7 +700,11 @@ interface NotificationType {
   created_at: string;
 }
 
-export default function Layout({ children, activeTab, onTabChange }: LayoutProps) {
+export default function Layout({
+  children,
+  activeTab,
+  onTabChange,
+}: LayoutProps) {
   const { profile, user, signOut, loading: authLoading } = useAuth();
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
@@ -695,7 +714,8 @@ export default function Layout({ children, activeTab, onTabChange }: LayoutProps
   const [userMenus, setUserMenus] = useState<string[]>([]);
   const [notifications, setNotifications] = useState<NotificationType[]>([]);
   const [unreadCount, setUnreadCount] = useState(0);
-  const [showRequestMaterial, setShowRequestMaterial] = useState<boolean>(false);
+  const [showRequestMaterial, setShowRequestMaterial] =
+    useState<boolean>(false);
 
   const profileRef = useRef<HTMLDivElement>(null);
   const notifRef = useRef<HTMLDivElement>(null);
@@ -711,25 +731,45 @@ export default function Layout({ children, activeTab, onTabChange }: LayoutProps
       id: "vendors",
       label: "Vendors",
       icon: MdLocalShipping,
-      value: ["view_vendors", "create_vendors", "edit_vendors", "delete_vendors"],
+      value: [
+        "view_vendors",
+        "create_vendors",
+        "edit_vendors",
+        "delete_vendors",
+      ],
     },
     {
       id: "purchase-orders",
       label: "Purchase Orders",
       icon: MdDescription,
-      value: ["view_pos", "create_pos", "edit_pos", "delete_pos", "approve_pos"],
+      value: [
+        "view_pos",
+        "create_pos",
+        "edit_pos",
+        "delete_pos",
+        "approve_pos",
+      ],
     },
     {
       id: "service-orders",
       label: "Service Orders",
       icon: MdConstruction,
-      value: ["edit_service_orders", "create_service_orders", "view_service_orders"],
+      value: [
+        "edit_service_orders",
+        "create_service_orders",
+        "view_service_orders",
+      ],
     },
     {
       id: "store-management",
       label: "Store Management",
       icon: MdWarehouse,
-      value: ["edit_inventory", "create_inventory", "view_inventory", "delete_inventory"],
+      value: [
+        "edit_inventory",
+        "create_inventory",
+        "view_inventory",
+        "delete_inventory",
+      ],
     },
     {
       id: "materials",
@@ -750,6 +790,18 @@ export default function Layout({ children, activeTab, onTabChange }: LayoutProps
       value: ["view_payments", "make_payments", "verify_payments"],
     },
     {
+      id: "task-management",
+      label: "Task Management",
+      icon: MdChecklist,
+      value: ["view_task", "create_task", "update_task", "delete_task"],
+    },
+    {
+      id: "hrms",
+      label: "HRMS",
+      icon: BsPerson,
+      value: ["view_hrms", "create_hrms", "update_hrms", "delete_hrms"],
+    },
+    {
       id: "notifications",
       label: "Notifications",
       icon: MdNotifications,
@@ -761,6 +813,7 @@ export default function Layout({ children, activeTab, onTabChange }: LayoutProps
       icon: MdAssessment,
       value: ["view_reports", "export_reports"],
     },
+
     {
       id: "masters",
       label: "Masters",
@@ -777,7 +830,7 @@ export default function Layout({ children, activeTab, onTabChange }: LayoutProps
 
   // Get current active menu label for header
   const activeMenuLabel = useMemo(() => {
-    const activeItem = menuItems.find(item => item.id === activeTab);
+    const activeItem = menuItems.find((item) => item.id === activeTab);
     return activeItem ? activeItem.label : "Dashboard";
   }, [activeTab]);
 
@@ -804,8 +857,8 @@ export default function Layout({ children, activeTab, onTabChange }: LayoutProps
   useEffect(() => {
     const result = Object.fromEntries(
       Object.entries(contextAuth.user.permissions).filter(
-        ([_, value]) => value === true
-      )
+        ([_, value]) => value === true,
+      ),
     );
     const data = Object.keys(result) ?? [];
     setUserMenus(data);
@@ -885,65 +938,74 @@ export default function Layout({ children, activeTab, onTabChange }: LayoutProps
     const diffHours = Math.floor(diffMs / (1000 * 60 * 60));
     const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
 
-    if (diffMins < 1) return 'Just now';
+    if (diffMins < 1) return "Just now";
     if (diffMins < 60) return `${diffMins} min ago`;
-    if (diffHours < 24) return `${diffHours} hour${diffHours > 1 ? 's' : ''} ago`;
-    if (diffDays < 7) return `${diffDays} day${diffDays > 1 ? 's' : ''} ago`;
-    
-    return date.toLocaleDateString('en-US', {
-      month: 'short',
-      day: 'numeric',
-      year: date.getFullYear() !== now.getFullYear() ? 'numeric' : undefined
+    if (diffHours < 24)
+      return `${diffHours} hour${diffHours > 1 ? "s" : ""} ago`;
+    if (diffDays < 7) return `${diffDays} day${diffDays > 1 ? "s" : ""} ago`;
+
+    return date.toLocaleDateString("en-US", {
+      month: "short",
+      day: "numeric",
+      year: date.getFullYear() !== now.getFullYear() ? "numeric" : undefined,
     });
   };
 
   // Close dropdowns when clicking outside
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
-      if (profileRef.current && !profileRef.current.contains(event.target as Node)) {
+      if (
+        profileRef.current &&
+        !profileRef.current.contains(event.target as Node)
+      ) {
         setProfileOpen(false);
       }
-      if (notifRef.current && !notifRef.current.contains(event.target as Node)) {
+      if (
+        notifRef.current &&
+        !notifRef.current.contains(event.target as Node)
+      ) {
         setNotifOpen(false);
       }
     };
 
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Mobile Sidebar Overlay */}
       {mobileSidebarOpen && (
-        <div 
+        <div
           className="lg:hidden fixed inset-0 bg-black/50 z-40"
           onClick={() => setMobileSidebarOpen(false)}
         />
       )}
 
       {/* Sidebar */}
-      <aside 
+      <aside
         className={`fixed top-0 left-0 z-40 h-screen transition-all duration-300 ease-in-out
-          ${sidebarOpen ? 'w-56' : 'w-20'}
-          ${mobileSidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}
+          ${sidebarOpen ? "w-56" : "w-20"}
+          ${mobileSidebarOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0"}
           bg-[#2D2D2D] border-r border-gray-700 flex flex-col shadow-lg`}
       >
         {/* Logo Section */}
-       <div className={`h-20 border-b border-gray-700 flex items-center ${sidebarOpen ? 'justify-start px-4' : 'justify-center'} transition-all bg-[#2D2D2D]`}>
+        <div
+          className={`h-20 border-b border-gray-700 flex items-center ${sidebarOpen ? "justify-start px-4" : "justify-center"} transition-all bg-[#2D2D2D]`}
+        >
           {sidebarOpen ? (
-            <img 
-              src={Logo} 
-              alt="Nayash Group" 
-              className="h-16 w-auto object-contain brightness-0 invert" 
-              style={{ filter: 'brightness(0) invert(1)' }}
+            <img
+              src={Logo}
+              alt="Nayash Group"
+              className="h-16 w-auto object-contain brightness-0 invert"
+              style={{ filter: "brightness(0) invert(1)" }}
             />
           ) : (
-            <img 
-              src={Logo} 
-              alt="N" 
-              className="h-10 w-10 object-contain brightness-0 invert" 
-              style={{ filter: 'brightness(0) invert(1)' }}
+            <img
+              src={Logo}
+              alt="N"
+              className="h-10 w-10 object-contain brightness-0 invert"
+              style={{ filter: "brightness(0) invert(1)" }}
             />
           )}
         </div>
@@ -953,10 +1015,16 @@ export default function Layout({ children, activeTab, onTabChange }: LayoutProps
           <div className="p-4 border-b border-gray-700 lg:hidden">
             <div className="flex items-center gap-3 px-3 py-2 bg-[#3D3D3D] rounded-lg">
               {avatarUrl ? (
-                <img src={avatarUrl} alt="avatar" className="w-10 h-10 rounded-full object-cover border-2 border-[#C62828]" />
+                <img
+                  src={avatarUrl}
+                  alt="avatar"
+                  className="w-10 h-10 rounded-full object-cover border-2 border-[#C62828]"
+                />
               ) : (
                 <div className="w-10 h-10 bg-[#C62828] rounded-full flex items-center justify-center shadow-sm">
-                  <span className="text-white font-semibold text-sm">{initials}</span>
+                  <span className="text-white font-semibold text-sm">
+                    {initials}
+                  </span>
                 </div>
               )}
               <div className="flex-1 min-w-0">
@@ -967,8 +1035,12 @@ export default function Layout({ children, activeTab, onTabChange }: LayoutProps
                   </div>
                 ) : (
                   <>
-                    <p className="text-sm font-semibold text-white truncate">{displayName}</p>
-                    <p className="text-xs text-gray-400 capitalize truncate">{displayRole}</p>
+                    <p className="text-sm font-semibold text-white truncate">
+                      {displayName}
+                    </p>
+                    <p className="text-xs text-gray-400 capitalize truncate">
+                      {displayRole}
+                    </p>
                   </>
                 )}
               </div>
@@ -984,8 +1056,10 @@ export default function Layout({ children, activeTab, onTabChange }: LayoutProps
               {menuItems.map((item) => {
                 const Icon = item.icon;
                 const isActive = activeTab === item.id;
-                const hasPermission = item.value.some((d) => userMenus.includes(d)) || userMenus.includes("full_access");
-                
+                const hasPermission =
+                  item.value.some((d) => userMenus.includes(d)) ||
+                  userMenus.includes("full_access");
+
                 if (!hasPermission) return null;
 
                 return (
@@ -996,9 +1070,10 @@ export default function Layout({ children, activeTab, onTabChange }: LayoutProps
                       setSidebarOpen(true);
                     }}
                     className={`w-full flex items-center justify-center p-3 rounded-lg transition-all group relative
-                      ${isActive 
-                        ? 'bg-[#C62828] text-white shadow-lg' 
-                        : 'text-gray-400 hover:bg-[#3D3D3D] hover:text-white'
+                      ${
+                        isActive
+                          ? "bg-[#C62828] text-white shadow-lg"
+                          : "text-gray-400 hover:bg-[#3D3D3D] hover:text-white"
                       }`}
                     title={item.label}
                   >
@@ -1016,8 +1091,10 @@ export default function Layout({ children, activeTab, onTabChange }: LayoutProps
               {menuItems.map((item) => {
                 const Icon = item.icon;
                 const isActive = activeTab === item.id;
-                const hasPermission = item.value.some((d) => userMenus.includes(d)) || userMenus.includes("full_access");
-                
+                const hasPermission =
+                  item.value.some((d) => userMenus.includes(d)) ||
+                  userMenus.includes("full_access");
+
                 if (!hasPermission) return null;
 
                 return (
@@ -1028,13 +1105,16 @@ export default function Layout({ children, activeTab, onTabChange }: LayoutProps
                       setMobileSidebarOpen(false);
                     }}
                     className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-all
-                      ${isActive 
-                        ? 'bg-[#C62828] text-white shadow-lg' 
-                        : 'text-gray-400 hover:bg-[#3D3D3D] hover:text-white'
+                      ${
+                        isActive
+                          ? "bg-[#C62828] text-white shadow-lg"
+                          : "text-gray-400 hover:bg-[#3D3D3D] hover:text-white"
                       }`}
                   >
                     <Icon className="w-5 h-5 flex-shrink-0" />
-                    <span className="font-medium text-sm truncate">{item.label}</span>
+                    <span className="font-medium text-sm truncate">
+                      {item.label}
+                    </span>
                   </button>
                 );
               })}
@@ -1057,7 +1137,9 @@ export default function Layout({ children, activeTab, onTabChange }: LayoutProps
       </aside>
 
       {/* Main Content */}
-      <div className={`transition-all duration-300 ease-in-out min-h-screen ${sidebarOpen ? 'lg:ml-56' : 'lg:ml-20'}`}>
+      <div
+        className={`transition-all duration-300 ease-in-out min-h-screen ${sidebarOpen ? "lg:ml-56" : "lg:ml-20"}`}
+      >
         {/* Top Navigation Bar */}
         <header className="sticky top-0 z-30 h-16 bg-white border-b border-gray-200 shadow-sm">
           <div className="px-4 h-full">
@@ -1090,8 +1172,12 @@ export default function Layout({ children, activeTab, onTabChange }: LayoutProps
                     <MdBusiness className="w-6 h-6 text-white" />
                   </div>
                   <div>
-                    <h1 className="font-bold text-[#2D2D2D] text-lg leading-tight">{activeMenuLabel}</h1>
-                    <p className="text-xs text-gray-500">Nayash Group Management</p>
+                    <h1 className="font-bold text-[#2D2D2D] text-lg leading-tight">
+                      {activeMenuLabel}
+                    </h1>
+                    <p className="text-xs text-gray-500">
+                      Nayash Group Management
+                    </p>
                   </div>
                 </div>
               </div>
@@ -1127,12 +1213,17 @@ export default function Layout({ children, activeTab, onTabChange }: LayoutProps
                   {notifOpen && (
                     <div className="absolute right-0 top-full mt-2 w-80 bg-white rounded-lg shadow-xl border border-gray-200 overflow-hidden z-50">
                       <div className="flex items-center justify-between px-4 py-3 border-b bg-[#2D2D2D]">
-                        <h4 className="text-sm font-semibold text-white">Notifications</h4>
+                        <h4 className="text-sm font-semibold text-white">
+                          Notifications
+                        </h4>
                         <div className="flex items-center gap-3">
                           <span className="text-xs text-gray-300 bg-[#C62828] px-2 py-1 rounded-full">
                             {unreadCount} new
                           </span>
-                          <button onClick={() => setNotifOpen(false)} className="p-1 hover:bg-[#3D3D3D] rounded">
+                          <button
+                            onClick={() => setNotifOpen(false)}
+                            className="p-1 hover:bg-[#3D3D3D] rounded"
+                          >
                             <FaTimes className="w-4 h-4 text-white" />
                           </button>
                         </div>
@@ -1142,7 +1233,9 @@ export default function Layout({ children, activeTab, onTabChange }: LayoutProps
                         {notifications.length === 0 ? (
                           <div className="p-8 text-center">
                             <FaBell className="w-12 h-12 text-gray-300 mx-auto mb-3" />
-                            <p className="text-gray-500 text-sm">No notifications yet</p>
+                            <p className="text-gray-500 text-sm">
+                              No notifications yet
+                            </p>
                           </div>
                         ) : (
                           notifications.map((n) => (
@@ -1158,10 +1251,16 @@ export default function Layout({ children, activeTab, onTabChange }: LayoutProps
                                 </div>
                                 <div className="flex-1 min-w-0">
                                   <div className="flex items-start justify-between gap-2">
-                                    <p className="text-sm font-semibold text-gray-900">{n.title}</p>
-                                    {!n.seen && <span className="w-2 h-2 bg-[#C62828] rounded-full flex-shrink-0 mt-1"></span>}
+                                    <p className="text-sm font-semibold text-gray-900">
+                                      {n.title}
+                                    </p>
+                                    {!n.seen && (
+                                      <span className="w-2 h-2 bg-[#C62828] rounded-full flex-shrink-0 mt-1"></span>
+                                    )}
                                   </div>
-                                  <p className="text-xs text-gray-600 mt-1 line-clamp-2">{n.description}</p>
+                                  <p className="text-xs text-gray-600 mt-1 line-clamp-2">
+                                    {n.description}
+                                  </p>
                                   <div className="flex items-center gap-1.5 mt-2">
                                     <Clock className="w-3.5 h-3.5 text-gray-400" />
                                     <p className="text-xs text-gray-400">
@@ -1206,15 +1305,25 @@ export default function Layout({ children, activeTab, onTabChange }: LayoutProps
                     className="flex items-center gap-2 p-1 rounded-lg hover:bg-gray-100 transition"
                   >
                     {avatarUrl ? (
-                      <img src={avatarUrl} alt="avatar" className="w-9 h-9 rounded-full object-cover border-2 border-[#C62828]" />
+                      <img
+                        src={avatarUrl}
+                        alt="avatar"
+                        className="w-9 h-9 rounded-full object-cover border-2 border-[#C62828]"
+                      />
                     ) : (
                       <div className="w-9 h-9 bg-[#C62828] rounded-full flex items-center justify-center shadow-sm">
-                        <span className="text-white font-semibold text-sm">{initials}</span>
+                        <span className="text-white font-semibold text-sm">
+                          {initials}
+                        </span>
                       </div>
                     )}
                     <div className="hidden md:flex flex-col items-start">
-                      <span className="text-sm font-semibold text-[#2D2D2D]">{displayName}</span>
-                      <span className="text-xs text-gray-500">{displayRole}</span>
+                      <span className="text-sm font-semibold text-[#2D2D2D]">
+                        {displayName}
+                      </span>
+                      <span className="text-xs text-gray-500">
+                        {displayRole}
+                      </span>
                     </div>
                   </button>
 
@@ -1224,15 +1333,25 @@ export default function Layout({ children, activeTab, onTabChange }: LayoutProps
                       <div className="p-4 bg-[#2D2D2D] border-b border-gray-700">
                         <div className="flex items-center gap-3">
                           {avatarUrl ? (
-                            <img src={avatarUrl} alt="avatar" className="w-12 h-12 rounded-full object-cover border-2 border-[#C62828] shadow" />
+                            <img
+                              src={avatarUrl}
+                              alt="avatar"
+                              className="w-12 h-12 rounded-full object-cover border-2 border-[#C62828] shadow"
+                            />
                           ) : (
                             <div className="w-12 h-12 bg-[#C62828] rounded-full flex items-center justify-center shadow">
-                              <span className="text-white font-semibold">{initials}</span>
+                              <span className="text-white font-semibold">
+                                {initials}
+                              </span>
                             </div>
                           )}
                           <div>
-                            <p className="text-sm font-semibold text-white">{displayName}</p>
-                            <p className="text-xs text-gray-300">{displayRole}</p>
+                            <p className="text-sm font-semibold text-white">
+                              {displayName}
+                            </p>
+                            <p className="text-xs text-gray-300">
+                              {displayRole}
+                            </p>
                           </div>
                         </div>
                       </div>
@@ -1268,9 +1387,7 @@ export default function Layout({ children, activeTab, onTabChange }: LayoutProps
         </header>
 
         {/* Main Content Area */}
-        <main className="p-6">
-          {children}
-        </main>
+        <main className="p-6">{children}</main>
       </div>
 
       {/* Request Material Modal */}
