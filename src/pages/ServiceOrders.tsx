@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 // import { useState, useEffect } from 'react';
 // import {
 //   Plus,
@@ -636,7 +637,6 @@
 // }
 
 
-
 import { useState, useEffect } from 'react';
 import {
   Plus,
@@ -1130,7 +1130,7 @@ export default function ServiceOrders() {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center h-96">
+      <div className="flex items-center justify-center h-96 px-3">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
           <p className="text-gray-600">Loading service orders...</p>
@@ -1140,56 +1140,49 @@ export default function ServiceOrders() {
   }
 
   return (
-    <div className="p-6">
+    <div className="p-2 px-3 md:px-6 -mt-4">
       {/* Header with Actions */}
-      <div className="flex justify-between items-center mb-6">
+      <div className="flex justify-between items-center mb-6 px-3">
         <button
           onClick={() => {
             resetForm();
             setShowModal(true);
           }}
-          className="bg-[#C62828] text-white px-6 py-3 rounded-lg hover:bg-red-500 transition flex items-center gap-2 shadow-sm"
+          className="bg-[#C62828] text-white px-4 md:px-6 py-2 md:py-3 rounded-lg hover:bg-red-500 transition flex items-center gap-2 shadow-sm text-sm md:text-base whitespace-nowrap"
         >
-          <Plus className="w-5 h-5" />
+          <Plus className="w-4 h-4 md:w-5 md:h-5" />
           Create Service Order
         </button>
       </div>
 
       {/* Bulk Actions Bar */}
-      <div className="mb-6 flex flex-col md:flex-row md:items-center justify-between gap-4">
-        <div className="flex gap-3">
-          <button
-            onClick={() => setShowFilterSidebar(true)}
-            className="bg-white border border-gray-300 text-gray-700 px-4 py-2 rounded-lg hover:bg-gray-50 transition-all flex items-center gap-2 font-medium shadow-sm text-sm"
-          >
-            <Filter className="w-4 h-4" />
-            Filters
-          </button>
+      <div className="mb-1 flex flex-col md:flex-row md:items-center justify-between gap-4 px-3">
+        <div className="flex gap-2 md:gap-3 flex-wrap">
           {selectedItems.size > 0 && (
-            <div className="flex gap-2">
+            <div className="flex gap-2 flex-wrap">
               <button
                 onClick={() => handleBulkAction('start')}
-                className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition"
+                className="bg-blue-600 text-white px-3 md:px-4 py-1.5 md:py-2 rounded-lg hover:bg-blue-700 transition text-sm"
               >
                 Start Selected
               </button>
               <button
                 onClick={() => handleBulkAction('complete')}
-                className="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition"
+                className="bg-green-600 text-white px-3 md:px-4 py-1.5 md:py-2 rounded-lg hover:bg-green-700 transition text-sm"
               >
                 Complete Selected
               </button>
               <button
                 onClick={() => handleBulkAction('cancel')}
-                className="bg-orange-600 text-white px-4 py-2 rounded-lg hover:bg-orange-700 transition"
+                className="bg-orange-600 text-white px-3 md:px-4 py-1.5 md:py-2 rounded-lg hover:bg-orange-700 transition text-sm"
               >
                 Cancel Selected
               </button>
               <button
                 onClick={handleBulkDelete}
-                className="bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700 transition flex items-center gap-2"
+                className="bg-red-600 text-white px-3 md:px-4 py-1.5 md:py-2 rounded-lg hover:bg-red-700 transition flex items-center gap-1 md:gap-2 text-sm"
               >
-                <Trash2 className="w-4 h-4" />
+                <Trash2 className="w-3 h-3 md:w-4 md:h-4" />
                 Delete ({selectedItems.size})
               </button>
             </div>
@@ -1197,13 +1190,13 @@ export default function ServiceOrders() {
         </div>
       </div>
 
-      {/* Main Table with Column Search */}
-      <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+      {/* Main Table */}
+      <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden mx-3">
         <div className="overflow-x-auto">
-          <table className="w-full">
+          <table className="w-full min-w-[1000px]">
             <thead className="bg-gray-200 border-b border-gray-200">
               <tr>
-                <th className="px-6 py-3 text-center w-16">
+                <th className="px-4 md:px-6 py-3 text-center w-14">
                   <input
                     type="checkbox"
                     checked={selectAll}
@@ -1211,10 +1204,57 @@ export default function ServiceOrders() {
                     className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-2 focus:ring-blue-500"
                   />
                 </th>
-                <th className="px-6 py-3 text-left">
-                  <div className="text-xs font-semibold text-gray-700 uppercase tracking-wider mb-2">
+                <th className="px-4 md:px-6 py-3 text-left">
+                  <div className="text-xs font-semibold text-gray-700 uppercase tracking-wider">
                     SO Number
                   </div>
+                </th>
+                <th className="px-4 md:px-6 py-3 text-left">
+                  <div className="text-xs font-semibold text-gray-700 uppercase tracking-wider">
+                    Service Name
+                  </div>
+                </th>
+                <th className="px-4 md:px-6 py-3 text-left">
+                  <div className="text-xs font-semibold text-gray-700 uppercase tracking-wider">
+                    Vendor
+                  </div>
+                </th>
+                <th className="px-4 md:px-6 py-3 text-left">
+                  <div className="text-xs font-semibold text-gray-700 uppercase tracking-wider">
+                    Project
+                  </div>
+                </th>
+                <th className="px-4 md:px-6 py-3 text-left">
+                  <div className="text-xs font-semibold text-gray-700 uppercase tracking-wider">
+                    Start Date
+                  </div>
+                </th>
+                <th className="px-4 md:px-6 py-3 text-left">
+                  <div className="text-xs font-semibold text-gray-700 uppercase tracking-wider">
+                    Location
+                  </div>
+                </th>
+                <th className="px-4 md:px-6 py-3 text-left">
+                  <div className="text-xs font-semibold text-gray-700 uppercase tracking-wider">
+                    Priority
+                  </div>
+                </th>
+                <th className="px-4 md:px-6 py-3 text-left">
+                  <div className="text-xs font-semibold text-gray-700 uppercase tracking-wider">
+                    Status
+                  </div>
+                </th>
+                <th className="px-4 md:px-6 py-3 text-left">
+                  <div className="text-xs font-semibold text-gray-700 uppercase tracking-wider">
+                    Actions
+                  </div>
+                </th>
+              </tr>
+              
+              {/* Search Row */}
+              <tr className="bg-gray-50 border-b border-gray-200">
+                <td className="px-4 md:px-6 py-3"></td>
+                <td className="px-4 md:px-6 py-3">
                   <input
                     type="text"
                     placeholder="Search SO..."
@@ -1222,11 +1262,8 @@ export default function ServiceOrders() {
                     onChange={(e) => setSearchSONumber(e.target.value)}
                     className="w-full px-3 py-1.5 text-sm border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                   />
-                </th>
-                <th className="px-6 py-3 text-left">
-                  <div className="text-xs font-semibold text-gray-700 uppercase tracking-wider mb-2">
-                    Service Name
-                  </div>
+                </td>
+                <td className="px-4 md:px-6 py-3">
                   <input
                     type="text"
                     placeholder="Search service..."
@@ -1234,11 +1271,8 @@ export default function ServiceOrders() {
                     onChange={(e) => setSearchServiceName(e.target.value)}
                     className="w-full px-3 py-1.5 text-sm border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                   />
-                </th>
-                <th className="px-6 py-3 text-left">
-                  <div className="text-xs font-semibold text-gray-700 uppercase tracking-wider mb-2">
-                    Vendor
-                  </div>
+                </td>
+                <td className="px-4 md:px-6 py-3">
                   <input
                     type="text"
                     placeholder="Search vendor..."
@@ -1246,11 +1280,8 @@ export default function ServiceOrders() {
                     onChange={(e) => setSearchVendor(e.target.value)}
                     className="w-full px-3 py-1.5 text-sm border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                   />
-                </th>
-                <th className="px-6 py-3 text-left">
-                  <div className="text-xs font-semibold text-gray-700 uppercase tracking-wider mb-2">
-                    Project
-                  </div>
+                </td>
+                <td className="px-4 md:px-6 py-3">
                   <input
                     type="text"
                     placeholder="Search project..."
@@ -1258,16 +1289,9 @@ export default function ServiceOrders() {
                     onChange={(e) => setSearchProject(e.target.value)}
                     className="w-full px-3 py-1.5 text-sm border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                   />
-                </th>
-                <th className="px-6 py-3 text-left">
-                  <div className="text-xs font-semibold text-gray-700 uppercase tracking-wider mb-2">
-                    Start Date
-                  </div>
-                </th>
-                <th className="px-6 py-3 text-left">
-                  <div className="text-xs font-semibold text-gray-700 uppercase tracking-wider mb-2">
-                    Location
-                  </div>
+                </td>
+                <td className="px-4 md:px-6 py-3"></td>
+                <td className="px-4 md:px-6 py-3">
                   <input
                     type="text"
                     placeholder="Search location..."
@@ -1275,24 +1299,21 @@ export default function ServiceOrders() {
                     onChange={(e) => setSearchLocation(e.target.value)}
                     className="w-full px-3 py-1.5 text-sm border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                   />
-                </th>
-                <th className="px-6 py-3 text-left">
-                  <div className="text-xs font-semibold text-gray-700 uppercase tracking-wider mb-2">
-                    Priority
-                  </div>
-                </th>
-                <th className="px-6 py-3 text-left">
-                  <div className="text-xs font-semibold text-gray-700 uppercase tracking-wider mb-2">
-                    Status
-                  </div>
-                </th>
-                <th className="px-6 py-3 text-left">
-                  <div className="text-xs font-semibold text-gray-700 uppercase tracking-wider">
-                    Actions
-                  </div>
-                </th>
+                </td>
+                <td className="px-4 md:px-6 py-3"></td>
+                <td className="px-4 md:px-6 py-3"></td>
+                <td className="px-4 md:px-6 py-3">
+                  <button
+                    onClick={() => setShowFilterSidebar(true)}
+                    className="p-1.5 text-gray-600 hover:text-blue-600 hover:bg-blue-50 rounded-md transition"
+                    title="Advanced Filters"
+                  >
+                    <Filter className="w-4 h-4" />
+                  </button>
+                </td>
               </tr>
             </thead>
+            
             <tbody className="divide-y divide-gray-200">
               {filteredSOs.map((so) => {
                 const isSelected = selectedItems.has(so.id!);
@@ -1303,7 +1324,7 @@ export default function ServiceOrders() {
                       isSelected ? 'bg-blue-50' : ''
                     }`}
                   >
-                    <td className="px-6 py-4 text-center">
+                    <td className="px-4 md:px-6 py-4 text-center">
                       <input
                         type="checkbox"
                         checked={isSelected}
@@ -1311,13 +1332,13 @@ export default function ServiceOrders() {
                         className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-2 focus:ring-blue-500"
                       />
                     </td>
-                    <td className="px-6 py-4">
+                    <td className="px-4 md:px-6 py-4">
                       <div className="flex items-center gap-2">
                         <Wrench className="w-4 h-4 text-blue-600" />
                         <span className="font-medium text-gray-800">{so.so_number}</span>
                       </div>
                     </td>
-                    <td className="px-6 py-4">
+                    <td className="px-4 md:px-6 py-4">
                       <div>
                         <p className="font-medium text-gray-800">{so.service_name}</p>
                         <p className="text-xs text-gray-500">
@@ -1325,57 +1346,57 @@ export default function ServiceOrders() {
                         </p>
                       </div>
                     </td>
-                    <td className="px-6 py-4 text-gray-700">
+                    <td className="px-4 md:px-6 py-4 text-gray-700">
                       {vendors.find((v) => Number(v.id) === Number(so.vendor_id))?.name || 'N/A'}
                     </td>
-                    <td className="px-6 py-4 text-gray-700">
+                    <td className="px-4 md:px-6 py-4 text-gray-700">
                       {projects.find((p) => Number(p.id) === Number(so.project_id))?.name || 'N/A'}
                     </td>
-                    <td className="px-6 py-4 text-gray-700">
+                    <td className="px-4 md:px-6 py-4 text-gray-700">
                       <div className="flex items-center gap-2">
                         <Calendar className="w-4 h-4 text-gray-400" />
                         {new Date(so.start_date).toLocaleDateString()}
                       </div>
                     </td>
-                    <td className="px-6 py-4 text-gray-700">
+                    <td className="px-4 md:px-6 py-4 text-gray-700">
                       {so.location || 'N/A'}
                     </td>
-                    <td className="px-6 py-4">
+                    <td className="px-4 md:px-6 py-4">
                       <span className={`px-2 py-1 rounded-full text-xs font-medium ${getPriorityBadge(so.priority)}`}>
                         {(so.priority || '').toUpperCase()}
                       </span>
                     </td>
-                    <td className="px-6 py-4">
+                    <td className="px-4 md:px-6 py-4">
                       <span className={`px-3 py-1 rounded-full text-xs font-medium ${getStatusBadge(so.status)}`}>
                         {(so.status || '').replace('_', ' ').toUpperCase()}
                       </span>
                     </td>
-                    <td className="px-6 py-4">
-                      <div className="flex gap-2">
+                    <td className="px-4 md:px-6 py-4">
+                      <div className="flex gap-1 md:gap-2">
                         <button
                           onClick={() => handleEdit(so)}
-                          className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition"
+                          className="p-1.5 md:p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition"
                           title="Edit"
                         >
                           <Edit2 className="w-4 h-4" />
                         </button>
                         <button
                           onClick={() => handlePrint(so)}
-                          className="p-2 text-green-600 hover:bg-green-50 rounded-lg transition"
+                          className="p-1.5 md:p-2 text-green-600 hover:bg-green-50 rounded-lg transition"
                           title="Print"
                         >
                           <Printer className="w-4 h-4" />
                         </button>
                         <button
                           onClick={() => handleShare(so)}
-                          className="p-2 text-purple-600 hover:bg-purple-50 rounded-lg transition"
+                          className="p-1.5 md:p-2 text-purple-600 hover:bg-purple-50 rounded-lg transition"
                           title="Share"
                         >
                           <Share2 className="w-4 h-4" />
                         </button>
                         <button
                           onClick={() => handleDelete(so.id!)}
-                          className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition"
+                          className="p-1.5 md:p-2 text-red-600 hover:bg-red-50 rounded-lg transition"
                           title="Delete"
                         >
                           <Trash2 className="w-4 h-4" />
@@ -1389,7 +1410,7 @@ export default function ServiceOrders() {
           </table>
 
           {filteredSOs.length === 0 && (
-            <div className="text-center py-12">
+            <div className="text-center py-12 px-3">
               <Wrench className="w-16 h-16 text-gray-300 mx-auto mb-4" />
               <h3 className="text-lg font-semibold text-gray-800 mb-2">No service orders found</h3>
               <p className="text-gray-600">
@@ -1526,431 +1547,431 @@ export default function ServiceOrders() {
       )}
 
       {/* Modal */}
-     {showModal && (
-  <div className="fixed inset-0 bg-black/60 backdrop-blur-md flex items-center justify-center z-50 p-4 animate-fadeIn">
-    <div className="bg-gradient-to-br from-gray-50 to-white rounded-2xl shadow-2xl shadow-gray-900/20 w-full max-w-xl my-4 border border-gray-200 overflow-hidden">
-      {/* Header */}
-      <div className="bg-gradient-to-r from-[#40423f] via-[#4a4c49] to-[#5a5d5a] px-5 py-3 flex justify-between items-center border-b border-gray-700/30 relative overflow-hidden">
-        <div className="flex items-center gap-2.5">
-          <div className="p-1.5 bg-white/20 rounded-xl backdrop-blur-sm">
-            <FileText className="w-4 h-4 text-white" />
-          </div>
-          <div>
-            <h2 className="text-base font-bold text-white flex items-center gap-1.5">
-              {editingId ? 'Edit Service Order' : 'Create Service Order'}
-            </h2>
-            <p className="text-xs text-white/90 font-medium mt-0.5">
-              {editingId ? 'Update service order details' : 'Add new service order'}
-            </p>
+      {showModal && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-md flex items-center justify-center z-50 p-4 animate-fadeIn">
+          <div className="bg-gradient-to-br from-gray-50 to-white rounded-2xl shadow-2xl shadow-gray-900/20 w-full max-w-xl my-4 border border-gray-200 overflow-hidden">
+            {/* Header */}
+            <div className="bg-gradient-to-r from-[#40423f] via-[#4a4c49] to-[#5a5d5a] px-5 py-3 flex justify-between items-center border-b border-gray-700/30 relative overflow-hidden">
+              <div className="flex items-center gap-2.5">
+                <div className="p-1.5 bg-white/20 rounded-xl backdrop-blur-sm">
+                  <FileText className="w-4 h-4 text-white" />
+                </div>
+                <div>
+                  <h2 className="text-base font-bold text-white flex items-center gap-1.5">
+                    {editingId ? 'Edit Service Order' : 'Create Service Order'}
+                  </h2>
+                  <p className="text-xs text-white/90 font-medium mt-0.5">
+                    {editingId ? 'Update service order details' : 'Add new service order'}
+                  </p>
+                </div>
+              </div>
+              <button
+                onClick={() => { setShowModal(false); resetForm(); }}
+                className="text-white hover:bg-white/20 rounded-xl p-1.5 transition-all duration-200 hover:scale-105 active:scale-95"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            {/* Content */}
+            <div className="p-4 max-h-[65vh] overflow-y-auto custom-scrollbar">
+              <form onSubmit={handleSubmit} className="space-y-3">
+                {/* Compact Grid Layout */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                  {/* Service Name */}
+                  <div className="space-y-1">
+                    <label className="block text-xs font-semibold text-gray-800 mb-1 flex items-center gap-1.5">
+                      <FileText className="w-3.5 h-3.5 text-[#C62828]" />
+                      Service Name <span className="text-red-500">*</span>
+                    </label>
+                    <div className="relative group">
+                      <div className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 group-focus-within:text-[#C62828] transition-colors">
+                        <FileText className="w-3.5 h-3.5" />
+                      </div>
+                      <input
+                        type="text"
+                        value={formData.service_name}
+                        onChange={(e) => setFormData({ ...formData, service_name: e.target.value })}
+                        className="w-full pl-9 pr-3 py-2 text-sm border-2 border-gray-200 rounded-xl focus:border-[#C62828] focus:ring-2 focus:ring-[#C62828]/20 outline-none transition-all duration-200 hover:border-gray-300"
+                        required
+                        placeholder="Enter service name"
+                      />
+                    </div>
+                  </div>
+
+                  {/* Service Type */}
+                  <div className="space-y-1">
+                    <label className="block text-xs font-semibold text-gray-800 mb-1 flex items-center gap-1.5">
+                      <Layers className="w-3.5 h-3.5 text-[#C62828]" />
+                      Service Type <span className="text-red-500">*</span>
+                    </label>
+                    <div className="relative group">
+                      <div className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 group-focus-within:text-[#C62828] transition-colors">
+                        <Layers className="w-3.5 h-3.5" />
+                      </div>
+                      <select
+                        value={formData.service_type_id !== null ? String(formData.service_type_id) : ''}
+                        onChange={(e) => setFormData({ ...formData, service_type_id: e.target.value ? Number(e.target.value) : null })}
+                        className="w-full pl-9 pr-8 py-2 text-sm border-2 border-gray-200 rounded-xl focus:border-[#C62828] focus:ring-2 focus:ring-[#C62828]/20 bg-white outline-none transition-all duration-200 appearance-none hover:border-gray-300"
+                      >
+                        <option value="" className="text-gray-400">Select Type</option>
+                        {serviceTypes.map((t) => (
+                          <option key={t.id} value={t.id} className="py-1">{t.name}</option>
+                        ))}
+                      </select>
+                      <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none">
+                        <ChevronDown className="w-3.5 h-3.5 text-gray-400" />
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Vendor */}
+                  <div className="space-y-1">
+                    <label className="block text-xs font-semibold text-gray-800 mb-1 flex items-center gap-1.5">
+                      <Truck className="w-3.5 h-3.5 text-[#C62828]" />
+                      Vendor <span className="text-red-500">*</span>
+                    </label>
+                    <div className="relative group">
+                      <div className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 group-focus-within:text-[#C62828] transition-colors">
+                        <Truck className="w-3.5 h-3.5" />
+                      </div>
+                      <select
+                        value={formData.vendor_id !== null ? String(formData.vendor_id) : ''}
+                        onChange={(e) => setFormData({ ...formData, vendor_id: e.target.value ? Number(e.target.value) : null })}
+                        className="w-full pl-9 pr-8 py-2 text-sm border-2 border-gray-200 rounded-xl focus:border-[#C62828] focus:ring-2 focus:ring-[#C62828]/20 bg-white outline-none transition-all duration-200 appearance-none hover:border-gray-300"
+                        required
+                      >
+                        <option value="" className="text-gray-400">Select Vendor</option>
+                        {vendors.map((v) => (
+                          <option key={v.id} value={v.id} className="py-1">{v.name}</option>
+                        ))}
+                      </select>
+                      <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none">
+                        <ChevronDown className="w-3.5 h-3.5 text-gray-400" />
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Project */}
+                  <div className="space-y-1">
+                    <label className="block text-xs font-semibold text-gray-800 mb-1 flex items-center gap-1.5">
+                      <Building className="w-3.5 h-3.5 text-[#C62828]" />
+                      Project <span className="text-red-500">*</span>
+                    </label>
+                    <div className="relative group">
+                      <div className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 group-focus-within:text-[#C62828] transition-colors">
+                        <Building className="w-3.5 h-3.5" />
+                      </div>
+                      <select
+                        value={formData.project_id !== null ? String(formData.project_id) : ''}
+                        onChange={(e) => setFormData({ ...formData, project_id: e.target.value ? Number(e.target.value) : null })}
+                        className="w-full pl-9 pr-8 py-2 text-sm border-2 border-gray-200 rounded-xl focus:border-[#C62828] focus:ring-2 focus:ring-[#C62828]/20 bg-white outline-none transition-all duration-200 appearance-none hover:border-gray-300"
+                        required
+                      >
+                        <option value="" className="text-gray-400">Select Project</option>
+                        {projects.map((p) => (
+                          <option key={p.id} value={p.id} className="py-1">{p.name}</option>
+                        ))}
+                      </select>
+                      <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none">
+                        <ChevronDown className="w-3.5 h-3.5 text-gray-400" />
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Start Date */}
+                  <div className="space-y-1">
+                    <label className="block text-xs font-semibold text-gray-800 mb-1 flex items-center gap-1.5">
+                      <Calendar className="w-3.5 h-3.5 text-[#C62828]" />
+                      Start Date <span className="text-red-500">*</span>
+                    </label>
+                    <div className="relative group">
+                      <div className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 group-focus-within:text-[#C62828] transition-colors">
+                        <Calendar className="w-3.5 h-3.5" />
+                      </div>
+                      <input
+                        type="date"
+                        value={formData.start_date}
+                        onChange={(e) => setFormData({ ...formData, start_date: e.target.value })}
+                        className="w-full pl-9 pr-3 py-2 text-sm border-2 border-gray-200 rounded-xl focus:border-[#C62828] focus:ring-2 focus:ring-[#C62828]/20 outline-none transition-all duration-200 hover:border-gray-300"
+                        required
+                      />
+                    </div>
+                  </div>
+
+                  {/* End Date */}
+                  <div className="space-y-1">
+                    <label className="block text-xs font-semibold text-gray-800 mb-1 flex items-center gap-1.5">
+                      <Calendar className="w-3.5 h-3.5 text-[#C62828]" />
+                      End Date
+                    </label>
+                    <div className="relative group">
+                      <div className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 group-focus-within:text-[#C62828] transition-colors">
+                        <Calendar className="w-3.5 h-3.5" />
+                      </div>
+                      <input
+                        type="date"
+                        value={formData.end_date}
+                        onChange={(e) => setFormData({ ...formData, end_date: e.target.value })}
+                        className="w-full pl-9 pr-3 py-2 text-sm border-2 border-gray-200 rounded-xl focus:border-[#C62828] focus:ring-2 focus:ring-[#C62828]/20 outline-none transition-all duration-200 hover:border-gray-300"
+                      />
+                    </div>
+                  </div>
+
+                  {/* Priority */}
+                  <div className="space-y-1">
+                    <label className="block text-xs font-semibold text-gray-800 mb-1 flex items-center gap-1.5">
+                      <AlertCircle className="w-3.5 h-3.5 text-[#C62828]" />
+                      Priority <span className="text-red-500">*</span>
+                    </label>
+                    <div className="relative group">
+                      <div className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 group-focus-within:text-[#C62828] transition-colors">
+                        <AlertCircle className="w-3.5 h-3.5" />
+                      </div>
+                      <select
+                        value={formData.priority}
+                        onChange={(e) => setFormData({ ...formData, priority: e.target.value })}
+                        className="w-full pl-9 pr-8 py-2 text-sm border-2 border-gray-200 rounded-xl focus:border-[#C62828] focus:ring-2 focus:ring-[#C62828]/20 bg-white outline-none transition-all duration-200 appearance-none hover:border-gray-300"
+                        required
+                      >
+                        <option value="low">Low</option>
+                        <option value="medium">Medium</option>
+                        <option value="high">High</option>
+                        <option value="urgent">Urgent</option>
+                      </select>
+                      <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none">
+                        <ChevronDown className="w-3.5 h-3.5 text-gray-400" />
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Status */}
+                  <div className="space-y-1">
+                    <label className="block text-xs font-semibold text-gray-800 mb-1 flex items-center gap-1.5">
+                      <CheckSquare className="w-3.5 h-3.5 text-[#C62828]" />
+                      Status
+                    </label>
+                    <div className="relative group">
+                      <div className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 group-focus-within:text-[#C62828] transition-colors">
+                        <CheckSquare className="w-3.5 h-3.5" />
+                      </div>
+                      <select
+                        value={formData.status}
+                        onChange={(e) => setFormData({ ...formData, status: e.target.value })}
+                        className="w-full pl-9 pr-8 py-2 text-sm border-2 border-gray-200 rounded-xl focus:border-[#C62828] focus:ring-2 focus:ring-[#C62828]/20 bg-white outline-none transition-all duration-200 appearance-none hover:border-gray-300"
+                      >
+                        <option value="scheduled">Scheduled</option>
+                        <option value="in_progress">In Progress</option>
+                        <option value="completed">Completed</option>
+                        <option value="cancelled">Cancelled</option>
+                        <option value="on_hold">On Hold</option>
+                      </select>
+                      <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none">
+                        <ChevronDown className="w-3.5 h-3.5 text-gray-400" />
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Estimated Cost */}
+                  <div className="space-y-1">
+                    <label className="block text-xs font-semibold text-gray-800 mb-1 flex items-center gap-1.5">
+                      <FileText className="w-3.5 h-3.5 text-[#C62828]" />
+                      Estimated Cost
+                    </label>
+                    <div className="relative group">
+                      <div className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 group-focus-within:text-[#C62828] transition-colors">
+                        <FileText className="w-3.5 h-3.5" />
+                      </div>
+                      <input
+                        type="number"
+                        value={formData.estimated_cost}
+                        onChange={(e) => setFormData({ ...formData, estimated_cost: parseFloat(e.target.value) || 0 })}
+                        className="w-full pl-9 pr-3 py-2 text-sm border-2 border-gray-200 rounded-xl focus:border-[#C62828] focus:ring-2 focus:ring-[#C62828]/20 outline-none transition-all duration-200 hover:border-gray-300"
+                        min="0"
+                        step="0.01"
+                        placeholder="0.00"
+                      />
+                    </div>
+                  </div>
+
+                  {/* Actual Cost */}
+                  <div className="space-y-1">
+                    <label className="block text-xs font-semibold text-gray-800 mb-1 flex items-center gap-1.5">
+                      <FileText className="w-3.5 h-3.5 text-[#C62828]" />
+                      Actual Cost
+                    </label>
+                    <div className="relative group">
+                      <div className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 group-focus-within:text-[#C62828] transition-colors">
+                        <FileText className="w-3.5 h-3.5" />
+                      </div>
+                      <input
+                        type="number"
+                        value={formData.actual_cost}
+                        onChange={(e) => setFormData({ ...formData, actual_cost: parseFloat(e.target.value) || 0 })}
+                        className="w-full pl-9 pr-3 py-2 text-sm border-2 border-gray-200 rounded-xl focus:border-[#C62828] focus:ring-2 focus:ring-[#C62828]/20 outline-none transition-all duration-200 hover:border-gray-300"
+                        min="0"
+                        step="0.01"
+                        placeholder="0.00"
+                      />
+                    </div>
+                  </div>
+
+                  {/* Location */}
+                  <div className="md:col-span-2 space-y-1">
+                    <label className="block text-xs font-semibold text-gray-800 mb-1 flex items-center gap-1.5">
+                      <MapPin className="w-3.5 h-3.5 text-[#C62828]" />
+                      Location
+                    </label>
+                    <div className="relative group">
+                      <div className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 group-focus-within:text-[#C62828] transition-colors">
+                        <MapPin className="w-3.5 h-3.5" />
+                      </div>
+                      <input
+                        type="text"
+                        value={formData.location}
+                        onChange={(e) => setFormData({ ...formData, location: e.target.value })}
+                        className="w-full pl-9 pr-3 py-2 text-sm border-2 border-gray-200 rounded-xl focus:border-[#C62828] focus:ring-2 focus:ring-[#C62828]/20 outline-none transition-all duration-200 hover:border-gray-300"
+                        placeholder="Enter location"
+                      />
+                    </div>
+                  </div>
+
+                  {/* Supervisor Name */}
+                  <div className="space-y-1">
+                    <label className="block text-xs font-semibold text-gray-800 mb-1 flex items-center gap-1.5">
+                      <UserRound className="w-3.5 h-3.5 text-[#C62828]" />
+                      Supervisor Name
+                    </label>
+                    <div className="relative group">
+                      <div className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 group-focus-within:text-[#C62828] transition-colors">
+                        <UserRound className="w-3.5 h-3.5" />
+                      </div>
+                      <input
+                        type="text"
+                        value={formData.supervisor_name}
+                        onChange={(e) => setFormData({ ...formData, supervisor_name: e.target.value })}
+                        className="w-full pl-9 pr-3 py-2 text-sm border-2 border-gray-200 rounded-xl focus:border-[#C62828] focus:ring-2 focus:ring-[#C62828]/20 outline-none transition-all duration-200 hover:border-gray-300"
+                        placeholder="Enter name"
+                      />
+                    </div>
+                  </div>
+
+                  {/* Supervisor Phone */}
+                  <div className="space-y-1">
+                    <label className="block text-xs font-semibold text-gray-800 mb-1 flex items-center gap-1.5">
+                      <Phone className="w-3.5 h-3.5 text-[#C62828]" />
+                      Supervisor Phone
+                    </label>
+                    <div className="relative group">
+                      <div className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 group-focus-within:text-[#C62828] transition-colors">
+                        <Phone className="w-3.5 h-3.5" />
+                      </div>
+                      <input
+                        type="tel"
+                        value={formData.supervisor_phone}
+                        onChange={(e) => setFormData({ ...formData, supervisor_phone: e.target.value })}
+                        className="w-full pl-9 pr-3 py-2 text-sm border-2 border-gray-200 rounded-xl focus:border-[#C62828] focus:ring-2 focus:ring-[#C62828]/20 outline-none transition-all duration-200 hover:border-gray-300"
+                        placeholder="Enter phone number"
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                {/* Description */}
+                <div className="space-y-1">
+                  <label className="block text-xs font-semibold text-gray-800 mb-1 flex items-center gap-1.5">
+                    <FileText className="w-3.5 h-3.5 text-[#C62828]" />
+                    Description
+                  </label>
+                  <div className="relative group">
+                    <div className="absolute left-3 top-3 text-gray-500 group-focus-within:text-[#C62828] transition-colors">
+                      <FileText className="w-3.5 h-3.5" />
+                    </div>
+                    <textarea
+                      value={formData.description}
+                      onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                      className="w-full pl-9 pr-3 py-2 text-sm border-2 border-gray-200 rounded-xl focus:border-[#C62828] focus:ring-2 focus:ring-[#C62828]/20 outline-none transition-all duration-200 hover:border-gray-300 min-h-[80px] resize-vertical"
+                      placeholder="Enter description"
+                    />
+                  </div>
+                </div>
+
+                {/* Notes */}
+                <div className="space-y-1">
+                  <label className="block text-xs font-semibold text-gray-800 mb-1 flex items-center gap-1.5">
+                    <FileText className="w-3.5 h-3.5 text-[#C62828]" />
+                    Notes
+                  </label>
+                  <div className="relative group">
+                    <div className="absolute left-3 top-3 text-gray-500 group-focus-within:text-[#C62828] transition-colors">
+                      <FileText className="w-3.5 h-3.5" />
+                    </div>
+                    <textarea
+                      value={formData.notes}
+                      onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
+                      className="w-full pl-9 pr-3 py-2 text-sm border-2 border-gray-200 rounded-xl focus:border-[#C62828] focus:ring-2 focus:ring-[#C62828]/20 outline-none transition-all duration-200 hover:border-gray-300 min-h-[60px] resize-vertical"
+                      placeholder="Additional notes"
+                    />
+                  </div>
+                </div>
+
+                {/* Submit Button */}
+                <div className="flex gap-2 pt-4 border-t border-gray-200">
+                  <button
+                    type="submit"
+                    disabled={loading}
+                    className="flex-1 bg-gradient-to-r from-[#C62828] to-red-600 text-white py-2.5 px-4 rounded-xl hover:from-red-600 hover:to-red-700 transition-all duration-200 font-semibold shadow-lg hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 group transform hover:-translate-y-0.5 active:translate-y-0"
+                  >
+                    {loading ? (
+                      <>
+                        <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                        Processing...
+                      </>
+                    ) : (
+                      <>
+                        <Save className="w-4 h-4 group-hover:scale-110 transition-transform" />
+                        {editingId ? 'Update Service Order' : 'Create Service Order'}
+                      </>
+                    )}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => { setShowModal(false); resetForm(); }}
+                    className="px-4 py-2.5 text-sm border-2 border-gray-200 rounded-xl hover:bg-gray-50 hover:border-gray-300 transition-all duration-200 font-medium text-gray-700 hover:text-gray-900"
+                  >
+                    Cancel
+                  </button>
+                </div>
+              </form>
+            </div>
+
+            {/* Add some custom styles for scrollbar */}
+            <style >{`
+              .custom-scrollbar::-webkit-scrollbar {
+                width: 6px;
+              }
+              .custom-scrollbar::-webkit-scrollbar-track {
+                background: #f1f1f1;
+                border-radius: 3px;
+              }
+              .custom-scrollbar::-webkit-scrollbar-thumb {
+                background: #c62828;
+                border-radius: 3px;
+              }
+              .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+                background: #b71c1c;
+              }
+              @keyframes fadeIn {
+                from { opacity: 0; transform: translateY(10px); }
+                to { opacity: 1; transform: translateY(0); }
+              }
+              .animate-fadeIn {
+                animation: fadeIn 0.3s ease-out;
+              }
+            `}</style>
           </div>
         </div>
-        <button
-          onClick={() => { setShowModal(false); resetForm(); }}
-          className="text-white hover:bg-white/20 rounded-xl p-1.5 transition-all duration-200 hover:scale-105 active:scale-95"
-        >
-          <X className="w-4 h-4" />
-        </button>
-      </div>
-
-      {/* Content */}
-      <div className="p-4 max-h-[65vh] overflow-y-auto custom-scrollbar">
-        <form onSubmit={handleSubmit} className="space-y-3">
-          {/* Compact Grid Layout */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-            {/* Service Name */}
-            <div className="space-y-1">
-              <label className="block text-xs font-semibold text-gray-800 mb-1 flex items-center gap-1.5">
-                <FileText className="w-3.5 h-3.5 text-[#C62828]" />
-                Service Name <span className="text-red-500">*</span>
-              </label>
-              <div className="relative group">
-                <div className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 group-focus-within:text-[#C62828] transition-colors">
-                  <FileText className="w-3.5 h-3.5" />
-                </div>
-                <input
-                  type="text"
-                  value={formData.service_name}
-                  onChange={(e) => setFormData({ ...formData, service_name: e.target.value })}
-                  className="w-full pl-9 pr-3 py-2 text-sm border-2 border-gray-200 rounded-xl focus:border-[#C62828] focus:ring-2 focus:ring-[#C62828]/20 outline-none transition-all duration-200 hover:border-gray-300"
-                  required
-                  placeholder="Enter service name"
-                />
-              </div>
-            </div>
-
-            {/* Service Type */}
-            <div className="space-y-1">
-              <label className="block text-xs font-semibold text-gray-800 mb-1 flex items-center gap-1.5">
-                <Layers className="w-3.5 h-3.5 text-[#C62828]" />
-                Service Type <span className="text-red-500">*</span>
-              </label>
-              <div className="relative group">
-                <div className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 group-focus-within:text-[#C62828] transition-colors">
-                  <Layers className="w-3.5 h-3.5" />
-                </div>
-                <select
-                  value={formData.service_type_id !== null ? String(formData.service_type_id) : ''}
-                  onChange={(e) => setFormData({ ...formData, service_type_id: e.target.value ? Number(e.target.value) : null })}
-                  className="w-full pl-9 pr-8 py-2 text-sm border-2 border-gray-200 rounded-xl focus:border-[#C62828] focus:ring-2 focus:ring-[#C62828]/20 bg-white outline-none transition-all duration-200 appearance-none hover:border-gray-300"
-                >
-                  <option value="" className="text-gray-400">Select Type</option>
-                  {serviceTypes.map((t) => (
-                    <option key={t.id} value={t.id} className="py-1">{t.name}</option>
-                  ))}
-                </select>
-                <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none">
-                  <ChevronDown className="w-3.5 h-3.5 text-gray-400" />
-                </div>
-              </div>
-            </div>
-
-            {/* Vendor */}
-            <div className="space-y-1">
-              <label className="block text-xs font-semibold text-gray-800 mb-1 flex items-center gap-1.5">
-                <Truck className="w-3.5 h-3.5 text-[#C62828]" />
-                Vendor <span className="text-red-500">*</span>
-              </label>
-              <div className="relative group">
-                <div className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 group-focus-within:text-[#C62828] transition-colors">
-                  <Truck className="w-3.5 h-3.5" />
-                </div>
-                <select
-                  value={formData.vendor_id !== null ? String(formData.vendor_id) : ''}
-                  onChange={(e) => setFormData({ ...formData, vendor_id: e.target.value ? Number(e.target.value) : null })}
-                  className="w-full pl-9 pr-8 py-2 text-sm border-2 border-gray-200 rounded-xl focus:border-[#C62828] focus:ring-2 focus:ring-[#C62828]/20 bg-white outline-none transition-all duration-200 appearance-none hover:border-gray-300"
-                  required
-                >
-                  <option value="" className="text-gray-400">Select Vendor</option>
-                  {vendors.map((v) => (
-                    <option key={v.id} value={v.id} className="py-1">{v.name}</option>
-                  ))}
-                </select>
-                <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none">
-                  <ChevronDown className="w-3.5 h-3.5 text-gray-400" />
-                </div>
-              </div>
-            </div>
-
-            {/* Project */}
-            <div className="space-y-1">
-              <label className="block text-xs font-semibold text-gray-800 mb-1 flex items-center gap-1.5">
-                <Building className="w-3.5 h-3.5 text-[#C62828]" />
-                Project <span className="text-red-500">*</span>
-              </label>
-              <div className="relative group">
-                <div className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 group-focus-within:text-[#C62828] transition-colors">
-                  <Building className="w-3.5 h-3.5" />
-                </div>
-                <select
-                  value={formData.project_id !== null ? String(formData.project_id) : ''}
-                  onChange={(e) => setFormData({ ...formData, project_id: e.target.value ? Number(e.target.value) : null })}
-                  className="w-full pl-9 pr-8 py-2 text-sm border-2 border-gray-200 rounded-xl focus:border-[#C62828] focus:ring-2 focus:ring-[#C62828]/20 bg-white outline-none transition-all duration-200 appearance-none hover:border-gray-300"
-                  required
-                >
-                  <option value="" className="text-gray-400">Select Project</option>
-                  {projects.map((p) => (
-                    <option key={p.id} value={p.id} className="py-1">{p.name}</option>
-                  ))}
-                </select>
-                <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none">
-                  <ChevronDown className="w-3.5 h-3.5 text-gray-400" />
-                </div>
-              </div>
-            </div>
-
-            {/* Start Date */}
-            <div className="space-y-1">
-              <label className="block text-xs font-semibold text-gray-800 mb-1 flex items-center gap-1.5">
-                <Calendar className="w-3.5 h-3.5 text-[#C62828]" />
-                Start Date <span className="text-red-500">*</span>
-              </label>
-              <div className="relative group">
-                <div className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 group-focus-within:text-[#C62828] transition-colors">
-                  <Calendar className="w-3.5 h-3.5" />
-                </div>
-                <input
-                  type="date"
-                  value={formData.start_date}
-                  onChange={(e) => setFormData({ ...formData, start_date: e.target.value })}
-                  className="w-full pl-9 pr-3 py-2 text-sm border-2 border-gray-200 rounded-xl focus:border-[#C62828] focus:ring-2 focus:ring-[#C62828]/20 outline-none transition-all duration-200 hover:border-gray-300"
-                  required
-                />
-              </div>
-            </div>
-
-            {/* End Date */}
-            <div className="space-y-1">
-              <label className="block text-xs font-semibold text-gray-800 mb-1 flex items-center gap-1.5">
-                <Calendar className="w-3.5 h-3.5 text-[#C62828]" />
-                End Date
-              </label>
-              <div className="relative group">
-                <div className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 group-focus-within:text-[#C62828] transition-colors">
-                  <Calendar className="w-3.5 h-3.5" />
-                </div>
-                <input
-                  type="date"
-                  value={formData.end_date}
-                  onChange={(e) => setFormData({ ...formData, end_date: e.target.value })}
-                  className="w-full pl-9 pr-3 py-2 text-sm border-2 border-gray-200 rounded-xl focus:border-[#C62828] focus:ring-2 focus:ring-[#C62828]/20 outline-none transition-all duration-200 hover:border-gray-300"
-                />
-              </div>
-            </div>
-
-            {/* Priority */}
-            <div className="space-y-1">
-              <label className="block text-xs font-semibold text-gray-800 mb-1 flex items-center gap-1.5">
-                <AlertCircle className="w-3.5 h-3.5 text-[#C62828]" />
-                Priority <span className="text-red-500">*</span>
-              </label>
-              <div className="relative group">
-                <div className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 group-focus-within:text-[#C62828] transition-colors">
-                  <AlertCircle className="w-3.5 h-3.5" />
-                </div>
-                <select
-                  value={formData.priority}
-                  onChange={(e) => setFormData({ ...formData, priority: e.target.value })}
-                  className="w-full pl-9 pr-8 py-2 text-sm border-2 border-gray-200 rounded-xl focus:border-[#C62828] focus:ring-2 focus:ring-[#C62828]/20 bg-white outline-none transition-all duration-200 appearance-none hover:border-gray-300"
-                  required
-                >
-                  <option value="low">Low</option>
-                  <option value="medium">Medium</option>
-                  <option value="high">High</option>
-                  <option value="urgent">Urgent</option>
-                </select>
-                <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none">
-                  <ChevronDown className="w-3.5 h-3.5 text-gray-400" />
-                </div>
-              </div>
-            </div>
-
-            {/* Status */}
-            <div className="space-y-1">
-              <label className="block text-xs font-semibold text-gray-800 mb-1 flex items-center gap-1.5">
-                <CheckSquare className="w-3.5 h-3.5 text-[#C62828]" />
-                Status
-              </label>
-              <div className="relative group">
-                <div className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 group-focus-within:text-[#C62828] transition-colors">
-                  <CheckSquare className="w-3.5 h-3.5" />
-                </div>
-                <select
-                  value={formData.status}
-                  onChange={(e) => setFormData({ ...formData, status: e.target.value })}
-                  className="w-full pl-9 pr-8 py-2 text-sm border-2 border-gray-200 rounded-xl focus:border-[#C62828] focus:ring-2 focus:ring-[#C62828]/20 bg-white outline-none transition-all duration-200 appearance-none hover:border-gray-300"
-                >
-                  <option value="scheduled">Scheduled</option>
-                  <option value="in_progress">In Progress</option>
-                  <option value="completed">Completed</option>
-                  <option value="cancelled">Cancelled</option>
-                  <option value="on_hold">On Hold</option>
-                </select>
-                <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none">
-                  <ChevronDown className="w-3.5 h-3.5 text-gray-400" />
-                </div>
-              </div>
-            </div>
-
-            {/* Estimated Cost */}
-            <div className="space-y-1">
-              <label className="block text-xs font-semibold text-gray-800 mb-1 flex items-center gap-1.5">
-                <FileText className="w-3.5 h-3.5 text-[#C62828]" />
-                Estimated Cost
-              </label>
-              <div className="relative group">
-                <div className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 group-focus-within:text-[#C62828] transition-colors">
-                  <FileText className="w-3.5 h-3.5" />
-                </div>
-                <input
-                  type="number"
-                  value={formData.estimated_cost}
-                  onChange={(e) => setFormData({ ...formData, estimated_cost: parseFloat(e.target.value) || 0 })}
-                  className="w-full pl-9 pr-3 py-2 text-sm border-2 border-gray-200 rounded-xl focus:border-[#C62828] focus:ring-2 focus:ring-[#C62828]/20 outline-none transition-all duration-200 hover:border-gray-300"
-                  min="0"
-                  step="0.01"
-                  placeholder="0.00"
-                />
-              </div>
-            </div>
-
-            {/* Actual Cost */}
-            <div className="space-y-1">
-              <label className="block text-xs font-semibold text-gray-800 mb-1 flex items-center gap-1.5">
-                <FileText className="w-3.5 h-3.5 text-[#C62828]" />
-                Actual Cost
-              </label>
-              <div className="relative group">
-                <div className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 group-focus-within:text-[#C62828] transition-colors">
-                  <FileText className="w-3.5 h-3.5" />
-                </div>
-                <input
-                  type="number"
-                  value={formData.actual_cost}
-                  onChange={(e) => setFormData({ ...formData, actual_cost: parseFloat(e.target.value) || 0 })}
-                  className="w-full pl-9 pr-3 py-2 text-sm border-2 border-gray-200 rounded-xl focus:border-[#C62828] focus:ring-2 focus:ring-[#C62828]/20 outline-none transition-all duration-200 hover:border-gray-300"
-                  min="0"
-                  step="0.01"
-                  placeholder="0.00"
-                />
-              </div>
-            </div>
-
-            {/* Location */}
-            <div className="md:col-span-2 space-y-1">
-              <label className="block text-xs font-semibold text-gray-800 mb-1 flex items-center gap-1.5">
-                <MapPin className="w-3.5 h-3.5 text-[#C62828]" />
-                Location
-              </label>
-              <div className="relative group">
-                <div className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 group-focus-within:text-[#C62828] transition-colors">
-                  <MapPin className="w-3.5 h-3.5" />
-                </div>
-                <input
-                  type="text"
-                  value={formData.location}
-                  onChange={(e) => setFormData({ ...formData, location: e.target.value })}
-                  className="w-full pl-9 pr-3 py-2 text-sm border-2 border-gray-200 rounded-xl focus:border-[#C62828] focus:ring-2 focus:ring-[#C62828]/20 outline-none transition-all duration-200 hover:border-gray-300"
-                  placeholder="Enter location"
-                />
-              </div>
-            </div>
-
-            {/* Supervisor Name */}
-            <div className="space-y-1">
-              <label className="block text-xs font-semibold text-gray-800 mb-1 flex items-center gap-1.5">
-                <UserRound className="w-3.5 h-3.5 text-[#C62828]" />
-                Supervisor Name
-              </label>
-              <div className="relative group">
-                <div className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 group-focus-within:text-[#C62828] transition-colors">
-                  <UserRound className="w-3.5 h-3.5" />
-                </div>
-                <input
-                  type="text"
-                  value={formData.supervisor_name}
-                  onChange={(e) => setFormData({ ...formData, supervisor_name: e.target.value })}
-                  className="w-full pl-9 pr-3 py-2 text-sm border-2 border-gray-200 rounded-xl focus:border-[#C62828] focus:ring-2 focus:ring-[#C62828]/20 outline-none transition-all duration-200 hover:border-gray-300"
-                  placeholder="Enter name"
-                />
-              </div>
-            </div>
-
-            {/* Supervisor Phone */}
-            <div className="space-y-1">
-              <label className="block text-xs font-semibold text-gray-800 mb-1 flex items-center gap-1.5">
-                <Phone className="w-3.5 h-3.5 text-[#C62828]" />
-                Supervisor Phone
-              </label>
-              <div className="relative group">
-                <div className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 group-focus-within:text-[#C62828] transition-colors">
-                  <Phone className="w-3.5 h-3.5" />
-                </div>
-                <input
-                  type="tel"
-                  value={formData.supervisor_phone}
-                  onChange={(e) => setFormData({ ...formData, supervisor_phone: e.target.value })}
-                  className="w-full pl-9 pr-3 py-2 text-sm border-2 border-gray-200 rounded-xl focus:border-[#C62828] focus:ring-2 focus:ring-[#C62828]/20 outline-none transition-all duration-200 hover:border-gray-300"
-                  placeholder="Enter phone number"
-                />
-              </div>
-            </div>
-          </div>
-
-          {/* Description */}
-          <div className="space-y-1">
-            <label className="block text-xs font-semibold text-gray-800 mb-1 flex items-center gap-1.5">
-              <FileText className="w-3.5 h-3.5 text-[#C62828]" />
-              Description
-            </label>
-            <div className="relative group">
-              <div className="absolute left-3 top-3 text-gray-500 group-focus-within:text-[#C62828] transition-colors">
-                <FileText className="w-3.5 h-3.5" />
-              </div>
-              <textarea
-                value={formData.description}
-                onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                className="w-full pl-9 pr-3 py-2 text-sm border-2 border-gray-200 rounded-xl focus:border-[#C62828] focus:ring-2 focus:ring-[#C62828]/20 outline-none transition-all duration-200 hover:border-gray-300 min-h-[80px] resize-vertical"
-                placeholder="Enter description"
-              />
-            </div>
-          </div>
-
-          {/* Notes */}
-          <div className="space-y-1">
-            <label className="block text-xs font-semibold text-gray-800 mb-1 flex items-center gap-1.5">
-              <FileText className="w-3.5 h-3.5 text-[#C62828]" />
-              Notes
-            </label>
-            <div className="relative group">
-              <div className="absolute left-3 top-3 text-gray-500 group-focus-within:text-[#C62828] transition-colors">
-                <FileText className="w-3.5 h-3.5" />
-              </div>
-              <textarea
-                value={formData.notes}
-                onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
-                className="w-full pl-9 pr-3 py-2 text-sm border-2 border-gray-200 rounded-xl focus:border-[#C62828] focus:ring-2 focus:ring-[#C62828]/20 outline-none transition-all duration-200 hover:border-gray-300 min-h-[60px] resize-vertical"
-                placeholder="Additional notes"
-              />
-            </div>
-          </div>
-
-          {/* Submit Button */}
-          <div className="flex gap-2 pt-4 border-t border-gray-200">
-            <button
-              type="submit"
-              disabled={loading}
-              className="flex-1 bg-gradient-to-r from-[#C62828] to-red-600 text-white py-2.5 px-4 rounded-xl hover:from-red-600 hover:to-red-700 transition-all duration-200 font-semibold shadow-lg hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 group transform hover:-translate-y-0.5 active:translate-y-0"
-            >
-              {loading ? (
-                <>
-                  <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                  Processing...
-                </>
-              ) : (
-                <>
-                  <Save className="w-4 h-4 group-hover:scale-110 transition-transform" />
-                  {editingId ? 'Update Service Order' : 'Create Service Order'}
-                </>
-              )}
-            </button>
-            <button
-              type="button"
-              onClick={() => { setShowModal(false); resetForm(); }}
-              className="px-4 py-2.5 text-sm border-2 border-gray-200 rounded-xl hover:bg-gray-50 hover:border-gray-300 transition-all duration-200 font-medium text-gray-700 hover:text-gray-900"
-            >
-              Cancel
-            </button>
-          </div>
-        </form>
-      </div>
-
-      {/* Add some custom styles for scrollbar */}
-      <style >{`
-        .custom-scrollbar::-webkit-scrollbar {
-          width: 6px;
-        }
-        .custom-scrollbar::-webkit-scrollbar-track {
-          background: #f1f1f1;
-          border-radius: 3px;
-        }
-        .custom-scrollbar::-webkit-scrollbar-thumb {
-          background: #c62828;
-          border-radius: 3px;
-        }
-        .custom-scrollbar::-webkit-scrollbar-thumb:hover {
-          background: #b71c1c;
-        }
-        @keyframes fadeIn {
-          from { opacity: 0; transform: translateY(10px); }
-          to { opacity: 1; transform: translateY(0); }
-        }
-        .animate-fadeIn {
-          animation: fadeIn 0.3s ease-out;
-        }
-      `}</style>
-    </div>
-  </div>
-)}
+      )}
     </div>
   );
 }
