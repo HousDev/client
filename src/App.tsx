@@ -118,6 +118,8 @@ import StoreManagement from "./pages/StoreManagement";
 import { Buffer } from "buffer";
 import { Toaster } from "sonner";
 import MaterialRequests from "./pages/MaterialRequests";
+import TaskManagement from "./pages/TaskManagement";
+import HRMS from "./pages/HRMS";
 import UsersManagement from "./components/users/UsersManagement"; // यहाँ बदलाव
 
 function AppContent() {
@@ -179,6 +181,13 @@ function AppContent() {
         return <Reports />;
       case "masters":
         return <Masters />;
+      case "hrms":
+        return <HRMS />;
+      case "permissions":
+        return <Permissions />;
+      case "task-management":
+        return <TaskManagement />;
+
       case "users":
         return <UsersManagement/>; // यहाँ बदलाव
       case "permissions":
