@@ -2741,7 +2741,7 @@ const filteredPOs = poData.filter((po) => {
   }
 
   return (
-    <div className="p-3 md:p-0 -mt-3.5 bg-gray-50 min-h-screen">
+    <div className="p-3 px-0 md:p-0 -mt-3.5 bg-gray-50 min-h-screen">
       {/* Delete Button (Appears when checkboxes are selected) */}
       {selectedPOs.length > 0 && (
         <div className="mb-4">
@@ -2783,7 +2783,7 @@ const filteredPOs = poData.filter((po) => {
       )}
 
       {/* Summary Cards - Responsive */}
-     <div className="grid grid-cols-2 md:grid-cols-4 gap-2 mb-2">
+     <div className="grid grid-cols-2 md:grid-cols-4 gap-2 mb-2 mx-0">
   {/* Total POs */}
   <div className="bg-white px-2.5 py-2 rounded-lg border border-gray-200 flex items-center justify-between">
     <div>
@@ -2831,7 +2831,7 @@ const filteredPOs = poData.filter((po) => {
 
 
       {/* Table */}
-      <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+      <div className="bg-white rounded-xl px-0 shadow-sm border border-gray-200 overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full min-w-[1000px]">
             <thead className="bg-gray-200 border-b border-gray-200">
@@ -3075,24 +3075,29 @@ const filteredPOs = poData.filter((po) => {
                             )}
                           </div>
                         </td>
-                        <td className="px-3 py-2">
-                          <div className="space-y-0.5 min-w-0">
-                            <div className="flex items-center gap-1">
-                              <span
-                                className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-medium ${getStatusColor(
-                                  po.payment_status
-                                )} truncate`}
-                              >
-                                {po.payment_status?.toUpperCase() || "PENDING"}
-                              </span>
-                              {Number(po.balance_amount) > 0 && (
-                                <span className="text-[10px] text-gray-600 whitespace-nowrap" title={`Balance: ${formatCurrency(Number(po.balance_amount))}`}>
-                                  Bal: {formatCurrency(Number(po.balance_amount)).replace('₹', '₹ ')}
-                                </span>
-                              )}
-                            </div>
-                          </div>
-                        </td>
+                       <td className="px-3 py-2">
+  <div className="space-y-1 min-w-0">
+    <div className="flex flex-col items-center gap-0.5">
+      <span
+        className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-medium ${getStatusColor(
+          po.payment_status
+        )} truncate`}
+      >
+        {po.payment_status?.toUpperCase() || "PENDING"}
+      </span>
+
+      {Number(po.balance_amount) > 0 && (
+        <span
+          className="text-[10px] text-gray-600 whitespace-nowrap"
+          title={`Balance: ${formatCurrency(Number(po.balance_amount))}`}
+        >
+          Bal: {formatCurrency(Number(po.balance_amount)).replace("₹", "₹ ")}
+        </span>
+      )}
+    </div>
+  </div>
+</td>
+
                       </tr>
 
                       {/* Expanded Items Row */}

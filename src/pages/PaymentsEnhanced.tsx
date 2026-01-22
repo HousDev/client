@@ -741,7 +741,7 @@
 //         <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
 //           <div className="px-6 py-4 bg-gray-50 border-b border-gray-200 flex justify-between">
 //             <h2 className="text-lg font-semibold text-gray-800">
-//               Payment Reminders
+//               s
 //             </h2>
 //             {paymentReminders.find((d: any) => d.status === "unseen") && (
 //               <button
@@ -1618,7 +1618,7 @@ export default function PaymentsEnhanced() {
       const paymentReminderRes = await PoPaymentRemindersApi.createReminder(payload);
       if (paymentReminderRes.success) {
         loadPaymentReminders();
-        toast.success("Payment reminder created successfully!");
+        toast.success(" created successfully!");
       } else {
         toast.error("Failed to create payment reminder");
       }
@@ -1772,72 +1772,87 @@ export default function PaymentsEnhanced() {
   }
 
   return (
-    <div className="p-3 md:p-4 -mt-5 bg-gray-50 min-h-screen">
+    <div className="p-3 md:p-4 px-0 md:px-0 -mt-5 bg-gray-50 min-h-screen">
       {/* Header */}
       <div className="mb-0">
        
 
         {/* Compact Stats Cards */}
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-2 md:gap-3 mb-4">
-          <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-3 hover:border-green-500 transition-all duration-200">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-xs text-gray-600 font-medium">Total Paid</p>
-                <p className="text-base md:text-lg font-bold text-green-600 mt-1">
-                  {formatCurrency(stats.totalPaid)}
-                </p>
-              </div>
-              <div className="bg-green-100 p-2 rounded-lg">
-                <CheckCircle className="w-4 h-4 md:w-5 md:h-5 text-green-600" />
-              </div>
-            </div>
-          </div>
+       <div className="grid grid-cols-2 lg:grid-cols-4 gap-2 md:gap-3 mb-4">
+  {/* Total Paid */}
+  <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-2.5 sm:p-3 hover:border-green-500 transition-all duration-200 min-w-0">
+    <div className="flex items-start justify-between gap-2">
+      <div className="min-w-0">
+        <p className="text-[11px] sm:text-xs text-gray-600 font-medium">
+          Total Paid
+        </p>
+        <p className="text-sm sm:text-base md:text-lg font-bold text-green-600 mt-1 break-all leading-tight">
+          {formatCurrency(stats.totalPaid)}
+        </p>
+      </div>
+      <div className="bg-green-100 p-1.5 sm:p-2 rounded-lg shrink-0">
+        <CheckCircle className="w-4 h-4 sm:w-5 sm:h-5 text-green-600" />
+      </div>
+    </div>
+  </div>
 
-          <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-3 hover:border-orange-500 transition-all duration-200">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-xs text-gray-600 font-medium">Pending</p>
-                <p className="text-base md:text-lg font-bold text-orange-600 mt-1">
-                  {formatCurrency(stats.totalPending)}
-                </p>
-              </div>
-              <div className="bg-orange-100 p-2 rounded-lg">
-                <Clock className="w-4 h-4 md:w-5 md:h-5 text-orange-600" />
-              </div>
-            </div>
-          </div>
+  {/* Pending */}
+  <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-2.5 sm:p-3 hover:border-orange-500 transition-all duration-200 min-w-0">
+    <div className="flex items-start justify-between gap-2">
+      <div className="min-w-0">
+        <p className="text-[11px] sm:text-xs text-gray-600 font-medium">
+          Pending
+        </p>
+        <p className="text-sm sm:text-base md:text-lg font-bold text-orange-600 mt-1 break-all leading-tight">
+          {formatCurrency(stats.totalPending)}
+        </p>
+      </div>
+      <div className="bg-orange-100 p-1.5 sm:p-2 rounded-lg shrink-0">
+        <Clock className="w-4 h-4 sm:w-5 sm:h-5 text-orange-600" />
+      </div>
+    </div>
+  </div>
 
-          <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-3 hover:border-red-500 transition-all duration-200">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-xs text-gray-600 font-medium">Overdue</p>
-                <p className="text-base md:text-lg font-bold text-red-600 mt-1">
-                  {formatCurrency(stats.totalOverdue)}
-                </p>
-              </div>
-              <div className="bg-red-100 p-2 rounded-lg">
-                <AlertCircle className="w-4 h-4 md:w-5 md:h-5 text-red-600" />
-              </div>
-            </div>
-          </div>
+  {/* Overdue */}
+  <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-2.5 sm:p-3 hover:border-red-500 transition-all duration-200 min-w-0">
+    <div className="flex items-start justify-between gap-2">
+      <div className="min-w-0">
+        <p className="text-[11px] sm:text-xs text-gray-600 font-medium">
+          Overdue
+        </p>
+        <p className="text-sm sm:text-base md:text-lg font-bold text-red-600 mt-1 break-all leading-tight">
+          {formatCurrency(stats.totalOverdue)}
+        </p>
+      </div>
+      <div className="bg-red-100 p-1.5 sm:p-2 rounded-lg shrink-0">
+        <AlertCircle className="w-4 h-4 sm:w-5 sm:h-5 text-red-600" />
+      </div>
+    </div>
+  </div>
 
-          <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-3 hover:border-blue-500 transition-all duration-200">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-xs text-gray-600 font-medium">Selected</p>
-                <p className="text-base md:text-lg font-bold text-blue-600 mt-1">
-                  {formatCurrency(stats.selectedAmount)}
-                </p>
-                {selectedItems.size > 0 && (
-                  <p className="text-xs text-blue-600">{selectedItems.size} item(s)</p>
-                )}
-              </div>
-              <div className="bg-blue-100 p-2 rounded-lg">
-                <CheckSquare className="w-4 h-4 md:w-5 md:h-5 text-blue-600" />
-              </div>
-            </div>
-          </div>
-        </div>
+  {/* Selected */}
+  <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-2.5 sm:p-3 hover:border-blue-500 transition-all duration-200 min-w-0">
+    <div className="flex items-start justify-between gap-2">
+      <div className="min-w-0">
+        <p className="text-[11px] sm:text-xs text-gray-600 font-medium">
+          Selected
+        </p>
+        <p className="text-sm sm:text-base md:text-lg font-bold text-blue-600 mt-1 break-all leading-tight">
+          {formatCurrency(stats.selectedAmount)}
+        </p>
+        {selectedItems.size > 0 && (
+          <p className="text-[11px] text-blue-600 mt-0.5">
+            {selectedItems.size} item(s)
+          </p>
+        )}
+      </div>
+      <div className="bg-blue-100 p-1.5 sm:p-2 rounded-lg shrink-0">
+        <CheckSquare className="w-4 h-4 sm:w-5 sm:h-5 text-blue-600" />
+      </div>
+    </div>
+  </div>
+</div>
+
 
         {/* Tabs */}
      <div className="bg-white rounded-xl shadow-sm border border-gray-200 mb-4 overflow-hidden">
@@ -1920,7 +1935,7 @@ export default function PaymentsEnhanced() {
       {activeTab === "payments" && (
         <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
           <div className="overflow-x-auto">
-            <table className="w-full min-w-[1000px]">
+<table className="w-full min-w-[820px] lg:min-w-full">
               <thead className="bg-gray-200 border-b border-gray-200">
                 <tr>
                   <th className="px-2 md:px-4 py-2 text-center w-10">
@@ -1983,7 +1998,7 @@ export default function PaymentsEnhanced() {
                         placeholder="Search..."
                         value={searchPONumber}
                         onChange={(e) => setSearchPONumber(e.target.value)}
-                        className="w-full pl-7 pr-2 py-1 text-[10px] md:text-xs border border-gray-300 rounded focus:ring-1 focus:ring-blue-500 focus:border-transparent"
+                        className="w-auto pl-7 pr-2 py-1 text-[10px] md:text-xs border border-gray-300 rounded focus:ring-1 focus:ring-blue-500 focus:border-transparent"
                       />
                     </div>
                   </td>
@@ -1999,7 +2014,7 @@ export default function PaymentsEnhanced() {
                         placeholder="Search..."
                         value={searchVendor}
                         onChange={(e) => setSearchVendor(e.target.value)}
-                        className="w-full pl-7 pr-2 py-1 text-[10px] md:text-xs border border-gray-300 rounded focus:ring-1 focus:ring-blue-500 focus:border-transparent"
+                        className="w-auto pl-7 pr-2 py-1 text-[10px] md:text-xs border border-gray-300 rounded focus:ring-1 focus:ring-blue-500 focus:border-transparent"
                       />
                     </div>
                   </td>
@@ -2015,7 +2030,7 @@ export default function PaymentsEnhanced() {
                         placeholder="Search..."
                         value={searchAmount}
                         onChange={(e) => setSearchAmount(e.target.value)}
-                        className="w-full pl-7 pr-2 py-1 text-[10px] md:text-xs border border-gray-300 rounded focus:ring-1 focus:ring-blue-500 focus:border-transparent"
+                        className="w-auto pl-7 pr-2 py-1 text-[10px] md:text-xs border border-gray-300 rounded focus:ring-1 focus:ring-blue-500 focus:border-transparent"
                       />
                     </div>
                   </td>
@@ -2579,7 +2594,7 @@ export default function PaymentsEnhanced() {
         <div className="fixed inset-0 z-50 overflow-hidden">
           <div className="absolute inset-0 bg-black bg-opacity-50" onClick={() => setShowFilters(false)}></div>
           <div className="absolute inset-y-0 right-0 max-w-md w-full bg-white shadow-2xl flex flex-col">
-            <div className="bg-blue-600 px-6 py-4 flex justify-between items-center">
+            <div className="bg-red-600 px-6 py-4 flex justify-between items-center">
               <h2 className="text-xl font-bold text-white">Advanced Filters</h2>
               <button
                 onClick={() => setShowFilters(false)}
@@ -2642,7 +2657,7 @@ export default function PaymentsEnhanced() {
               </button>
               <button
                 onClick={() => setShowFilters(false)}
-                className="flex-1 bg-blue-600 text-white px-4 py-2.5 rounded-lg hover:bg-blue-700 transition font-medium"
+                className="flex-1 bg-red-600 text-white px-4 py-2.5 rounded-lg hover:bg-blue-700 transition font-medium"
               >
                 Apply Filters
               </button>
