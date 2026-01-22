@@ -1,6 +1,7 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 // src/components/PurchaseOrdersPro.tsx
 import React, { useEffect, useState, useRef, SetStateAction } from "react";
-import { Plus, X, Trash2, Package, Save } from "lucide-react";
+import { Plus, X, Trash2, Package, Save, Truck, Layers, ClipboardCheck, Calendar, User, MapPin, ChevronDown, Search, Box } from "lucide-react";
 import { useAuth } from "../contexts/AuthContext";
 import poApi from "../lib/poApi";
 import poTypeApi from "../lib/poTypeApi";
@@ -65,7 +66,6 @@ function SearchableSelect({
   value,
   onChange,
   placeholder = "Select...",
-  required = false,
   disabled = false,
   id,
 }: {
@@ -132,8 +132,8 @@ function SearchableSelect({
   return (
     <div ref={containerRef} className="relative">
       <div
-        className={`w-full flex items-center gap-2 px-3 py-2 border rounded-lg bg-white cursor-pointer ${
-          disabled ? "opacity-50 cursor-not-allowed" : "hover:shadow-sm"
+        className={`w-full flex items-center gap-2 px-3 py-2 border border-gray-300 rounded-xl bg-white/50 cursor-pointer text-sm ${
+          disabled ? "opacity-50 cursor-not-allowed" : "hover:shadow-sm hover:border-gray-400"
         }`}
         onClick={() => !disabled && setOpen((s) => !s)}
         role="button"
@@ -143,14 +143,14 @@ function SearchableSelect({
       >
         <div className="flex-1 text-left">
           {selected ? (
-            <div className="text-sm text-gray-800">{selected.name}</div>
+            <div className="text-sm text-[#40423f]">{selected.name}</div>
           ) : (
-            <div className="text-sm text-gray-400">{placeholder}</div>
+            <div className="text-sm text-gray-500">{placeholder}</div>
           )}
         </div>
         <div>
           <svg
-            className={`w-4 h-4 transform transition ${
+            className={`w-4 h-4 transform transition text-[#5a5d5a] ${
               open ? "rotate-180" : ""
             }`}
             viewBox="0 0 20 20"
@@ -163,7 +163,7 @@ function SearchableSelect({
 
       {/* dropdown */}
       {open && (
-        <div className="absolute z-50 mt-2 w-full bg-white border border-gray-200 rounded-lg shadow-lg">
+        <div className="absolute z-50 mt-1 w-full bg-white border border-gray-300 rounded-xl shadow-lg">
           {/* search input */}
           <div className="p-2">
             <input
@@ -172,14 +172,14 @@ function SearchableSelect({
               onChange={(e) => setFilter(e.target.value)}
               onKeyDown={onKeyDown}
               placeholder="Search..."
-              className="w-full px-3 py-2 border border-gray-200 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#b52124]/20 focus:border-[#b52124] outline-none text-sm"
             />
           </div>
 
           <ul
             role="listbox"
             aria-labelledby={id}
-            className="max-h-60 overflow-y-auto divide-y divide-gray-100"
+            className="max-h-60 overflow-y-auto divide-y divide-gray-200"
           >
             {filtered.length === 0 ? (
               <li className="p-3 text-sm text-gray-500">No results</li>
@@ -190,11 +190,11 @@ function SearchableSelect({
                   role="option"
                   aria-selected={opt.id === value}
                   className={`px-3 py-2 cursor-pointer text-sm ${
-                    idx === highlight ? "bg-blue-50" : "hover:bg-gray-50"
+                    idx === highlight ? "bg-[#b52124]/10" : "hover:bg-gray-50"
                   } ${
                     opt.id === value
-                      ? "font-medium text-gray-800"
-                      : "text-gray-700"
+                      ? "font-medium text-[#40423f]"
+                      : "text-[#5a5d5a]"
                   }`}
                   onMouseEnter={() => setHighlight(idx)}
                   onClick={() => {
@@ -320,7 +320,7 @@ export default function UpdatePurchaseOrderForm({
     }
   };
 
-  const loadPOTypes = async (projectId?: string) => {
+  const loadPOTypes = async () => {
     setPOTypesLoading(true);
     try {
       const data = await poTypeApi.getPOTypes();
@@ -514,15 +514,6 @@ export default function UpdatePurchaseOrderForm({
     );
   };
 
-  const removeItem = (index: number) => {
-    const newItems = formData.items.filter((_, i) => i !== index);
-    setFormData({ ...formData, items: newItems });
-    calculateTotals(
-      newItems,
-      formData.discount_percentage,
-      formData.is_interstate
-    );
-  };
 
   const deletePOItems = async (poItemId: any, poMaterialTrackingId: any) => {
     // console.log("ids for delete", poItemId, poMaterialTrackingId);
@@ -604,40 +595,9 @@ export default function UpdatePurchaseOrderForm({
     }));
   };
 
-  const handleDiscountChange = (percentage: number) => {
-    setFormData({ ...formData, discount_percentage: percentage });
-    calculateTotals(formData.items, percentage, formData.is_interstate);
-  };
 
-  const handleInterstateChange = (isInterstate: boolean) => {
-    setFormData({ ...formData, is_interstate: isInterstate });
-    calculateTotals(formData.items, formData.discount_percentage, isInterstate);
-  };
 
-  const toggleTerm = (termId: string) => {
-    const currentTerms = [...formData.selected_terms_ids];
-    const idx = currentTerms.indexOf(termId);
-    if (idx > -1) currentTerms.splice(idx, 1);
-    else currentTerms.push(termId);
-    setFormData({ ...formData, selected_terms_ids: currentTerms });
-  };
 
-  const handlePaymentTermsChange = (paymentTermsId: string) => {
-    const selectedPaymentTerms = paymentTerms.find(
-      (pt) => pt.id === paymentTermsId
-    );
-    const advanceAmount =
-      selectedPaymentTerms && formData.grand_total
-        ? (formData.grand_total *
-            (selectedPaymentTerms.advance_percentage || 0)) /
-          100
-        : 0;
-    setFormData({
-      ...formData,
-      payment_terms_id: paymentTermsId,
-      advance_amount: advanceAmount,
-    });
-  };
 
   // Helper: derive 'material' or 'service' from selected PO Type
   const getselectedPOSTypeCategory = (): string | null => {
@@ -739,7 +699,6 @@ export default function UpdatePurchaseOrderForm({
         created_by: user?.id,
       };
 
-      const response = await poApi.updatePO(formData?.poId, payload);
       toast.success("PO Updated Successfully.");
       await loadAllData();
 
@@ -812,527 +771,520 @@ export default function UpdatePurchaseOrderForm({
     });
 
   return (
-    <div className="p-6">
+    <div className="fixed inset-0 bg-gray-900/70 backdrop-blur-md flex items-center justify-center z-50 p-2 md:p-4">
       {/* Create Modal (with SearchableSelects) */}
-      <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4 overflow-y-auto">
-        <div className="bg-white rounded-2xl shadow-2xl w-full max-w-4xl my-8">
-          <div className="bg-gradient-to-r from-blue-600 to-blue-700 px-6 py-4 flex justify-between items-center sticky top-0 rounded-t-2xl">
-            <h2 className="text-2xl font-bold text-white">
-              Update Purchase Order
-            </h2>
-            <button
-              onClick={() => {
-                setShowEditModal(false);
-                resetForm();
-              }}
-              className="text-white hover:bg-white hover:bg-opacity-20 rounded-lg p-2 transition"
-            >
-              <X className="w-6 h-6" />
-            </button>
+      <div className="bg-gradient-to-br from-gray-50 to-white rounded-2xl shadow-2xl shadow-gray-900/30 w-full max-w-3xl my-4 border border-gray-300/50 overflow-hidden max-h-[95vh] flex flex-col">
+        <div className="bg-gradient-to-r from-[#40423f] via-[#4a4c49] to-[#5a5d5a] px-4 md:px-6 py-4 flex justify-between items-center border-b border-gray-700/30 relative overflow-hidden flex-shrink-0">
+          <div className="absolute inset-0 bg-gradient-to-r from-gray-900/10 via-transparent to-gray-900/10"></div>
+          <div className="absolute -right-10 top-0 bottom-0 w-40 bg-gradient-to-l from-[#b52124]/20 to-transparent -skew-x-12"></div>
+          
+          <div className="flex items-center gap-3 relative z-10">
+            <div className="p-2.5 bg-white/10 backdrop-blur-sm rounded-2xl border border-gray-400/30">
+              <Package className="w-4 h-4 md:w-5 md:h-5 text-gray-100" />
+            </div>
+            <div>
+              <div className="flex items-baseline gap-2">
+                <h2 className="text-lg md:text-xl font-bold text-white">
+                  Update Purchase Order
+                </h2>
+              </div>
+              <p className="text-xs text-gray-300/80 font-medium mt-1 hidden md:flex items-center gap-1">
+                Modify purchase order details and items
+              </p>
+            </div>
           </div>
+          <button
+            onClick={() => {
+              setShowEditModal(false);
+              resetForm();
+            }}
+            className="text-gray-200 hover:bg-gray-700/40 rounded-xl p-2 transition-all duration-200 hover:scale-105 active:scale-95 relative z-10"
+          >
+            <X className="w-4 h-4 md:w-5 md:h-5" />
+          </button>
+        </div>
 
-          <form className="p-6 max-h-[calc(100vh-200px)] overflow-y-auto">
-            {/* Basic Details */}
-            <div className="mb-6">
-              <h3 className="text-lg font-semibold text-gray-800 mb-4">
-                Basic Details
-              </h3>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Vendor <span className="text-red-500">*</span>
-                  </label>
+        <form className="p-4 md:p-6 overflow-y-auto flex-grow" onSubmit={handleSubmit}>
+          {/* Basic Details */}
+          <div className="mb-6">
+            <h3 className="text-base font-semibold text-[#40423f] mb-3 flex items-center gap-2">
+              <User className="w-4 h-4 text-[#b52124]" />
+              Basic Details
+            </h3>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+              <div className="space-y-1.5">
+                <label className="block text-xs font-medium text-[#40423f] mb-1">
+                  Vendor <span className="text-[#b52124]">*</span>
+                </label>
+                <SearchableSelect
+                  options={vendors.map((v) => ({
+                    id: v.id,
+                    name: v.name || v.vendor_name || v.display || "",
+                  }))}
+                  value={formData.vendor_id}
+                  onChange={(id) => {
+                    const interState =
+                      vendors.find((d) => d.id === id).office_state !==
+                      "Maharashtra";
+                    setFormData({
+                      ...formData,
+                      vendor_id: id,
+                      is_interstate: interState,
+                    });
+                  }}
+                  placeholder="Select Vendor"
+                  required
+                />
+              </div>
 
-                  {/* SearchableSelect for Vendor */}
-                  <SearchableSelect
-                    options={vendors.map((v) => ({
-                      id: v.id,
-                      name: v.name || v.vendor_name || v.display || "",
-                    }))}
-                    value={formData.vendor_id}
-                    onChange={(id) => {
-                      const interState =
-                        vendors.find((d) => d.id === id).office_state !==
-                        "Maharashtra";
-                      setFormData({
-                        ...formData,
-                        vendor_id: id,
-                        is_interstate: interState,
-                      });
-                    }}
-                    placeholder="Select Vendor"
-                    required
-                  />
-                </div>
+              <div className="space-y-1.5">
+                <label className="block text-xs font-medium text-[#40423f] mb-1">
+                  Project <span className="text-[#b52124]">*</span>
+                </label>
+                <SearchableSelect
+                  options={projects.map((p) => ({
+                    id: p.id,
+                    name: p.name || p.project_name || "",
+                  }))}
+                  value={formData.project_id}
+                  onChange={(id) =>
+                    setFormData({ ...formData, project_id: id })
+                  }
+                  placeholder="Select Project"
+                  required
+                />
+              </div>
 
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Project <span className="text-red-500">*</span>
-                  </label>
+              <div className="space-y-1.5">
+                <label className="block text-xs font-medium text-[#40423f] mb-1">
+                  PO Type <span className="text-[#b52124]">*</span>
+                </label>
+                <SearchableSelect
+                  options={poTypes.map((t: any) => ({
+                    id: t.id,
+                    name: t.name,
+                  }))}
+                  value={formData.po_type_id}
+                  onChange={(id) => handlePOTypeChange(id)}
+                  placeholder={
+                    poTypesLoading ? "Loading types..." : "Select Type"
+                  }
+                  required
+                  disabled={poTypesLoading}
+                />
+              </div>
 
-                  {/* SearchableSelect for Project */}
-                  <SearchableSelect
-                    options={projects.map((p) => ({
-                      id: p.id,
-                      name: p.name || p.project_name || "",
-                    }))}
-                    value={formData.project_id}
-                    onChange={(id) =>
-                      setFormData({ ...formData, project_id: id })
-                    }
-                    placeholder="Select Project"
-                    required
-                  />
-                </div>
+              <div className="space-y-1.5">
+                <label className="block text-xs font-medium text-[#40423f] mb-1 flex items-center gap-1">
+                  <Calendar className="w-3 h-3 text-[#b52124]" />
+                  PO Date <span className="text-[#b52124]">*</span>
+                </label>
+                <input
+                  type="date"
+                  value={formData.po_date}
+                  onChange={(e) => {
+                    setFormData({ ...formData, po_date: e.target.value });
+                  }}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-xl focus:ring-2 focus:ring-[#b52124]/20 focus:border-[#b52124] outline-none text-sm bg-white/50"
+                  required
+                />
+              </div>
 
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    PO Type <span className="text-red-500">*</span>
-                  </label>
+              <div className="space-y-1.5">
+                <label className="block text-xs font-medium text-[#40423f] mb-1 flex items-center gap-1">
+                  <Calendar className="w-3 h-3 text-[#b52124]" />
+                  Delivery Date
+                </label>
+                <input
+                  type="date"
+                  value={formData.delivery_date}
+                  onChange={(e) =>
+                    setFormData({
+                      ...formData,
+                      delivery_date: e.target.value,
+                    })
+                  }
+                  className="w-full px-3 py-2 border border-gray-300 rounded-xl focus:ring-2 focus:ring-[#b52124]/20 focus:border-[#b52124] outline-none text-sm bg-white/50"
+                />
+              </div>
 
-                  {/* SearchableSelect for PO Type (disabled while loading) */}
-                  <SearchableSelect
-                    options={poTypes.map((t: any) => ({
-                      id: t.id,
-                      name: t.name,
-                    }))}
-                    value={formData.po_type_id}
-                    onChange={(id) => handlePOTypeChange(id)}
-                    placeholder={
-                      poTypesLoading ? "Loading types..." : "Select Type"
-                    }
-                    required
-                    disabled={poTypesLoading}
-                  />
-                </div>
-
-                {/* the rest fields unchanged */}
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    PO Date <span className="text-red-500">*</span>
-                  </label>
-                  <input
-                    type="date"
-                    value={formData.po_date}
-                    onChange={(e) => {
-                      setFormData({ ...formData, po_date: e.target.value });
-                    }}
-                    className="w-full px-4 py-1 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                    required
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Delivery Date
-                  </label>
-                  <input
-                    type="date"
-                    value={formData.delivery_date}
-                    onChange={(e) =>
-                      setFormData({
-                        ...formData,
-                        delivery_date: e.target.value,
-                      })
-                    }
-                    className="w-full px-4 py-1 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Payment Due Date
-                  </label>
-                  <input
-                    type="date"
-                    value={formData.due_date}
-                    onChange={(e) =>
-                      setFormData({
-                        ...formData,
-                        due_date: e.target.value,
-                      })
-                    }
-                    className="w-full px-4 py-1 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  />
-                </div>
-
-                {/* <div className="flex items-center pt-8">
-                  <input
-                    type="checkbox"
-                    id="interstate"
-                    checked={formData.is_interstate}
-                    onChange={(e) => handleInterstateChange(e.target.checked)}
-                    className="w-4 h-4 text-blue-600 rounded focus:ring-2 focus:ring-blue-500"
-                  />
-                  <label
-                    htmlFor="interstate"
-                    className="ml-2 text-sm font-medium text-gray-700"
-                  >
-                    Interstate Supply (IGST)
-                  </label>
-                </div> */}
+              <div className="space-y-1.5">
+                <label className="block text-xs font-medium text-[#40423f] mb-1 flex items-center gap-1">
+                  <Calendar className="w-3 h-3 text-[#b52124]" />
+                  Payment Due Date
+                </label>
+                <input
+                  type="date"
+                  value={formData.due_date}
+                  onChange={(e) =>
+                    setFormData({
+                      ...formData,
+                      due_date: e.target.value,
+                    })
+                  }
+                  className="w-full px-3 py-2 border border-gray-300 rounded-xl focus:ring-2 focus:ring-[#b52124]/20 focus:border-[#b52124] outline-none text-sm bg-white/50"
+                />
               </div>
             </div>
+          </div>
 
-            {/* Items section */}
-            <div className="mb-6">
-              <div className="flex justify-between items-center mb-4">
-                <h3 className="text-lg font-semibold text-gray-800">Items</h3>
-                <button
-                  type="button"
-                  onClick={() => {
-                    setShowItemSelector(true);
-                    setItemSelectorSearch("");
-                  }}
-                  className="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition text-sm flex items-center gap-2"
-                >
-                  <Plus className="w-4 h-4" /> Add Item from Master
-                </button>
-              </div>
+          {/* Items section */}
+          <div className="mb-6">
+            <div className="flex justify-between items-center mb-3">
+              <h3 className="text-base font-semibold text-[#40423f] flex items-center gap-2">
+                <Layers className="w-4 h-4 text-[#b52124]" />
+                Items
+              </h3>
+              <button
+                type="button"
+                onClick={() => {
+                  setShowItemSelector(true);
+                  setItemSelectorSearch("");
+                }}
+                className="bg-gradient-to-r from-[#b52124] to-[#d43538] text-white px-3 py-2 rounded-xl hover:from-[#d43538] hover:to-[#b52124] transition-all duration-200 text-xs font-medium flex items-center gap-2"
+              >
+                <Plus className="w-3 h-3" /> Add Item
+              </button>
+            </div>
 
-              {formData.items.length === 0 ? (
-                <div className="bg-gray-50 border-2 border-dashed border-gray-300 rounded-lg p-8 text-center">
-                  <Package className="w-12 h-12 text-gray-400 mx-auto mb-3" />
-                  <p className="text-gray-600">No items added yet</p>
-                  <p className="text-sm text-gray-500 mt-1">
-                    Click "Add Item from Master" to start
-                  </p>
+            {formData.items.length === 0 ? (
+              <div className="bg-gradient-to-b from-gray-50/50 to-white/50 border-2 border-dashed border-gray-300 rounded-2xl p-4 text-center group hover:border-[#b52124]/30 transition-all duration-300">
+                <div className="p-2 bg-[#b52124]/5 rounded-2xl inline-block mb-2">
+                  <Package className="w-8 h-8 text-[#b52124]/60" />
                 </div>
-              ) : (
-                <div className="space-y-3">
-                  {formData.items.map((item, index) => (
-                    <div
-                      key={item.id}
-                      className="bg-gray-50 p-4 rounded-lg border border-gray-200"
-                    >
-                      <div className="grid grid-cols-12 gap-3 items-start">
-                        <div className="col-span-3">
-                          <label className="text-xs text-gray-600">Item</label>
-                          <p className="font-medium text-gray-800">
-                            {item.item_name}
-                          </p>
-                          <p className="text-xs text-gray-500">
-                            {item.item_code}
-                          </p>
+                <p className="text-xs font-semibold text-[#40423f] mb-1">
+                  No items added yet
+                </p>
+                <p className="text-xs text-[#5a5d5a]">
+                  Click "Add Item" to select materials
+                </p>
+              </div>
+            ) : (
+              <div className="space-y-2">
+                {formData.items.map((item, index) => (
+                  <div
+                    key={item.id}
+                    className="bg-gradient-to-b from-gray-50/30 to-white/30 p-3 rounded-xl border border-gray-300 hover:border-gray-400 transition-all duration-200"
+                  >
+                    <div className="flex justify-between items-start mb-2">
+                      <div>
+                        <p className="font-medium text-sm text-[#40423f]">
+                          {item.item_name}
+                        </p>
+                        <div className="flex flex-wrap gap-2 mt-1">
+                          <span className="text-xs px-2 py-0.5 bg-gray-100 text-[#5a5d5a] rounded-full">
+                            Code: {item.item_code}
+                          </span>
+                          <span className="text-xs px-2 py-0.5 bg-gray-100 text-[#5a5d5a] rounded-full">
+                            HSN: {item.hsn_code}
+                          </span>
                         </div>
-                        <div className="col-span-1">
-                          <label className="text-xs text-gray-600">HSN</label>
-                          <p className="text-sm text-gray-700">
-                            {item.hsn_code}
-                          </p>
-                        </div>
-                        <div className="col-span-2">
-                          <label className="text-xs text-gray-600">Qty</label>
-                          <input
-                            type="text"
-                            value={item.quantity}
-                            onChange={(e) => {
-                              if (
-                                !/^\d*\.?\d*$/.test(e.target.value) ||
-                                parseFloat(e.target.value) < 0
-                              )
-                                return;
-                              handleItemChange(
-                                index,
-                                "quantity",
-                                parseFloat(e.target.value) || 0
-                              );
-                            }}
-                            className="w-full px-2 py-1 border border-gray-300 rounded text-sm"
-                            min="0"
-                            step="0.01"
-                          />
-                        </div>
-                        <div className="col-span-1">
-                          <label className="text-xs text-gray-600">Unit</label>
-                          <p className="text-sm text-gray-700">{item.unit}</p>
-                        </div>
-                        <div className="col-span-2">
-                          <label className="text-xs text-gray-600">Rate</label>
-                          <input
-                            type="text"
-                            value={item.rate}
-                            onChange={(e) => {
-                              if (
-                                !/^\d*\.?\d*$/.test(e.target.value) ||
-                                Number(e.target.value) < 0
-                              )
-                                return;
-                              handleItemChange(
-                                index,
-                                "rate",
-                                parseFloat(e.target.value) || 0
-                              );
-                            }}
-                            className="w-full px-2 py-1 border border-gray-300 rounded text-sm"
-                            min="0"
-                            step="0.01"
-                          />
-                        </div>
-                        <div className="col-span-2">
-                          <label className="text-xs text-gray-600">
-                            Amount
-                          </label>
-                          <p className="font-medium text-gray-800">
-                            {formatCurrency(item.amount)}
-                          </p>
-                          <p className="text-xs text-gray-500">
-                            {formData.is_interstate
-                              ? `IGST: ${item.igst_rate}%`
-                              : `CGST: ${item.cgst_rate}% + SGST: ${item.sgst_rate}%`}
-                          </p>
-                        </div>
-                        <div className="col-span-1 flex justify-end pt-5">
-                          <button
-                            type="button"
-                            onClick={async () => {
-                              const result: any = await MySwal.fire({
-                                title: "Delete Item?",
-                                text: "This action cannot be undone",
-                                icon: "warning",
-                                showCancelButton: true,
-                              });
+                      </div>
+                      <button
+                        type="button"
+                        onClick={async () => {
+                          const result: any = await MySwal.fire({
+                            title: "Delete Item?",
+                            text: "This action cannot be undone",
+                            icon: "warning",
+                            showCancelButton: true,
+                          });
 
-                              if (!result.isConfirmed) return;
-                              if (
-                                result.isConfirmed &&
-                                item.materialTrackingId
-                              ) {
-                                deletePOItems(item.id, item.materialTrackingId);
-                                const items = formData.items.filter(
-                                  (i: any) => i.id !== item.id
-                                );
-                                calculateTotals(
-                                  items,
-                                  formData.discount_percentage,
-                                  formData.is_interstate
-                                );
-                              } else {
-                                if (result.isConfirmed) {
-                                  const items = formData.items.filter(
-                                    (i: any) => i.id !== item.id
-                                  );
-                                  calculateTotals(
-                                    items,
-                                    formData.discount_percentage,
-                                    formData.is_interstate
-                                  );
-                                }
-                              }
-                            }}
-                            className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition"
-                          >
-                            <Trash2 className="w-4 h-4" />
-                          </button>
+                          if (!result.isConfirmed) return;
+                          if (
+                            result.isConfirmed &&
+                            item.materialTrackingId
+                          ) {
+                            deletePOItems(item.id, item.materialTrackingId);
+                            const items = formData.items.filter(
+                              (i: any) => i.id !== item.id
+                            );
+                            calculateTotals(
+                              items,
+                              formData.discount_percentage,
+                              formData.is_interstate
+                            );
+                          } else {
+                            if (result.isConfirmed) {
+                              const items = formData.items.filter(
+                                (i: any) => i.id !== item.id
+                              );
+                              calculateTotals(
+                                items,
+                                formData.discount_percentage,
+                                formData.is_interstate
+                              );
+                            }
+                          }
+                        }}
+                        className="p-1.5 text-[#b52124] hover:bg-[#b52124]/10 rounded-xl transition-all duration-200"
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
+                    
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
+                      <div>
+                        <label className="text-xs text-[#5a5d5a]">Qty</label>
+                        <input
+                          type="text"
+                          value={item.quantity}
+                          onChange={(e) => {
+                            if (
+                              !/^\d*\.?\d*$/.test(e.target.value) ||
+                              parseFloat(e.target.value) < 0
+                            )
+                              return;
+                            handleItemChange(
+                              index,
+                              "quantity",
+                              parseFloat(e.target.value) || 0
+                            );
+                          }}
+                          className="w-full px-2 py-1.5 text-xs border border-gray-300 rounded-lg focus:border-[#b52124] focus:ring-1 focus:ring-[#b52124]/20 outline-none"
+                        />
+                      </div>
+                      <div>
+                        <label className="text-xs text-[#5a5d5a]">Unit</label>
+                        <div className="px-2 py-1.5 text-xs border border-gray-300 rounded-lg bg-gray-50 text-[#40423f]">
+                          {item.unit}
+                        </div>
+                      </div>
+                      <div>
+                        <label className="text-xs text-[#5a5d5a]">Rate</label>
+                        <input
+                          type="text"
+                          value={item.rate}
+                          onChange={(e) => {
+                            if (
+                              !/^\d*\.?\d*$/.test(e.target.value) ||
+                              Number(e.target.value) < 0
+                            )
+                              return;
+                            handleItemChange(
+                              index,
+                              "rate",
+                              parseFloat(e.target.value) || 0
+                            );
+                          }}
+                          className="w-full px-2 py-1.5 text-xs border border-gray-300 rounded-lg focus:border-[#b52124] focus:ring-1 focus:ring-[#b52124]/20 outline-none"
+                        />
+                      </div>
+                      <div>
+                        <label className="text-xs text-[#5a5d5a]">Amount</label>
+                        <div className="px-2 py-1.5 text-xs font-medium border border-gray-300 rounded-lg bg-gray-50 text-[#40423f]">
+                          {formatCurrency(item.amount)}
                         </div>
                       </div>
                     </div>
-                  ))}
-                </div>
-              )}
-            </div>
+                    
+                    <div className="mt-2 text-xs text-[#5a5d5a]">
+                      {formData.is_interstate
+                        ? `IGST: ${item.igst_rate}%`
+                        : `CGST: ${item.cgst_rate}% | SGST: ${item.sgst_rate}%`}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
 
-            {/* calculation summary unchanged */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-              <div className="col-span-2"></div>
-              <div className="bg-gray-50 p-4 rounded-lg border border-gray-200">
-                <div className="flex justify-between text-sm text-gray-600">
-                  <div>Subtotal</div>
-                  <div>{formatCurrency(formData.subtotal)}</div>
-                </div>
-                <div className="flex justify-between text-sm text-gray-600 mt-2">
-                  <div>Discount ({formData.discount_percentage}%)</div>
-                  <div>{formatCurrency(formData.discount_amount)}</div>
-                </div>
-                <div className="flex justify-between text-sm text-gray-600 mt-2">
-                  <div>Taxable</div>
-                  <div>{formatCurrency(formData.taxable_amount)}</div>
-                </div>
-                <div className="flex justify-between text-sm text-gray-600 mt-2">
-                  <div>Total GST</div>
-                  <div>{formatCurrency(formData.total_gst_amount)}</div>
-                </div>
-                <div className="flex justify-between text-lg font-semibold text-gray-800 mt-3">
+          {/* calculation summary */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mb-6">
+            <div className="col-span-2"></div>
+            <div className="bg-gradient-to-b from-gray-50/30 to-white/30 p-3 rounded-xl border border-gray-300">
+              <div className="flex justify-between text-xs text-[#5a5d5a] mb-1">
+                <div>Subtotal</div>
+                <div>{formatCurrency(formData.subtotal)}</div>
+              </div>
+              <div className="flex justify-between text-xs text-[#5a5d5a] mb-1">
+                <div>Discount ({formData.discount_percentage}%)</div>
+                <div>{formatCurrency(formData.discount_amount)}</div>
+              </div>
+              <div className="flex justify-between text-xs text-[#5a5d5a] mb-1">
+                <div>Taxable</div>
+                <div>{formatCurrency(formData.taxable_amount)}</div>
+              </div>
+              <div className="flex justify-between text-xs text-[#5a5d5a] mb-2">
+                <div>Total GST</div>
+                <div>{formatCurrency(formData.total_gst_amount)}</div>
+              </div>
+              <div className="border-t border-gray-300 pt-2">
+                <div className="flex justify-between text-sm font-semibold text-[#40423f]">
                   <div>Grand Total</div>
                   <div>{formatCurrency(formData.grand_total)}</div>
                 </div>
               </div>
             </div>
-            <div className="pb-6">
-              <div>
-                {formData.terms_and_conditions.length > 0 && (
-                  <h1 className="font-semibold">Terms & Conditions</h1>
-                )}
-                <div className="py-3">
-                  <ul className="px-6 list-decimal">
-                    {formData.terms_and_conditions.map((d, indx: number) => {
-                      const displayTerms = d.content.filter((dtc: any) =>
-                        Boolean(dtc.is_default)
+          </div>
+          
+          <div className="mb-6">
+            <div>
+              {formData.terms_and_conditions.length > 0 && (
+                <h3 className="text-base font-semibold text-[#40423f] mb-2 flex items-center gap-2">
+                  <ClipboardCheck className="w-4 h-4 text-[#b52124]" />
+                  Terms & Conditions
+                </h3>
+              )}
+              <div className="py-2">
+                <ul className="px-4 list-decimal text-xs text-[#5a5d5a]">
+                  {formData.terms_and_conditions.map((d, indx: number) => {
+                    const displayTerms = d.content.filter((dtc: any) =>
+                      Boolean(dtc.is_default)
+                    );
+                    if (displayTerms.length > 0) {
+                      return (
+                        <li className="mb-2" key={indx}>
+                          <div>
+                            {d.content.find((tcD: any) => tcD.is_default) && (
+                              <h4 className="font-semibold text-sm text-[#40423f] mb-1">
+                                {d.category.charAt(0).toUpperCase() +
+                                  d.category.slice(1) || ""}
+                              </h4>
+                            )}
+                          </div>
+                          <ul className="ml-3 list-disc">
+                            {displayTerms.map((term: any, idx: number) => {
+                              return <li key={idx} className="mb-1">{term.content}</li>;
+                            })}
+                          </ul>
+                        </li>
                       );
-                      if (displayTerms.length > 0) {
-                        return (
-                          <li className="mb-3" key={indx}>
-                            <div>
-                              {d.content.find((tcD: any) => tcD.is_default) && (
-                                <h1 className="font-semibold">
-                                  {d.category.charAt(0).toUpperCase() +
-                                    d.category.slice(1) || ""}
-                                </h1>
-                              )}
-                            </div>
-                            <ul className=" ml-3 list-disc">
-                              {displayTerms.map((term: any, idx: number) => {
-                                return <li key={idx}>{term.content}</li>;
-                              })}
-                            </ul>
-                          </li>
-                        );
-                      } else {
-                        return;
-                      }
-                    })}
-                  </ul>
-                </div>
-              </div>
-              <div className="flex items-center ">
-                <button
-                  onClick={() => {
-                    setShowTermsConditions(true);
-                  }}
-                  type="button"
-                  className="ml-2 text-sm font-medium text-blue-700"
-                >
-                  Add Terms & Conditions
-                </button>
+                    } else {
+                      return null;
+                    }
+                  })}
+                </ul>
               </div>
             </div>
+            <button
+              onClick={() => {
+                setShowTermsConditions(true);
+              }}
+              type="button"
+              className="text-xs font-medium text-[#b52124] hover:text-[#d43538] transition-colors"
+            >
+              + Add Terms & Conditions
+            </button>
+          </div>
 
-            <div className="flex gap-3 pt-6 border-t sticky bottom-0 bg-white">
-              <button
-                onClick={handleSubmit}
-                disabled={formData.items.length === 0}
-                className="flex-1 bg-blue-600 text-white py-2 px-6 rounded-lg hover:bg-blue-700 transition font-medium shadow-sm disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                Update Purchase Order
-              </button>
-              <button
-                type="button"
-                onClick={() => {
-                  setShowEditModal(false);
-                  resetForm();
-                }}
-                className="px-6 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition font-medium"
-              >
-                Cancel
-              </button>
-            </div>
-          </form>
-        </div>
+          <div className="flex gap-2 pt-4 border-t border-gray-300 sticky bottom-0 bg-gradient-to-b from-white to-gray-50/50">
+            <button
+              type="submit"
+              disabled={formData.items.length === 0}
+              className="flex-1 bg-gradient-to-r from-[#b52124] to-[#d43538] text-white py-2.5 px-4 rounded-xl hover:from-[#d43538] hover:to-[#b52124] transition-all duration-200 font-medium text-sm shadow-lg hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+            >
+              <Save className="w-4 h-4" />
+              Update Purchase Order
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                setShowEditModal(false);
+                resetForm();
+              }}
+              className="px-4 py-2.5 text-sm border border-gray-300 rounded-xl hover:bg-gray-50/50 hover:border-gray-400 transition-all duration-200 font-medium text-[#40423f] hover:text-[#2a2c2a]"
+            >
+              Cancel
+            </button>
+          </div>
+        </form>
       </div>
 
       {/* Item selector (with category + search) */}
       {showItemSelector && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[60] p-4">
-          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-4xl max-h-[80vh] overflow-hidden">
-            <div className="bg-gradient-to-r from-green-600 to-green-700 px-6 py-4 flex justify-between items-center">
-              <h3 className="text-xl font-bold text-white">
-                Select Item from Master
-              </h3>
+        <div className="fixed inset-0 bg-gray-900/70 backdrop-blur-md flex items-center justify-center z-[60] p-2 md:p-4">
+          <div className="bg-gradient-to-br from-gray-50 to-white rounded-2xl shadow-2xl shadow-gray-900/30 w-full max-w-md border border-gray-300/50 overflow-hidden max-h-[90vh] flex flex-col">
+            <div className="bg-gradient-to-r from-[#40423f] via-[#4a4c49] to-[#5a5d5a] px-4 md:px-6 py-4 flex justify-between items-center border-b border-gray-700/30">
+              <div className="flex items-center gap-3">
+                <div className="p-2 bg-white/10 rounded-xl">
+                  <Package className="w-4 h-4 md:w-5 md:h-5 text-gray-100" />
+                </div>
+                <div>
+                  <h3 className="font-bold text-white text-sm md:text-base">Select Item</h3>
+                  <p className="text-xs text-gray-300/80 hidden md:block">Choose from available items</p>
+                </div>
+              </div>
               <button
                 onClick={() => {
                   setShowItemSelector(false);
                   setItemSelectorSearch("");
                 }}
-                className="text-white hover:bg-white hover:bg-opacity-20 rounded-lg p-2 transition"
+                className="text-gray-200 hover:bg-gray-700/40 rounded-xl p-2 transition-all duration-200"
               >
-                <X className="w-5 h-5" />
+                <X className="w-4 h-4 md:w-5 md:h-5" />
               </button>
             </div>
 
-            <div className="p-4 border-b">
-              <div className="flex gap-3 items-center">
-                <div className="flex-1">
-                  <input
-                    placeholder={
-                      selectedCategory
-                        ? `Search ${selectedCategory} items...`
-                        : "Search all items..."
-                    }
-                    value={itemSelectorSearch}
-                    onChange={(e) => setItemSelectorSearch(e.target.value)}
-                    className="w-full px-3 py-2 border border-gray-200 rounded-md focus:ring-2 focus:ring-green-500 focus:border-transparent"
-                  />
+            {/* Search Bar */}
+            <div className="p-4 border-b border-gray-300">
+              <div className="relative group">
+                <div className="absolute left-3 top-1/2 -translate-y-1/2 text-[#5a5d5a]">
+                  <Search className="w-4 h-4" />
                 </div>
-                <div className="text-sm text-gray-600">
-                  {selectedCategory ? (
-                    <span>
-                      Filtering by type:{" "}
-                      <strong className="capitalize">{selectedCategory}</strong>
-                    </span>
-                  ) : (
-                    <span>Showing all item types</span>
-                  )}
-                </div>
+                <input
+                  type="text"
+                  placeholder={
+                    selectedCategory
+                      ? `Search ${selectedCategory} items...`
+                      : "Search all items..."
+                  }
+                  value={itemSelectorSearch}
+                  onChange={(e) => setItemSelectorSearch(e.target.value)}
+                  className="w-full pl-10 pr-4 py-2.5 text-sm border border-gray-300 rounded-xl focus:border-[#b52124] focus:ring-2 focus:ring-[#b52124]/20 outline-none transition-all duration-200 hover:border-gray-400 bg-white/50 text-[#40423f]"
+                />
               </div>
             </div>
 
-            <div className="p-6 overflow-y-auto max-h-[calc(80vh-140px)]">
-              <div className="grid grid-cols-1 gap-3">
+            {/* Item List */}
+            <div className="p-2 overflow-y-auto flex-grow">
+              <div className="space-y-2">
                 {filteredItems.length === 0 ? (
-                  <div className="p-6 text-center text-gray-500">
-                    No items found for the selected PO type / search
+                  <div className="p-6 text-center">
+                    <div className="p-3 bg-gray-100 rounded-xl inline-block mb-3">
+                      <Package className="w-8 h-8 text-gray-400" />
+                    </div>
+                    <p className="text-sm font-medium text-[#40423f]">
+                      No items found
+                    </p>
+                    <p className="text-xs text-[#5a5d5a] mt-1">
+                      Try a different search term
+                    </p>
                   </div>
                 ) : (
                   filteredItems.map((item) => (
-                    <div
+                    <button
+                      type="button"
                       key={item.id}
                       onClick={() => addItemFromMaster(item)}
-                      className="p-4 border border-gray-200 rounded-lg hover:bg-blue-50 hover:border-blue-300 cursor-pointer transition"
+                      className="w-full p-3 text-left border border-gray-300 rounded-xl hover:border-gray-400 hover:bg-gray-50/50 transition-all duration-200"
                     >
-                      <div className="flex justify-between items-start">
-                        <div>
-                          <p className="font-medium text-gray-800">
+                      <div className="flex justify-between items-start gap-2">
+                        <div className="text-left flex-1">
+                          <div className="font-medium text-sm text-[#40423f] mb-1">
                             {item.item_name}
-                          </p>
-                          <p className="text-sm text-gray-600">
-                            {item.item_code}{" "}
-                            {item.hsn_code ? `| HSN: ${item.hsn_code}` : ""}
-                          </p>
-                          {item.description && (
-                            <p className="text-xs text-gray-500 mt-1">
-                              {item.description}
-                            </p>
-                          )}
+                          </div>
+                          <div className="flex flex-wrap items-center gap-2">
+                            <span className="text-xs text-[#5a5d5a]">
+                              Code: {item.item_code}
+                            </span>
+                            {item.hsn_code && (
+                              <span className="text-xs text-[#5a5d5a]">
+                                HSN: {item.hsn_code}
+                              </span>
+                            )}
+                          </div>
                         </div>
-                        <div className="text-right">
-                          <p className="font-semibold text-blue-600">
+                        <div className="text-right flex-shrink-0">
+                          <p className="font-semibold text-sm text-[#b52124]">
                             {formatCurrency(item.standard_rate)}
                           </p>
-                          <p className="text-xs text-gray-600">
-                            per {item.unit}
-                          </p>
-                          {formData.is_interstate ? (
-                            <p className="text-xs text-gray-500">
-                              IGST: {item.igst_rate ?? 0}%
-                            </p>
-                          ) : (
-                            <p className="text-xs text-gray-500">
-                              CGST: {item.cgst_rate ?? 0}% SGST:{" "}
-                              {item.sgst_rate ?? 0}%
-                            </p>
-                          )}
+                          <span className="text-xs px-2 py-1 bg-[#b52124]/10 text-[#b52124] rounded-lg">
+                            Add
+                          </span>
                         </div>
                       </div>
-                      <span
-                        className={`inline-block mt-2 px-2 py-1 rounded text-xs font-medium ${
-                          String(item.category).toLowerCase() === "material"
-                            ? "bg-blue-100 text-blue-700"
-                            : "bg-green-100 text-green-700"
-                        }`}
-                      >
-                        {String(item.category || "UNKNOWN").toUpperCase()}
-                      </span>
-                    </div>
+                    </button>
                   ))
                 )}
               </div>
@@ -1342,37 +1294,77 @@ export default function UpdatePurchaseOrderForm({
       )}
 
       {showTermsConditions && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-2xl">
-            <div className="bg-gradient-to-r rounded-t-2xl from-blue-600 to-blue-700 px-6 py-4 flex justify-between items-center">
-              <h2 className="text-2xl font-bold text-white">
-                Add Terms & Conditions
-              </h2>
+        <div className="fixed inset-0 bg-gray-900/70 backdrop-blur-md flex items-center justify-center z-[70] p-2 md:p-4">
+          <div className="bg-gradient-to-br from-gray-50 to-white rounded-2xl shadow-2xl shadow-gray-900/30 w-full max-w-md border border-gray-300/50 overflow-hidden max-h-[90vh] flex flex-col">
+            <div className="bg-gradient-to-r from-[#40423f] via-[#4a4c49] to-[#5a5d5a] px-4 md:px-6 py-4 flex justify-between items-center border-b border-gray-700/30">
+              <div className="flex items-center gap-3">
+                <div className="p-2 bg-white/10 rounded-xl">
+                  <ClipboardCheck className="w-4 h-4 md:w-5 md:h-5 text-gray-100" />
+                </div>
+                <div>
+                  <h3 className="font-bold text-white text-sm md:text-base">Terms & Conditions</h3>
+                  <p className="text-xs text-gray-300/80 hidden md:block">Manage terms and conditions</p>
+                </div>
+              </div>
               <div className="flex">
                 <button
                   onClick={() => setShowAddTerm(true)}
-                  className="text-white bg-green-600 hover:bg-green-700 rounded-lg px-3 font-semibold py-1 flex items-center mr-3 text-sm"
+                  className="text-white bg-green-600 hover:bg-green-700 rounded-lg px-2 py-1 font-medium text-xs flex items-center mr-2"
                 >
-                  <Plus className="w-4 h-4" /> Add
+                  <Plus className="w-3 h-3 mr-1" /> Add
                 </button>
                 <button
                   onClick={() => setShowTermsConditions(false)}
-                  className="text-white hover:bg-white hover:bg-opacity-20 rounded-lg p-2 transition"
+                  className="text-gray-200 hover:bg-gray-700/40 rounded-xl p-2 transition-all duration-200"
                 >
-                  <X className="w-6 h-6" />
+                  <X className="w-4 h-4 md:w-5 md:h-5" />
                 </button>
               </div>
             </div>
-            <div className="py-6 ">
-              <ul className="px-6">
-                {formData.terms_and_conditions.map((d, indx: number) => {
-                  return (
-                    <li className="mb-3" key={indx}>
-                      <div>
-                        <h1 className="font-semibold">
+            <div className="p-4 overflow-y-auto flex-grow">
+              <ul className="space-y-3">
+                {formData.terms_and_conditions.map((d, indx: number) => (
+                  <li key={indx} className="border border-gray-300 rounded-xl p-3">
+                    <div className="flex items-start gap-2 mb-2">
+                      <input
+                        type="checkbox"
+                        onChange={() => {
+                          setFormData((prev) => ({
+                            ...prev,
+                            terms_and_conditions:
+                              prev.terms_and_conditions.map((tc) =>
+                                tc.category === d.category
+                                  ? {
+                                      ...tc,
+                                      isActive: !tc.isActive,
+                                      content: tc.content.map((i: any) => ({
+                                        ...i,
+                                        is_default: !tc.isActive,
+                                      })),
+                                    }
+                                  : tc
+                              ),
+                          }));
+                        }}
+                        checked={
+                          d.isActive ||
+                          d.content.filter((ftc: any) => ftc.is_default)
+                            .length === d.content.length
+                        }
+                        className="w-4 h-4 accent-[#b52124] cursor-pointer mt-0.5"
+                      />
+                      <h4 className="font-semibold text-sm text-[#40423f]">
+                        {d.category.charAt(0).toUpperCase() +
+                          d.category.slice(1) || ""}
+                      </h4>
+                    </div>
+                    <ul className="ml-6 space-y-1">
+                      {d.content.map((term: any, idx: number) => (
+                        <li key={idx} className="flex items-start gap-2">
                           <input
                             type="checkbox"
-                            onChange={(e) => {
+                            checked={term.is_default}
+                            onChange={() => {
                               setFormData((prev) => ({
                                 ...prev,
                                 terms_and_conditions:
@@ -1380,108 +1372,59 @@ export default function UpdatePurchaseOrderForm({
                                     tc.category === d.category
                                       ? {
                                           ...tc,
-                                          isActive: !tc.isActive,
-                                          content: tc.content.map((i: any) => ({
-                                            ...i,
-                                            is_default: !tc.isActive,
-                                          })),
+                                          content: tc.content.map(
+                                            (i: any) =>
+                                              i.content === term.content
+                                                ? {
+                                                    ...i,
+                                                    is_default: !i.is_default,
+                                                  }
+                                                : i
+                                          ),
                                         }
                                       : tc
                                   ),
                               }));
-
-                              setTerms((prev) =>
-                                prev.map((tc) =>
-                                  tc.id === d.id
-                                    ? {
-                                        ...tc,
-                                        isActive: !tc.isActive,
-                                        content: tc.content.map((i: any) => ({
-                                          ...i,
-                                          is_default: !tc.isActive,
-                                        })),
-                                      }
-                                    : tc
-                                )
-                              );
                             }}
-                            checked={
-                              d.isActive ||
-                              d.content.filter((ftc: any) => ftc.is_default)
-                                .length === d.content.length
-                            }
-                            className="w-4 h-4 accent-blue-600 cursor-pointer mr-1"
-                          />{" "}
-                          {d.category.charAt(0).toUpperCase() +
-                            d.category.slice(1) || ""}
-                        </h1>
-                      </div>
-                      <ul className=" ml-3">
-                        {d.content.map((term: any, idx: number) => {
-                          return (
-                            <li key={idx}>
-                              <input
-                                type="checkbox"
-                                checked={term.is_default}
-                                onChange={(e) => {
-                                  setFormData((prev) => ({
-                                    ...prev,
-                                    terms_and_conditions:
-                                      prev.terms_and_conditions.map((tc) =>
-                                        tc.category === d.category
-                                          ? {
-                                              ...tc,
-                                              content: tc.content.map(
-                                                (i: any) =>
-                                                  i.content === term.content
-                                                    ? {
-                                                        ...i,
-                                                        is_default:
-                                                          !i.is_default,
-                                                      }
-                                                    : i
-                                              ),
-                                            }
-                                          : tc
-                                      ),
-                                  }));
-                                }}
-                                className="w-4 h-4 accent-blue-600 cursor-pointer mr-1"
-                              />{" "}
-                              {term.content}
-                            </li>
-                          );
-                        })}
-                      </ul>
-                    </li>
-                  );
-                })}
+                            className="w-3.5 h-3.5 accent-[#b52124] cursor-pointer mt-0.5"
+                          />
+                          <span className="text-xs text-[#5a5d5a]">{term.content}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  </li>
+                ))}
               </ul>
             </div>
           </div>
         </div>
       )}
+      
       {showAddTerm && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-xl">
-            <div className="bg-gradient-to-r rounded-t-2xl from-blue-600 to-blue-700 px-6 py-4 flex justify-between items-center">
-              <h2 className="text-2xl font-bold text-white">
-                Add Terms & Conditions
-              </h2>
-              <div className="flex">
-                <button
-                  onClick={() => setShowAddTerm(false)}
-                  className="text-white hover:bg-white hover:bg-opacity-20 rounded-lg p-2 transition"
-                >
-                  <X className="w-6 h-6" />
-                </button>
+        <div className="fixed inset-0 bg-gray-900/70 backdrop-blur-md flex items-center justify-center z-[80] p-2 md:p-4">
+          <div className="bg-gradient-to-br from-gray-50 to-white rounded-2xl shadow-2xl shadow-gray-900/30 w-full max-w-md border border-gray-300/50 overflow-hidden max-h-[90vh] flex flex-col">
+            <div className="bg-gradient-to-r from-[#40423f] via-[#4a4c49] to-[#5a5d5a] px-4 md:px-6 py-4 flex justify-between items-center border-b border-gray-700/30">
+              <div className="flex items-center gap-3">
+                <div className="p-2 bg-white/10 rounded-xl">
+                  <Plus className="w-4 h-4 md:w-5 md:h-5 text-gray-100" />
+                </div>
+                <div>
+                  <h3 className="font-bold text-white text-sm md:text-base">Add Term</h3>
+                  <p className="text-xs text-gray-300/80 hidden md:block">Add new terms & conditions</p>
+                </div>
               </div>
+              <button
+                onClick={() => setShowAddTerm(false)}
+                className="text-gray-200 hover:bg-gray-700/40 rounded-xl p-2 transition-all duration-200"
+              >
+                <X className="w-4 h-4 md:w-5 md:h-5" />
+              </button>
             </div>
 
-            <div className="grid grid-cols-1 gap-3 items-end mb-6 px-6 py-3">
+            <div className="p-4 space-y-3">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Category <span className="text-red-500">*</span>
+                <label className="block text-xs font-medium text-[#40423f] mb-1">
+                  Category <span className="text-[#b52124]">*</span>
                 </label>
                 <select
                   value={extraTermData.category}
@@ -1491,7 +1434,7 @@ export default function UpdatePurchaseOrderForm({
                       category: e.target.value,
                     })
                   }
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  className="w-full px-3 py-2 text-sm border border-gray-300 rounded-xl focus:ring-2 focus:ring-[#b52124]/20 focus:border-[#b52124] outline-none bg-white/50"
                   required
                 >
                   <option value="">Select Category</option>
@@ -1507,8 +1450,8 @@ export default function UpdatePurchaseOrderForm({
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Terms & Condition <span className="text-red-500">*</span>
+                <label className="block text-xs font-medium text-[#40423f] mb-1">
+                  Terms & Condition <span className="text-[#b52124]">*</span>
                 </label>
                 <textarea
                   value={extraTermData.content}
@@ -1518,13 +1461,13 @@ export default function UpdatePurchaseOrderForm({
                       content: e.target.value,
                     });
                   }}
-                  className="w-full outline-none px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  className="w-full px-3 py-2 text-sm border border-gray-300 rounded-xl focus:ring-2 focus:ring-[#b52124]/20 focus:border-[#b52124] outline-none bg-white/50"
                   rows={3}
                   placeholder="Enter the full terms & conditions text..."
                   required
                 />
               </div>
-              <div className="flex flex-col sm:flex-row gap-3 w-full">
+              <div className="flex gap-2 pt-2">
                 <button
                   type="button"
                   onClick={() => {
@@ -1535,7 +1478,6 @@ export default function UpdatePurchaseOrderForm({
                       toast.error("All input fields required.");
                       return;
                     }
-                    console.log(extraTermData);
                     setFormData((prev) => ({
                       ...prev,
                       terms_and_conditions: prev.terms_and_conditions.map(
@@ -1565,14 +1507,14 @@ export default function UpdatePurchaseOrderForm({
                     });
                     setShowAddTerm(false);
                   }}
-                  className="bg-blue-600 text-white px-4 py-3 h-fit w-full  rounded-lg hover:bg-blue-700 transition text-sm flex items-center gap-2 cursor-pointer justify-center"
+                  className="flex-1 bg-gradient-to-r from-[#b52124] to-[#d43538] text-white px-4 py-2.5 rounded-xl hover:from-[#d43538] hover:to-[#b52124] transition-all duration-200 text-sm font-medium flex items-center justify-center gap-2"
                 >
-                  <Plus className="w-4 h-4" /> Add
+                  <Plus className="w-3 h-3" /> Add
                 </button>
                 <button
                   type="button"
                   onClick={() => setShowAddTerm(false)}
-                  className="bg-gray-600 text-white px-4 py-3 h-fit  w-full sm:w-40  rounded-lg hover:bg-gray-700 transition text-sm flex items-center justify-center gap-2 cursor-pointer"
+                  className="px-4 py-2.5 text-sm border border-gray-300 rounded-xl hover:bg-gray-50/50 hover:border-gray-400 transition-all duration-200 font-medium text-[#40423f]"
                 >
                   Close
                 </button>

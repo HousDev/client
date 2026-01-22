@@ -1101,9 +1101,7 @@ export default function ItemsMaster(): JSX.Element {
         <div className="bg-gradient-to-r from-[#40423f] via-[#4a4c49] to-[#5a5d5a] rounded-xl shadow-md p-5">
           <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
             <div className="flex items-center gap-3">
-              <div className="p-2 bg-white/20 rounded-xl backdrop-blur-sm">
-                <Package className="w-6 h-6 text-white" />
-              </div>
+            
               <div>
                 <h1 className="text-2xl font-bold text-white">Items Master</h1>
                 <p className="text-sm text-white/90 font-medium mt-0.5">

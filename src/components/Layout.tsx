@@ -1,6 +1,9 @@
 import { ReactNode, useState, useMemo, useEffect, useRef } from "react";
 import { useAuth } from "../contexts/AuthContext";
 import Logo from "../assets/images/Nayash Logo.png";
+import { FaBell, FaTimes, FaSignOutAlt, FaCog, FaBars, FaTruck, FaHardHat, FaBoxOpen, FaTools, FaChartLine, FaUserShield, FaDollarSign, FaClipboardList, FaConciergeBell } from "react-icons/fa";
+import { MdBusiness, MdDashboard, MdLocalShipping, MdDescription, MdConstruction, MdWarehouse, MdInventory2, MdRequestQuote, MdPayment, MdNotifications, MdAssessment, MdSettings, MdSecurity, MdClose, MdAdd, MdStore, MdReceipt } from "react-icons/md";
+import { Menu, ChevronRight, Clock, PackagePlus, PackageMinus, UserCheck, MoreVertical, Home, Building, FileText, Truck, Wrench, Package, BarChart3, Shield, Users, PackageSearch, ClipboardCheck, DollarSign, TrendingUp, Handshake, FileCheck, Calculator, Layers } from "lucide-react";
 import { FaBell, FaTimes, FaSignOutAlt, FaCog, FaChevronDown, FaChevronRight } from "react-icons/fa";
 import {
   MdBusiness,
@@ -75,24 +78,32 @@ export default function Layout({
   const [notifications, setNotifications] = useState<NotificationType[]>([]);
   const [unreadCount, setUnreadCount] = useState(0);
   const [showRequestMaterial, setShowRequestMaterial] = useState<boolean>(false);
+  const [showMaterialActionsMenu, setShowMaterialActionsMenu] = useState<boolean>(false);
+  
+  // Local state for forms if not provided via props
   const [openSubmenu, setOpenSubmenu] = useState<string | null>(null);
 
   const [localActiveFormTab, setLocalActiveFormTab] = useState<string>("");
 
   const profileRef = useRef<HTMLDivElement>(null);
   const notifRef = useRef<HTMLDivElement>(null);
+  const materialActionsRef = useRef<HTMLDivElement>(null);
 
   const menuItems = [
     {
       id: "dashboard",
       label: "Dashboard",
-      icon: MdDashboard,
+      icon: Home,
+      headerIcon: Home,
       value: ["view_dashboard"],
       submenu: null,
     },
     {
       id: "vendors",
       label: "Vendors",
+      icon: Handshake,
+      headerIcon: Handshake,
+      value: ["view_vendors", "create_vendors", "edit_vendors", "delete_vendors"],
       icon: MdLocalShipping,
       value: [
         "view_vendors",
@@ -105,6 +116,9 @@ export default function Layout({
     {
       id: "purchase-orders",
       label: "Purchase Orders",
+      icon: FileText,
+      headerIcon: FileCheck,
+      value: ["view_pos", "create_pos", "edit_pos", "delete_pos", "approve_pos"],
       icon: MdDescription,
       value: [
         "view_pos",
@@ -118,6 +132,9 @@ export default function Layout({
     {
       id: "service-orders",
       label: "Service Orders",
+      icon: Layers,
+      headerIcon: Layers,
+      value: ["edit_service_orders", "create_service_orders", "view_service_orders"],
       icon: MdConstruction,
       value: [
         "edit_service_orders",
@@ -129,6 +146,9 @@ export default function Layout({
     {
       id: "store-management",
       label: "Store Management",
+      icon: Package,
+      headerIcon: Package,
+      value: ["edit_inventory", "create_inventory", "view_inventory", "delete_inventory"],
       icon: MdWarehouse,
       value: [
         "edit_inventory",
@@ -141,21 +161,24 @@ export default function Layout({
     {
       id: "materials",
       label: "Material Tracking",
-      icon: MdInventory2,
+      icon: PackageSearch,
+      headerIcon: PackageSearch,
       value: ["view_materials", "receive_materials"],
       submenu: null,
     },
     {
       id: "material-requests",
       label: "Material Requests",
-      icon: MdRequestQuote,
+      icon: ClipboardCheck,
+      headerIcon: ClipboardCheck,
       value: ["view_materials_requests", "update_materials_requests"],
       submenu: null,
     },
     {
       id: "payments",
       label: "Payments",
-      icon: MdPayment,
+      icon: Calculator,
+      headerIcon: Calculator,
       value: ["view_payments", "make_payments", "verify_payments"],
       submenu: null,
     },
@@ -176,14 +199,16 @@ export default function Layout({
     {
       id: "notifications",
       label: "Notifications",
-      icon: MdNotifications,
+      icon: FaConciergeBell,
+      headerIcon: FaConciergeBell,
       value: ["view_notifications"],
       submenu: null,
     },
     {
       id: "reports",
       label: "Reports",
-      icon: MdAssessment,
+      icon: BarChart3,
+      headerIcon: BarChart3,
       value: ["view_reports", "export_reports"],
       submenu: null,
     },
@@ -197,7 +222,8 @@ export default function Layout({
     {
       id: "masters",
       label: "Masters",
-      icon: MdSettings,
+      icon: Users,
+      headerIcon: Users,
       value: ["manage_users", "manage_roles"],
       submenu: null,
     },
@@ -211,7 +237,8 @@ export default function Layout({
     {
       id: "permissions",
       label: "Permissions",
-      icon: MdSecurity,
+      icon: Shield,
+      headerIcon: Shield,
       value: ["manage_permissions"],
       submenu: null,
     },
@@ -221,6 +248,9 @@ export default function Layout({
   const currentActiveFormTab = activeFormTab !== undefined ? activeFormTab : localActiveFormTab;
   const currentSetActiveFormTab = setActiveFormTab || setLocalActiveFormTab;
 
+  // Get current active menu label and icon for header
+  const activeMenuItem = useMemo(() => {
+    return menuItems.find(item => item.id === activeTab) || menuItems[0];
   // Get current active menu label for header
   const activeMenuLabel = useMemo(() => {
     // Check if activeTab is an HRMS submenu
@@ -339,6 +369,13 @@ export default function Layout({
 
     if (diffMins < 1) return "Just now";
     if (diffMins < 60) return `${diffMins} min ago`;
+    if (diffHours < 24) return `${diffHours} hour${diffHours > 1 ? 's' : ''} ago`;
+    if (diffDays < 7) return `${diffDays} day${diffDays > 1 ? 's' : ''} ago`;
+    
+    return date.toLocaleDateString('en-US', {
+      month: 'short',
+      day: 'numeric',
+      year: date.getFullYear() !== now.getFullYear() ? 'numeric' : undefined
     if (diffHours < 24) return `${diffHours} hour${diffHours > 1 ? "s" : ""} ago`;
     if (diffDays < 7) return `${diffDays} day${diffDays > 1 ? "s" : ""} ago`;
 
@@ -363,6 +400,9 @@ export default function Layout({
         !notifRef.current.contains(event.target as Node)
       ) {
         setNotifOpen(false);
+      }
+      if (materialActionsRef.current && !materialActionsRef.current.contains(event.target as Node)) {
+        setShowMaterialActionsMenu(false);
       }
     };
 
@@ -389,12 +429,14 @@ export default function Layout({
   // Handle material form button click
   const handleMaterialButtonClick = (formType: string) => {
     currentSetActiveFormTab(formType);
+    setShowMaterialActionsMenu(false);
   };
 
   // Reset form tab when changing tabs
   useEffect(() => {
     if (activeTab !== "store-management") {
       currentSetActiveFormTab("");
+      setShowMaterialActionsMenu(false);
     }
   }, [activeTab, currentSetActiveFormTab]);
 
@@ -421,15 +463,34 @@ export default function Layout({
     <div className="min-h-screen bg-gray-50">
       {/* Mobile Sidebar Overlay */}
       {mobileSidebarOpen && (
-        <div
+        <div 
           className="lg:hidden fixed inset-0 bg-black/50 z-40"
           onClick={() => setMobileSidebarOpen(false)}
         />
       )}
 
       {/* Sidebar */}
-      <aside
+      <aside 
         className={`fixed top-0 left-0 z-40 h-screen transition-all duration-300 ease-in-out
+          ${sidebarOpen ? 'w-64' : 'w-20'}
+          ${mobileSidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}
+          bg-[#2D2D2D] border-r border-gray-700 flex flex-col shadow-xl`}
+      >
+        {/* Logo Section */}
+        <div className={`h-20 border-b border-gray-700 flex items-center ${sidebarOpen ? 'justify-start px-6' : 'justify-center'} transition-all bg-[#2D2D2D]`}>
+          {sidebarOpen ? (
+            <img 
+              src={Logo} 
+              alt="Nayash Group" 
+              className="h-16 w-auto object-contain brightness-0 invert" 
+              style={{ filter: 'brightness(0) invert(1)' }}
+            />
+          ) : (
+            <img 
+              src={Logo} 
+              alt="N" 
+              className="h-10 w-10 object-contain brightness-0 invert" 
+              style={{ filter: 'brightness(0) invert(1)' }}
           ${sidebarOpen ? "w-56" : "w-20"}
           ${mobileSidebarOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0"}
           bg-[#2D2D2D] border-r border-gray-700 flex flex-col shadow-lg`}
@@ -458,6 +519,14 @@ export default function Layout({
         {/* Mobile Profile Section */}
         {sidebarOpen && (
           <div className="p-4 border-b border-gray-700 lg:hidden">
+            <div className="flex items-center justify-between gap-3 px-3 py-2 bg-[#3D3D3D] rounded-lg">
+              <div className="flex items-center gap-3">
+                {avatarUrl ? (
+                  <img src={avatarUrl} alt="avatar" className="w-10 h-10 rounded-full object-cover border-2 border-[#C62828]" />
+                ) : (
+                  <div className="w-10 h-10 bg-[#C62828] rounded-full flex items-center justify-center shadow-sm">
+                    <span className="text-white font-semibold text-sm">{initials}</span>
+                  </div>
             <div className="flex items-center gap-3 px-3 py-2 bg-[#3D3D3D] rounded-lg">
               {avatarUrl ? (
                 <img
@@ -488,7 +557,26 @@ export default function Layout({
                     </p>
                   </>
                 )}
+                <div className="flex-1 min-w-0">
+                  {authLoading ? (
+                    <div className="animate-pulse">
+                      <div className="h-4 bg-gray-600 rounded w-32 mb-1" />
+                      <div className="h-3 bg-gray-600 rounded w-20" />
+                    </div>
+                  ) : (
+                    <>
+                      <p className="text-sm font-semibold text-white truncate">{displayName}</p>
+                      <p className="text-xs text-gray-400 capitalize truncate">{displayRole}</p>
+                    </>
+                  )}
+                </div>
               </div>
+              <button 
+                onClick={() => setMobileSidebarOpen(false)}
+                className="p-1 hover:bg-gray-700 rounded-md"
+              >
+                <MdClose className="w-5 h-5 text-gray-400" />
+              </button>
             </div>
           </div>
         )}
@@ -497,10 +585,12 @@ export default function Layout({
         <nav className="flex-1 overflow-y-auto py-4 px-3 scrollbar-thin scrollbar-thumb-gray-600 scrollbar-track-transparent">
           {!sidebarOpen ? (
             // Collapsed View - Only Icons
-            <div className="space-y-1">
+            <div className="space-y-2">
               {menuItems.map((item) => {
                 const Icon = item.icon;
                 const isActive = activeTab === item.id;
+                const hasPermission = item.value.some((d) => userMenus.includes(d)) || userMenus.includes("full_access");
+                
                 const hasPermission =
                   item.value.some((d) => userMenus.includes(d)) ||
                   userMenus.includes("full_access");
@@ -512,6 +602,9 @@ export default function Layout({
                     key={item.id}
                     onClick={() => handleMenuItemClick(item)}
                     className={`w-full flex items-center justify-center p-3 rounded-lg transition-all group relative
+                      ${isActive 
+                        ? 'bg-[#C62828] text-white shadow-lg' 
+                        : 'text-gray-400 hover:bg-[#3D3D3D] hover:text-white'
                       ${isActive
                         ? "bg-[#C62828] text-white shadow-lg"
                         : "text-gray-400 hover:bg-[#3D3D3D] hover:text-white"
@@ -531,6 +624,27 @@ export default function Layout({
             <div className="space-y-1">
               {menuItems.map((item) => {
                 const Icon = item.icon;
+                const isActive = activeTab === item.id;
+                const hasPermission = item.value.some((d) => userMenus.includes(d)) || userMenus.includes("full_access");
+                
+                if (!hasPermission) return null;
+
+                return (
+                  <button
+                    key={item.id}
+                    onClick={() => {
+                      onTabChange(item.id);
+                      setMobileSidebarOpen(false);
+                    }}
+                    className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-all
+                      ${isActive 
+                        ? 'bg-[#C62828] text-white shadow-lg' 
+                        : 'text-gray-400 hover:bg-[#3D3D3D] hover:text-white'
+                      }`}
+                  >
+                    <Icon className="w-5 h-5 flex-shrink-0" />
+                    <span className="font-medium text-sm truncate">{item.label}</span>
+                  </button>
                 const isActive = activeTab === item.id || (item.submenu && item.submenu.some(sub => sub.id === activeTab));
                 const hasPermission =
                   item.value.some((d) => userMenus.includes(d)) ||
@@ -608,15 +722,16 @@ export default function Layout({
       </aside>
 
       {/* Main Content */}
+      <div className={`transition-all duration-300 ease-in-out min-h-screen ${sidebarOpen ? 'lg:ml-64' : 'lg:ml-20'}`}>
       <div
         className={`transition-all duration-300 ease-in-out min-h-screen ${sidebarOpen ? "lg:ml-56" : "lg:ml-20"}`}
       >
         {/* Top Navigation Bar */}
         <header className="sticky top-0 z-30 h-16 bg-white border-b border-gray-200 shadow-sm">
-          <div className="px-4 h-full">
+          <div className="px-4 sm:px-6 h-full">
             <div className="flex items-center justify-between h-full">
               {/* Left Side */}
-              <div className="flex items-center space-x-3">
+              <div className="flex items-center space-x-2 sm:space-x-3">
                 {/* Desktop Sidebar Toggle */}
                 <button
                   onClick={() => setSidebarOpen(!sidebarOpen)}
@@ -634,14 +749,24 @@ export default function Layout({
                   onClick={() => setMobileSidebarOpen(true)}
                   className="lg:hidden p-2 rounded-lg hover:bg-gray-100 transition"
                 >
-                  <Menu className="w-5 h-5 text-[#2D2D2D]" />
+                  <FaBars className="w-5 h-5 text-[#2D2D2D]" />
                 </button>
 
-                {/* Dynamic Page Title */}
-                <div className="flex items-center gap-3">
-                  <div className="bg-[#C62828] p-2 rounded-lg shadow-sm">
-                    <MdBusiness className="w-6 h-6 text-white" />
+                {/* Dynamic Page Title with Icon */}
+                <div className="flex items-center gap-2 sm:gap-3">
+                  {/* Icon Container - REMOVED from mobile */}
+                  <div className="bg-[#C62828] p-1.5 sm:p-2 rounded-lg shadow-sm hidden sm:block">
+                    {/* Dynamic Icon - Only shown on desktop */}
+                    <div className="hidden sm:block">
+                      {(() => {
+                        const HeaderIcon = activeMenuItem.headerIcon;
+                        return <HeaderIcon className="w-5 h-5 sm:w-6 sm:h-6 text-white" />;
+                      })()}
+                    </div>
                   </div>
+                  <div className="max-w-[140px] sm:max-w-none">
+                    <h1 className="font-bold text-[#2D2D2D] text-base sm:text-lg leading-tight truncate">{activeMenuItem.label}</h1>
+                    <p className="text-xs text-gray-500 truncate">Nayash Group</p>
                   <div>
                     <h1 className="font-bold text-[#2D2D2D] text-lg leading-tight">
                       {activeMenuLabel}
@@ -651,10 +776,33 @@ export default function Layout({
                     </p>
                   </div>
                 </div>
+              </div>
 
-                {/* Store Management Buttons - Only show when activeTab is "store-management" */}
+              {/* Right Side */}
+              <div className="flex items-center gap-2 sm:gap-3">
+                {/* Request Material Button - Desktop (ALWAYS SHOW except on store management) */}
+                {activeTab !== "store-management" && (
+                  <button
+                    onClick={() => setShowRequestMaterial(true)}
+                    className="hidden sm:flex items-center px-4 py-2 bg-[#C62828] text-white rounded-lg hover:bg-[#A62222] hover:shadow-lg transition text-sm font-medium whitespace-nowrap"
+                  >
+                    Request Material
+                  </button>
+                )}
+
+                {/* Request Material Button - Desktop on Store Management (Show on right side) */}
+                {activeTab === "store-management" && (
+                  <button
+                    onClick={() => setShowRequestMaterial(true)}
+                    className="hidden lg:flex items-center px-4 py-2 bg-[#C62828] text-white rounded-lg hover:bg-[#A62222] hover:shadow-lg transition text-sm font-medium whitespace-nowrap ml-4"
+                  >
+                    Request Material
+                  </button>
+                )}
+
+                {/* Store Management Actions Menu - Desktop (3 buttons on left side) */}
                 {activeTab === "store-management" && can("create_inventory") && (
-                  <div className="hidden md:flex items-center gap-2 ml-4 border-l border-gray-300 pl-4">
+                  <div className="hidden lg:flex items-center gap-2 ml-4 border-l border-gray-300 pl-4">
                     <button
                       onClick={() => handleMaterialButtonClick("in")}
                       className={`px-4 py-2 rounded-lg font-medium transition-all flex items-center gap-2 ${currentActiveFormTab === "in"
@@ -687,17 +835,87 @@ export default function Layout({
                     </button>
                   </div>
                 )}
-              </div>
 
-              {/* Right Side */}
-              <div className="flex items-center gap-3">
-                {/* Request Material Button */}
-                <button
-                  onClick={() => setShowRequestMaterial(true)}
-                  className="hidden sm:flex items-center px-4 py-2 bg-[#C62828] text-white rounded-lg hover:bg-[#A62222] hover:shadow-lg transition text-sm font-medium"
-                >
-                  Request Material
-                </button>
+                {/* Store Management Actions Menu - Mobile (+ icon only in mobile) */}
+                {/* {activeTab === "store-management" && can("create_inventory") && (
+                  <div className="lg:hidden relative" ref={materialActionsRef}>
+                    <button
+                      onClick={() => setShowMaterialActionsMenu(!showMaterialActionsMenu)}
+                      className={`p-2 rounded-lg transition ${
+                        showMaterialActionsMenu || currentActiveFormTab
+                          ? "bg-[#C62828] text-white"
+                          : "bg-gray-100 hover:bg-gray-200 text-gray-700"
+                      }`}
+                    >
+                      <MdAdd className="w-5 h-5" />
+                    </button>
+
+                    {showMaterialActionsMenu && (
+                      <div className="absolute right-0 top-full mt-2 w-48 bg-white rounded-lg shadow-xl border border-gray-200 overflow-hidden z-50">
+                        <div className="px-4 py-3 border-b bg-[#2D2D2D]">
+                          <h4 className="text-sm font-semibold text-white">Quick Actions</h4>
+                        </div>
+                        <div className="p-2">
+                          <button
+                            onClick={() => handleMaterialButtonClick("in")}
+                            className={`w-full text-left px-3 py-2.5 rounded-lg text-sm flex items-center gap-3 transition ${
+                              currentActiveFormTab === "in"
+                                ? "bg-red-50 text-[#C62828] font-semibold"
+                                : "text-gray-700 hover:bg-gray-100"
+                            }`}
+                          >
+                            <PackagePlus className="w-4 h-4" />
+                            In
+                          </button>
+                          <button
+                            onClick={() => handleMaterialButtonClick("out")}
+                            className={`w-full text-left px-3 py-2.5 rounded-lg text-sm flex items-center gap-3 transition ${
+                              currentActiveFormTab === "out"
+                                ? "bg-red-50 text-[#C62828] font-semibold"
+                                : "text-gray-700 hover:bg-gray-100"
+                            }`}
+                          >
+                            <PackageMinus className="w-4 h-4" />
+                            Out
+                          </button>
+                          <button
+                            onClick={() => handleMaterialButtonClick("issue")}
+                            className={`w-full text-left px-3 py-2.5 rounded-lg text-sm flex items-center gap-3 transition ${
+                              currentActiveFormTab === "issue"
+                                ? "bg-red-50 text-[#C62828] font-semibold"
+                                : "text-gray-700 hover:bg-gray-100"
+                            }`}
+                          >
+                            <UserCheck className="w-4 h-4" />
+                            Issue
+                          </button>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                )} */}
+
+                {/* Request Material Button - Mobile (Hidden only on Store Management) */}
+                {activeTab !== "store-management" && (
+                  <button
+                    onClick={() => setShowRequestMaterial(true)}
+                    className="sm:hidden p-2 rounded-lg bg-[#C62828] text-white hover:bg-[#A62222] transition"
+                    title="Request Material"
+                  >
+                    <MdRequestQuote className="w-5 h-5" />
+                  </button>
+                )}
+
+                {/* Request Material Button - Mobile on Store Management */}
+                {activeTab === "store-management" && (
+                  <button
+                    onClick={() => setShowRequestMaterial(true)}
+                    className="lg:hidden p-2 rounded-lg bg-[#C62828] text-white hover:bg-[#A62222] transition"
+                    title="Request Material"
+                  >
+                    <MdRequestQuote className="w-5 h-5" />
+                  </button>
+                )}
 
                 {/* Notification Bell */}
                 <div className="relative" ref={notifRef}>
@@ -705,19 +923,38 @@ export default function Layout({
                     onClick={() => {
                       setNotifOpen(!notifOpen);
                       setProfileOpen(false);
+                      setShowMaterialActionsMenu(false);
                     }}
                     className="p-2 rounded-lg hover:bg-gray-100 transition relative"
                   >
                     <FaBell className="w-5 h-5 text-[#2D2D2D]" />
                     {unreadCount > 0 && (
-                      <span className="absolute -top-1 -right-1 w-5 h-5 bg-[#C62828] text-white text-xs rounded-full flex items-center justify-center font-semibold">
-                        {unreadCount}
+                      <span className="absolute -top-1 -right-1 w-5 h-5 bg-[#C62828] text-white text-xs rounded-full flex items-center justify-center font-semibold border border-white">
+                        {unreadCount > 9 ? '9+' : unreadCount}
                       </span>
                     )}
                   </button>
 
-                  {/* Notifications Dropdown */}
+                  {/* Notifications Dropdown - Desktop only (removed mobile full screen) */}
                   {notifOpen && (
+                    <>
+                      {/* Dropdown Content - Desktop only, small dropdown */}
+                      <div className="hidden lg:block absolute right-0 top-full mt-2 w-80 bg-white rounded-lg shadow-xl border border-gray-200 overflow-hidden z-50">
+                        <div className="flex items-center justify-between px-4 py-3 border-b bg-[#2D2D2D] sticky top-0">
+                          <h4 className="text-sm font-semibold text-white">Notifications</h4>
+                          <div className="flex items-center gap-3">
+                            {unreadCount > 0 && (
+                              <span className="text-xs text-gray-300 bg-[#C62828] px-2 py-1 rounded-full">
+                                {unreadCount} new
+                              </span>
+                            )}
+                            <button 
+                              onClick={() => setNotifOpen(false)}
+                              className="p-1 hover:bg-[#3D3D3D] rounded"
+                            >
+                              <FaTimes className="w-4 h-4 text-white" />
+                            </button>
+                          </div>
                     <div className="absolute right-0 top-full mt-2 w-80 bg-white rounded-lg shadow-xl border border-gray-200 overflow-hidden z-50">
                       <div className="flex items-center justify-between px-4 py-3 border-b bg-[#2D2D2D]">
                         <h4 className="text-sm font-semibold text-white">
@@ -734,8 +971,44 @@ export default function Layout({
                             <FaTimes className="w-4 h-4 text-white" />
                           </button>
                         </div>
-                      </div>
 
+                        <div className="overflow-y-auto max-h-96">
+                          {notifications.length === 0 ? (
+                            <div className="p-8 text-center">
+                              <FaBell className="w-12 h-12 text-gray-300 mx-auto mb-3" />
+                              <p className="text-gray-500 text-sm">No notifications yet</p>
+                              <p className="text-gray-400 text-xs mt-1">You're all caught up!</p>
+                            </div>
+                          ) : (
+                            notifications.map((n) => (
+                              <div
+                                key={n.id}
+                                className={`p-4 border-b border-gray-100 hover:bg-gray-50 transition cursor-pointer ${
+                                  !n.seen ? "bg-red-50/40" : ""
+                                }`}
+                                onClick={() => {
+                                  // Handle notification click
+                                  setNotifOpen(false);
+                                }}
+                              >
+                                <div className="flex items-start gap-3">
+                                  <div className="w-10 h-10 rounded-full bg-[#C62828] flex items-center justify-center text-white font-semibold shadow-sm flex-shrink-0 mt-1">
+                                    {n.title.charAt(0)}
+                                  </div>
+                                  <div className="flex-1 min-w-0">
+                                    <div className="flex items-start justify-between gap-2">
+                                      <p className="text-sm font-semibold text-gray-900">{n.title}</p>
+                                      {!n.seen && (
+                                        <span className="w-2 h-2 bg-[#C62828] rounded-full flex-shrink-0 mt-1.5"></span>
+                                      )}
+                                    </div>
+                                    <p className="text-sm text-gray-600 mt-1.5 line-clamp-2">{n.description}</p>
+                                    <div className="flex items-center gap-1.5 mt-2.5">
+                                      <Clock className="w-3.5 h-3.5 text-gray-400" />
+                                      <p className="text-xs text-gray-400">
+                                        {formatDateTime(n.created_at)}
+                                      </p>
+                                    </div>
                       <div className="max-h-96 overflow-y-auto">
                         {notifications.length === 0 ? (
                           <div className="p-8 text-center">
@@ -775,29 +1048,114 @@ export default function Layout({
                                   </div>
                                 </div>
                               </div>
-                            </div>
-                          ))
+                            ))
+                          )}
+                        </div>
+
+                        {notifications.length > 0 && (
+                          <div className="px-4 py-3 border-t bg-gray-50 flex items-center justify-between sticky bottom-0">
+                            <button
+                              onClick={() => {
+                                markAllRead();
+                                setNotifOpen(false);
+                              }}
+                              className="text-sm text-[#C62828] hover:text-[#A62222] font-medium"
+                            >
+                              Mark all as read
+                            </button>
+                            <button
+                              onClick={() => setNotifOpen(false)}
+                              className="px-3 py-1.5 rounded-md bg-white border border-gray-300 hover:bg-gray-100 text-sm text-gray-700"
+                            >
+                              Close
+                            </button>
+                          </div>
                         )}
                       </div>
+                      {/* Mobile Notification Panel */}
+<div
+  className={`
+    lg:hidden fixed 
+    top-16 right-2
+    w-[88vw] max-w-sm
+    bg-white 
+    rounded-xl
+    shadow-2xl 
+    border border-gray-200
+    z-50
+    transform transition-all duration-300 ease-out
+    ${notifOpen 
+      ? "translate-x-0 opacity-100" 
+      : "translate-x-6 opacity-0 pointer-events-none"}
+  `}
+>
+  {/* Header */}
+  <div className="flex items-center justify-between px-4 py-3 bg-[#2D2D2D] rounded-t-xl">
+    <h4 className="text-sm font-semibold text-white">Notifications</h4>
+    <button
+      onClick={() => setNotifOpen(false)}
+      className="p-1 rounded hover:bg-[#3D3D3D]"
+    >
+      <FaTimes className="w-4 h-4 text-white" />
+    </button>
+  </div>
 
-                      <div className="px-4 py-3 border-t bg-gray-50 flex items-center justify-between">
-                        <button
-                          onClick={() => {
-                            markAllRead();
-                            setNotifOpen(false);
-                          }}
-                          className="text-sm text-[#C62828] hover:text-[#A62222] font-medium"
-                        >
-                          Mark all as read
-                        </button>
-                        <button
-                          onClick={() => setNotifOpen(false)}
-                          className="px-3 py-1.5 rounded-md bg-white border border-gray-300 hover:bg-gray-100 text-sm text-gray-700"
-                        >
-                          Close
-                        </button>
-                      </div>
-                    </div>
+  {/* Body */}
+  <div className="divide-y max-h-[60vh] overflow-y-auto">
+    {notifications.length === 0 ? (
+      <div className="p-6 text-center">
+        <FaBell className="w-10 h-10 text-gray-300 mx-auto mb-2" />
+        <p className="text-gray-500 text-sm">No notifications</p>
+      </div>
+    ) : (
+      notifications.map((n) => (
+        <div
+          key={n.id}
+          className={`px-3 py-3 hover:bg-gray-50 ${
+            !n.seen ? "bg-red-50/40" : ""
+          }`}
+        >
+          <div className="flex gap-2">
+            <div className="w-9 h-9 rounded-full bg-[#C62828] flex items-center justify-center text-white text-sm font-semibold">
+              {n.title.charAt(0)}
+            </div>
+            <div className="flex-1">
+              <p className="text-sm font-semibold text-gray-800 truncate">
+                {n.title}
+              </p>
+              <p className="text-xs text-gray-600 line-clamp-2">
+                {n.description}
+              </p>
+              <p className="text-[11px] text-gray-400 mt-1">
+                {formatDateTime(n.created_at)}
+              </p>
+            </div>
+          </div>
+        </div>
+      ))
+    )}
+  </div>
+
+  {/* Footer */}
+  {notifications.length > 0 && (
+    <div className="px-3 py-2 border-t bg-gray-50 flex justify-between rounded-b-xl">
+      <button
+        onClick={markAllRead}
+        className="text-xs text-[#C62828] font-medium"
+      >
+        Mark all read
+      </button>
+      <button
+        onClick={() => setNotifOpen(false)}
+        className="text-xs text-gray-600"
+      >
+        Close
+      </button>
+    </div>
+  )}
+</div>
+
+                    </>
                   )}
                 </div>
 
@@ -807,10 +1165,26 @@ export default function Layout({
                     onClick={() => {
                       setProfileOpen(!profileOpen);
                       setNotifOpen(false);
+                      setShowMaterialActionsMenu(false);
                     }}
                     className="flex items-center gap-2 p-1 rounded-lg hover:bg-gray-100 transition"
                   >
                     {avatarUrl ? (
+                      <img 
+                        src={avatarUrl} 
+                        alt="avatar" 
+                        className="w-8 h-8 sm:w-9 sm:h-9 rounded-full object-cover border-2 border-[#C62828]" 
+                      />
+                    ) : (
+                      <div className="w-8 h-8 sm:w-9 sm:h-9 bg-[#C62828] rounded-full flex items-center justify-center shadow-sm">
+                        <span className="text-white font-semibold text-sm">{initials}</span>
+                      </div>
+                    )}
+                    <div className="hidden lg:flex flex-col items-start">
+                      <span className="text-sm font-semibold text-[#2D2D2D] truncate max-w-[120px]">
+                        {displayName}
+                      </span>
+                      <span className="text-xs text-gray-500 truncate max-w-[120px]">
                       <img
                         src={avatarUrl}
                         alt="avatar"
@@ -833,6 +1207,52 @@ export default function Layout({
                     </div>
                   </button>
 
+                  {/* Profile Dropdown Menu - Small dropdown for mobile and desktop */}
+                 {profileOpen && (
+  <>
+    {/* Profile Dropdown */}
+    <div
+      className={`
+        fixed lg:absolute
+        top-16 lg:top-full
+        right-2 lg:right-0
+        lg:mt-2
+        w-64
+        bg-white rounded-xl
+        shadow-2xl border border-gray-200
+        overflow-hidden z-50
+        transform transition-all duration-300 ease-out
+        ${profileOpen
+          ? "translate-x-0 opacity-100"
+          : "translate-x-4 opacity-0 pointer-events-none"}
+      `}
+    >
+      {/* Header */}
+      <div className="p-4 bg-[#2D2D2D] border-b border-gray-700">
+        <div className="flex items-center gap-3">
+          {avatarUrl ? (
+            <img
+              src={avatarUrl}
+              alt="avatar"
+              className="w-10 h-10 rounded-full object-cover border-2 border-[#C62828] shadow"
+            />
+          ) : (
+            <div className="w-10 h-10 bg-[#C62828] rounded-full flex items-center justify-center shadow">
+              <span className="text-white font-semibold text-sm">
+                {initials}
+              </span>
+            </div>
+          )}
+          <div className="flex-1 min-w-0">
+            <p className="text-sm font-semibold text-white truncate">
+              {displayName}
+            </p>
+            <p className="text-xs text-gray-300 truncate">
+              {displayRole}
+            </p>
+          </div>
+        </div>
+      </div>
                   {/* Profile Dropdown Menu */}
                   {profileOpen && (
                     <div className="absolute right-0 top-full mt-2 w-72 bg-white rounded-lg shadow-xl border border-gray-200 overflow-hidden z-50">
@@ -862,36 +1282,90 @@ export default function Layout({
                         </div>
                       </div>
 
-                      <div className="p-2">
-                        <button className="w-full text-left px-3 py-2.5 rounded-lg hover:bg-gray-100 text-sm text-gray-700 flex items-center gap-3 transition">
-                          <FaCog className="w-4 h-4 text-gray-500" />
-                          Settings
-                        </button>
-                        <button
-                          onClick={handleSignOut}
-                          className="w-full text-left px-3 py-2.5 rounded-lg hover:bg-red-50 hover:text-[#C62828] text-sm text-gray-700 flex items-center gap-3 transition"
-                        >
-                          <FaSignOutAlt className="w-4 h-4" />
-                          Sign out
-                        </button>
-                      </div>
+      {/* Actions */}
+      <div className="p-2">
+        <button
+          onClick={() => setProfileOpen(false)}
+          className="w-full text-left px-3 py-2.5 rounded-lg hover:bg-gray-100 text-sm text-gray-700 flex items-center gap-3 transition"
+        >
+          <FaCog className="w-4 h-4 text-gray-500" />
+          Settings
+        </button>
 
-                      <div className="p-2 border-t bg-gray-50 text-right">
-                        <button
-                          onClick={() => setProfileOpen(false)}
-                          className="text-sm text-gray-600 px-3 py-1.5 rounded hover:bg-gray-100"
-                        >
-                          Close
-                        </button>
-                      </div>
-                    </div>
-                  )}
+        <button
+          onClick={handleSignOut}
+          className="w-full text-left px-3 py-2.5 rounded-lg hover:bg-red-50 hover:text-[#C62828] text-sm text-gray-700 flex items-center gap-3 transition"
+        >
+          <FaSignOutAlt className="w-4 h-4" />
+          Sign out
+        </button>
+      </div>
+
+      {/* Footer */}
+      <div className="p-2 border-t bg-gray-50 text-right">
+        <button
+          onClick={() => setProfileOpen(false)}
+          className="text-sm text-gray-600 px-3 py-1.5 rounded hover:bg-gray-100"
+        >
+          Close
+        </button>
+      </div>
+    </div>
+  </>
+)}
+
                 </div>
               </div>
             </div>
           </div>
+
+          {/* Quick Actions Bar (Mobile) - Only shown for store-management */}
+          {activeTab === "store-management" && can("create_inventory") && (
+            <div className="lg:hidden bg-gray-50 border-t border-gray-200 px-4 py-2">
+              <div className="flex items-center justify-between gap-2">
+                <span className="text-sm font-medium text-gray-700">Quick Actions:</span>
+                <div className="flex items-center gap-1">
+                  <button
+                    onClick={() => handleMaterialButtonClick("in")}
+                    className={`px-3 py-1.5 rounded-lg text-xs font-medium flex items-center gap-1 transition ${
+                      currentActiveFormTab === "in"
+                        ? "bg-[#C62828] text-white shadow-sm"
+                        : "bg-white border border-gray-300 text-gray-700 hover:bg-gray-50"
+                    }`}
+                  >
+                    <PackagePlus className="w-3.5 h-3.5" />
+                    <span>In</span>
+                  </button>
+                  <button
+                    onClick={() => handleMaterialButtonClick("out")}
+                    className={`px-3 py-1.5 rounded-lg text-xs font-medium flex items-center gap-1 transition ${
+                      currentActiveFormTab === "out"
+                        ? "bg-[#C62828] text-white shadow-sm"
+                        : "bg-white border border-gray-300 text-gray-700 hover:bg-gray-50"
+                    }`}
+                  >
+                    <PackageMinus className="w-3.5 h-3.5" />
+                    <span>Out</span>
+                  </button>
+                  <button
+                    onClick={() => handleMaterialButtonClick("issue")}
+                    className={`px-3 py-1.5 rounded-lg text-xs font-medium flex items-center gap-1 transition ${
+                      currentActiveFormTab === "issue"
+                        ? "bg-[#C62828] text-white shadow-sm"
+                        : "bg-white border border-gray-300 text-gray-700 hover:bg-gray-50"
+                    }`}
+                  >
+                    <UserCheck className="w-3.5 h-3.5" />
+                    <span>Issue</span>
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
         </header>
 
+        {/* Main Content Area */}
+        <main className="p-4 sm:p-6">
         {/* Main Content Area with Forms */}
         <main className="p-6">
           {/* Render children (StoreManagement component) */}
@@ -899,7 +1373,7 @@ export default function Layout({
         </main>
       </div>
 
-      {/* Request Material Modal */}
+      {/* Request Material Modal - Always available */}
       {showRequestMaterial && (
         <RequestMaterial setShowRequestMaterial={setShowRequestMaterial} />
       )}

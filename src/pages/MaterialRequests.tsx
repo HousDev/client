@@ -1497,7 +1497,7 @@ useEffect(() => {
   }
 
   return (
-    <div className="p-3 md:p-4 -mt-5 bg-gray-50 min-h-screen">
+    <div className="p-4 px-0 md:px-0 md:p-4 -mt-5 bg-gray-50 min-h-screen">
       {/* Delete Button (Appears when checkboxes are selected) */}
       {selectedRequests.size > 0 && (
         <div className="mb-4">
@@ -1531,7 +1531,7 @@ useEffect(() => {
       
 
       {/* Desktop View - Table */}
-      <div className="hidden md:block bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+      <div className="hidden md:block bg-white rounded-xl shadow-sm border border-gray-200  px-0 overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full min-w-[1200px]">
             <thead className="bg-gray-200 border-b border-gray-200">
@@ -2067,7 +2067,7 @@ useEffect(() => {
           <div className={`absolute inset-y-0 right-0 bg-white shadow-2xl flex flex-col transition-transform duration-300 ${
             showFilterSidebar ? 'translate-x-0' : 'translate-x-full'
           } md:max-w-md w-full md:w-96`}>
-            <div className="bg-blue-600 px-4 py-3 flex justify-between items-center">
+            <div className="bg-red-600 px-4 py-3 flex justify-between items-center">
               <h2 className="text-lg font-bold text-white">Filters</h2>
               <div className="flex items-center gap-3">
                 <button
@@ -2141,7 +2141,7 @@ useEffect(() => {
               </button>
               <button
                 onClick={applyFilters}
-                className="flex-1 bg-blue-600 text-white px-4 py-2 text-xs md:text-sm rounded-lg hover:shadow-lg transition font-medium"
+                className="flex-1 bg-red-600 text-white px-4 py-2 text-xs md:text-sm rounded-lg hover:shadow-lg transition font-medium"
               >
                 Apply
               </button>

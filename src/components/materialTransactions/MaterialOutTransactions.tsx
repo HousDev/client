@@ -704,171 +704,187 @@ const MaterialOutTransactions = (loadTableData: any) => {
       </div>
 
       {/* Updated Filter Sidebar with react-datepicker */}
-      {showFilterSidebar && (
-        <div className="fixed inset-0 z-50 overflow-hidden">
-          <div className="absolute inset-0 bg-black bg-opacity-50" onClick={() => setShowFilterSidebar(false)}></div>
-          <div className="absolute inset-y-0 right-0 max-w-md w-full bg-white shadow-2xl flex flex-col">
-            <div className="bg-gradient-to-r from-[#C62828] to-[#D32F2F] px-6 py-4 flex justify-between items-center">
-              <div className="flex items-center gap-3">
-                <div className="p-2 bg-white/20 rounded-lg">
-                  <Calendar className="w-5 h-5 text-white" />
-                </div>
-                <div>
-                  <h2 className="text-xl font-bold text-white">Date Filters</h2>
-                  <p className="text-sm text-white/80">Select a date range to filter transactions</p>
-                </div>
-              </div>
-              <div className="flex items-center gap-3">
-                <button
-                  onClick={resetFilters}
-                  className="text-white text-sm hover:bg-white hover:bg-opacity-20 px-3 py-1.5 rounded transition font-medium"
-                >
-                  Reset
-                </button>
-                <button
-                  onClick={() => setShowFilterSidebar(false)}
-                  className="text-white hover:bg-white hover:bg-opacity-20 rounded-lg p-1.5 transition"
-                >
-                  <X className="w-5 h-5" />
-                </button>
-              </div>
-            </div>
+     {showFilterSidebar && (
+  <div className="fixed inset-0 z-50 overflow-hidden">
+    
+    {/* Overlay */}
+    <div
+      className="absolute inset-0 bg-black bg-opacity-50 transition-opacity duration-300"
+      onClick={() => setShowFilterSidebar(false)}
+    />
 
-            <div className="flex-1 overflow-y-auto p-6 space-y-6">
-              {/* Date Range Selection */}
-              <div className="space-y-4">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  {/* From Date Picker */}
-                  <div className="space-y-2">
-                    <label className="block text-sm font-semibold text-gray-700 flex items-center gap-2">
-                      <Calendar className="w-4 h-4 text-[#C62828]" />
-                      From Date
-                    </label>
-                    <div className="relative">
-                      <DatePicker
-                        selected={startDate}
-                        onChange={(date: Date | null) => setStartDate(date)}
-                        selectsStart
-                        startDate={startDate}
-                        endDate={endDate}
-                        maxDate={endDate || new Date()}
-                        placeholderText="Select start date"
-                        className="w-full pl-10 pr-4 py-2.5 text-sm border border-gray-300 rounded-lg focus:border-[#C62828] focus:ring-2 focus:ring-[#C62828]/20 outline-none transition-all"
-                        dateFormat="dd/MM/yyyy"
-                        locale="en-GB"
-                        isClearable
-                        showMonthDropdown
-                        showYearDropdown
-                        dropdownMode="select"
-                      />
-                      <div className="absolute left-3 top-1/2 transform -translate-y-1/2">
-                        <Calendar className="w-4 h-4 text-gray-500" />
-                      </div>
-                    </div>
-                  </div>
+    {/* Sidebar */}
+    <div
+      className={`
+        absolute inset-y-0 right-0
+        bg-white shadow-2xl flex flex-col
+        transition-transform duration-300 ease-out
+        ${showFilterSidebar ? "translate-x-0" : "translate-x-full"}
 
-                  {/* To Date Picker */}
-                  <div className="space-y-2">
-                    <label className="block text-sm font-semibold text-gray-700 flex items-center gap-2">
-                      <Calendar className="w-4 h-4 text-[#C62828]" />
-                      To Date
-                    </label>
-                    <div className="relative">
-                      <DatePicker
-                        selected={endDate}
-                        onChange={(date: Date | null) => setEndDate(date)}
-                        selectsEnd
-                        startDate={startDate}
-                        endDate={endDate}
-                        minDate={startDate || undefined}
-                        maxDate={new Date()}
-                        placeholderText="Select end date"
-                        className="w-full pl-10 pr-4 py-2.5 text-sm border border-gray-300 rounded-lg focus:border-[#C62828] focus:ring-2 focus:ring-[#C62828]/20 outline-none transition-all"
-                        dateFormat="dd/MM/yyyy"
-                        locale="en-GB"
-                        isClearable
-                        showMonthDropdown
-                        showYearDropdown
-                        dropdownMode="select"
-                      />
-                      <div className="absolute left-3 top-1/2 transform -translate-y-1/2">
-                        <Calendar className="w-4 h-4 text-gray-500" />
-                      </div>
-                    </div>
-                  </div>
-                </div>
+        /* MOBILE */
+        w-[90vw] max-w-none
 
-                {/* Date Range Summary */}
-                {(startDate || endDate) && (
-                  <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <p className="text-sm font-medium text-gray-800">Selected Range:</p>
-                        <p className="text-xs text-gray-600">
-                          {startDate ? startDate.toLocaleDateString('en-GB') : 'Any'} 
-                          {" → "}
-                          {endDate ? endDate.toLocaleDateString('en-GB') : 'Any'}
-                        </p>
-                      </div>
-                      <button
-                        onClick={resetFilters}
-                        className="text-xs text-red-600 hover:text-red-800 font-medium"
-                      >
-                        Clear Dates
-                      </button>
-                    </div>
-                  </div>
-                )}
-              </div>
+        /* DESKTOP (unchanged) */
+        md:max-w-md md:w-full
+      `}
+    >
+      {/* Header */}
+      <div className="bg-gradient-to-r from-[#C62828] to-[#D32F2F] px-4 md:px-6 py-3 md:py-4 flex justify-between items-center">
+        <div className="flex items-center gap-3">
+          <div className="p-2 bg-white/20 rounded-lg">
+            <Calendar className="w-4 h-4 md:w-5 md:h-5 text-white" />
+          </div>
+          <div>
+            <h2 className="text-sm md:text-xl font-bold text-white">
+              Date Filters
+            </h2>
+            <p className="text-xs md:text-sm text-white/80">
+              Select a date range to filter transactions
+            </p>
+          </div>
+        </div>
 
-              {/* Ignore Date Checkbox */}
-              <div className="border-t pt-4">
-                <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
-                  <input
-                    type="checkbox"
-                    id="ignoreDate"
-                    checked={ignoreDate}
-                    onChange={(e) => {
-                      setIgnoreDate(e.target.checked);
-                      if (e.target.checked) {
-                        setStartDate(null);
-                        setEndDate(null);
-                      }
-                    }}
-                    className="w-5 h-5 text-[#C62828] border-gray-300 rounded focus:ring-[#C62828]"
-                  />
-                  <div className="flex-1">
-                    <label htmlFor="ignoreDate" className="text-sm font-medium text-gray-700 cursor-pointer block">
-                      Ignore Date Filters
-                    </label>
-                    <p className="text-xs text-gray-500">
-                      When checked, all dates will be shown regardless of selected range
-                    </p>
-                  </div>
+        <div className="flex items-center gap-2 md:gap-3">
+          <button
+            onClick={resetFilters}
+            className="text-white text-xs md:text-sm hover:bg-white hover:bg-opacity-20 px-2 md:px-3 py-1 md:py-1.5 rounded transition font-medium"
+          >
+            Reset
+          </button>
+          <button
+            onClick={() => setShowFilterSidebar(false)}
+            className="text-white hover:bg-white hover:bg-opacity-20 rounded-lg p-1 md:p-1.5 transition"
+          >
+            <X className="w-4 h-4 md:w-5 md:h-5" />
+          </button>
+        </div>
+      </div>
+
+      {/* Content */}
+      <div className="flex-1 overflow-y-auto p-4 md:p-6 space-y-4 md:space-y-6">
+        <div className="space-y-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            
+            {/* From Date */}
+            <div className="space-y-2">
+              <label className="block text-xs md:text-sm font-semibold text-gray-700 flex items-center gap-2">
+                <Calendar className="w-4 h-4 text-[#C62828]" />
+                From Date
+              </label>
+              <div className="relative">
+                <DatePicker
+                  selected={startDate}
+                  onChange={(date) => setStartDate(date)}
+                  selectsStart
+                  startDate={startDate}
+                  endDate={endDate}
+                  maxDate={endDate || new Date()}
+                  placeholderText="Select start date"
+                  className="w-full pl-9 md:pl-10 pr-3 md:pr-4 py-2 text-xs md:text-sm border border-gray-300 rounded-lg focus:border-[#C62828] focus:ring-2 focus:ring-[#C62828]/20 outline-none transition-all"
+                  dateFormat="dd/MM/yyyy"
+                  locale="en-GB"
+                  isClearable
+                  showMonthDropdown
+                  showYearDropdown
+                  dropdownMode="select"
+                />
+                <div className="absolute left-3 top-1/2 -translate-y-1/2">
+                  <Calendar className="w-4 h-4 text-gray-500" />
                 </div>
               </div>
             </div>
 
-            {/* Footer Buttons */}
-            <div className="border-t p-4 flex gap-3">
-              <button
-                onClick={resetFilters}
-                className="flex-1 px-4 py-2.5 border border-gray-300 rounded-lg hover:bg-gray-50 transition font-medium text-gray-700 flex items-center justify-center gap-2"
-              >
-                <X className="w-4 h-4" />
-                Reset All
-              </button>
-              <button
-                onClick={applyFilters}
-                className="flex-1 bg-gradient-to-r from-[#C62828] to-[#D32F2F] text-white px-4 py-2.5 rounded-lg hover:shadow-lg transition font-medium flex items-center justify-center gap-2"
-              >
-                <Filter className="w-4 h-4" />
-                Apply Filters
-              </button>
+            {/* To Date */}
+            <div className="space-y-2">
+              <label className="block text-xs md:text-sm font-semibold text-gray-700 flex items-center gap-2">
+                <Calendar className="w-4 h-4 text-[#C62828]" />
+                To Date
+              </label>
+              <div className="relative">
+                <DatePicker
+                  selected={endDate}
+                  onChange={(date) => setEndDate(date)}
+                  selectsEnd
+                  startDate={startDate}
+                  endDate={endDate}
+                  minDate={startDate || undefined}
+                  maxDate={new Date()}
+                  placeholderText="Select end date"
+                  className="w-full pl-9 md:pl-10 pr-3 md:pr-4 py-2 text-xs md:text-sm border border-gray-300 rounded-lg focus:border-[#C62828] focus:ring-2 focus:ring-[#C62828]/20 outline-none transition-all"
+                  dateFormat="dd/MM/yyyy"
+                  locale="en-GB"
+                  isClearable
+                  showMonthDropdown
+                  showYearDropdown
+                  dropdownMode="select"
+                />
+                <div className="absolute left-3 top-1/2 -translate-y-1/2">
+                  <Calendar className="w-4 h-4 text-gray-500" />
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Date Summary */}
+          {(startDate || endDate) && (
+            <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
+              <p className="text-xs md:text-sm font-medium text-gray-800">
+                Selected Range
+              </p>
+              <p className="text-[11px] md:text-xs text-gray-600">
+                {startDate ? startDate.toLocaleDateString("en-GB") : "Any"} →{" "}
+                {endDate ? endDate.toLocaleDateString("en-GB") : "Any"}
+              </p>
+            </div>
+          )}
+        </div>
+
+        {/* Ignore Date */}
+        <div className="border-t pt-4">
+          <div className="flex items-start gap-3 p-3 bg-gray-50 rounded-lg">
+            <input
+              type="checkbox"
+              checked={ignoreDate}
+              onChange={(e) => {
+                setIgnoreDate(e.target.checked);
+                if (e.target.checked) {
+                  setStartDate(null);
+                  setEndDate(null);
+                }
+              }}
+              className="w-4 h-4 md:w-5 md:h-5 text-[#C62828]"
+            />
+            <div>
+              <p className="text-xs md:text-sm font-medium text-gray-700">
+                Ignore Date Filters
+              </p>
+              <p className="text-[11px] md:text-xs text-gray-500">
+                Show all data regardless of date
+              </p>
             </div>
           </div>
         </div>
-      )}
+      </div>
+
+      {/* Footer */}
+      <div className="border-t p-3 md:p-4 flex gap-2 md:gap-3">
+        <button
+          onClick={resetFilters}
+          className="flex-1 px-3 md:px-4 py-2 text-xs md:text-sm border border-gray-300 rounded-lg hover:bg-gray-50 font-medium"
+        >
+          Reset All
+        </button>
+        <button
+          onClick={applyFilters}
+          className="flex-1 bg-gradient-to-r from-[#C62828] to-[#D32F2F] text-white px-3 md:px-4 py-2 text-xs md:text-sm rounded-lg hover:shadow-lg font-medium"
+        >
+          Apply Filters
+        </button>
+      </div>
+    </div>
+  </div>
+)}
+
 
       {/* View Transaction Modal */}
       {isOpen && (

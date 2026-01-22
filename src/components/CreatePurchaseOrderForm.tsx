@@ -1,6 +1,7 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 // src/components/PurchaseOrdersPro.tsx
 import React, { useEffect, useState, useRef, SetStateAction } from "react";
-import { Plus, X, Trash2, Package, Save, FileText, Info, Box, Building2, Calculator, Calendar, CreditCard, Tag, Truck, User } from "lucide-react";
+import { Plus, X, Trash2, Package, Save, FileText, Info, Box, Building2, Calculator, Calendar, CreditCard, Tag, Truck, User, Search, ChevronDown, ClipboardCheck } from "lucide-react";
 import { useAuth } from "../contexts/AuthContext";
 import poApi from "../lib/poApi";
 import poTypeApi from "../lib/poTypeApi";
@@ -1411,7 +1412,7 @@ export default function CreatePurchaseOrderForm({
     <button
       type="submit"
       disabled={formData.items.length === 0}
-      className="flex-1 bg-gradient-to-r from-red-600 to-red-700 text-white py-3 px-6 rounded-xl hover:from-blue-700 hover:to-blue-800 transition-all duration-200 font-semibold text-sm shadow-lg hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 group"
+      className="flex-1 bg-gradient-to-r from-red-600 to-red-700 text-white py-3 px-6 rounded-xl hover:from-red-400 hover:to-red-800 transition-all duration-200 font-semibold text-sm shadow-lg hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 group"
     >
       <FileText className="w-4 h-4 group-hover:scale-110 transition-transform" />
       Create Purchase Order
@@ -1469,118 +1470,189 @@ export default function CreatePurchaseOrderForm({
       </div>
 
       {/* Item selector (with category + search) */}
-      {showItemSelector && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[60] p-4">
-          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-4xl max-h-[80vh] overflow-hidden">
-            <div className="bg-gradient-to-r from-green-600 to-green-700 px-6 py-4 flex justify-between items-center">
-              <h3 className="text-xl font-bold text-white">
-                Select Item from Master
-              </h3>
-              <button
-                onClick={() => {
-                  setShowItemSelector(false);
-                  setItemSelectorSearch("");
-                }}
-                className="text-white hover:bg-white hover:bg-opacity-20 rounded-lg p-2 transition"
-              >
-                <X className="w-5 h-5" />
-              </button>
-            </div>
+    {showItemSelector && (
+  <div className="fixed inset-0 bg-gray-900/70 backdrop-blur-md flex items-center justify-center z-[60] p-2 md:p-4">
+    <div className="bg-gradient-to-br from-gray-50 to-white rounded-2xl shadow-2xl shadow-gray-900/30 w-full max-w-2xl border border-gray-300/50 overflow-hidden max-h-[90vh] flex flex-col">
+      {/* Header */}
+      <div className="bg-gradient-to-r from-[#40423f] via-[#4a4c49] to-[#5a5d5a] px-4 md:px-6 py-4 flex justify-between items-center border-b border-gray-700/30">
+        <div className="flex items-center gap-3">
+          <div className="p-2 bg-white/10 rounded-xl">
+            <Package className="w-4 h-4 md:w-5 md:h-5 text-gray-100" />
+          </div>
+          <div>
+            <h3 className="font-bold text-white text-sm md:text-base">Select Items</h3>
+            <p className="text-xs text-gray-300/80 hidden md:block">Choose from inventory</p>
+          </div>
+        </div>
+        <button
+          onClick={() => {
+            setShowItemSelector(false);
+            setItemSelectorSearch("");
+          }}
+          className="text-gray-200 hover:bg-gray-700/40 rounded-xl p-2 transition-all duration-200"
+        >
+          <X className="w-4 h-4 md:w-5 md:h-5" />
+        </button>
+      </div>
 
-            <div className="p-4 border-b">
-              <div className="flex gap-3 items-center">
-                <div className="flex-1">
-                  <input
-                    placeholder={
-                      selectedCategory
-                        ? `Search ${selectedCategory} items...`
-                        : "Search all items..."
-                    }
-                    value={itemSelectorSearch}
-                    onChange={(e) => setItemSelectorSearch(e.target.value)}
-                    className="w-full px-3 py-2 border border-gray-200 rounded-md focus:ring-2 focus:ring-green-500 focus:border-transparent"
-                  />
-                </div>
-                <div className="text-sm text-gray-600">
-                  {selectedCategory ? (
-                    <span>
-                      Filtering by type:{" "}
-                      <strong className="capitalize">{selectedCategory}</strong>
-                    </span>
-                  ) : (
-                    <span>Showing all item types</span>
-                  )}
-                </div>
+      {/* Search Bar */}
+      <div className="p-4 border-b border-gray-300">
+        <div className="relative group">
+          <div className="absolute left-3 top-1/2 -translate-y-1/2 text-[#5a5d5a]">
+            <Search className="w-4 h-4" />
+          </div>
+          <input
+            type="text"
+            placeholder={
+              selectedCategory
+                ? `Search ${selectedCategory} items...`
+                : "Search all items..."
+            }
+            value={itemSelectorSearch}
+            onChange={(e) => setItemSelectorSearch(e.target.value)}
+            className="w-full pl-10 pr-4 py-2.5 text-sm border border-gray-300 rounded-xl focus:border-[#b52124] focus:ring-2 focus:ring-[#b52124]/20 outline-none transition-all duration-200 hover:border-gray-400 bg-white/50 text-[#40423f]"
+          />
+        </div>
+        {selectedCategory && (
+          <div className="mt-2 text-xs text-[#5a5d5a]">
+            Filtering by: <span className="font-medium capitalize text-[#b52124]">{selectedCategory}</span>
+          </div>
+        )}
+      </div>
+
+      {/* Items List */}
+      <div className="p-2 overflow-y-auto flex-grow">
+        <div className="space-y-2">
+          {filteredItems.length === 0 ? (
+            <div className="p-8 text-center">
+              <div className="p-3 bg-gray-100 rounded-xl inline-block mb-3">
+                <Package className="w-8 h-8 text-gray-400" />
               </div>
+              <p className="text-sm font-medium text-[#40423f]">
+                No items found
+              </p>
+              <p className="text-xs text-[#5a5d5a] mt-1">
+                {selectedCategory 
+                  ? `No ${selectedCategory} items match your search`
+                  : "Try a different search term"}
+              </p>
             </div>
-
-            <div className="p-6 overflow-y-auto max-h-[calc(80vh-140px)]">
-              <div className="grid grid-cols-1 gap-3">
-                {filteredItems.length === 0 ? (
-                  <div className="p-6 text-center text-gray-500">
-                    No items found for the selected PO type / search
-                  </div>
-                ) : (
-                  filteredItems.map((item) => (
-                    <div
-                      key={item.id}
-                      onClick={() => addItemFromMaster(item)}
-                      className="p-4 border border-gray-200 rounded-lg hover:bg-blue-50 hover:border-blue-300 cursor-pointer transition"
-                    >
-                      <div className="flex justify-between items-start">
-                        <div>
-                          <p className="font-medium text-gray-800">
-                            {item.item_name}
-                          </p>
-                          <p className="text-sm text-gray-600">
-                            {item.item_code}{" "}
-                            {item.hsn_code ? `| HSN: ${item.hsn_code}` : ""}
-                          </p>
-                          {item.description && (
-                            <p className="text-xs text-gray-500 mt-1">
-                              {item.description}
-                            </p>
-                          )}
+          ) : (
+            filteredItems.map((item) => {
+              const existingMaterial = formData.items.find(
+                (i: any) => Number(i.item_id) === item.id
+              );
+              
+              const isMaterial = String(item.category).toLowerCase() === "material";
+              
+              return (
+                <button
+                  type="button"
+                  key={item.id}
+                  onClick={() => addItemFromMaster(item)}
+                  className={`w-full p-3 text-left border rounded-xl transition-all duration-200 ${
+                    existingMaterial
+                      ? "border-[#b52124]/30 bg-[#b52124]/5"
+                      : "border-gray-300 hover:border-gray-400 hover:bg-gray-50/50"
+                  }`}
+                >
+                  <div className="flex justify-between items-start gap-3">
+                    {/* Left Side - Item Info */}
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-start gap-2">
+                        <div className={`p-1.5 rounded-lg flex-shrink-0 ${
+                          isMaterial ? "bg-blue-100" : "bg-green-100"
+                        }`}>
+                          <Package className={`w-3.5 h-3.5 ${
+                            isMaterial ? "text-blue-600" : "text-green-600"
+                          }`} />
                         </div>
-                        <div className="text-right">
-                          <p className="font-semibold text-blue-600">
-                            {formatCurrency(item.standard_rate)}
-                          </p>
-                          <p className="text-xs text-gray-600">
-                            per {item.unit}
-                          </p>
-                          <div className="text-xs text-gray-500">
-                            {formData.is_interstate ? (
-                              <p className="text-xs text-gray-500">
-                                IGST: {item.igst_rate ?? 0}%
-                              </p>
-                            ) : (
-                              <p className="text-xs text-gray-500">
-                                CGST: {item.cgst_rate ?? 0}% SGST:{" "}
-                                {item.sgst_rate ?? 0}%
-                              </p>
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-baseline gap-2">
+                            <p className="font-medium text-sm text-[#40423f] truncate">
+                              {item.item_name}
+                            </p>
+                            <span className={`text-xs px-2 py-0.5 rounded-full ${
+                              isMaterial 
+                                ? "bg-blue-100 text-blue-700" 
+                                : "bg-green-100 text-green-700"
+                            }`}>
+                              {String(item.category || "UNKNOWN").toUpperCase()}
+                            </span>
+                          </div>
+                          
+                          <div className="flex flex-wrap items-center gap-2 mt-1">
+                            <span className="text-xs text-[#5a5d5a]">
+                              {item.item_code}
+                            </span>
+                            {item.hsn_code && (
+                              <span className="text-xs px-2 py-0.5 bg-gray-100 text-gray-700 rounded-full">
+                                HSN: {item.hsn_code}
+                              </span>
                             )}
+                          </div>
+                          
+                          <div className="flex items-center gap-3 mt-2">
+                            <div className="text-xs text-[#5a5d5a]">
+                              <span className="font-medium">Rate:</span> {formatCurrency(item.standard_rate)}
+                            </div>
+                            <div className="text-xs text-[#5a5d5a]">
+                              <span className="font-medium">Unit:</span> {item.unit}
+                            </div>
                           </div>
                         </div>
                       </div>
-                      <span
-                        className={`inline-block mt-2 px-2 py-1 rounded text-xs font-medium ${
-                          String(item.category).toLowerCase() === "material"
-                            ? "bg-blue-100 text-blue-700"
-                            : "bg-green-100 text-green-700"
-                        }`}
-                      >
-                        {String(item.category || "UNKNOWN").toUpperCase()}
-                      </span>
                     </div>
-                  ))
-                )}
-              </div>
-            </div>
-          </div>
+
+                    {/* Right Side - Action & Tax Info */}
+                    <div className="flex flex-col items-end gap-2 flex-shrink-0">
+                      <div className={`px-2.5 py-1 rounded-lg text-xs font-medium ${
+                        existingMaterial
+                          ? "bg-[#b52124] text-white"
+                          : "bg-[#b52124]/10 text-[#b52124]"
+                      }`}>
+                        {existingMaterial ? "Add More" : "Add"}
+                      </div>
+                      
+                      <div className="text-right">
+                        <div className="text-xs text-[#5a5d5a]">
+                          {formData.is_interstate ? (
+                            <span className="font-medium">IGST: {item.igst_rate ?? 0}%</span>
+                          ) : (
+                            <>
+                              <span className="font-medium">CGST: {item.cgst_rate ?? 0}%</span>
+                              <span className="mx-1">•</span>
+                              <span className="font-medium">SGST: {item.sgst_rate ?? 0}%</span>
+                            </>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </button>
+              );
+            })
+          )}
         </div>
-      )}
-      {showTermsConditions && (
+      </div>
+
+      {/* Footer */}
+      <div className="p-4 border-t border-gray-300 bg-gradient-to-r from-gray-50/50 to-transparent flex-shrink-0">
+        <button
+          type="button"
+          onClick={() => {
+            setShowItemSelector(false);
+            setItemSelectorSearch("");
+          }}
+          className="w-full px-4 py-2.5 bg-gradient-to-r from-[#b52124] to-[#d43538] text-white rounded-xl hover:from-[#d43538] hover:to-[#b52124] transition-all duration-200 text-sm font-medium"
+        >
+          Done
+        </button>
+      </div>
+    </div>
+  </div>
+)}
+      {/* {showTermsConditions && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-2xl shadow-2xl w-full max-w-2xl">
             <div className="bg-gradient-to-r rounded-t-2xl from-blue-600 to-blue-700 px-6 py-4 flex justify-between items-center">
@@ -1660,7 +1732,7 @@ export default function CreatePurchaseOrderForm({
                               <input
                                 type="checkbox"
                                 checked={term.is_default}
-                                onChange={(e) => {
+                                onChange={() => {
                                   setTerms((prev) =>
                                     prev.map((tc) =>
                                       tc.id === d.id
@@ -1717,85 +1789,129 @@ export default function CreatePurchaseOrderForm({
             </div>
           </div>
         </div>
-      )}
+      )} */}
 
       {showAddPaymentTerm && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-xl">
-            <div className="bg-gradient-to-r rounded-t-2xl from-blue-600 to-blue-700 px-6 py-4 flex justify-between items-center">
-              <h2 className="text-2xl font-bold text-white">
-                Add Payment Terms & Conditions
-              </h2>
-              <div className="flex">
-                <button
-                  onClick={() => {
-                    setSelectedPaymentTerm("");
-                    setSelectedPaymentTermData("");
-                    setSelectedPaymentTermId("");
-                    setShowAddPaymentTerm(false);
-                  }}
-                  className="text-white hover:bg-white hover:bg-opacity-20 rounded-lg p-2 transition"
-                >
-                  <X className="w-6 h-6" />
-                </button>
+  <div className="fixed inset-0 bg-gradient-to-br from-gray-900/95 via-gray-800/95 to-gray-900/95 backdrop-blur-sm flex items-center justify-center z-[70] p-2 md:p-4">
+    <div className="bg-gradient-to-br from-white via-gray-50 to-white rounded-2xl shadow-2xl shadow-gray-900/20 w-full max-w-2xl border border-gray-300/30 overflow-hidden max-h-[95vh] flex flex-col animate-fade-in">
+      {/* Header */}
+      <div className="relative bg-gradient-to-r from-[#1a1c1a] via-[#2a2c2a] to-[#3a3d3a] px-5 md:px-7 py-5 flex justify-between items-center border-b border-gray-700/20">
+        <div className="flex items-center gap-4">
+          <div className="relative">
+            <div className="absolute inset-0 bg-gradient-to-r from-[#b52124] to-[#d43538] blur-lg opacity-40 rounded-full"></div>
+            <div className="relative p-3 bg-gradient-to-br from-gray-800 to-gray-900 rounded-2xl border border-gray-700/50 shadow-lg">
+              <svg className="w-5 h-5 md:w-6 md:h-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+            </div>
+          </div>
+          <div>
+            <h3 className="font-bold text-white text-lg md:text-xl bg-gradient-to-r from-white to-gray-200 bg-clip-text text-transparent">
+              Add Payment Terms
+            </h3>
+            <p className="text-xs text-gray-300/70 mt-1 flex items-center gap-2">
+              <span className="w-1 h-1 bg-gradient-to-r from-[#b52124] to-[#d43538] rounded-full"></span>
+              Configure payment schedule and conditions
+            </p>
+          </div>
+        </div>
+        <button
+          onClick={() => {
+            setSelectedPaymentTerm("");
+            setSelectedPaymentTermData("");
+            setSelectedPaymentTermId("");
+            setShowAddPaymentTerm(false);
+          }}
+          className="group relative p-2.5 hover:bg-gray-700/30 rounded-xl transition-all duration-200 hover:scale-105 active:scale-95"
+        >
+          <div className="absolute inset-0 bg-gradient-to-r from-red-500/0 via-red-500/0 to-red-500/0 group-hover:from-red-500/10 group-hover:via-red-500/5 group-hover:to-red-500/0 rounded-xl transition-all duration-300"></div>
+          <X className="w-5 h-5 text-gray-300 group-hover:text-white transition-colors" />
+        </button>
+      </div>
+
+      {/* Content */}
+      <div className="relative flex-grow overflow-y-auto">
+        <div className="relative p-5 md:p-7 space-y-6">
+          {/* Category Selection */}
+          <div className="group">
+            <div className="flex items-center justify-between mb-3">
+              <label className="block text-sm font-semibold text-[#2a2c2a]">
+                Payment Term Category
+              </label>
+              <span className="text-xs px-2.5 py-1 bg-gradient-to-r from-[#b52124]/10 to-[#d43538]/10 text-[#b52124] rounded-full font-medium">
+                Required
+              </span>
+            </div>
+            <div className="relative">
+              <div className="absolute -inset-0.5 bg-gradient-to-r from-[#b52124]/20 to-transparent rounded-xl blur opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+              <select
+                value={selectedPaymentTermId}
+                onChange={(e) => {
+                  setSelectedPaymentTermData("");
+                  setSelectedPaymentTermId(e.target.value);
+                }}
+                className="relative w-full px-4 py-3.5 text-sm border-2 border-gray-300/80 rounded-xl focus:border-[#b52124] focus:ring-4 focus:ring-[#b52124]/15 outline-none transition-all duration-300 hover:border-gray-400 bg-white/80 backdrop-blur-sm text-[#2a2c2a] font-medium appearance-none cursor-pointer"
+                required
+              >
+                <option value={""} className="text-gray-400">Select Category</option>
+                {classifiedPaymentTerms.map((d: any) => (
+                  <option
+                    key={d.category}
+                    value={d.category}
+                    className="py-2 hover:bg-[#b52124]/5 transition-colors"
+                  >
+                    {d.category.replaceAll("_", " ")}
+                  </option>
+                ))}
+              </select>
+              <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none">
+                <ChevronDown className="w-5 h-5 text-gray-500" />
               </div>
             </div>
+          </div>
 
-            <div className="grid grid-cols-1 gap-3 items-end mb-6 px-6 py-3 overflow-hidden relative">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Payment Term Category <span className="text-red-500">*</span>
-                </label>
-                <select
-                  value={selectedPaymentTermId}
-                  onChange={(e) => {
-                    setSelectedPaymentTermData("");
-                    setSelectedPaymentTermId(e.target.value);
-                  }}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  required
+          {/* Custom Payment Term Select */}
+          {selectedPaymentTermId && (
+            <div className="animate-fade-up">
+              <label className="block text-sm font-semibold text-[#2a2c2a] mb-3">
+                Select Payment Term
+              </label>
+              
+              <div className="relative">
+                {/* Selected Value Button */}
+                <button
+                  type="button"
+                  className="group w-full text-left px-4 py-3.5 border-2 border-gray-300/80 rounded-xl bg-white/80 backdrop-blur-sm hover:border-gray-400 focus:ring-4 focus:ring-[#b52124]/15 focus:border-[#b52124] transition-all duration-300 flex items-center justify-between"
+                  onClick={() => setShowTermDropdown((prev) => !prev)}
                 >
-                  <option value={""}>Select Category</option>
-                  {classifiedPaymentTerms.map((d: any) => (
-                    <option
-                      value={d.category}
-                      className="w-40 break-words relative"
-                    >
-                      {d.category.replaceAll("_", " ")}
-                    </option>
-                  ))}
-                </select>
-              </div>
+                  <span className={`font-medium ${selectedPaymentTermData?.displayContent ? 'text-[#2a2c2a]' : 'text-gray-400'}`}>
+                    {selectedPaymentTermData?.displayContent || "Choose payment term"}
+                  </span>
+                  <div className="flex items-center gap-2">
+                    {selectedPaymentTermData?.displayContent && (
+                      <div className="w-2 h-2 bg-gradient-to-r from-[#b52124] to-[#d43538] rounded-full animate-pulse"></div>
+                    )}
+                    <ChevronDown className={`w-4 h-4 text-gray-500 transition-transform duration-300 ${showTermDropdown ? 'rotate-180' : ''}`} />
+                  </div>
+                </button>
 
-              {/* Custom Payment Term Select */}
-              {selectedPaymentTermId && (
-                <div className="relative w-full ">
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Payment Term <span className="text-red-500">*</span>
-                  </label>
-
-                  {/* Selected value */}
-                  <button
-                    type="button"
-                    className="w-full text-left px-4 py-2 border border-gray-300 rounded-lg bg-white focus:ring-2 focus:ring-blue-500"
-                    onClick={() => setShowTermDropdown((prev) => !prev)}
-                  >
-                    {selectedPaymentTermData?.displayContent ||
-                      "Select Payment Term"}
-                  </button>
-
-                  {/* Dropdown */}
-                  {showTermDropdown && (
-                    <div className=" z-50 mt-1 w-full max-h-64 overflow-y-auto bg-white border border-gray-300 rounded-lg shadow-lg ">
+                {/* Dropdown */}
+                {showTermDropdown && (
+                  <div className="absolute z-50 mt-2 w-full max-h-72 overflow-y-auto bg-white/95 backdrop-blur-xl border border-gray-300/50 rounded-xl shadow-2xl shadow-gray-900/10 animate-scale-in">
+                    <div className="p-2">
                       <div
                         onClick={() => {
                           setSelectedPaymentTermData("");
                           setShowTermDropdown(false);
                         }}
-                        className="px-4 py-3 text-sm cursor-pointer hover:bg-blue-50 whitespace-normal break-words border-b last:border-b-0"
+                        className="px-4 py-3 text-sm text-gray-600 hover:text-[#b52124] cursor-pointer hover:bg-gradient-to-r hover:from-[#b52124]/5 hover:to-transparent rounded-lg transition-all duration-200 flex items-center gap-3 group"
                       >
+                        <div className="w-2 h-2 rounded-full bg-gray-300 group-hover:bg-[#b52124]"></div>
                         Select Payment Term
                       </div>
+                      
+                      <div className="h-px bg-gradient-to-r from-transparent via-gray-300/50 to-transparent my-2"></div>
+                      
                       {classifiedPaymentTerms
                         .find((d: any) => d.category === selectedPaymentTermId)
                         ?.details.filter(
@@ -1809,26 +1925,142 @@ export default function CreatePurchaseOrderForm({
                               poPaymentTerms.some((dttc: any) => dttc.id === 2)
                             ),
                         )
-                        .map((t: any) => (
+                        .map((t: any, index: number) => (
                           <div
                             key={t.id}
                             onClick={() => {
                               setSelectedPaymentTermData(t);
                               setShowTermDropdown(false);
                             }}
-                            className="px-4 py-3 text-sm cursor-pointer hover:bg-blue-50 whitespace-normal break-words border-b last:border-b-0"
+                            className="px-4 py-3 text-sm text-[#2a2c2a] cursor-pointer hover:bg-gradient-to-r hover:from-[#b52124]/5 hover:to-transparent rounded-lg transition-all duration-200 group border-b border-gray-100 last:border-b-0 animate-fade-up"
+                            style={{ animationDelay: `${index * 50}ms` }}
                           >
-                            {t.displayContent}
+                            <div className="flex items-center justify-between">
+                              <span className="font-medium group-hover:text-[#b52124] transition-colors">
+                                {t.displayContent}
+                              </span>
+                              <div className="opacity-0 group-hover:opacity-100 transition-opacity">
+                                <div className="w-1.5 h-1.5 rounded-full bg-gradient-to-r from-[#b52124] to-[#d43538]"></div>
+                              </div>
+                            </div>
                           </div>
                         ))}
                     </div>
-                  )}
-                </div>
-              )}
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
 
-              {selectedPaymentTermData.id === 1 && (
-                <div>
-                  <div className="my-2 ">
+          {/* Dynamic Form Sections with all original logic */}
+          {selectedPaymentTermData.id === 1 && (
+            <div className="p-5 bg-gradient-to-br from-blue-50/50 to-white border border-blue-200/50 rounded-xl animate-fade-up">
+              <div className="flex items-center gap-3 mb-4">
+                <div className="p-2 bg-gradient-to-r from-blue-500 to-blue-600 rounded-lg">
+                  <svg className="w-4 h-4 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
+                  </svg>
+                </div>
+                <h4 className="font-semibold text-blue-900">Advance Payment Configuration</h4>
+              </div>
+              
+              <div className="flex flex-wrap items-center gap-3 p-4 bg-white/50 rounded-lg border border-blue-100">
+                <div className="relative">
+                  <input
+                    type="text"
+                    value={selectedPaymentTermData.percent}
+                    onChange={(e) => {
+                      const totalPercent = poPaymentTerms.reduce(
+                        (acc, term) => acc + Number(term.percent),
+                        0,
+                      );
+                      if (totalPercent + Number(e.target.value) > 100) {
+                        toast.error(
+                          "You have already entered payment percent of " +
+                            totalPercent +
+                            "% You can not exceed 100%",
+                        );
+                        return;
+                      }
+                      setSelectedPaymentTermData((prev: any) => ({
+                        ...prev,
+                        percent: Number(e.target.value),
+                      }));
+                    }}
+                    className="w-20 px-3 py-2 text-center border-2 border-blue-300 rounded-lg focus:ring-4 focus:ring-blue-500/20 focus:border-blue-500 outline-none font-bold text-blue-900 bg-white shadow-inner"
+                  />
+                  <div className="absolute -top-2 left-1/2 -translate-x-1/2 bg-gradient-to-r from-blue-500 to-blue-600 text-white text-xs px-2 py-0.5 rounded-full whitespace-nowrap">
+                    %
+                  </div>
+                </div>
+                <span className="text-blue-900 font-medium">
+                  % advance payment payable after order confirmation.
+                </span>
+              </div>
+            </div>
+          )}
+
+          {selectedPaymentTermData.id === 2 && (
+            <div className="p-5 bg-gradient-to-br from-green-50/50 to-white border border-green-200/50 rounded-xl animate-fade-up">
+              <div className="flex items-center gap-3 mb-4">
+                <div className="p-2 bg-gradient-to-r from-green-500 to-green-600 rounded-lg">
+                  <svg className="w-4 h-4 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                  </svg>
+                </div>
+                <h4 className="font-semibold text-green-900">Dispatch Payment Configuration</h4>
+              </div>
+              
+              <div className="flex flex-wrap items-center gap-3 p-4 bg-white/50 rounded-lg border border-green-100">
+                <div className="relative">
+                  <input
+                    type="text"
+                    value={selectedPaymentTermData.percent}
+                    onChange={(e) => {
+                      const totalPercent = poPaymentTerms.reduce(
+                        (acc, term) => acc + Number(term.percent),
+                        0,
+                      );
+                      if (totalPercent + Number(e.target.value) > 100) {
+                        toast.error(
+                          "You have already entered payment percent of " +
+                            totalPercent +
+                            "% You can not exceed 100%",
+                        );
+                        return;
+                      }
+                      setSelectedPaymentTermData((prev: any) => ({
+                        ...prev,
+                        percent: Number(e.target.value),
+                      }));
+                    }}
+                    className="w-20 px-3 py-2 text-center border-2 border-green-300 rounded-lg focus:ring-4 focus:ring-green-500/20 focus:border-green-500 outline-none font-bold text-green-900 bg-white shadow-inner"
+                  />
+                  <div className="absolute -top-2 left-1/2 -translate-x-1/2 bg-gradient-to-r from-green-500 to-green-600 text-white text-xs px-2 py-0.5 rounded-full whitespace-nowrap">
+                    %
+                  </div>
+                </div>
+                <span className="text-green-900 font-medium">
+                  % payment before dispatch of material.
+                </span>
+              </div>
+            </div>
+          )}
+
+          {selectedPaymentTermData.id === 3 && (
+            <div className="p-5 bg-gradient-to-br from-purple-50/50 to-white border border-purple-200/50 rounded-xl animate-fade-up">
+              <div className="flex items-center gap-3 mb-4">
+                <div className="p-2 bg-gradient-to-r from-purple-500 to-purple-600 rounded-lg">
+                  <svg className="w-4 h-4 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                </div>
+                <h4 className="font-semibold text-purple-900">Receiving Payment Configuration</h4>
+              </div>
+              
+              <div className="space-y-4 p-4 bg-white/50 rounded-lg border border-purple-100">
+                <div className="flex flex-wrap items-center gap-3">
+                  <div className="relative">
                     <input
                       type="text"
                       value={selectedPaymentTermData.percent}
@@ -1850,71 +2082,16 @@ export default function CreatePurchaseOrderForm({
                           percent: Number(e.target.value),
                         }));
                       }}
-                      className="w-16 mr-3 border border-slate-600 rounded-md outline-none px-2 "
+                      className="w-20 px-3 py-2 text-center border-2 border-purple-300 rounded-lg focus:ring-4 focus:ring-purple-500/20 focus:border-purple-500 outline-none font-bold text-purple-900 bg-white shadow-inner"
                     />
-                    % advance payment payable after order confirmation.
+                    <div className="absolute -top-2 left-1/2 -translate-x-1/2 bg-gradient-to-r from-purple-500 to-purple-600 text-white text-xs px-2 py-0.5 rounded-full whitespace-nowrap">
+                      Payment %
+                    </div>
                   </div>
-                </div>
-              )}
-
-              {selectedPaymentTermData.id === 2 && (
-                <div>
-                  <div className="my-2 ">
-                    <input
-                      type="text"
-                      value={selectedPaymentTermData.percent}
-                      onChange={(e) => {
-                        const totalPercent = poPaymentTerms.reduce(
-                          (acc, term) => acc + Number(term.percent),
-                          0,
-                        );
-                        if (totalPercent + Number(e.target.value) > 100) {
-                          toast.error(
-                            "You have already entered payment percent of " +
-                              totalPercent +
-                              "% You can not exceed 100%",
-                          );
-                          return;
-                        }
-                        setSelectedPaymentTermData((prev: any) => ({
-                          ...prev,
-                          percent: Number(e.target.value),
-                        }));
-                      }}
-                      className="w-16 mr-3 border border-slate-600 rounded-md outline-none px-2 "
-                    />{" "}
-                    % payment before dispatch of material.
-                  </div>
-                </div>
-              )}
-
-              {selectedPaymentTermData.id === 3 && (
-                <div>
-                  <div className="my-2 ">
-                    <input
-                      type="text"
-                      value={selectedPaymentTermData.percent}
-                      onChange={(e) => {
-                        const totalPercent = poPaymentTerms.reduce(
-                          (acc, term) => acc + Number(term.percent),
-                          0,
-                        );
-                        if (totalPercent + Number(e.target.value) > 100) {
-                          toast.error(
-                            "You have already entered payment percent of " +
-                              totalPercent +
-                              "% You can not exceed 100%",
-                          );
-                          return;
-                        }
-                        setSelectedPaymentTermData((prev: any) => ({
-                          ...prev,
-                          percent: Number(e.target.value),
-                        }));
-                      }}
-                      className="w-16 mr-3 border border-slate-600 rounded-md outline-none px-2 "
-                    />{" "}
-                    % payment after receiving{" "}
+                  <span className="text-purple-900 font-medium">
+                    % payment after receiving
+                  </span>
+                  <div className="relative">
                     <input
                       type="text"
                       value={selectedPaymentTermData.materialPercent}
@@ -1940,9 +2117,16 @@ export default function CreatePurchaseOrderForm({
                           materialPercent: Number(e.target.value),
                         }));
                       }}
-                      className="w-16 mr-3 border border-slate-600 rounded-md outline-none px-2 "
-                    />{" "}
-                    % material within{" "}
+                      className="w-20 px-3 py-2 text-center border-2 border-purple-300 rounded-lg focus:ring-4 focus:ring-purple-500/20 focus:border-purple-500 outline-none font-bold text-purple-900 bg-white shadow-inner"
+                    />
+                    <div className="absolute -top-2 left-1/2 -translate-x-1/2 bg-gradient-to-r from-purple-500 to-purple-600 text-white text-xs px-2 py-0.5 rounded-full whitespace-nowrap">
+                      Material %
+                    </div>
+                  </div>
+                  <span className="text-purple-900 font-medium">
+                    % material within
+                  </span>
+                  <div className="relative">
                     <input
                       type="text"
                       value={selectedPaymentTermData.days}
@@ -1952,182 +2136,360 @@ export default function CreatePurchaseOrderForm({
                           days: e.target.value,
                         }))
                       }
-                      className="w-16 mr-3 border border-slate-600 rounded-md outline-none px-2 "
-                    />{" "}
-                    days.
+                      className="w-20 px-3 py-2 text-center border-2 border-purple-300 rounded-lg focus:ring-4 focus:ring-purple-500/20 focus:border-purple-500 outline-none font-bold text-purple-900 bg-white shadow-inner"
+                    />
+                    <div className="absolute -top-2 left-1/2 -translate-x-1/2 bg-gradient-to-r from-purple-500 to-purple-600 text-white text-xs px-2 py-0.5 rounded-full whitespace-nowrap">
+                      Days
+                    </div>
                   </div>
+                  <span className="text-purple-900 font-medium">days.</span>
                 </div>
-              )}
-
-              <div className="flex flex-col sm:flex-row gap-3 w-full">
-                <button
-                  type="button"
-                  disabled={!selectedPaymentTermData}
-                  onClick={() => {
-                    if (!selectedPaymentTermData) {
-                      toast.error("Fill correct data.");
-                      return;
-                    }
-
-                    const totalPercent = poPaymentTerms.reduce(
-                      (acc, term) => acc + Number(term.percent),
-                      0,
-                    );
-                    const totalMaterialPercent = poPaymentTerms.reduce(
-                      (acc, term) => acc + Number(term.materialPercent),
-                      0,
-                    );
-
-                    if (
-                      totalMaterialPercent +
-                        Number(selectedPaymentTermData.materialPercent) >
-                      100
-                    ) {
-                      toast.error(
-                        "You have already entered material percent of " +
-                          totalMaterialPercent +
-                          "% You can not exceed 100%",
-                      );
-                      return;
-                    }
-                    if (
-                      totalPercent + Number(selectedPaymentTermData.percent) >
-                      100
-                    ) {
-                      toast.error(
-                        "You have already entered payment percent of " +
-                          totalPercent +
-                          "% You can not exceed 100%",
-                      );
-                      return;
-                    }
-                    console.log(poPaymentTerms);
-                    let data = poPaymentTerms;
-                    console.log("this is payment terms", data);
-                    data.push(selectedPaymentTermData);
-                    setPoPaymentTerms(data);
-                    setSelectedPaymentTerm("");
-                    setSelectedPaymentTermData("");
-                    setSelectedPaymentTermId("");
-                    setShowAddPaymentTerm(false);
-                    setShowAddPaymentTerm(false);
-                  }}
-                  className="bg-blue-600 text-white px-4 py-3 h-fit w-full  rounded-lg hover:bg-blue-700 transition text-sm flex items-center gap-2 cursor-pointer justify-center"
-                >
-                  <Plus className="w-4 h-4" /> Add
-                </button>
-                <button
-                  type="button"
-                  onClick={() => {
-                    setSelectedPaymentTerm("");
-                    setSelectedPaymentTermData("");
-                    setSelectedPaymentTermId("");
-                    setShowAddPaymentTerm(false);
-                  }}
-                  className="bg-gray-600 text-white px-4 py-3 h-fit  w-full sm:w-40  rounded-lg hover:bg-gray-700 transition text-sm flex items-center justify-center gap-2 cursor-pointer"
-                >
-                  Close
-                </button>
               </div>
             </div>
-          </div>
-        </div>
-      )}
-      {showAddTerm && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-xl">
-            <div className="bg-gradient-to-r rounded-t-2xl from-blue-600 to-blue-700 px-6 py-4 flex justify-between items-center">
-              <h2 className="text-2xl font-bold text-white">
-                Add Terms & Conditions
-              </h2>
-              <div className="flex">
-                <button
-                  onClick={() => setShowAddTerm(false)}
-                  className="text-white hover:bg-white hover:bg-opacity-20 rounded-lg p-2 transition"
-                >
-                  <X className="w-6 h-6" />
-                </button>
-              </div>
-            </div>
+          )}
 
-            <div className="grid grid-cols-1 gap-3 items-end mb-6 px-6 py-3">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Category <span className="text-red-500">*</span>
-                </label>
-                <select
-                  value={extraTermData.category}
-                  onChange={(e) =>
-                    setExtraTermData({
-                      ...extraTermData,
-                      category: e.target.value,
-                    })
+          {/* Action Buttons - All original logic preserved */}
+          <div className="pt-6 border-t border-gray-200/50">
+            <div className="flex flex-col sm:flex-row gap-4">
+              <button
+                type="button"
+                disabled={!selectedPaymentTermData}
+                onClick={() => {
+                  if (!selectedPaymentTermData) {
+                    toast.error("Fill correct data.");
+                    return;
                   }
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  required
-                >
-                  <option value="">Select Category</option>
-                  <option value="general">General</option>
-                  <option value="payment">Payment</option>
-                  <option value="delivery">Delivery</option>
-                  <option value="quality">Quality</option>
-                  <option value="warranty">Warranty</option>
-                  <option value="tax">Tax</option>
-                  <option value="legal">Legal</option>
-                  <option value="returns">Returns</option>
-                </select>
-              </div>
 
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Terms & Condition <span className="text-red-500">*</span>
-                </label>
-                <textarea
-                  value={extraTermData.content}
-                  onChange={(e) => {
-                    setExtraTermData({
-                      ...extraTermData,
-                      content: e.target.value,
-                    });
-                  }}
-                  className="w-full outline-none px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  rows={3}
-                  placeholder="Enter the full terms & conditions text..."
-                  required
-                />
-              </div>
-              <div className="flex flex-col sm:flex-row gap-3 w-full">
-                <button
-                  type="button"
-                  onClick={() => {
-                    setExtraTerms([
-                      ...extraTerms,
-                      { ...extraTermData, is_default: true },
-                    ]);
-                    setExtraTermData({
-                      category: "",
-                      content: "",
-                      is_default: false,
-                    });
-                    setShowAddPaymentTerm(false);
-                    console.log(extraTerms);
-                  }}
-                  className="bg-blue-600 text-white px-4 py-3 h-fit w-full  rounded-lg hover:bg-blue-700 transition text-sm flex items-center gap-2 cursor-pointer justify-center"
-                >
-                  <Plus className="w-4 h-4" /> Add
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setShowAddPaymentTerm(false)}
-                  className="bg-gray-600 text-white px-4 py-3 h-fit  w-full sm:w-40  rounded-lg hover:bg-gray-700 transition text-sm flex items-center justify-center gap-2 cursor-pointer"
-                >
-                  Close
-                </button>
-              </div>
+                  const totalPercent = poPaymentTerms.reduce(
+                    (acc, term) => acc + Number(term.percent),
+                    0,
+                  );
+                  const totalMaterialPercent = poPaymentTerms.reduce(
+                    (acc, term) => acc + Number(term.materialPercent),
+                    0,
+                  );
+
+                  if (
+                    totalMaterialPercent +
+                      Number(selectedPaymentTermData.materialPercent) >
+                    100
+                  ) {
+                    toast.error(
+                      "You have already entered material percent of " +
+                        totalMaterialPercent +
+                        "% You can not exceed 100%",
+                    );
+                    return;
+                  }
+                  if (
+                    totalPercent + Number(selectedPaymentTermData.percent) >
+                    100
+                  ) {
+                    toast.error(
+                      "You have already entered payment percent of " +
+                        totalPercent +
+                        "% You can not exceed 100%",
+                    );
+                    return;
+                  }
+                  console.log(poPaymentTerms);
+                  let data = poPaymentTerms;
+                  console.log("this is payment terms", data);
+                  data.push(selectedPaymentTermData);
+                  setPoPaymentTerms(data);
+                  setSelectedPaymentTerm("");
+                  setSelectedPaymentTermData("");
+                  setSelectedPaymentTermId("");
+                  setShowAddPaymentTerm(false);
+                  setShowAddPaymentTerm(false);
+                }}
+                className={`relative group flex-1 px-6 py-3.5 rounded-xl font-semibold text-sm transition-all duration-300 transform hover:scale-[1.02] active:scale-[0.98] ${
+                  selectedPaymentTermData
+                    ? 'bg-gradient-to-r from-[#b52124] via-[#c52c30] to-[#d43538] text-white shadow-lg shadow-red-500/25 hover:shadow-xl hover:shadow-red-500/30'
+                    : 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                }`}
+              >
+                <div className="absolute inset-0 rounded-xl bg-gradient-to-r from-transparent via-white/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
+                <div className="relative flex items-center justify-center gap-3">
+                  <Plus className="w-4 h-4 group-hover:rotate-90 transition-transform duration-300" />
+                  <span>Add</span>
+                </div>
+              </button>
+              
+              <button
+                type="button"
+                onClick={() => {
+                  setSelectedPaymentTerm("");
+                  setSelectedPaymentTermData("");
+                  setSelectedPaymentTermId("");
+                  setShowAddPaymentTerm(false);
+                }}
+                className="px-6 py-3.5 rounded-xl font-semibold text-sm bg-gradient-to-r from-gray-200 to-gray-300 text-gray-700 hover:from-gray-300 hover:to-gray-400 transition-all duration-300 transform hover:scale-[1.02] active:scale-[0.98] shadow-md shadow-gray-500/10 border border-gray-300/50"
+              >
+                Close
+              </button>
             </div>
           </div>
         </div>
-      )}
+      </div>
+    </div>
+  </div>
+)}
+     {showTermsConditions && (
+  <div className="fixed inset-0 bg-gray-900/70 backdrop-blur-md flex items-center justify-center z-[70] p-2 md:p-4">
+    <div className="bg-gradient-to-br from-gray-50 to-white rounded-2xl shadow-2xl shadow-gray-900/30 w-full max-w-md border border-gray-300/50 overflow-hidden max-h-[90vh] flex flex-col">
+      <div className="bg-gradient-to-r from-[#40423f] via-[#4a4c49] to-[#5a5d5a] px-4 md:px-6 py-4 flex justify-between items-center border-b border-gray-700/30">
+        <div className="flex items-center gap-3">
+          <div className="p-2 bg-white/10 rounded-xl">
+            <ClipboardCheck className="w-4 h-4 md:w-5 md:h-5 text-gray-100" />
+          </div>
+          <div>
+            <h3 className="font-bold text-white text-sm md:text-base">Terms & Conditions</h3>
+            <p className="text-xs text-gray-300/80 hidden md:block">Manage terms and conditions</p>
+          </div>
+        </div>
+        <div className="flex">
+          <button
+            onClick={() => setShowAddTerm(true)}
+            className="text-white bg-green-600 hover:bg-green-700 rounded-lg px-2 py-1 font-medium text-xs flex items-center mr-2"
+          >
+            <Plus className="w-3 h-3 mr-1" /> Add
+          </button>
+          <button
+            onClick={() => setShowTermsConditions(false)}
+            className="text-gray-200 hover:bg-gray-700/40 rounded-xl p-2 transition-all duration-200"
+          >
+            <X className="w-4 h-4 md:w-5 md:h-5" />
+          </button>
+        </div>
+      </div>
+      
+      <div className="p-4 overflow-y-auto flex-grow">
+        <ul className="space-y-3">
+          {terms.map((d, indx: number) => {
+            const extraTCData = extraTerms.filter((ed: any) => ed.category === d.category) || [];
+            
+            return (
+              <li key={indx} className="border border-gray-300 rounded-xl p-3">
+                <div className="flex items-start gap-2 mb-2">
+                  <input
+                    type="checkbox"
+                    onChange={() => {
+                      const isActive = !d.isActive;
+                      
+                      setTerms((prev) =>
+                        prev.map((tc) =>
+                          tc.id === d.id
+                            ? {
+                                ...tc,
+                                isActive: isActive,
+                                content: tc.content.map((i: any) => ({
+                                  ...i,
+                                  is_default: isActive,
+                                })),
+                              }
+                            : tc
+                        )
+                      );
+
+                      setExtraTerms((prev) =>
+                        prev.map((tc) =>
+                          tc.category === d.category
+                            ? {
+                                ...tc,
+                                is_default: isActive,
+                              }
+                            : tc
+                        )
+                      );
+                    }}
+                    checked={
+                      d.isActive ||
+                      d.content.filter((ftc: any) => ftc.is_default).length === d.content.length
+                    }
+                    className="w-4 h-4 accent-[#b52124] cursor-pointer mt-0.5"
+                  />
+                  <h4 className="font-semibold text-sm text-[#40423f]">
+                    {d.category.charAt(0).toUpperCase() + d.category.slice(1) || ""}
+                  </h4>
+                </div>
+                
+                <ul className="ml-6 space-y-2">
+                  {d.content.map((term: any, idx: number) => (
+                    <li key={idx} className="flex items-start gap-2">
+                      <input
+                        type="checkbox"
+                        checked={term.is_default}
+                        onChange={() => {
+                          setTerms((prev) =>
+                            prev.map((tc) =>
+                              tc.id === d.id
+                                ? {
+                                    ...tc,
+                                    content: tc.content.map((i: any) =>
+                                      i.term_id === term.term_id
+                                        ? {
+                                            ...i,
+                                            is_default: !i.is_default,
+                                          }
+                                        : i
+                                    ),
+                                  }
+                                : tc
+                            )
+                          );
+                        }}
+                        className="w-3.5 h-3.5 accent-[#b52124] cursor-pointer mt-0.5"
+                      />
+                      <span className="text-xs text-[#5a5d5a]">{term.content}</span>
+                    </li>
+                  ))}
+                  
+                  {extraTCData.map((etc: any) => (
+                    <li key={etc.content} className="flex items-start gap-2">
+                      <input
+                        type="checkbox"
+                        checked={etc.is_default}
+                        onChange={() => {
+                          setExtraTerms((prev) =>
+                            prev.map((etci) =>
+                              etci.content === etc.content
+                                ? {
+                                    ...etci,
+                                    is_default: !etci.is_default,
+                                  }
+                                : etci
+                            )
+                          );
+                        }}
+                        className="w-3.5 h-3.5 accent-[#b52124] cursor-pointer mt-0.5"
+                      />
+                      <span className="text-xs text-[#5a5d5a] italic">{etc.content}</span>
+                    </li>
+                  ))}
+                </ul>
+              </li>
+            );
+          })}
+        </ul>
+      </div>
+    </div>
+  </div>
+)}
+
+{showAddTerm && (
+  <div className="fixed inset-0 bg-gray-900/70 backdrop-blur-md flex items-center justify-center z-[80] p-2 md:p-4">
+    <div className="bg-gradient-to-br from-gray-50 to-white rounded-2xl shadow-2xl shadow-gray-900/30 w-full max-w-md border border-gray-300/50 overflow-hidden max-h-[90vh] flex flex-col">
+      <div className="bg-gradient-to-r from-[#40423f] via-[#4a4c49] to-[#5a5d5a] px-4 md:px-6 py-4 flex justify-between items-center border-b border-gray-700/30">
+        <div className="flex items-center gap-3">
+          <div className="p-2 bg-white/10 rounded-xl">
+            <Plus className="w-4 h-4 md:w-5 md:h-5 text-gray-100" />
+          </div>
+          <div>
+            <h3 className="font-bold text-white text-sm md:text-base">Add Term</h3>
+            <p className="text-xs text-gray-300/80 hidden md:block">Add new terms & conditions</p>
+          </div>
+        </div>
+        <button
+          onClick={() => setShowAddTerm(false)}
+          className="text-gray-200 hover:bg-gray-700/40 rounded-xl p-2 transition-all duration-200"
+        >
+          <X className="w-4 h-4 md:w-5 md:h-5" />
+        </button>
+      </div>
+
+      <div className="p-4 space-y-3">
+        <div>
+          <label className="block text-xs font-medium text-[#40423f] mb-1">
+            Category <span className="text-[#b52124]">*</span>
+          </label>
+          <select
+            value={extraTermData.category}
+            onChange={(e) =>
+              setExtraTermData({
+                ...extraTermData,
+                category: e.target.value,
+              })
+            }
+            className="w-full px-3 py-2 text-sm border border-gray-300 rounded-xl focus:ring-2 focus:ring-[#b52124]/20 focus:border-[#b52124] outline-none bg-white/50"
+            required
+          >
+            <option value="">Select Category</option>
+            <option value="general">General</option>
+            <option value="payment">Payment</option>
+            <option value="delivery">Delivery</option>
+            <option value="quality">Quality</option>
+            <option value="warranty">Warranty</option>
+            <option value="tax">Tax</option>
+            <option value="legal">Legal</option>
+            <option value="returns">Returns</option>
+          </select>
+        </div>
+
+        <div>
+          <label className="block text-xs font-medium text-[#40423f] mb-1">
+            Terms & Condition <span className="text-[#b52124]">*</span>
+          </label>
+          <textarea
+            value={extraTermData.content}
+            onChange={(e) => {
+              setExtraTermData({
+                ...extraTermData,
+                content: e.target.value,
+              });
+            }}
+            className="w-full px-3 py-2 text-sm border border-gray-300 rounded-xl focus:ring-2 focus:ring-[#b52124]/20 focus:border-[#b52124] outline-none bg-white/50"
+            rows={3}
+            placeholder="Enter the full terms & conditions text..."
+            required
+          />
+        </div>
+        
+        <div className="flex gap-2 pt-2">
+          <button
+            type="button"
+            onClick={() => {
+              if (
+                extraTermData.category.length === 0 ||
+                extraTermData.content.length === 0
+              ) {
+                toast.error("All input fields required.");
+                return;
+              }
+              
+              // Add to extraTerms
+              setExtraTerms([
+                ...extraTerms,
+                { ...extraTermData, is_default: true },
+              ]);
+              
+              // Reset form
+              setExtraTermData({
+                category: "",
+                content: "",
+                is_default: false,
+              });
+              
+              // Close modal
+              setShowAddTerm(false);
+              toast.success("Term added successfully");
+            }}
+            className="flex-1 bg-gradient-to-r from-[#b52124] to-[#d43538] text-white px-4 py-2.5 rounded-xl hover:from-[#d43538] hover:to-[#b52124] transition-all duration-200 text-sm font-medium flex items-center justify-center gap-2"
+          >
+            <Plus className="w-3 h-3" /> Add Term
+          </button>
+          <button
+            type="button"
+            onClick={() => setShowAddTerm(false)}
+            className="px-4 py-2.5 text-sm border border-gray-300 rounded-xl hover:bg-gray-50/50 hover:border-gray-400 transition-all duration-200 font-medium text-[#40423f]"
+          >
+            Close
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+)}
     </div>
   );
 }
