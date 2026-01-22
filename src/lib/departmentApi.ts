@@ -1,6 +1,5 @@
-// 
-import { api } from './Api';
-
+//
+import { api } from "./Api";
 
 // Or if you want to keep it separate, re-export all interfaces
 export interface Department {
@@ -37,8 +36,8 @@ export interface PaginatedDepartments {
 export interface DepartmentFilters {
   search?: string;
   is_active?: boolean;
-  sort_by?: 'name' | 'code';
-  sort_order?: 'asc' | 'desc';
+  sort_by?: "name" | "code";
+  sort_order?: "asc" | "desc";
 }
 
 export type CreateDepartmentDTO = {
@@ -91,8 +90,8 @@ export interface PaginatedDepartments {
 export interface DepartmentFilters {
   search?: string;
   is_active?: boolean;
-  sort_by?: 'name' | 'code';
-  sort_order?: 'asc' | 'desc';
+  sort_by?: "name" | "code";
+  sort_order?: "asc" | "desc";
 }
 
 export const departmentsApi = {
@@ -102,8 +101,10 @@ export const departmentsApi = {
       const response = await api.get(`/departments`);
       return response.data;
     } catch (error: any) {
-      console.error('Error fetching departments:', error);
-      throw new Error(error.response?.data?.message || 'Failed to fetch departments');
+      console.error("Error fetching departments:", error);
+      throw new Error(
+        error.response?.data?.message || "Failed to fetch departments",
+      );
     }
   },
 
@@ -111,21 +112,24 @@ export const departmentsApi = {
   async getPaginated(
     page: number = 1,
     limit: number = 10,
-    filters?: DepartmentFilters
+    filters?: DepartmentFilters,
   ): Promise<PaginatedDepartments> {
     try {
       const params: any = { page, limit };
-      
+
       if (filters?.search) params.search = filters.search;
-      if (filters?.is_active !== undefined) params.is_active = filters.is_active;
+      if (filters?.is_active !== undefined)
+        params.is_active = filters.is_active;
       if (filters?.sort_by) params.sort_by = filters.sort_by;
       if (filters?.sort_order) params.sort_order = filters.sort_order;
 
       const response = await api.get(`/departments/paginated`, { params });
       return response.data;
     } catch (error: any) {
-      console.error('Error fetching paginated departments:', error);
-      throw new Error(error.response?.data?.message || 'Failed to fetch departments');
+      console.error("Error fetching paginated departments:", error);
+      throw new Error(
+        error.response?.data?.message || "Failed to fetch departments",
+      );
     }
   },
 
@@ -135,8 +139,11 @@ export const departmentsApi = {
       const response = await api.get(`/departments/stats`);
       return response.data;
     } catch (error: any) {
-      console.error('Error fetching department stats:', error);
-      throw new Error(error.response?.data?.message || 'Failed to fetch department statistics');
+      console.error("Error fetching department stats:", error);
+      throw new Error(
+        error.response?.data?.message ||
+          "Failed to fetch department statistics",
+      );
     }
   },
 
@@ -146,8 +153,10 @@ export const departmentsApi = {
       const response = await api.get(`/departments/managers`);
       return response.data;
     } catch (error: any) {
-      console.error('Error fetching managers:', error);
-      throw new Error(error.response?.data?.message || 'Failed to fetch managers');
+      console.error("Error fetching managers:", error);
+      throw new Error(
+        error.response?.data?.message || "Failed to fetch managers",
+      );
     }
   },
 
@@ -157,73 +166,99 @@ export const departmentsApi = {
       const response = await api.get(`$/departments/active`);
       return response.data;
     } catch (error: any) {
-      console.error('Error fetching active departments:', error);
-      throw new Error(error.response?.data?.message || 'Failed to fetch active departments');
+      console.error("Error fetching active departments:", error);
+      throw new Error(
+        error.response?.data?.message || "Failed to fetch active departments",
+      );
     }
   },
 
   // Create new department
-  async create(department: Omit<Department, 'id'>): Promise<Department> {
+  async create(department: Omit<Department, "id">): Promise<Department> {
     try {
       const response = await api.post(`/departments`, department);
       return response.data;
     } catch (error: any) {
-      console.error('Error creating department:', error);
-      throw new Error(error.response?.data?.message || 'Failed to create department');
+      console.error("Error creating department:", error);
+      throw new Error(
+        error.response?.data?.message || "Failed to create department",
+      );
     }
   },
 
   // Update department
-  async update(id: string, department: Partial<Department>): Promise<Department> {
+  async update(
+    id: string,
+    department: Partial<Department>,
+  ): Promise<Department> {
     try {
       const response = await api.put(`/departments/${id}`, department);
       return response.data;
     } catch (error: any) {
-      console.error('Error updating department:', error);
-      throw new Error(error.response?.data?.message || 'Failed to update department');
+      console.error("Error updating department:", error);
+      throw new Error(
+        error.response?.data?.message || "Failed to update department",
+      );
     }
   },
 
   // Delete department
   async delete(id: string): Promise<void> {
     try {
-      await api.delete(`$/departments/${id}`);
+      await api.delete(`/departments/${id}`);
     } catch (error: any) {
-      console.error('Error deleting department:', error);
-      throw new Error(error.response?.data?.message || 'Failed to delete department');
+      console.error("Error deleting department:", error);
+      throw new Error(
+        error.response?.data?.message || "Failed to delete department",
+      );
     }
   },
 
   // Assign manager to department
-  async assignManager(departmentId: string, managerId: string): Promise<Department> {
+  async assignManager(
+    departmentId: string,
+    managerId: string,
+  ): Promise<Department> {
     try {
-      const response = await api.put(`$/departments/${departmentId}/manager`, { managerId });
+      const response = await api.put(`$/departments/${departmentId}/manager`, {
+        managerId,
+      });
       return response.data;
     } catch (error: any) {
-      console.error('Error assigning manager:', error);
-      throw new Error(error.response?.data?.message || 'Failed to assign manager');
+      console.error("Error assigning manager:", error);
+      throw new Error(
+        error.response?.data?.message || "Failed to assign manager",
+      );
     }
   },
 
   // Remove manager from department
   async removeManager(departmentId: string): Promise<Department> {
     try {
-      const response = await api.delete(`$/departments/${departmentId}/manager`);
+      const response = await api.delete(
+        `$/departments/${departmentId}/manager`,
+      );
       return response.data;
     } catch (error: any) {
-      console.error('Error removing manager:', error);
-      throw new Error(error.response?.data?.message || 'Failed to remove manager');
+      console.error("Error removing manager:", error);
+      throw new Error(
+        error.response?.data?.message || "Failed to remove manager",
+      );
     }
   },
 
   // Toggle department active status
   async toggleActive(departmentId: string): Promise<Department> {
     try {
-      const response = await api.patch(`$/departments/${departmentId}/toggle-active`);
+      const response = await api.patch(
+        `$/departments/${departmentId}/toggle-active`,
+      );
       return response.data;
     } catch (error: any) {
-      console.error('Error toggling department status:', error);
-      throw new Error(error.response?.data?.message || 'Failed to toggle department status');
+      console.error("Error toggling department status:", error);
+      throw new Error(
+        error.response?.data?.message || "Failed to toggle department status",
+      );
     }
   },
 
@@ -231,9 +266,8 @@ export const departmentsApi = {
   validateCode(code: string): boolean {
     const regex = /^[A-Z0-9]{2,20}$/;
     return regex.test(code);
-  }
+  },
 };
-
 
 // // src/lib/departmentsApi.ts
 // import axios from 'axios';

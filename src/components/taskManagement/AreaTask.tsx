@@ -1,40 +1,42 @@
 import { useState, useEffect } from "react";
 import {
   Plus,
-  Wrench,
   Calendar,
-  Clock,
   X,
   Trash2,
   Edit2,
-  Printer,
-  Share2,
-  ChevronDown,
   Filter,
-  Eye,
   Building,
-  CheckSquare,
-  FileText,
-  MapPin,
-  Phone,
   Save,
   UserRound,
   HardHat,
   Users,
   Home,
   Layers,
-  FolderTree,
+  Hash,
+  Ruler,
+  ChevronDown,
+  TrendingUp,
+  CheckCircle,
+  FileText,
+  Clock,
+  Pickaxe,
+  Construction,
 } from "lucide-react";
 import { useAuth } from "../../contexts/AuthContext";
 
 // Backend API calls for Area Tasks
-import AreaTasksApifrom from "../lib/areaTasksApi";
+import AreaTasksApifrom from "../../lib/areaTasksApi";
 
 // Use only projectApi since it contains nested data
-import projectApi from "../lib/projectApi";
-import { api, UsersApi } from "../lib/Api";
+import projectApi from "../../lib/projectApi";
+import { api, UsersApi } from "../../lib/Api";
+import { BiLeftArrow } from "react-icons/bi";
+import { FaLeftLong } from "react-icons/fa6";
+import { toast } from "sonner";
+import MySwal from "../../utils/swal";
 
-interface AreaTaskFormData {
+interface AreaFormData {
   id?: string;
   project_id: number | string | null;
   building_id: number | string | null;
@@ -108,7 +110,7 @@ interface CommonAreaData {
   workflow?: any[];
 }
 
-const defaultFormData: AreaTaskFormData = {
+const defaultFormData: AreaFormData = {
   project_id: null,
   building_id: null,
   floor_id: null,
@@ -125,13 +127,32 @@ const defaultFormData: AreaTaskFormData = {
   created_by: null,
 };
 
-export default function AreaTasks() {
+interface SubTaskType {
+  id?: string | number | null;
+  area_task_id: string | number | null;
+  name: string | null;
+  unit: string | null;
+  start_date: string;
+  end_date: string;
+  total_work: string | null;
+  progress: string | null;
+  status: string | null;
+}
+
+export default function AreaTasks({
+  selectedProjectId,
+  setSelectedProjectId,
+}: {
+  selectedProjectId: number;
+  setSelectedProjectId: React.Dispatch<React.SetStateAction<number | null>>;
+}) {
   const { user } = useAuth();
-  const [areaTasks, setAreaTasks] = useState<AreaTaskFormData[]>([]);
+  const [areaTasks, setAreaTasks] = useState<AreaFormData[]>([]);
   const [loading, setLoading] = useState(true);
 
   // Master data states
   const [projects, setProjects] = useState<ProjectData[]>([]);
+  const [showCreate] = useState<boolean>(false);
   const [selectedProject, setSelectedProject] = useState<ProjectData | null>(
     null,
   );
@@ -143,7 +164,7 @@ export default function AreaTasks() {
 
   // Modal states
   const [showModal, setShowModal] = useState(false);
-  const [editingId, setEditingId] = useState<string | null>(null);
+  const [editingId, setEditingId] = useState<string | number | null>(null);
 
   // Filter states
   const [showFilterSidebar, setShowFilterSidebar] = useState(false);
@@ -158,32 +179,33 @@ export default function AreaTasks() {
     is_active: "",
   });
 
-  const [formData, setFormData] = useState<AreaTaskFormData>({
+  const [formData, setFormData] = useState<AreaFormData>({
     ...defaultFormData,
+    project_id: selectedProject?.id || "",
     created_by: user?.id ?? null,
   });
 
-  useEffect(() => {
-    loadData();
-    loadMasterData();
-  }, []);
+  const [taskFormData, setTaskFormData] = useState<SubTaskType>({
+    area_task_id: null,
+    name: "",
+    unit: "",
+    start_date: "",
+    end_date: "",
+    total_work: "",
+    progress: "",
+    status: "",
+  });
 
-  const loadMasterData = async () => {
-    try {
-      const projectRes: any = await projectApi.getProjects();
-      console.log(projectRes, "this is data");
-      setProjects(Array.isArray(projectRes.data) ? projectRes.data : []);
-    } catch (error) {
-      console.error("Error loading master data:", error);
-    }
-  };
+  const [showTaskModal, setShowTaskModal] = useState<boolean>(false);
 
-  const loadProjectDetails = async (projectId: number) => {
+  const loadProjectDetails = async () => {
     try {
-      const project: any = await projectApi.getProjectById(projectId);
-      console.log(project.data);
-      setSelectedProject(project.data);
-      setBuildings(project.data.buildings || []);
+      const project: any = await projectApi.getProjectById(selectedProjectId);
+      console.log("this is project details", project.data);
+      setSelectedProject(project.data || []);
+      setBuildings(
+        Array.isArray(project.data.buildings) ? project.data.buildings : [],
+      );
       setFloors([]);
       setFlats([]);
       setCommonAreas([]);
@@ -196,6 +218,10 @@ export default function AreaTasks() {
       setCommonAreas([]);
     }
   };
+
+  useEffect(() => {
+    console.log("from use effect", selectedProject);
+  }, [selectedProject]);
 
   const loadEngineers = async () => {
     try {
@@ -210,36 +236,9 @@ export default function AreaTasks() {
 
   useEffect(() => {
     loadEngineers();
+    loadProjectDetails();
+    loadData();
   }, []);
-
-  const handleProjectChange = (projectId: string) => {
-    if (!projectId) {
-      setSelectedProject(null);
-      setBuildings([]);
-      setFloors([]);
-      setFlats([]);
-      setCommonAreas([]);
-      setFormData({
-        ...formData,
-        project_id: null,
-        building_id: null,
-        floor_id: null,
-        flat_id: null,
-        common_area_id: null,
-      });
-      return;
-    }
-
-    loadProjectDetails(Number(projectId));
-    setFormData({
-      ...formData,
-      project_id: projectId,
-      building_id: null,
-      floor_id: null,
-      flat_id: null,
-      common_area_id: null,
-    });
-  };
 
   const handleBuildingChange = (buildingId: string) => {
     if (!buildingId || !selectedProject) {
@@ -302,7 +301,8 @@ export default function AreaTasks() {
   const loadData = async () => {
     setLoading(true);
     try {
-      const rows: any = await AreaTasksApifrom.getAreaTasks();
+      const rows: any =
+        await AreaTasksApifrom.getAreaTasksByProjectId(selectedProjectId);
       console.log(rows, "hellow");
       // Sort by start date (newest first)
       const data = rows.data;
@@ -344,7 +344,7 @@ export default function AreaTasks() {
       !formData.start_date ||
       !formData.expected_end_date
     ) {
-      alert(
+      toast.error(
         "Please fill required fields: Project, Building, Floor, and Assigned Engineer",
       );
       return;
@@ -385,12 +385,12 @@ export default function AreaTasks() {
       setShowModal(false);
       resetForm();
     } catch (err: any) {
-      alert(err?.message || "Failed to save area task");
+      toast.error(err?.message || "Failed to save area task");
       console.error("handleSubmit error", err);
     }
   };
 
-  const handleEdit = (task: AreaTaskFormData) => {
+  const handleEdit = (task: AreaFormData) => {
     setEditingId(task.id ?? null);
     setFormData({
       ...task,
@@ -407,7 +407,7 @@ export default function AreaTasks() {
 
     // Load project details for editing
     if (task.project_id) {
-      loadProjectDetails(Number(task.project_id)).then(() => {
+      loadProjectDetails().then(() => {
         // After project loads, find and set the correct building
         if (task.building_id && selectedProject) {
           const building = selectedProject.buildings?.find(
@@ -434,13 +434,39 @@ export default function AreaTasks() {
     setShowModal(true);
   };
 
+  const handleTaskEdit = (task: SubTaskType) => {
+    setEditingId(task.id || null);
+    setTaskFormData({
+      area_task_id: task.id || "",
+      name: task.name || "",
+      unit: task.unit || "",
+      start_date: task.start_date || "",
+      end_date: task.end_date || "",
+      total_work: task.total_work || "",
+      progress: task.progress || "",
+      status: task.status || "",
+    });
+
+    setShowTaskModal(true);
+  };
+
   const handleDelete = async (id: string) => {
-    if (!confirm("Are you sure you want to delete this area task?")) return;
+    const result: any = await MySwal.fire({
+      title: "Delete Item?",
+      text: "This action cannot be undone",
+      icon: "warning",
+      showCancelButton: true,
+      confirmButtonColor: "#C62828",
+      cancelButtonColor: "#6b7280",
+      confirmButtonText: "Delete",
+    });
+
+    if (!result.isConfirmed) return;
     try {
       await AreaTasksApifrom.deleteAreaTask(id);
       await loadData();
     } catch (err) {
-      alert("Delete failed");
+      toast.error("Delete failed");
       console.error("handleDelete error", err);
     }
   };
@@ -450,7 +476,7 @@ export default function AreaTasks() {
       await AreaTasksApifrom.toggleAreaTaskStatus(id);
       await loadData();
     } catch (err) {
-      alert("Failed to toggle status");
+      toast.error("Failed to toggle status");
       console.error("handleToggleStatus error", err);
     }
   };
@@ -458,11 +484,10 @@ export default function AreaTasks() {
   const resetForm = () => {
     setFormData({
       ...defaultFormData,
+      project_id: selectedProject?.id || "",
       created_by: user?.id ?? null,
     });
     setEditingId(null);
-    setSelectedProject(null);
-    setBuildings([]);
     setFloors([]);
     setFlats([]);
     setCommonAreas([]);
@@ -503,50 +528,6 @@ export default function AreaTasks() {
       : "bg-red-100 text-red-700 px-3 py-1 rounded-full text-xs font-medium";
   };
 
-  const getAreaDisplay = (task: AreaTaskFormData) => {
-    if (task.flat_id) {
-      return `Flat: ${task.flat_name || "N/A"}`;
-    } else if (task.common_area_id) {
-      return `Common Area: ${task.common_area_name || "N/A"}`;
-    }
-    return "N/A";
-  };
-
-  const getProjectNameById = (projectId: number | string | null) => {
-    if (!projectId) return "N/A";
-    const project = projects.find((p) => String(p.id) === String(projectId));
-    return project?.name || "N/A";
-  };
-
-  const getBuildingNameById = (
-    projectId: number | string | null,
-    buildingId: number | string | null,
-  ) => {
-    if (!projectId || !buildingId) return "N/A";
-    const project = projects.find((p) => String(p.id) === String(projectId));
-    if (!project?.buildings) return "N/A";
-    const building = project.buildings.find(
-      (b) => String(b.id) === String(buildingId),
-    );
-    return building?.building_name || "N/A";
-  };
-
-  const getFloorNameById = (
-    projectId: number | string | null,
-    buildingId: number | string | null,
-    floorId: number | string | null,
-  ) => {
-    if (!projectId || !buildingId || !floorId) return "N/A";
-    const project = projects.find((p) => String(p.id) === String(projectId));
-    if (!project?.buildings) return "N/A";
-    const building = project.buildings.find(
-      (b) => String(b.id) === String(buildingId),
-    );
-    if (!building?.floors) return "N/A";
-    const floor = building.floors.find((f) => String(f.id) === String(floorId));
-    return floor?.floor_name || "N/A";
-  };
-
   if (loading) {
     return (
       <div className="flex items-center justify-center h-96">
@@ -561,8 +542,16 @@ export default function AreaTasks() {
   return (
     <div className="p-6">
       {/* Header with Actions */}
+
+      <button
+        className="flex items-center font-semibold"
+        onClick={() => setSelectedProjectId(null)}
+      >
+        <FaLeftLong className="mr-3" />
+        Back to Projects
+      </button>
       <div className="flex justify-between items-center mb-6">
-        <h1 className="text-2xl font-bold text-gray-800">Area Tasks</h1>
+        <h1 className="text-2xl font-bold text-gray-800">Tasks Area</h1>
         <button
           onClick={() => {
             resetForm();
@@ -571,7 +560,7 @@ export default function AreaTasks() {
           className="bg-[#C62828] text-white px-6 py-3 rounded-lg hover:bg-red-500 transition flex items-center gap-2 shadow-sm"
         >
           <Plus className="w-5 h-5" />
-          Create Area Task
+          Create Area
         </button>
       </div>
 
@@ -643,32 +632,27 @@ export default function AreaTasks() {
                   <td className="px-6 py-4">
                     <div>
                       <p className="font-medium text-gray-800">
-                        {task.project_name ||
-                          getProjectNameById(task.project_id)}
+                        {task.project_name}
                       </p>
                     </div>
                   </td>
                   <td className="px-6 py-4">
                     <div>
                       <p className="font-medium text-gray-800">
-                        {task.building_name ||
-                          getBuildingNameById(
-                            task.project_id,
-                            task.building_id,
-                          )}
+                        {task.building_name}
                       </p>
                       <p className="text-xs text-gray-500">
-                        Floor:{" "}
-                        {task.floor_name ||
-                          getFloorNameById(
-                            task.project_id,
-                            task.building_id,
-                            task.floor_id,
-                          )}
+                        Floor: {task.floor_name}
                       </p>
                     </div>
                   </td>
-                  <td className="px-6 py-4">{getAreaDisplay(task)}</td>
+                  <td className="px-6 py-4">
+                    {task.flat_name
+                      ? task.flat_name
+                      : task.common_area_name
+                        ? task.common_area_name
+                        : "N/A"}
+                  </td>
                   <td className="px-6 py-4">
                     <div className="flex items-center gap-2">
                       <UserRound className="w-4 h-4 text-gray-400" />
@@ -713,12 +697,26 @@ export default function AreaTasks() {
                     </span>
                   </td>
                   <td className="px-6 py-4">
-                    <span className={getActiveBadge(task.is_active)}>
+                    <button
+                      onClick={() => handleToggleStatus(task.id!)}
+                      className={getActiveBadge(task.is_active)}
+                    >
                       {task.is_active ? "ACTIVE" : "INACTIVE"}
-                    </span>
+                    </button>
                   </td>
                   <td className="px-6 py-4">
                     <div className="flex gap-2">
+                      <button
+                        onClick={() => {
+                          resetForm();
+                          setShowTaskModal(true);
+                        }}
+                        className="p-1 bg-green-200 text-green-700 hover:bg-green-100 rounded-lg transition text-[0.8rem] flex items-center font-semibold px-2"
+                        title="Edit"
+                      >
+                        <Plus className="w-4 h-4" />
+                        Task
+                      </button>
                       <button
                         onClick={() => handleEdit(task)}
                         className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition"
@@ -726,17 +724,7 @@ export default function AreaTasks() {
                       >
                         <Edit2 className="w-4 h-4" />
                       </button>
-                      <button
-                        onClick={() => handleToggleStatus(task.id!)}
-                        className={`p-2 rounded-lg transition ${
-                          task.is_active
-                            ? "text-orange-600 hover:bg-orange-50"
-                            : "text-green-600 hover:bg-green-50"
-                        }`}
-                        title={task.is_active ? "Deactivate" : "Activate"}
-                      >
-                        <Eye className="w-4 h-4" />
-                      </button>
+
                       <button
                         onClick={() => handleDelete(task.id!)}
                         className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition"
@@ -782,7 +770,7 @@ export default function AreaTasks() {
                   onClick={resetFilters}
                   className="text-white text-sm hover:bg-white hover:bg-opacity-20 px-3 py-1.5 rounded transition"
                 >
-                  Reset All
+                  Reset All yes
                 </button>
                 <button
                   onClick={() => setShowFilterSidebar(false)}
@@ -794,27 +782,6 @@ export default function AreaTasks() {
             </div>
 
             <div className="flex-1 overflow-y-auto p-6 space-y-6">
-              {/* Project Filter */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Project
-                </label>
-                <select
-                  value={filters.project_id}
-                  onChange={(e) =>
-                    setFilters({ ...filters, project_id: e.target.value })
-                  }
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                >
-                  <option value="">All Projects</option>
-                  {projects.map((project) => (
-                    <option key={project.id} value={project.id}>
-                      {project.name}
-                    </option>
-                  ))}
-                </select>
-              </div>
-
               {/* Status Filter */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -932,28 +899,20 @@ export default function AreaTasks() {
               <form onSubmit={handleSubmit} className="space-y-3">
                 {/* Project */}
                 <div className="space-y-1">
-                  <label className="block text-xs font-semibold text-gray-800 mb-1 flex items-center gap-1.5">
+                  <label className=" text-xs font-semibold text-gray-800 mb-1 flex items-center gap-1.5">
                     <Building className="w-3.5 h-3.5 text-[#C62828]" />
                     Project <span className="text-red-500">*</span>
                   </label>
                   <select
-                    value={
-                      formData.project_id !== null
-                        ? String(formData.project_id)
-                        : ""
-                    }
-                    onChange={(e) => {
-                      handleProjectChange(e.target.value);
-                    }}
+                    disabled
+                    value={selectedProjectId}
                     className="w-full px-3 py-2 text-sm border-2 border-gray-200 rounded-xl focus:border-[#C62828] focus:ring-2 focus:ring-[#C62828]/20 bg-white outline-none transition-all"
                     required
                   >
                     <option value="">Select Project</option>
-                    {projects.map((p) => (
-                      <option key={p.id} value={p.id}>
-                        {p.name}
-                      </option>
-                    ))}
+                    <option value={selectedProjectId}>
+                      {selectedProject?.name}
+                    </option>
                   </select>
                 </div>
 
@@ -972,7 +931,6 @@ export default function AreaTasks() {
                     onChange={(e) => handleBuildingChange(e.target.value)}
                     className="w-full px-3 py-2 text-sm border-2 border-gray-200 rounded-xl focus:border-[#C62828] focus:ring-2 focus:ring-[#C62828]/20 bg-white outline-none transition-all"
                     required
-                    disabled={!formData.project_id}
                   >
                     <option value="">Select Building</option>
                     {buildings.map((b) => (
@@ -1026,7 +984,9 @@ export default function AreaTasks() {
                       })
                     }
                     className="w-full px-3 py-2 text-sm border-2 border-gray-200 rounded-xl focus:border-[#C62828] focus:ring-2 focus:ring-[#C62828]/20 bg-white outline-none transition-all"
-                    disabled={!formData.floor_id}
+                    disabled={
+                      !formData.floor_id || Boolean(formData.common_area_id)
+                    }
                   >
                     <option value="">Select Flat (Optional)</option>
                     {flats.map((f) => (
@@ -1058,7 +1018,7 @@ export default function AreaTasks() {
                       })
                     }
                     className="w-full px-3 py-2 text-sm border-2 border-gray-200 rounded-xl focus:border-[#C62828] focus:ring-2 focus:ring-[#C62828]/20 bg-white outline-none transition-all"
-                    disabled={!formData.floor_id}
+                    disabled={!formData.floor_id || Boolean(formData.flat_id)}
                   >
                     <option value="">Select Common Area (Optional)</option>
                     {commonAreas.map((ca) => (
@@ -1177,6 +1137,271 @@ export default function AreaTasks() {
                 </div>
               </form>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* form for creating sub task */}
+      {showTaskModal && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-md flex items-center justify-center z-50 p-4 animate-fadeIn">
+          <div className="bg-gradient-to-br from-gray-50 to-white rounded-2xl shadow-2xl shadow-gray-900/20 w-full max-w-xl my-4 border border-gray-200 overflow-hidden">
+            {/* Header */}
+            <div className="bg-gradient-to-r from-[#40423f] via-[#4a4c49] to-[#5a5d5a] px-5 py-3 flex justify-between items-center border-b border-gray-700/30">
+              <div className="flex items-center gap-2.5">
+                <div className="p-1.5 bg-white/20 rounded-xl backdrop-blur-sm">
+                  <Layers className="w-4 h-4 text-white" />
+                </div>
+                <div>
+                  <h2 className="text-base font-bold text-white">
+                    {editingId ? "Edit Sub Task" : "Create Sub Task"}
+                  </h2>
+                  <p className="text-xs text-white/90 font-medium mt-0.5">
+                    {editingId ? "Update Sub Task Details" : "Add New Sub Task"}
+                  </p>
+                </div>
+              </div>
+              <button
+                onClick={() => {
+                  setShowTaskModal(false);
+                  resetForm();
+                }}
+                className="text-white hover:bg-white/20 rounded-xl p-1.5 transition-all duration-200"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            {/* Content */}
+            <div className="p-4 max-h-[70vh] overflow-y-auto custom-scrollbar">
+              <form onSubmit={handleSubmit} className="space-y-3">
+                {/* Name */}
+                <div className="space-y-1">
+                  <label className="block text-xs font-semibold text-gray-800 mb-1 flex items-center gap-1.5">
+                    <Pickaxe className="w-3.5 h-3.5 text-[#C62828]" />
+                    Sub Task Name <span className="text-red-500">*</span>
+                  </label>
+                  <div className="relative group">
+                    <div className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 group-focus-within:text-[#C62828] transition-colors">
+                      <Pickaxe className="w-3.5 h-3.5" />
+                    </div>
+                    <input
+                      type="text"
+                      value={taskFormData.name || ""}
+                      onChange={(e) =>
+                        setTaskFormData({
+                          ...taskFormData,
+                          name: e.target.value,
+                        })
+                      }
+                      className="w-full pl-9 pr-3 py-2 text-sm border-2 border-gray-200 rounded-xl focus:border-[#C62828] focus:ring-2 focus:ring-[#C62828]/20 outline-none transition-all"
+                      placeholder="Enter sub-task name"
+                      required
+                    />
+                  </div>
+                </div>
+
+                {/* Unit */}
+                <div className="space-y-1">
+                  <label className="block text-xs font-semibold text-gray-800 mb-1 flex items-center gap-1.5">
+                    <Ruler className="w-3.5 h-3.5 text-[#C62828]" />
+                    Unit <span className="text-red-500">*</span>
+                  </label>
+                  <div className="relative group">
+                    <div className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 group-focus-within:text-[#C62828] transition-colors">
+                      <Ruler className="w-3.5 h-3.5" />
+                    </div>
+                    <select
+                      value={taskFormData.unit || ""}
+                      onChange={(e) =>
+                        setTaskFormData({
+                          ...taskFormData,
+                          unit: e.target.value,
+                        })
+                      }
+                      className="w-full pl-9 pr-8 py-2 text-sm border-2 border-gray-200 rounded-xl focus:border-[#C62828] focus:ring-2 focus:ring-[#C62828]/20 bg-white outline-none transition-all appearance-none"
+                      required
+                    >
+                      <option value="">Select Unit</option>
+                      <option value="sqm">Square Meter (sqm)</option>
+                      <option value="m²">m²</option>
+                      <option value="m³">m³</option>
+                      <option value="kg">Kilogram (kg)</option>
+                      <option value="ton">Tonne (ton)</option>
+                      <option value="hours">Hours</option>
+                      <option value="days">Days</option>
+                      <option value="units">Units</option>
+                      <option value="pcs">Pieces</option>
+                      <option value="liters">Liters</option>
+                      <option value="meters">Meters</option>
+                      <option value="feet">Feet</option>
+                    </select>
+                    <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none">
+                      <ChevronDown className="w-3.5 h-3.5 text-gray-400" />
+                    </div>
+                  </div>
+                </div>
+
+                {/* Total Work */}
+                <div className="space-y-1">
+                  <label className="block text-xs font-semibold text-gray-800 mb-1 flex items-center gap-1.5">
+                    <Construction className="w-3.5 h-3.5 text-[#C62828]" />
+                    Total Work <span className="text-red-500">*</span>
+                  </label>
+                  <div className="relative group">
+                    <div className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 group-focus-within:text-[#C62828] transition-colors">
+                      <Construction className="w-3.5 h-3.5" />
+                    </div>
+                    <input
+                      type="text"
+                      value={taskFormData.total_work || ""}
+                      onChange={(e) =>
+                        setTaskFormData({
+                          ...taskFormData,
+                          total_work: e.target.value,
+                        })
+                      }
+                      className="w-full pl-9 pr-3 py-2 text-sm border-2 border-gray-200 rounded-xl focus:border-[#C62828] focus:ring-2 focus:ring-[#C62828]/20 outline-none transition-all"
+                      placeholder="Enter total work"
+                      required
+                      min="0"
+                      step="0.01"
+                    />
+                    <div className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 text-sm">
+                      {taskFormData.unit}
+                    </div>
+                  </div>
+                </div>
+
+                {/* Start Date */}
+                <div className="space-y-1">
+                  <label className=" text-xs font-semibold text-gray-800 mb-1 flex items-center gap-1.5">
+                    <Calendar className="w-3.5 h-3.5 text-[#C62828]" />
+                    Start Date <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    type="date"
+                    value={taskFormData.start_date}
+                    onChange={(e) =>
+                      setTaskFormData({
+                        ...taskFormData,
+                        start_date: e.target.value,
+                      })
+                    }
+                    className="w-full px-3 py-2 text-sm border-2 border-gray-200 rounded-xl focus:border-[#C62828] focus:ring-2 focus:ring-[#C62828]/20 outline-none transition-all"
+                    required
+                  />
+                </div>
+
+                {/* Expected End Date */}
+                <div className="space-y-1">
+                  <label className=" text-xs font-semibold text-gray-800 mb-1 flex items-center gap-1.5">
+                    <Calendar className="w-3.5 h-3.5 text-[#C62828]" />
+                    Expected End Date <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    type="date"
+                    value={taskFormData.end_date}
+                    onChange={(e) =>
+                      setTaskFormData({
+                        ...taskFormData,
+                        end_date: e.target.value,
+                      })
+                    }
+                    className="w-full px-3 py-2 text-sm border-2 border-gray-200 rounded-xl focus:border-[#C62828] focus:ring-2 focus:ring-[#C62828]/20 outline-none transition-all"
+                    required
+                  />
+                </div>
+
+                {/* Progress (only for editing) */}
+                {editingId && (
+                  <div className="space-y-1">
+                    <label className=" text-xs font-semibold text-gray-800 mb-1 flex items-center gap-1.5">
+                      <TrendingUp className="w-3.5 h-3.5 text-[#C62828]" />
+                      Progress
+                    </label>
+                    <div className="relative group">
+                      <div className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 group-focus-within:text-[#C62828] transition-colors">
+                        <TrendingUp className="w-3.5 h-3.5" />
+                      </div>
+                      <input
+                        type="text"
+                        value={taskFormData.progress || ""}
+                        onChange={(e) =>
+                          setTaskFormData({
+                            ...taskFormData,
+                            progress: e.target.value || "",
+                          })
+                        }
+                        className="w-full pl-9 pr-8 py-2 text-sm border-2 border-gray-200 rounded-xl focus:border-[#C62828] focus:ring-2 focus:ring-[#C62828]/20 outline-none transition-all"
+                        placeholder="Enter progress percentage"
+                        min="0"
+                        max="100"
+                        step="0.1"
+                      />
+                      <div className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 text-sm">
+                        %
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* Submit Button */}
+                <div className=" flex gap-2 pt-4 border-t border-gray-200">
+                  <button
+                    type="submit"
+                    disabled={loading}
+                    className="flex-1 bg-gradient-to-r from-[#C62828] to-red-600 text-white py-2.5 px-4 rounded-xl hover:from-red-600 hover:to-red-700 transition-all duration-200 font-semibold shadow-lg hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 group transform hover:-translate-y-0.5"
+                  >
+                    {loading ? (
+                      <>
+                        <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                        Processing...
+                      </>
+                    ) : (
+                      <>
+                        <Save className="w-4 h-4 group-hover:scale-110 transition-transform" />
+                        {editingId ? "Update Sub-Task" : "Create Sub-Task"}
+                      </>
+                    )}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setShowTaskModal(false);
+                      resetForm();
+                    }}
+                    className="px-4 py-2.5 text-sm border-2 border-gray-200 rounded-xl hover:bg-gray-50 hover:border-gray-300 transition-all duration-200 font-medium text-gray-700 hover:text-gray-900"
+                  >
+                    Cancel
+                  </button>
+                </div>
+              </form>
+            </div>
+
+            {/* Custom Scrollbar Styles */}
+            <style>{`
+      .custom-scrollbar::-webkit-scrollbar {
+        width: 6px;
+      }
+      .custom-scrollbar::-webkit-scrollbar-track {
+        background: #f1f1f1;
+        border-radius: 3px;
+      }
+      .custom-scrollbar::-webkit-scrollbar-thumb {
+        background: #c62828;
+        border-radius: 3px;
+      }
+      .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+        background: #b71c1c;
+      }
+      @keyframes fadeIn {
+        from { opacity: 0; transform: translateY(10px); }
+        to { opacity: 1; transform: translateY(0); }
+      }
+      .animate-fadeIn {
+        animation: fadeIn 0.3s ease-out;
+      }
+    `}</style>
           </div>
         </div>
       )}
