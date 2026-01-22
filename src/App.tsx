@@ -36,6 +36,7 @@ import RolesPermissions from "./pages/RolesPermissions";
 // Settings Pages Import
 import HrSettings from "./pages/HrmsSettings";
 import SystemSettings from "./pages/SystemSettings"; // System-wide Settings
+import ProjectsMaster from "./pages/ProjectsMaster";
 
 function AppContent() {
   const { user, loading } = useAuth();
@@ -92,7 +93,8 @@ function AppContent() {
         return <PaymentsEnhanced />;
       case "task-management":
         return <TaskManagement />;
-
+      case "projects":
+        return <ProjectsMaster />;
       // HRMS Submenu Pages
       case "hrms-dashboard":
         return <HrmsDashboard />;
