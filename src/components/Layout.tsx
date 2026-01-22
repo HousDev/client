@@ -1,7 +1,7 @@
 import { ReactNode, useState, useMemo, useEffect, useRef } from "react";
 import { useAuth } from "../contexts/AuthContext";
 import Logo from "../assets/images/Nayash Logo.png";
-import { FaBell, FaTimes, FaSignOutAlt, FaCog } from "react-icons/fa";
+import { FaBell, FaTimes, FaSignOutAlt, FaCog, FaChevronDown, FaChevronRight } from "react-icons/fa";
 import {
   MdBusiness,
   MdDashboard,
@@ -19,7 +19,7 @@ import {
   MdSecurity,
   MdAccountCircle,
 } from "react-icons/md";
-import { Menu, ChevronRight, Clock, PackagePlus, PackageMinus, UserCheck } from "lucide-react";
+import { Menu, ChevronRight, Clock, PackagePlus, PackageMinus, UserCheck, BarChart, UserPlus, Wallet, Receipt, Ticket, FileText, Shield, Users, LayoutDashboard, Calendar } from "lucide-react";
 import NotificationsApi from "../lib/notificationApi";
 import { toast } from "sonner";
 import RequestMaterial from "./materialRequest/RequestMaterial";
@@ -42,6 +42,22 @@ interface NotificationType {
   created_at: string;
 }
 
+// HRMS submenu items
+const hrmsSubmenuItems = [
+  { id: "hrms-dashboard", label: "Dashboard", icon: LayoutDashboard },
+  { id: "employees", label: "Employees", icon: Users },
+  { id: "recruitment", label: "Recruitment", icon: UserPlus },
+  { id: "attendance", label: "Attendance", icon: Clock },
+  { id: "leaves", label: "Leaves", icon: Calendar },
+  { id: "payroll", label: "Payroll", icon: Wallet },
+  { id: "expenses", label: "Expenses", icon: Receipt },
+  { id: "tickets", label: "Tickets", icon: Ticket },
+  { id: "documents", label: "Documents", icon: FileText },
+  { id: "hr-reports", label: "HR Reports", icon: BarChart }, 
+  { id: "roles-permissions", label: "Roles & Permissions", icon: Shield },
+  { id: "hr-settings", label: "HR Settings", icon: MdSettings },
+];
+
 export default function Layout({
   children,
   activeTab,
@@ -59,8 +75,8 @@ export default function Layout({
   const [notifications, setNotifications] = useState<NotificationType[]>([]);
   const [unreadCount, setUnreadCount] = useState(0);
   const [showRequestMaterial, setShowRequestMaterial] = useState<boolean>(false);
+  const [openSubmenu, setOpenSubmenu] = useState<string | null>(null);
 
-  // Local state for forms if not provided via props
   const [localActiveFormTab, setLocalActiveFormTab] = useState<string>("");
 
   const profileRef = useRef<HTMLDivElement>(null);
@@ -72,6 +88,7 @@ export default function Layout({
       label: "Dashboard",
       icon: MdDashboard,
       value: ["view_dashboard"],
+      submenu: null,
     },
     {
       id: "vendors",
@@ -83,6 +100,7 @@ export default function Layout({
         "edit_vendors",
         "delete_vendors",
       ],
+      submenu: null,
     },
     {
       id: "purchase-orders",
@@ -95,6 +113,7 @@ export default function Layout({
         "delete_pos",
         "approve_pos",
       ],
+      submenu: null,
     },
     {
       id: "service-orders",
@@ -105,6 +124,7 @@ export default function Layout({
         "create_service_orders",
         "view_service_orders",
       ],
+      submenu: null,
     },
     {
       id: "store-management",
@@ -116,66 +136,84 @@ export default function Layout({
         "view_inventory",
         "delete_inventory",
       ],
+      submenu: null,
     },
     {
       id: "materials",
       label: "Material Tracking",
       icon: MdInventory2,
       value: ["view_materials", "receive_materials"],
+      submenu: null,
     },
     {
       id: "material-requests",
       label: "Material Requests",
       icon: MdRequestQuote,
       value: ["view_materials_requests", "update_materials_requests"],
+      submenu: null,
     },
     {
       id: "payments",
       label: "Payments",
       icon: MdPayment,
       value: ["view_payments", "make_payments", "verify_payments"],
+      submenu: null,
     },
     {
       id: "task-management",
       label: "Task Management",
       icon: MdChecklist,
       value: ["view_task", "create_task", "update_task", "delete_task"],
+      submenu: null,
     },
     {
       id: "hrms",
       label: "HRMS",
       icon: BsPerson,
       value: ["view_hrms", "create_hrms", "update_hrms", "delete_hrms"],
+      submenu: hrmsSubmenuItems,
     },
     {
       id: "notifications",
       label: "Notifications",
       icon: MdNotifications,
       value: ["view_notifications"],
+      submenu: null,
     },
     {
       id: "reports",
       label: "Reports",
       icon: MdAssessment,
       value: ["view_reports", "export_reports"],
+      submenu: null,
+    },
+    {
+      id: "system-settings",
+      label: "System Settings",
+      icon: FaCog,
+      value: ["view_system_settings", "edit_system_settings"],
+      submenu: null,
     },
     {
       id: "masters",
       label: "Masters",
       icon: MdSettings,
       value: ["manage_users", "manage_roles"],
+      submenu: null,
     },
     {
       id: "users",
       label: "Users",
       icon: MdAccountCircle,
       value: ["manage_users"],
+      submenu: null,
     },
     {
       id: "permissions",
       label: "Permissions",
       icon: MdSecurity,
       value: ["manage_permissions"],
+      submenu: null,
     },
   ];
 
@@ -185,6 +223,10 @@ export default function Layout({
 
   // Get current active menu label for header
   const activeMenuLabel = useMemo(() => {
+    // Check if activeTab is an HRMS submenu
+    const hrmsSubItem = hrmsSubmenuItems.find(item => item.id === activeTab);
+    if (hrmsSubItem) return hrmsSubItem.label;
+
     const activeItem = menuItems.find((item) => item.id === activeTab);
     return activeItem ? activeItem.label : "Dashboard";
   }, [activeTab]);
@@ -356,6 +398,25 @@ export default function Layout({
     }
   }, [activeTab, currentSetActiveFormTab]);
 
+  // Handle menu item click with submenu toggle
+  const handleMenuItemClick = (item: any) => {
+    if (item.submenu) {
+      // Toggle submenu
+      setOpenSubmenu(openSubmenu === item.id ? null : item.id);
+    } else {
+      // Regular menu item
+      onTabChange(item.id);
+      setMobileSidebarOpen(false);
+      setOpenSubmenu(null);
+    }
+  };
+
+  // Handle HRMS submenu item click
+  const handleHRMSSubmenuClick = (subItemId: string) => {
+    onTabChange(subItemId);
+    setMobileSidebarOpen(false);
+  };
+
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Mobile Sidebar Overlay */}
@@ -449,10 +510,7 @@ export default function Layout({
                 return (
                   <button
                     key={item.id}
-                    onClick={() => {
-                      onTabChange(item.id);
-                      setMobileSidebarOpen(false);
-                    }}
+                    onClick={() => handleMenuItemClick(item)}
                     className={`w-full flex items-center justify-center p-3 rounded-lg transition-all group relative
                       ${isActive
                         ? "bg-[#C62828] text-white shadow-lg"
@@ -473,7 +531,7 @@ export default function Layout({
             <div className="space-y-1">
               {menuItems.map((item) => {
                 const Icon = item.icon;
-                const isActive = activeTab === item.id;
+                const isActive = activeTab === item.id || (item.submenu && item.submenu.some(sub => sub.id === activeTab));
                 const hasPermission =
                   item.value.some((d) => userMenus.includes(d)) ||
                   userMenus.includes("full_access");
@@ -481,23 +539,54 @@ export default function Layout({
                 if (!hasPermission) return null;
 
                 return (
-                  <button
-                    key={item.id}
-                    onClick={() => {
-                      onTabChange(item.id);
-                      setMobileSidebarOpen(false);
-                    }}
-                    className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-all
-                      ${isActive
-                        ? "bg-[#C62828] text-white shadow-lg"
-                        : "text-gray-400 hover:bg-[#3D3D3D] hover:text-white"
-                      }`}
-                  >
-                    <Icon className="w-5 h-5 flex-shrink-0" />
-                    <span className="font-medium text-sm truncate">
-                      {item.label}
-                    </span>
-                  </button>
+                  <div key={item.id} className="space-y-1">
+                    <button
+                      onClick={() => handleMenuItemClick(item)}
+                      className={`w-full flex items-center justify-between px-4 py-3 rounded-lg transition-all
+                        ${isActive
+                          ? "bg-[#C62828] text-white shadow-lg"
+                          : "text-gray-400 hover:bg-[#3D3D3D] hover:text-white"
+                        }`}
+                    >
+                      <div className="flex items-center gap-3">
+                        <Icon className="w-5 h-5 flex-shrink-0" />
+                        <span className="font-medium text-sm truncate">
+                          {item.label}
+                        </span>
+                      </div>
+                      {item.submenu && (
+                        <div className="flex-shrink-0">
+                          {openSubmenu === item.id ? (
+                            <FaChevronDown className="w-4 h-4" />
+                          ) : (
+                            <FaChevronRight className="w-4 h-4" />
+                          )}
+                        </div>
+                      )}
+                    </button>
+
+                    {/* HRMS Submenu Dropdown */}
+                    {item.submenu && openSubmenu === item.id && (
+                      <div className="ml-8 pl-2 border-l border-gray-600 space-y-1">
+                        {item.submenu.map((subItem) => (
+                          <button
+                            key={subItem.id}
+                            onClick={() => handleHRMSSubmenuClick(subItem.id)}
+                            className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg transition-all
+                              ${activeTab === subItem.id
+                                ? "bg-[#C62828] text-white"
+                                : "text-gray-400 hover:bg-[#3D3D3D] hover:text-white"
+                              }`}
+                          >
+                            <subItem.icon className="w-4 h-4 flex-shrink-0" />
+                            <span className="font-medium text-xs truncate">
+                              {subItem.label}
+                            </span>
+                          </button>
+                        ))}
+                      </div>
+                    )}
+                  </div>
                 );
               })}
             </div>
@@ -569,8 +658,8 @@ export default function Layout({
                     <button
                       onClick={() => handleMaterialButtonClick("in")}
                       className={`px-4 py-2 rounded-lg font-medium transition-all flex items-center gap-2 ${currentActiveFormTab === "in"
-                          ? "bg-[#C62828] text-white shadow-sm"
-                          : "bg-white border border-gray-300 text-gray-700 hover:bg-gray-50"
+                        ? "bg-[#C62828] text-white shadow-sm"
+                        : "bg-white border border-gray-300 text-gray-700 hover:bg-gray-50"
                         }`}
                     >
                       <PackagePlus className="w-5 h-5" />
@@ -579,8 +668,8 @@ export default function Layout({
                     <button
                       onClick={() => handleMaterialButtonClick("out")}
                       className={`px-4 py-2 rounded-lg font-medium transition-all flex items-center gap-2 ${currentActiveFormTab === "out"
-                          ? "bg-[#C62828] text-white shadow-sm"
-                          : "bg-white border border-gray-300 text-gray-700 hover:bg-gray-50"
+                        ? "bg-[#C62828] text-white shadow-sm"
+                        : "bg-white border border-gray-300 text-gray-700 hover:bg-gray-50"
                         }`}
                     >
                       <PackageMinus className="w-5 h-5" />
@@ -589,8 +678,8 @@ export default function Layout({
                     <button
                       onClick={() => handleMaterialButtonClick("issue")}
                       className={`px-4 py-2 rounded-lg font-medium transition-all flex items-center gap-2 ${currentActiveFormTab === "issue"
-                          ? "bg-[#C62828] text-white shadow-sm"
-                          : "bg-white border border-gray-300 text-gray-700 hover:bg-gray-50"
+                        ? "bg-[#C62828] text-white shadow-sm"
+                        : "bg-white border border-gray-300 text-gray-700 hover:bg-gray-50"
                         }`}
                     >
                       <UserCheck className="w-5 h-5" />

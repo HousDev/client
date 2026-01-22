@@ -10,7 +10,7 @@ import ServiceOrders from "./pages/ServiceOrders";
 import MaterialsEnhanced from "./pages/MaterialsEnhanced";
 import PaymentsEnhanced from "./pages/PaymentsEnhanced";
 import Notifications from "./pages/Notifications";
-import Reports from "./pages/Reports";
+import Reports from "./pages/Reports"; // General Reports
 import Masters from "./pages/Masters";
 import Permissions from "./pages/Permissions";
 import StoreManagement from "./pages/StoreManagement";
@@ -18,8 +18,24 @@ import { Buffer } from "buffer";
 import { Toaster } from "sonner";
 import MaterialRequests from "./pages/MaterialRequests";
 import TaskManagement from "./pages/TaskManagement";
-import HRMS from "./pages/HRMS";
 import UsersManagement from "./components/users/UsersManagement";
+
+// HRMS Pages Import
+import HrmsDashboard from "./pages/HrmsDashboard";
+import Employees from "./pages/Employees";
+import Recruitment from "./pages/Recruitment";
+import Attendance from "./pages/Attendance";
+import Leaves from "./pages/Leaves";
+import Payroll from "./pages/Payroll";
+import Expenses from "./pages/Expenses";
+import Tickets from "./pages/Tickets";
+import Documents from "./pages/Documents";
+import HrReports from "./pages/HrmsReports"; // HR-specific Reports
+import RolesPermissions from "./pages/RolesPermissions";
+
+// Settings Pages Import
+import HrSettings from "./pages/HrmsSettings";
+import SystemSettings from "./pages/SystemSettings"; // System-wide Settings
 
 function AppContent() {
   const { user, loading } = useAuth();
@@ -51,13 +67,6 @@ function AppContent() {
 
   const renderContent = () => {
     switch (activeTab) {
-      case "store-management":
-        return (
-          <StoreManagement
-            activeFormTab={activeFormTab}
-            setActiveFormTab={setActiveFormTab}
-          />
-        );
       case "dashboard":
         return <Dashboard />;
       case "vendors":
@@ -68,22 +77,57 @@ function AppContent() {
         return <PurchaseOrdersPro />;
       case "service-orders":
         return <ServiceOrders />;
+      case "store-management":
+        return (
+          <StoreManagement
+            activeFormTab={activeFormTab}
+            setActiveFormTab={setActiveFormTab}
+          />
+        );
       case "materials":
         return <MaterialsEnhanced />;
       case "material-requests":
         return <MaterialRequests />;
       case "payments":
         return <PaymentsEnhanced />;
+      case "task-management":
+        return <TaskManagement />;
+
+      // HRMS Submenu Pages
+      case "hrms-dashboard":
+        return <HrmsDashboard />;
+      case "employees":
+        return <Employees />;
+      case "recruitment":
+        return <Recruitment />;
+      case "attendance":
+        return <Attendance />;
+      case "leaves":
+        return <Leaves />;
+      case "payroll":
+        return <Payroll />;
+      case "expenses":
+        return <Expenses />;
+      case "tickets":
+        return <Tickets />;
+      case "documents":
+        return <Documents />;
+      case "hr-reports":
+        return <HrReports />;
+      case "roles-permissions":
+        return <RolesPermissions />;
+      case "hr-settings":
+        return <HrSettings />;
+
+      // Main sidebar Pages
+      case "system-settings":
+        return <SystemSettings />;
       case "notifications":
         return <Notifications />;
       case "reports":
         return <Reports />;
       case "masters":
         return <Masters />;
-      case "hrms":
-        return <HRMS />;
-      case "task-management":
-        return <TaskManagement />;
       case "users":
         return <UsersManagement />;
       case "permissions":
