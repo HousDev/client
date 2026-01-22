@@ -4,7 +4,6 @@ import {
   Package,
   FileText,
   CreditCard,
-  Building2,
   FileType,
   Wrench,
   Shield,
@@ -13,7 +12,6 @@ import {
 import ItemsMaster from "./ItemsMaster";
 import TermsConditionsMaster from "./TermsConditionsMaster";
 import PaymentTermsMaster from "./PaymentTermsMaster";
-import ProjectsMaster from "./ProjectsMaster";
 import GenericMaster from "./GenericMaster";
 import DepartmentsMaster from "../components/DepartmentsMaster";
 import RolesMaster from "../components/RolesMaster";
@@ -28,13 +26,6 @@ export default function Masters() {
       icon: Package,
       description: "Materials & Services",
       component: ItemsMaster,
-    },
-    {
-      id: "projects",
-      label: "Projects",
-      icon: Building2,
-      description: "Manage projects",
-      component: ProjectsMaster,
     },
     {
       id: "po_types",
@@ -91,7 +82,7 @@ export default function Masters() {
       icon: Building,
       description: "Department management",
       component: DepartmentsMaster,
-    }
+    },
   ];
 
   const ActiveComponent = tabs.find((tab) => tab.id === activeTab)?.component;

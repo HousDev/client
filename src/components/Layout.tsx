@@ -1,9 +1,79 @@
 import { ReactNode, useState, useMemo, useEffect, useRef } from "react";
 import { useAuth } from "../contexts/AuthContext";
 import Logo from "../assets/images/Nayash Logo.png";
-import { FaBell, FaTimes, FaSignOutAlt, FaCog, FaBars, FaTruck, FaHardHat, FaBoxOpen, FaTools, FaChartLine, FaUserShield, FaDollarSign, FaClipboardList, FaConciergeBell, FaChevronDown, FaChevronRight } from "react-icons/fa";
-import { MdBusiness, MdDashboard, MdLocalShipping, MdDescription, MdConstruction, MdWarehouse, MdInventory2, MdRequestQuote, MdPayment, MdNotifications, MdChecklist, MdAssessment, MdSettings, MdSecurity, MdClose, MdAdd, MdStore, MdReceipt, MdAccountCircle } from "react-icons/md";
-import { Menu, ChevronRight, Clock, PackagePlus, PackageMinus, UserCheck, MoreVertical, Home, Building, FileText, Truck, Wrench, Package, BarChart3, Shield, Users, PackageSearch, ClipboardCheck, DollarSign, TrendingUp, Handshake, FileCheck, Calculator, Layers, LayoutDashboard, Calendar, BarChart, UserPlus, Wallet, Receipt, Ticket } from "lucide-react";
+import {
+  FaBell,
+  FaTimes,
+  FaSignOutAlt,
+  FaCog,
+  FaBars,
+  FaTruck,
+  FaHardHat,
+  FaBoxOpen,
+  FaTools,
+  FaChartLine,
+  FaUserShield,
+  FaDollarSign,
+  FaClipboardList,
+  FaConciergeBell,
+  FaChevronDown,
+  FaChevronRight,
+} from "react-icons/fa";
+import {
+  MdBusiness,
+  MdDashboard,
+  MdLocalShipping,
+  MdDescription,
+  MdConstruction,
+  MdWarehouse,
+  MdInventory2,
+  MdRequestQuote,
+  MdPayment,
+  MdNotifications,
+  MdChecklist,
+  MdAssessment,
+  MdSettings,
+  MdSecurity,
+  MdClose,
+  MdAdd,
+  MdStore,
+  MdReceipt,
+  MdAccountCircle,
+} from "react-icons/md";
+import {
+  Menu,
+  ChevronRight,
+  Clock,
+  PackagePlus,
+  PackageMinus,
+  UserCheck,
+  MoreVertical,
+  Home,
+  Building,
+  FileText,
+  Truck,
+  Wrench,
+  Package,
+  BarChart3,
+  Shield,
+  Users,
+  PackageSearch,
+  ClipboardCheck,
+  DollarSign,
+  TrendingUp,
+  Handshake,
+  FileCheck,
+  Calculator,
+  Layers,
+  LayoutDashboard,
+  Calendar,
+  BarChart,
+  UserPlus,
+  Wallet,
+  Receipt,
+  Ticket,
+  Building2,
+} from "lucide-react";
 import NotificationsApi from "../lib/notificationApi";
 import { toast } from "sonner";
 import RequestMaterial from "./materialRequest/RequestMaterial";
@@ -47,7 +117,7 @@ export default function Layout({
   activeTab,
   onTabChange,
   activeFormTab = "",
-  setActiveFormTab = () => { },
+  setActiveFormTab = () => {},
 }: LayoutProps) {
   const { profile, user, signOut, loading: authLoading } = useAuth();
   const [sidebarOpen, setSidebarOpen] = useState(true);
@@ -58,8 +128,10 @@ export default function Layout({
   const [userMenus, setUserMenus] = useState<string[]>([]);
   const [notifications, setNotifications] = useState<NotificationType[]>([]);
   const [unreadCount, setUnreadCount] = useState(0);
-  const [showRequestMaterial, setShowRequestMaterial] = useState<boolean>(false);
-  const [showMaterialActionsMenu, setShowMaterialActionsMenu] = useState<boolean>(false);
+  const [showRequestMaterial, setShowRequestMaterial] =
+    useState<boolean>(false);
+  const [showMaterialActionsMenu, setShowMaterialActionsMenu] =
+    useState<boolean>(false);
 
   // Local state for forms if not provided via props
   const [openSubmenu, setOpenSubmenu] = useState<string | null>(null);
@@ -84,7 +156,12 @@ export default function Layout({
       label: "Vendors",
       icon: Handshake,
       headerIcon: Handshake,
-      value: ["view_vendors", "create_vendors", "edit_vendors", "delete_vendors"],
+      value: [
+        "view_vendors",
+        "create_vendors",
+        "edit_vendors",
+        "delete_vendors",
+      ],
       submenu: null,
     },
     {
@@ -92,7 +169,13 @@ export default function Layout({
       label: "Purchase Orders",
       icon: FileText,
       headerIcon: FileCheck,
-      value: ["view_pos", "create_pos", "edit_pos", "delete_pos", "approve_pos"],
+      value: [
+        "view_pos",
+        "create_pos",
+        "edit_pos",
+        "delete_pos",
+        "approve_pos",
+      ],
       submenu: null,
     },
     {
@@ -100,7 +183,11 @@ export default function Layout({
       label: "Service Orders",
       icon: Layers,
       headerIcon: Layers,
-      value: ["edit_service_orders", "create_service_orders", "view_service_orders"],
+      value: [
+        "edit_service_orders",
+        "create_service_orders",
+        "view_service_orders",
+      ],
       submenu: null,
     },
     {
@@ -108,7 +195,12 @@ export default function Layout({
       label: "Store Management",
       icon: Package,
       headerIcon: Package,
-      value: ["edit_inventory", "create_inventory", "view_inventory", "delete_inventory"],
+      value: [
+        "edit_inventory",
+        "create_inventory",
+        "view_inventory",
+        "delete_inventory",
+      ],
       submenu: null,
     },
     {
@@ -140,6 +232,18 @@ export default function Layout({
       label: "Task Management",
       icon: MdChecklist,
       value: ["view_task", "create_task", "update_task", "delete_task"],
+      submenu: null,
+    },
+    {
+      id: "projects",
+      label: "Projects",
+      icon: Building2,
+      value: [
+        "view_project",
+        "create_project",
+        "update_project",
+        "delete_project",
+      ],
       submenu: null,
     },
     {
@@ -198,13 +302,14 @@ export default function Layout({
   ];
 
   // Determine which activeFormTab to use
-  const currentActiveFormTab = activeFormTab !== undefined ? activeFormTab : localActiveFormTab;
+  const currentActiveFormTab =
+    activeFormTab !== undefined ? activeFormTab : localActiveFormTab;
   const currentSetActiveFormTab = setActiveFormTab || setLocalActiveFormTab;
 
   // Get current active menu label for header
   const activeMenuLabel = useMemo(() => {
     // Check if activeTab is an HRMS submenu
-    const hrmsSubItem = hrmsSubmenuItems.find(item => item.id === activeTab);
+    const hrmsSubItem = hrmsSubmenuItems.find((item) => item.id === activeTab);
     if (hrmsSubItem) return hrmsSubItem.label;
 
     const activeItem = menuItems.find((item) => item.id === activeTab);
@@ -319,7 +424,8 @@ export default function Layout({
 
     if (diffMins < 1) return "Just now";
     if (diffMins < 60) return `${diffMins} min ago`;
-    if (diffHours < 24) return `${diffHours} hour${diffHours > 1 ? "s" : ""} ago`;
+    if (diffHours < 24)
+      return `${diffHours} hour${diffHours > 1 ? "s" : ""} ago`;
     if (diffDays < 7) return `${diffDays} day${diffDays > 1 ? "s" : ""} ago`;
 
     return date.toLocaleDateString("en-US", {
@@ -344,7 +450,10 @@ export default function Layout({
       ) {
         setNotifOpen(false);
       }
-      if (materialActionsRef.current && !materialActionsRef.current.contains(event.target as Node)) {
+      if (
+        materialActionsRef.current &&
+        !materialActionsRef.current.contains(event.target as Node)
+      ) {
         setShowMaterialActionsMenu(false);
       }
     };
@@ -446,10 +555,16 @@ export default function Layout({
             <div className="flex items-center justify-between gap-3 px-3 py-2 bg-[#3D3D3D] rounded-lg">
               <div className="flex items-center gap-3">
                 {avatarUrl ? (
-                  <img src={avatarUrl} alt="avatar" className="w-10 h-10 rounded-full object-cover border-2 border-[#C62828]" />
+                  <img
+                    src={avatarUrl}
+                    alt="avatar"
+                    className="w-10 h-10 rounded-full object-cover border-2 border-[#C62828]"
+                  />
                 ) : (
                   <div className="w-10 h-10 bg-[#C62828] rounded-full flex items-center justify-center shadow-sm">
-                    <span className="text-white font-semibold text-sm">{initials}</span>
+                    <span className="text-white font-semibold text-sm">
+                      {initials}
+                    </span>
                   </div>
                 )}
                 <div className="flex-1 min-w-0">
@@ -460,8 +575,12 @@ export default function Layout({
                     </div>
                   ) : (
                     <>
-                      <p className="text-sm font-semibold text-white truncate">{displayName}</p>
-                      <p className="text-xs text-gray-400 capitalize truncate">{displayRole}</p>
+                      <p className="text-sm font-semibold text-white truncate">
+                        {displayName}
+                      </p>
+                      <p className="text-xs text-gray-400 capitalize truncate">
+                        {displayRole}
+                      </p>
                     </>
                   )}
                 </div>
@@ -495,9 +614,10 @@ export default function Layout({
                     key={item.id}
                     onClick={() => handleMenuItemClick(item)}
                     className={`w-full flex items-center justify-center p-3 rounded-lg transition-all group relative
-                      ${isActive
-                        ? "bg-[#C62828] text-white shadow-lg"
-                        : "text-gray-400 hover:bg-[#3D3D3D] hover:text-white"
+                      ${
+                        isActive
+                          ? "bg-[#C62828] text-white shadow-lg"
+                          : "text-gray-400 hover:bg-[#3D3D3D] hover:text-white"
                       }`}
                     title={item.label}
                   >
@@ -514,7 +634,10 @@ export default function Layout({
             <div className="space-y-1">
               {menuItems.map((item) => {
                 const Icon = item.icon;
-                const isActive = activeTab === item.id || (item.submenu && item.submenu.some(sub => sub.id === activeTab));
+                const isActive =
+                  activeTab === item.id ||
+                  (item.submenu &&
+                    item.submenu.some((sub) => sub.id === activeTab));
                 const hasPermission =
                   item.value.some((d) => userMenus.includes(d)) ||
                   userMenus.includes("full_access");
@@ -526,9 +649,10 @@ export default function Layout({
                     <button
                       onClick={() => handleMenuItemClick(item)}
                       className={`w-full flex items-center justify-between px-4 py-3 rounded-lg transition-all
-                        ${isActive
-                          ? "bg-[#C62828] text-white shadow-lg"
-                          : "text-gray-400 hover:bg-[#3D3D3D] hover:text-white"
+                        ${
+                          isActive
+                            ? "bg-[#C62828] text-white shadow-lg"
+                            : "text-gray-400 hover:bg-[#3D3D3D] hover:text-white"
                         }`}
                     >
                       <div className="flex items-center gap-3">
@@ -556,9 +680,10 @@ export default function Layout({
                             key={subItem.id}
                             onClick={() => handleHRMSSubmenuClick(subItem.id)}
                             className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg transition-all
-                              ${activeTab === subItem.id
-                                ? "bg-[#C62828] text-white"
-                                : "text-gray-400 hover:bg-[#3D3D3D] hover:text-white"
+                              ${
+                                activeTab === subItem.id
+                                  ? "bg-[#C62828] text-white"
+                                  : "text-gray-400 hover:bg-[#3D3D3D] hover:text-white"
                               }`}
                           >
                             <subItem.icon className="w-4 h-4 flex-shrink-0" />
@@ -656,40 +781,44 @@ export default function Layout({
                 )}
 
                 {/* Store Management Actions Menu - Desktop (3 buttons on left side) */}
-                {activeTab === "store-management" && can("create_inventory") && (
-                  <div className="hidden lg:flex items-center gap-2 ml-4 border-l border-gray-300 pl-4">
-                    <button
-                      onClick={() => handleMaterialButtonClick("in")}
-                      className={`px-4 py-2 rounded-lg font-medium transition-all flex items-center gap-2 ${currentActiveFormTab === "in"
-                        ? "bg-[#C62828] text-white shadow-sm"
-                        : "bg-white border border-gray-300 text-gray-700 hover:bg-gray-50"
+                {activeTab === "store-management" &&
+                  can("create_inventory") && (
+                    <div className="hidden lg:flex items-center gap-2 ml-4 border-l border-gray-300 pl-4">
+                      <button
+                        onClick={() => handleMaterialButtonClick("in")}
+                        className={`px-4 py-2 rounded-lg font-medium transition-all flex items-center gap-2 ${
+                          currentActiveFormTab === "in"
+                            ? "bg-[#C62828] text-white shadow-sm"
+                            : "bg-white border border-gray-300 text-gray-700 hover:bg-gray-50"
                         }`}
-                    >
-                      <PackagePlus className="w-5 h-5" />
-                      Material In
-                    </button>
-                    <button
-                      onClick={() => handleMaterialButtonClick("out")}
-                      className={`px-4 py-2 rounded-lg font-medium transition-all flex items-center gap-2 ${currentActiveFormTab === "out"
-                        ? "bg-[#C62828] text-white shadow-sm"
-                        : "bg-white border border-gray-300 text-gray-700 hover:bg-gray-50"
+                      >
+                        <PackagePlus className="w-5 h-5" />
+                        Material In
+                      </button>
+                      <button
+                        onClick={() => handleMaterialButtonClick("out")}
+                        className={`px-4 py-2 rounded-lg font-medium transition-all flex items-center gap-2 ${
+                          currentActiveFormTab === "out"
+                            ? "bg-[#C62828] text-white shadow-sm"
+                            : "bg-white border border-gray-300 text-gray-700 hover:bg-gray-50"
                         }`}
-                    >
-                      <PackageMinus className="w-5 h-5" />
-                      Material Out
-                    </button>
-                    <button
-                      onClick={() => handleMaterialButtonClick("issue")}
-                      className={`px-4 py-2 rounded-lg font-medium transition-all flex items-center gap-2 ${currentActiveFormTab === "issue"
-                        ? "bg-[#C62828] text-white shadow-sm"
-                        : "bg-white border border-gray-300 text-gray-700 hover:bg-gray-50"
+                      >
+                        <PackageMinus className="w-5 h-5" />
+                        Material Out
+                      </button>
+                      <button
+                        onClick={() => handleMaterialButtonClick("issue")}
+                        className={`px-4 py-2 rounded-lg font-medium transition-all flex items-center gap-2 ${
+                          currentActiveFormTab === "issue"
+                            ? "bg-[#C62828] text-white shadow-sm"
+                            : "bg-white border border-gray-300 text-gray-700 hover:bg-gray-50"
                         }`}
-                    >
-                      <UserCheck className="w-5 h-5" />
-                      Issue Material
-                    </button>
-                  </div>
-                )}
+                      >
+                        <UserCheck className="w-5 h-5" />
+                        Issue Material
+                      </button>
+                    </div>
+                  )}
 
                 {/* Request Material Button - Mobile (Hidden only on Store Management) */}
                 {activeTab !== "store-management" && (
@@ -726,7 +855,7 @@ export default function Layout({
                     <FaBell className="w-5 h-5 text-[#2D2D2D]" />
                     {unreadCount > 0 && (
                       <span className="absolute -top-1 -right-1 w-5 h-5 bg-[#C62828] text-white text-xs rounded-full flex items-center justify-center font-semibold border border-white">
-                        {unreadCount > 9 ? '9+' : unreadCount}
+                        {unreadCount > 9 ? "9+" : unreadCount}
                       </span>
                     )}
                   </button>
@@ -765,8 +894,9 @@ export default function Layout({
                             notifications.map((n) => (
                               <div
                                 key={n.id}
-                                className={`p-4 border-b border-gray-100 hover:bg-gray-50 transition cursor-pointer ${!n.seen ? "bg-red-50/40" : ""
-                                  }`}
+                                className={`p-4 border-b border-gray-100 hover:bg-gray-50 transition cursor-pointer ${
+                                  !n.seen ? "bg-red-50/40" : ""
+                                }`}
                               >
                                 <div className="flex items-start gap-3">
                                   <div className="w-10 h-10 rounded-full bg-[#C62828] flex items-center justify-center text-white font-semibold shadow-sm flex-shrink-0">
@@ -829,14 +959,18 @@ export default function Layout({
                           border border-gray-200
                           z-50
                           transform transition-all duration-300 ease-out
-                          ${notifOpen
-                            ? "translate-x-0 opacity-100"
-                            : "translate-x-6 opacity-0 pointer-events-none"}
+                          ${
+                            notifOpen
+                              ? "translate-x-0 opacity-100"
+                              : "translate-x-6 opacity-0 pointer-events-none"
+                          }
                         `}
                       >
                         {/* Header */}
                         <div className="flex items-center justify-between px-4 py-3 bg-[#2D2D2D] rounded-t-xl">
-                          <h4 className="text-sm font-semibold text-white">Notifications</h4>
+                          <h4 className="text-sm font-semibold text-white">
+                            Notifications
+                          </h4>
                           <button
                             onClick={() => setNotifOpen(false)}
                             className="p-1 rounded hover:bg-[#3D3D3D]"
@@ -850,14 +984,17 @@ export default function Layout({
                           {notifications.length === 0 ? (
                             <div className="p-6 text-center">
                               <FaBell className="w-10 h-10 text-gray-300 mx-auto mb-2" />
-                              <p className="text-gray-500 text-sm">No notifications</p>
+                              <p className="text-gray-500 text-sm">
+                                No notifications
+                              </p>
                             </div>
                           ) : (
                             notifications.map((n) => (
                               <div
                                 key={n.id}
-                                className={`px-3 py-3 hover:bg-gray-50 ${!n.seen ? "bg-red-50/40" : ""
-                                  }`}
+                                className={`px-3 py-3 hover:bg-gray-50 ${
+                                  !n.seen ? "bg-red-50/40" : ""
+                                }`}
                               >
                                 <div className="flex gap-2">
                                   <div className="w-9 h-9 rounded-full bg-[#C62828] flex items-center justify-center text-white text-sm font-semibold">
@@ -949,9 +1086,11 @@ export default function Layout({
                           shadow-2xl border border-gray-200
                           overflow-hidden z-50
                           transform transition-all duration-300 ease-out
-                          ${profileOpen
-                            ? "translate-x-0 opacity-100"
-                            : "translate-x-4 opacity-0 pointer-events-none"}
+                          ${
+                            profileOpen
+                              ? "translate-x-0 opacity-100"
+                              : "translate-x-4 opacity-0 pointer-events-none"
+                          }
                         `}
                       >
                         {/* Header */}
@@ -1021,34 +1160,39 @@ export default function Layout({
           {activeTab === "store-management" && can("create_inventory") && (
             <div className="lg:hidden bg-gray-50 border-t border-gray-200 px-4 py-2">
               <div className="flex items-center justify-between gap-2">
-                <span className="text-sm font-medium text-gray-700">Quick Actions:</span>
+                <span className="text-sm font-medium text-gray-700">
+                  Quick Actions:
+                </span>
                 <div className="flex items-center gap-1">
                   <button
                     onClick={() => handleMaterialButtonClick("in")}
-                    className={`px-3 py-1.5 rounded-lg text-xs font-medium flex items-center gap-1 transition ${currentActiveFormTab === "in"
+                    className={`px-3 py-1.5 rounded-lg text-xs font-medium flex items-center gap-1 transition ${
+                      currentActiveFormTab === "in"
                         ? "bg-[#C62828] text-white shadow-sm"
                         : "bg-white border border-gray-300 text-gray-700 hover:bg-gray-50"
-                      }`}
+                    }`}
                   >
                     <PackagePlus className="w-3.5 h-3.5" />
                     <span>In</span>
                   </button>
                   <button
                     onClick={() => handleMaterialButtonClick("out")}
-                    className={`px-3 py-1.5 rounded-lg text-xs font-medium flex items-center gap-1 transition ${currentActiveFormTab === "out"
+                    className={`px-3 py-1.5 rounded-lg text-xs font-medium flex items-center gap-1 transition ${
+                      currentActiveFormTab === "out"
                         ? "bg-[#C62828] text-white shadow-sm"
                         : "bg-white border border-gray-300 text-gray-700 hover:bg-gray-50"
-                      }`}
+                    }`}
                   >
                     <PackageMinus className="w-3.5 h-3.5" />
                     <span>Out</span>
                   </button>
                   <button
                     onClick={() => handleMaterialButtonClick("issue")}
-                    className={`px-3 py-1.5 rounded-lg text-xs font-medium flex items-center gap-1 transition ${currentActiveFormTab === "issue"
+                    className={`px-3 py-1.5 rounded-lg text-xs font-medium flex items-center gap-1 transition ${
+                      currentActiveFormTab === "issue"
                         ? "bg-[#C62828] text-white shadow-sm"
                         : "bg-white border border-gray-300 text-gray-700 hover:bg-gray-50"
-                      }`}
+                    }`}
                   >
                     <UserCheck className="w-3.5 h-3.5" />
                     <span>Issue</span>
@@ -1060,9 +1204,7 @@ export default function Layout({
         </header>
 
         {/* Main Content Area */}
-        <main className="p-6">
-          {children}
-        </main>
+        <main className="p-6">{children}</main>
       </div>
 
       {/* Request Material Modal - Always available */}
