@@ -72,7 +72,7 @@ api.interceptors.request.use(
     }
     return config;
   },
-  (err) => Promise.reject(err)
+  (err) => Promise.reject(err),
 );
 
 // handle 401
@@ -86,7 +86,7 @@ api.interceptors.response.use(
       }
     }
     return Promise.reject(error);
-  }
+  },
 );
 
 /* ---------------- unwrap helper ---------------- */
@@ -117,20 +117,24 @@ export const UsersApi = {
   get: async (id: string): Promise<UserProfile> =>
     unwrap(api.get(`/users/${id}`)),
 
+  getByRole: async (role: string): Promise<UserProfile> =>
+    unwrap(api.get(`/users/role/${role}`)),
+
   create: async (payload: any): Promise<UserProfile> =>
     unwrap(api.post("/users", payload)),
 
   update: async (id: string, payload: any): Promise<UserProfile> =>
     unwrap(api.put(`/users/${id}`, payload)),
 
-  remove: async (id: string): Promise<void> => unwrap(api.delete(`/users/${id}`)),
+  remove: async (id: string): Promise<void> =>
+    unwrap(api.delete(`/users/${id}`)),
 
   toggleActive: async (id: string): Promise<UserProfile> =>
     unwrap(api.put(`/users/${id}/toggle-active`)),
 
   login: async (
     email: string,
-    password: string
+    password: string,
   ): Promise<{ token: string; user: UserProfile }> =>
     unwrap(api.post("/auth/login", { email, password })),
 

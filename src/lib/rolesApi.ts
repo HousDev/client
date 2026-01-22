@@ -14,10 +14,10 @@ export interface Role {
 // Get all roles
 export const getAllRoles = async (): Promise<Role[]> => {
   try {
-    const response = await api.get('/roles');
+    const response: any = await api.get("/roles");
     return unwrap(response);
   } catch (error) {
-    console.error('Error fetching roles:', error);
+    console.error("Error fetching roles:", error);
     throw error;
   }
 };
@@ -25,7 +25,7 @@ export const getAllRoles = async (): Promise<Role[]> => {
 // Get single role by ID
 export const getRoleById = async (id: string): Promise<Role> => {
   try {
-    const response = await api.get(`/roles/${id}`);
+    const response: any = await api.get(`/roles/${id}`);
     return unwrap(response);
   } catch (error) {
     console.error(`Error fetching role ${id}:`, error);
@@ -41,23 +41,26 @@ export const createRole = async (roleData: {
   is_active?: boolean;
 }): Promise<Role> => {
   try {
-    const response = await api.post('/roles', roleData);
+    const response: any = await api.post("/roles", roleData);
     return unwrap(response);
   } catch (error) {
-    console.error('Error creating role:', error);
+    console.error("Error creating role:", error);
     throw error;
   }
 };
 
 // Update role
-export const updateRole = async (id: string, roleData: {
-  name?: string;
-  description?: string;
-  permissions?: Record<string, boolean>;
-  is_active?: boolean;
-}): Promise<Role> => {
+export const updateRole = async (
+  id: string,
+  roleData: {
+    name?: string;
+    description?: string;
+    permissions?: Record<string, boolean>;
+    is_active?: boolean;
+  },
+): Promise<Role> => {
   try {
-    const response = await api.put(`/roles/${id}`, roleData);
+    const response: any = await api.put(`/roles/${id}`, roleData);
     return unwrap(response);
   } catch (error) {
     console.error(`Error updating role ${id}:`, error);
@@ -76,9 +79,11 @@ export const deleteRole = async (id: string): Promise<void> => {
 };
 
 // Get role permissions
-export const getRolePermissions = async (roleId: string): Promise<Record<string, boolean>> => {
+export const getRolePermissions = async (
+  roleId: string,
+): Promise<Record<string, boolean>> => {
   try {
-    const response = await api.get(`/roles/${roleId}/permissions`);
+    const response: any = await api.get(`/roles/${roleId}/permissions`);
     return unwrap(response);
   } catch (error) {
     console.error(`Error fetching permissions for role ${roleId}:`, error);
@@ -89,10 +94,12 @@ export const getRolePermissions = async (roleId: string): Promise<Record<string,
 // Update role permissions
 export const updateRolePermissions = async (
   roleId: string,
-  permissions: Record<string, boolean>
+  permissions: Record<string, boolean>,
 ): Promise<Record<string, boolean>> => {
   try {
-    const response = await api.put(`/roles/${roleId}/permissions`, { permissions });
+    const response: any = await api.put(`/roles/${roleId}/permissions`, {
+      permissions,
+    });
     return unwrap(response);
   } catch (error) {
     console.error(`Error updating permissions for role ${roleId}:`, error);
@@ -103,10 +110,10 @@ export const updateRolePermissions = async (
 // Get all permissions list
 export const getAllPermissions = async (): Promise<string[]> => {
   try {
-    const response = await api.get('/permissions');
+    const response: any = await api.get("/permissions");
     return unwrap(response);
   } catch (error) {
-    console.error('Error fetching permissions list:', error);
+    console.error("Error fetching permissions list:", error);
     throw error;
   }
 };
@@ -115,9 +122,11 @@ export const getAllPermissions = async (): Promise<string[]> => {
 export const roleExists = async (roleName: string): Promise<boolean> => {
   try {
     const roles = await getAllRoles();
-    return roles.some(role => role.name.toLowerCase() === roleName.toLowerCase());
+    return roles.some(
+      (role) => role.name.toLowerCase() === roleName.toLowerCase(),
+    );
   } catch (error) {
-    console.error('Error checking role existence:', error);
+    console.error("Error checking role existence:", error);
     throw error;
   }
 };
@@ -126,8 +135,8 @@ export const roleExists = async (roleName: string): Promise<boolean> => {
 export const toggleRoleActive = async (id: string): Promise<Role> => {
   try {
     const role = await getRoleById(id);
-    const response = await api.put(`/roles/${id}`, {
-      is_active: !role.is_active
+    const response: any = await api.put(`/roles/${id}`, {
+      is_active: !role.is_active,
     });
     return unwrap(response);
   } catch (error) {
@@ -139,12 +148,15 @@ export const toggleRoleActive = async (id: string): Promise<Role> => {
 // Get roles by status
 export const getRolesByStatus = async (isActive: boolean): Promise<Role[]> => {
   try {
-    const response = await api.get('/roles', {
-      params: { is_active: isActive }
+    const response: any = await api.get("/roles", {
+      params: { is_active: isActive },
     });
     return unwrap(response);
   } catch (error) {
-    console.error(`Error fetching ${isActive ? 'active' : 'inactive'} roles:`, error);
+    console.error(
+      `Error fetching ${isActive ? "active" : "inactive"} roles:`,
+      error,
+    );
     throw error;
   }
 };
@@ -153,7 +165,7 @@ export const getRolesByStatus = async (isActive: boolean): Promise<Role[]> => {
 export const getRolesPaginated = async (
   page: number = 1,
   limit: number = 10,
-  filters?: any
+  filters?: any,
 ): Promise<{
   data: Role[];
   total: number;
@@ -165,25 +177,28 @@ export const getRolesPaginated = async (
     const params = {
       page,
       limit,
-      ...filters
+      ...filters,
     };
-    const response = await api.get('/roles/paginated', { params });
+    const response: any = await api.get("/roles/paginated", { params });
     return unwrap(response);
   } catch (error) {
-    console.error('Error fetching paginated roles:', error);
+    console.error("Error fetching paginated roles:", error);
     throw error;
   }
 };
 
 // Duplicate role
-export const duplicateRole = async (id: string, newName: string): Promise<Role> => {
+export const duplicateRole = async (
+  id: string,
+  newName: string,
+): Promise<Role> => {
   try {
     const role = await getRoleById(id);
     const roleData = {
       name: newName,
-      description: role.description ? `${role.description} (Copy)` : 'Copy',
+      description: role.description ? `${role.description} (Copy)` : "Copy",
       permissions: { ...role.permissions },
-      is_active: role.is_active
+      is_active: role.is_active,
     };
     return await createRole(roleData);
   } catch (error) {
@@ -195,8 +210,8 @@ export const duplicateRole = async (id: string, newName: string): Promise<Role> 
 // Search roles
 export const searchRoles = async (query: string): Promise<Role[]> => {
   try {
-    const response = await api.get('/roles/search', {
-      params: { q: query }
+    const response: any = await api.get("/roles/search", {
+      params: { q: query },
     });
     return unwrap(response);
   } catch (error) {
@@ -212,10 +227,10 @@ export const getRoleStats = async (): Promise<{
   inactive: number;
 }> => {
   try {
-    const response = await api.get('/roles/stats');
+    const response: any = await api.get("/roles/stats");
     return unwrap(response);
   } catch (error) {
-    console.error('Error fetching role statistics:', error);
+    console.error("Error fetching role statistics:", error);
     throw error;
   }
 };

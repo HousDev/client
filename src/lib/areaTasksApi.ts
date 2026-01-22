@@ -32,6 +32,10 @@ export const AreaTasksApi = {
     return unwrap(api.get(url));
   },
 
+  getAreaTasksByProjectId: async (project_id: number): Promise<AreaTask[]> => {
+    return unwrap(api.get(`/area-tasks/projectTasks/${project_id}`));
+  },
+
   getAreaTask: async (id: string | number): Promise<AreaTask> =>
     unwrap(api.get(`/area-tasks/${id}`)),
 
