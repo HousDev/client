@@ -404,11 +404,8 @@
 //   );
 // }
 
-
-
-
 import { useState, useEffect } from 'react';
-import { Plus, Edit2, Trash2, CreditCard, X, Search, CheckSquare, Square, Loader2 } from 'lucide-react';
+import { Plus, Edit2, Trash2, CreditCard, X, Search, CheckSquare, Square, Loader2, XCircle } from 'lucide-react';
 import { toast } from 'sonner';
 
 interface PaymentTermFormData {
@@ -432,6 +429,9 @@ export default function PaymentTermsMaster() {
   const [searchName, setSearchName] = useState('');
   const [searchDays, setSearchDays] = useState('');
   const [searchDescription, setSearchDescription] = useState('');
+  const [searchAdvance, setSearchAdvance] = useState('');
+const [searchStatus, setSearchStatus] = useState('');
+
   
   // Bulk selection
   const [selectedTerms, setSelectedTerms] = useState<Set<string>>(new Set());
@@ -670,18 +670,26 @@ export default function PaymentTermsMaster() {
     setSelectAll(!selectAll);
   };
 
-  const filteredTerms = paymentTerms.filter((term) => {
-    const matchesName = !searchName || 
-      (term.name || '').toLowerCase().includes(searchName.toLowerCase());
-    
-    const matchesDays = !searchDays || 
-      String(term.days || '').includes(searchDays);
-    
-    const matchesDescription = !searchDescription || 
-      (term.description || '').toLowerCase().includes(searchDescription.toLowerCase());
-    
-    return matchesName && matchesDays && matchesDescription;
-  });
+ const filteredTerms = paymentTerms.filter((term) => {
+  const matchesName = !searchName || 
+    (term.name || '').toLowerCase().includes(searchName.toLowerCase());
+  
+  const matchesDays = !searchDays || 
+    String(term.days || '').includes(searchDays);
+  
+  const matchesDescription = !searchDescription || 
+    (term.description || '').toLowerCase().includes(searchDescription.toLowerCase());
+  
+  // NEW: Advance % search
+  const matchesAdvance = !searchAdvance || 
+    String(term.advance_percentage || '').includes(searchAdvance);
+  
+  // NEW: Status search
+  const matchesStatus = !searchStatus || 
+    (term.is_active ? "active" : "inactive").includes(searchStatus.toLowerCase());
+  
+  return matchesName && matchesDays && matchesDescription && matchesAdvance && matchesStatus;
+});
 
   if (loading) {
     return (
@@ -695,140 +703,223 @@ export default function PaymentTermsMaster() {
   }
 
   return (
-    <div className="p-6 bg-gray-50 min-h-screen">
-      {/* Header with Bulk Actions */}
-      <div className="mb-6">
-        <div className="bg-gradient-to-r from-[#40423f] via-[#4a4c49] to-[#5a5d5a] rounded-xl shadow-md p-5">
-          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-            <div className="flex items-center gap-3">
-              <div className="p-2 bg-white/20 rounded-xl backdrop-blur-sm">
-                <CreditCard className="w-6 h-6 text-white" />
-              </div>
-              <div>
-                <h1 className="text-2xl font-bold text-white">Payment Terms Master</h1>
-                <p className="text-sm text-white/90 font-medium mt-0.5">
-                  Manage payment terms and conditions
+    <div className="px-0 bg-gray-50 min-h-screen">
+      {/* Header with Bulk Actions and Add Button in one line */}
+      <div className="mt-0 mb-0 px-2 py-1 md:p-4 flex flex-col md:flex-row md:items-center justify-between gap-1 md:gap-3">
+        <div></div>
+        
+        <div className="flex items-center gap-1 md:gap-2 flex-nowrap md:flex-wrap w-full md:w-auto">
+          {/* Bulk Actions */}
+          {selectedTerms.size > 0 && (
+            <div className="
+              flex items-center gap-0.5
+              bg-gradient-to-r from-red-50 to-rose-50
+              border border-red-200
+              rounded-md
+              shadow-sm
+              px-1.5 py-0.5
+              md:px-2 md:py-2
+              whitespace-nowrap px-0
+            ">
+              {/* Selected Count */}
+              <div className="flex items-center gap-0.5">
+                <div className="bg-red-100 p-0.5 rounded">
+                  <Trash2 className="w-2.5 h-2.5 md:w-3.5 md:h-3.5 text-red-600" />
+                </div>
+                <p className="font-medium text-[9px] md:text-xs text-gray-800">
+                  {selectedTerms.size} selected
                 </p>
               </div>
+
+              {/* Actions */}
+              <div className="flex items-center gap-0.5">
+                <button
+                  onClick={() => handleBulkToggleActive(true)}
+                  disabled={submitting}
+                  className="bg-green-600 text-white px-1.5 py-0.5 rounded text-[9px] md:text-xs disabled:opacity-50"
+                >
+                  Activate
+                </button>
+                <button
+                  onClick={() => handleBulkToggleActive(false)}
+                  disabled={submitting}
+                  className="bg-yellow-600 text-white px-1.5 py-0.5 rounded text-[9px] md:text-xs disabled:opacity-50"
+                >
+                  Deactivate
+                </button>
+                <button
+                  onClick={handleBulkDelete}
+                  disabled={submitting}
+                  className="bg-red-600 text-white px-1.5 py-0.5 rounded text-[9px] md:text-xs disabled:opacity-50"
+                >
+                  {submitting ? (
+                    <Loader2 className="w-2.5 h-2.5 animate-spin" />
+                  ) : (
+                    "Delete"
+                  )}
+                </button>
+              </div>
             </div>
-            <div className="flex flex-wrap items-center gap-2">
-              {selectedTerms.size > 0 && (
-                <div className="flex items-center gap-3 bg-white/10 p-2 rounded-xl">
-                  <button
-                    onClick={() => handleBulkToggleActive(true)}
-                    disabled={submitting}
-                    className="flex items-center gap-2 bg-gradient-to-r from-green-600 to-emerald-600 text-white px-3 py-1.5 rounded-xl hover:from-green-700 hover:to-emerald-700 transition-all duration-200 text-xs font-medium shadow-md hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
-                  >
-                    Activate ({selectedTerms.size})
-                  </button>
-                  <button
-                    onClick={() => handleBulkToggleActive(false)}
-                    disabled={submitting}
-                    className="flex items-center gap-2 bg-gradient-to-r from-yellow-600 to-amber-600 text-white px-3 py-1.5 rounded-xl hover:from-yellow-700 hover:to-amber-700 transition-all duration-200 text-xs font-medium shadow-md hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
-                  >
-                    Deactivate ({selectedTerms.size})
-                  </button>
-                  <button
-                    onClick={handleBulkDelete}
-                    disabled={submitting}
-                    className="flex items-center gap-2 bg-gradient-to-r from-red-600 to-rose-600 text-white px-3 py-1.5 rounded-xl hover:from-red-700 hover:to-rose-700 transition-all duration-200 text-xs font-medium shadow-md hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
-                  >
-                    {submitting ? (
-                      <Loader2 className="w-3 h-3 animate-spin" />
-                    ) : (
-                      <Trash2 className="w-3 h-3" />
-                    )}
-                    Delete ({selectedTerms.size})
-                  </button>
-                  <div className="text-xs text-white font-medium px-2 py-1 bg-white/20 rounded-lg">
-                    {selectedTerms.size} selected
-                  </div>
-                </div>
-              )}
-              <button
-                onClick={() => {
-                  resetForm();
-                  setShowModal(true);
-                }}
-                className="bg-gradient-to-r from-[#C62828] to-red-600 text-white px-6 py-3 rounded-xl hover:from-red-600 hover:to-red-700 transition-all duration-200 flex items-center gap-2 font-medium shadow-lg hover:shadow-xl"
-              >
-                <Plus className="w-5 h-5" />
-                Add Payment Terms
-              </button>
-            </div>
-          </div>
+          )}
+
+          {/* Divider (desktop only) */}
+          <div className="hidden md:block h-6 border-l border-gray-300 mx-1"></div>
+
+          {/* Add Payment Terms Button */}
+          <button
+            onClick={() => {
+              resetForm();
+              setShowModal(true);
+            }}
+            className="
+              flex items-center gap-1
+              bg-gradient-to-r from-[#C62828] to-red-600
+              text-white
+              px-2.5 py-1
+              md:px-4 md:py-2
+              rounded-lg
+              text-[10px] md:text-sm
+              font-medium
+              shadow-sm
+              whitespace-nowrap
+              ml-auto md:ml-0
+            "
+          >
+            <Plus className="w-3 h-3 md:w-4 md:h-4" />
+            Add Payment Terms 
+          </button>
         </div>
       </div>
 
-      {/* Table with Search and Checkboxes */}
-      <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+      {/* Main Table with Search Bars below header */}
+      <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden mx-0 md:mx-0">
         <div className="overflow-x-auto">
-          <table className="w-full">
+          <table className="w-full min-w-[900px]">
             <thead className="bg-gray-200 border-b border-gray-200">
+              {/* Header Row */}
               <tr>
-                <th className="px-6 py-3 text-left w-12">
-                  <button
-                    onClick={handleSelectAll}
-                    className="p-1 hover:bg-gray-300 rounded transition-colors"
-                  >
-                    {selectAll ? (
-                      <CheckSquare className="w-5 h-5 text-blue-600" />
-                    ) : (
-                      <Square className="w-5 h-5 text-gray-500" />
-                    )}
-                  </button>
+                <th className="px-3 md:px-4 py-2 text-center w-12">
+                  <div className="text-[10px] md:text-xs font-semibold text-gray-700 uppercase tracking-wider">
+                    Select
+                  </div>
                 </th>
-                <th className="px-6 py-3 text-left">
-                  <div className="text-xs font-semibold text-gray-700 uppercase tracking-wider mb-2">
+                <th className="px-3 md:px-4 py-2 text-left">
+                  <div className="text-[10px] md:text-xs font-semibold text-gray-700 uppercase tracking-wider">
                     Name
                   </div>
+                </th>
+                <th className="px-3 md:px-4 py-2 text-left">
+                  <div className="text-[10px] md:text-xs font-semibold text-gray-700 uppercase tracking-wider">
+                    Credit Days
+                  </div>
+                </th>
+                <th className="px-3 md:px-4 py-2 text-left">
+                  <div className="text-[10px] md:text-xs font-semibold text-gray-700 uppercase tracking-wider">
+                    Description
+                  </div>
+                </th>
+                <th className="px-3 md:px-4 py-2 text-left">
+                  <div className="text-[10px] md:text-xs font-semibold text-gray-700 uppercase tracking-wider">
+                    Advance %
+                  </div>
+                </th>
+                <th className="px-3 md:px-4 py-2 text-left">
+                  <div className="text-[10px] md:text-xs font-semibold text-gray-700 uppercase tracking-wider">
+                    Status
+                  </div>
+                </th>
+                <th className="px-3 md:px-4 py-2 text-left">
+                  <div className="text-[10px] md:text-xs font-semibold text-gray-700 uppercase tracking-wider">
+                    Actions
+                  </div>
+                </th>
+              </tr>
+              
+              {/* Search Row - Below header */}
+              <tr className="bg-gray-50 border-b border-gray-200">
+                <td className="px-3 md:px-4 py-1 text-center">
+                  <input
+                    type="checkbox"
+                    checked={selectAll}
+                    onChange={handleSelectAll}
+                    className="w-3.5 h-3.5 md:w-4 md:h-4 text-[#C62828] border-gray-300 rounded focus:ring-[#C62828]"
+                  />
+                </td>
+                
+                {/* Name Search */}
+                <td className="px-3 md:px-4 py-1">
                   <input
                     type="text"
                     placeholder="Search name..."
                     value={searchName}
                     onChange={(e) => setSearchName(e.target.value)}
-                    className="w-full px-3 py-1.5 text-sm border border-gray-300 rounded-md focus:ring-2 focus:ring-[#C62828] focus:border-transparent"
+                    className="w-full px-2 py-1 text-[9px] md:text-xs border border-gray-300 rounded focus:ring-1 focus:ring-blue-500 focus:border-transparent"
                   />
-                </th>
-                <th className="px-6 py-3 text-left">
-                  <div className="text-xs font-semibold text-gray-700 uppercase tracking-wider mb-2">
-                    Credit Days
-                  </div>
+                </td>
+                
+                {/* Days Search */}
+                <td className="px-3 md:px-4 py-1">
                   <input
                     type="text"
                     placeholder="Search days..."
                     value={searchDays}
                     onChange={(e) => setSearchDays(e.target.value)}
-                    className="w-full px-3 py-1.5 text-sm border border-gray-300 rounded-md focus:ring-2 focus:ring-[#C62828] focus:border-transparent"
+                    className="w-full px-2 py-1 text-[9px] md:text-xs border border-gray-300 rounded focus:ring-1 focus:ring-blue-500 focus:border-transparent"
                   />
-                </th>
-                <th className="px-6 py-3 text-left">
-                  <div className="text-xs font-semibold text-gray-700 uppercase tracking-wider mb-2">
-                    Description
-                  </div>
+                </td>
+                
+                {/* Description Search */}
+                <td className="px-3 md:px-4 py-1">
                   <input
                     type="text"
                     placeholder="Search description..."
                     value={searchDescription}
                     onChange={(e) => setSearchDescription(e.target.value)}
-                    className="w-full px-3 py-1.5 text-sm border border-gray-300 rounded-md focus:ring-2 focus:ring-[#C62828] focus:border-transparent"
+                    className="w-full px-2 py-1 text-[9px] md:text-xs border border-gray-300 rounded focus:ring-1 focus:ring-blue-500 focus:border-transparent"
                   />
-                </th>
-                <th className="px-6 py-3 text-left">
-                  <div className="text-xs font-semibold text-gray-700 uppercase tracking-wider">
-                    Advance %
-                  </div>
-                </th>
-                <th className="px-6 py-3 text-left">
-                  <div className="text-xs font-semibold text-gray-700 uppercase tracking-wider">
-                    Status
-                  </div>
-                </th>
-                <th className="px-6 py-3 text-left">
-                  <div className="text-xs font-semibold text-gray-700 uppercase tracking-wider">
-                    Actions
-                  </div>
-                </th>
+                </td>
+                
+                {/* Advance % Search */}
+               {/* Advance % Search - FIXED */}
+<td className="px-3 md:px-4 py-1">
+  <input
+    type="text"
+    placeholder="Search advance %..."
+    value={searchAdvance}  // CHANGE THIS
+    onChange={(e) => setSearchAdvance(e.target.value)}  // ADD THIS
+    className="w-full px-2 py-1 text-[9px] md:text-xs border border-gray-300 rounded focus:ring-1 focus:ring-blue-500 focus:border-transparent"
+  />
+</td>
+                
+                {/* Status Search */}
+                {/* Status Search - FIXED */}
+<td className="px-3 md:px-4 py-1">
+  <input
+    type="text"
+    placeholder="Search status..."
+    value={searchStatus}  // CHANGE THIS
+    onChange={(e) => setSearchStatus(e.target.value)}  // ADD THIS
+    className="w-full px-2 py-1 text-[9px] md:text-xs border border-gray-300 rounded focus:ring-1 focus:ring-blue-500 focus:border-transparent"
+  />
+</td>
+                
+                {/* Actions - Clear Filter Button */}
+                <td className="px-3 md:px-4 py-1 text-center">
+                  <button
+  onClick={() => {
+    setSearchName('');
+    setSearchDays('');
+    setSearchDescription('');
+    setSearchAdvance('');  // ADD THIS
+    setSearchStatus('');   // ADD THIS
+  }}
+  className="inline-flex items-center px-2 py-1 border border-gray-300 rounded hover:bg-gray-50 transition text-[9px] md:text-xs font-medium text-gray-700"
+  title="Clear Filters"
+>
+                    <XCircle className="w-2.5 h-2.5 md:w-3 md:h-3 mr-0.5" />
+                    Clear
+                  </button>
+                </td>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-200">
@@ -837,41 +928,37 @@ export default function PaymentTermsMaster() {
                 return (
                   <tr 
                     key={term.id} 
-                    className={`hover:bg-gray-50 transition ${isSelected ? 'bg-blue-50 border-l-4 border-blue-500' : ''}`}
+                    className={`hover:bg-gray-50 transition ${isSelected ? 'bg-blue-50' : ''}`}
                   >
-                    <td className="px-6 py-4">
-                      <button
-                        onClick={() => handleSelectTerm(term.id)}
-                        className="p-1 hover:bg-gray-200 rounded transition-colors"
-                      >
-                        {isSelected ? (
-                          <CheckSquare className="w-5 h-5 text-blue-600" />
-                        ) : (
-                          <Square className="w-5 h-5 text-gray-400" />
-                        )}
-                      </button>
+                    <td className="px-3 md:px-4 py-3 text-center">
+                      <input
+                        type="checkbox"
+                        checked={isSelected}
+                        onChange={() => handleSelectTerm(term.id)}
+                        className="w-3.5 h-3.5 md:w-4 md:h-4 text-[#C62828] border-gray-300 rounded focus:ring-[#C62828]"
+                      />
                     </td>
-                    <td className="px-6 py-4">
+                    <td className="px-3 md:px-4 py-3">
                       <div className="flex items-center gap-2">
                         <CreditCard className="w-4 h-4 text-blue-600" />
-                        <span className="font-medium text-gray-800">{term.name}</span>
+                        <span className="font-medium text-gray-800 text-xs md:text-sm">{term.name}</span>
                       </div>
                     </td>
-                    <td className="px-6 py-4 text-gray-700">
+                    <td className="px-3 md:px-4 py-3 text-gray-700 text-xs md:text-sm">
                       {term.days > 0 ? `${term.days} days` : 'Immediate'}
                     </td>
-                    <td className="px-6 py-4 text-gray-700">{term.description || '-'}</td>
-                    <td className="px-6 py-4">
+                    <td className="px-3 md:px-4 py-3 text-gray-700 text-xs md:text-sm">{term.description || '-'}</td>
+                    <td className="px-3 md:px-4 py-3">
                       {term.advance_percentage > 0 ? (
-                        <span className="font-medium text-orange-600">{term.advance_percentage}%</span>
+                        <span className="font-medium text-orange-600 text-xs md:text-sm">{term.advance_percentage}%</span>
                       ) : (
-                        <span className="text-gray-500">0%</span>
+                        <span className="text-gray-500 text-xs md:text-sm">0%</span>
                       )}
                     </td>
-                    <td className="px-6 py-4">
+                    <td className="px-3 md:px-4 py-3">
                       <button
                         onClick={() => toggleActive(term.id, term.is_active)}
-                        className={`px-3 py-1 rounded-full text-xs font-medium ${
+                        className={`px-2 py-0.5 md:px-3 md:py-1 rounded-full text-[10px] md:text-xs font-medium ${
                           term.is_active 
                             ? 'bg-green-100 text-green-700' 
                             : 'bg-red-100 text-red-700'
@@ -880,44 +967,44 @@ export default function PaymentTermsMaster() {
                         {term.is_active ? 'ACTIVE' : 'INACTIVE'}
                       </button>
                     </td>
-                    <td className="px-6 py-4">
-                      <div className="flex gap-2">
+                    <td className="px-3 md:px-4 py-3">
+                      <div className="flex items-center justify-center gap-1.5 md:gap-2">
                         <button
                           onClick={() => handleEdit(term)}
-                          className="p-2 bg-blue-100 text-blue-600 hover:bg-blue-200 rounded-lg transition-all duration-200 hover:scale-105"
+                          className="p-1.5 md:p-2 text-green-600 hover:bg-green-50 rounded-lg transition"
                           title="Edit"
                         >
-                          <Edit2 className="w-4 h-4" />
+                          <Edit2 className="w-3.5 h-3.5 md:w-4 md:h-4" />
                         </button>
                         <button
                           onClick={() => handleDelete(term.id)}
-                          className="p-2 bg-red-100 text-red-600 hover:bg-red-200 rounded-lg transition-all duration-200 hover:scale-105"
+                          className="p-1.5 md:p-2 text-red-600 hover:bg-red-50 rounded-lg transition"
                           title="Delete"
                         >
-                          <Trash2 className="w-4 h-4" />
+                          <Trash2 className="w-3.5 h-3.5 md:w-4 md:h-4" />
                         </button>
                       </div>
                     </td>
                   </tr>
                 );
               })}
+              
+              {filteredTerms.length === 0 && (
+                <tr>
+                  <td colSpan={7} className="px-4 py-8 text-center">
+                    <CreditCard className="w-12 h-12 md:w-16 md:h-16 text-gray-300 mx-auto mb-3" />
+                    <p className="text-gray-600 text-sm md:text-lg font-medium">No Payment Terms Found</p>
+                    <p className="text-gray-500 text-xs md:text-sm mt-1">
+  {searchName || searchDays || searchDescription || searchAdvance || searchStatus
+    ? "Try a different search term"
+    : "No payment terms available"}
+</p>
+                  </td>
+                </tr>
+              )}
             </tbody>
           </table>
         </div>
-
-        {filteredTerms.length === 0 && (
-          <div className="text-center py-12">
-            <CreditCard className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-            <h3 className="text-lg font-semibold text-gray-800 mb-2">
-              No payment terms found
-            </h3>
-            <p className="text-gray-600">
-              {searchName || searchDays || searchDescription
-                ? 'Try a different search term'
-                : 'Click "Add Payment Terms" to create your first payment term'}
-            </p>
-          </div>
-        )}
       </div>
 
       {/* Add/Edit Modal */}
@@ -973,7 +1060,7 @@ export default function PaymentTermsMaster() {
                 </div>
 
                 {/* Credit Days & Advance Percentage */}
-                <div className="grid grid-cols-2 gap-3">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                   <div className="space-y-1">
                     <label className="block text-xs font-semibold text-gray-800 mb-1">
                       Credit Days

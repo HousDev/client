@@ -678,12 +678,12 @@
 //       )}
 //     </div>
 //   );
-// }
+// }//
+// 
 
-
-// src/pages/ItemsMaster.tsx
+//src/pages/ItemsMaster.tsx
 import React, { useState, useEffect } from "react";
-import { Plus, Edit2, Trash2, Package, X, Search, CheckSquare, Square, Loader2 } from "lucide-react";
+import { Plus, Edit2, Trash2, Package, X, CheckSquare, Square, Loader2, XCircle } from "lucide-react";
 import ItemsApi from "../lib/itemsApi";
 import { toast } from "sonner";
 import MySwal from "../utils/swal";
@@ -718,6 +718,11 @@ export default function ItemsMaster(): JSX.Element {
   const [searchCategory, setSearchCategory] = useState("");
   const [searchHSN, setSearchHSN] = useState("");
   const [searchUnit, setSearchUnit] = useState("");
+  const [searchIGST, setSearchIGST] = useState("");
+  const [searchCGST, setSearchCGST] = useState("");
+  const [searchSGST, setSearchSGST] = useState("");
+  const [searchRate, setSearchRate] = useState("");
+  const [searchStatus, setSearchStatus] = useState("");
 
   // Bulk selection
   const [selectedItems, setSelectedItems] = useState<Set<string>>(new Set());
@@ -765,7 +770,6 @@ export default function ItemsMaster(): JSX.Element {
         })
       );
       setItems(normalized);
-      toast.success("Items loaded successfully!");
     } catch (err) {
       console.error("Failed to load items from API:", err);
       toast.error("Could not load items from server.");
@@ -868,7 +872,6 @@ export default function ItemsMaster(): JSX.Element {
 
       setShowModal(false);
       resetForm();
-      loadItems();
     } catch (err) {
       console.error("Error saving item:", err);
       toast.error("Failed to save item.");
@@ -990,50 +993,6 @@ export default function ItemsMaster(): JSX.Element {
     }
   };
 
-  // Bulk toggle active status
-  const handleBulkToggleActive = async (activate: boolean) => {
-    if (selectedItems.size === 0) {
-      toast.error("Please select at least one item.");
-      return;
-    }
-
-    setSubmitting(true);
-    try {
-      let successCount = 0;
-      let errorCount = 0;
-
-      for (const itemId of Array.from(selectedItems)) {
-        try {
-          // Since we don't have a bulk toggle API, we'll update locally
-          // This assumes the toggle endpoint accepts the new status
-          setItems(prev =>
-            prev.map(item =>
-              selectedItems.has(item.id) 
-                ? { ...item, is_active: activate }
-                : item
-            )
-          );
-          successCount++;
-        } catch (error) {
-          console.error(`Error updating item ${itemId}:`, error);
-          errorCount++;
-        }
-      }
-
-      if (successCount > 0) {
-        toast.success(`${successCount} item${successCount > 1 ? 's' : ''} ${activate ? 'activated' : 'deactivated'} successfully!`);
-      }
-      if (errorCount > 0) {
-        toast.error(`Failed to update ${errorCount} item${errorCount > 1 ? 's' : ''}.`);
-      }
-    } catch (err) {
-      console.error("Error in bulk toggle:", err);
-      toast.error("Failed to update items.");
-    } finally {
-      setSubmitting(false);
-    }
-  };
-
   // Handle item selection
   const handleSelectItem = (id: string) => {
     const newSelected = new Set(selectedItems);
@@ -1057,6 +1016,20 @@ export default function ItemsMaster(): JSX.Element {
     setSelectAll(!selectAll);
   };
 
+  // Clear all search filters
+  const clearAllFilters = () => {
+    setSearchItemCode("");
+    setSearchItemName("");
+    setSearchCategory("");
+    setSearchHSN("");
+    setSearchUnit("");
+    setSearchIGST("");
+    setSearchCGST("");
+    setSearchSGST("");
+    setSearchRate("");
+    setSearchStatus("");
+  };
+
   const filteredItems = items.filter((item) => {
     const matchesItemCode = !searchItemCode || 
       (item.item_code || "").toLowerCase().includes(searchItemCode.toLowerCase());
@@ -1073,7 +1046,24 @@ export default function ItemsMaster(): JSX.Element {
     const matchesUnit = !searchUnit || 
       (item.unit || "").toLowerCase().includes(searchUnit.toLowerCase());
     
-    return matchesItemCode && matchesItemName && matchesCategory && matchesHSN && matchesUnit;
+    const matchesIGST = !searchIGST || 
+      (item.igst_rate || "").toLowerCase().includes(searchIGST.toLowerCase());
+    
+    const matchesCGST = !searchCGST || 
+      (item.cgst_rate || "").toLowerCase().includes(searchCGST.toLowerCase());
+    
+    const matchesSGST = !searchSGST || 
+      (item.sgst_rate || "").toLowerCase().includes(searchSGST.toLowerCase());
+    
+    const matchesRate = !searchRate || 
+      String(item.standard_rate || "").includes(searchRate);
+    
+    const matchesStatus = !searchStatus || 
+      (item.is_active ? "active" : "inactive").includes(searchStatus.toLowerCase());
+    
+    return matchesItemCode && matchesItemName && matchesCategory && 
+           matchesHSN && matchesUnit && matchesIGST && matchesCGST && 
+           matchesSGST && matchesRate && matchesStatus;
   });
 
   const formatCurrency = (amount: number) =>
@@ -1095,219 +1085,362 @@ export default function ItemsMaster(): JSX.Element {
   }
 
   return (
-    <div className="p-6 bg-gray-50 min-h-screen">
-      {/* Header with Bulk Actions */}
-      <div className="mb-6">
-        <div className="bg-gradient-to-r from-[#40423f] via-[#4a4c49] to-[#5a5d5a] rounded-xl shadow-md p-5">
-          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-            <div className="flex items-center gap-3">
-            
-              <div>
-                <h1 className="text-2xl font-bold text-white">Items Master</h1>
-                <p className="text-sm text-white/90 font-medium mt-0.5">
-                  Manage materials and services (backend)
-                </p>
-              </div>
-            </div>
-            <div className="flex flex-wrap items-center gap-2">
-              {selectedItems.size > 0 && (
-                <div className="flex items-center gap-3 bg-white/10 p-2 rounded-xl">
-                  <button
-                    onClick={() => handleBulkToggleActive(true)}
-                    disabled={submitting}
-                    className="flex items-center gap-2 bg-gradient-to-r from-green-600 to-emerald-600 text-white px-3 py-1.5 rounded-xl hover:from-green-700 hover:to-emerald-700 transition-all duration-200 text-xs font-medium shadow-md hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
-                  >
-                    Activate ({selectedItems.size})
-                  </button>
-                  <button
-                    onClick={() => handleBulkToggleActive(false)}
-                    disabled={submitting}
-                    className="flex items-center gap-2 bg-gradient-to-r from-yellow-600 to-amber-600 text-white px-3 py-1.5 rounded-xl hover:from-yellow-700 hover:to-amber-700 transition-all duration-200 text-xs font-medium shadow-md hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
-                  >
-                    Deactivate ({selectedItems.size})
-                  </button>
-                  <button
-                    onClick={handleBulkDelete}
-                    disabled={submitting}
-                    className="flex items-center gap-2 bg-gradient-to-r from-red-600 to-rose-600 text-white px-3 py-1.5 rounded-xl hover:from-red-700 hover:to-rose-700 transition-all duration-200 text-xs font-medium shadow-md hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
-                  >
-                    {submitting ? (
-                      <Loader2 className="w-3 h-3 animate-spin" />
-                    ) : (
-                      <Trash2 className="w-3 h-3" />
-                    )}
-                    Delete ({selectedItems.size})
-                  </button>
-                  <div className="text-xs text-white font-medium px-2 py-1 bg-white/20 rounded-lg">
-                    {selectedItems.size} selected
-                  </div>
-                </div>
-              )}
-              <button
-                onClick={() => {
-                  resetForm();
-                  setShowModal(true);
-                }}
-                className="bg-gradient-to-r from-[#C62828] to-red-600 text-white px-6 py-3 rounded-xl hover:from-red-600 hover:to-red-700 transition-all duration-200 flex items-center gap-2 font-medium shadow-lg hover:shadow-xl"
-              >
-                <Plus className="w-5 h-5" />
-                Add Item
-              </button>
-            </div>
+    <div className="px-0 bg-gray-50 min-h-screen">
+      {/* Header with Actions and Bulk Actions - Side by Side */}
+    <div className="mt-0 mb-0 px-2 py-1 md:p-4 flex flex-col md:flex-row md:items-center justify-between gap-1 md:gap-3">
+
+  <div></div>
+
+<div className="flex items-center gap-1 md:gap-2 flex-nowrap md:flex-wrap w-full md:w-auto">
+
+    {/* Bulk Actions */}
+    {selectedItems.size > 0 && (
+      <div
+        className="
+          flex items-center gap-0.5
+          bg-gradient-to-r from-red-50 to-rose-50
+          border border-red-200
+          rounded-md
+          shadow-sm
+          px-1.5 py-0.5
+          md:px-2 md:py-2
+          whitespace-nowrap px-0
+        "
+      >
+        {/* Selected Count */}
+        <div className="flex items-center gap-0.5">
+          <div className="bg-red-100 p-0.5 rounded">
+            <Trash2 className="w-2.5 h-2.5 md:w-3.5 md:h-3.5 text-red-600" />
           </div>
+          <p className="font-medium text-[9px] md:text-xs text-gray-800">
+            {selectedItems.size} selected
+          </p>
+        </div>
+
+        {/* Actions */}
+        <div className="flex items-center gap-0.5">
+
+          <button
+            onClick={() => {
+              setItems(prev =>
+                prev.map(item =>
+                  selectedItems.has(item.id)
+                    ? { ...item, is_active: true }
+                    : item
+                )
+              );
+              setSelectedItems(new Set());
+            }}
+            className="bg-green-600 text-white px-1.5 py-0.5 rounded text-[9px] md:text-xs"
+          >
+            Activate
+          </button>
+
+          <button
+            onClick={() => {
+              setItems(prev =>
+                prev.map(item =>
+                  selectedItems.has(item.id)
+                    ? { ...item, is_active: false }
+                    : item
+                )
+              );
+              setSelectedItems(new Set());
+            }}
+            className="bg-yellow-600 text-white px-1.5 py-0.5 rounded text-[9px] md:text-xs"
+          >
+            Deactivate
+          </button>
+
+          <button
+            onClick={handleBulkDelete}
+            disabled={submitting}
+            className="bg-red-600 text-white px-1.5 py-0.5 rounded text-[9px] md:text-xs disabled:opacity-50"
+          >
+            {submitting ? (
+              <Loader2 className="w-2.5 h-2.5 animate-spin" />
+            ) : (
+              "Delete"
+            )}
+          </button>
+
         </div>
       </div>
+    )}
 
-      {/* Table with Search and Checkboxes */}
-      <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+    {/* Divider (desktop only) */}
+    <div className="hidden md:block h-6 border-l border-gray-300 mx-1"></div>
+
+    {/* Add Item */}
+   <button
+  onClick={() => {
+    resetForm();
+    setShowModal(true);
+  }}
+  className="
+    flex items-center gap-1
+    bg-gradient-to-r from-[#C62828] to-red-600
+    text-white
+    px-2.5 py-1
+    md:px-4 md:py-2
+    rounded-lg
+    text-[10px] md:text-sm
+    font-medium
+    shadow-sm
+    whitespace-nowrap
+    ml-auto md:ml-0
+  "
+>
+
+      <Plus className="w-3 h-3 md:w-4 md:h-4" />
+      Add Item
+    </button>
+
+  </div>
+</div>
+
+
+      {/* Main Table - Responsive with Search Bars */}
+      <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden mx-0 md:mx-0">
         <div className="overflow-x-auto">
-          <table className="w-full">
+          <table className="w-full min-w-[1300px]">
             <thead className="bg-gray-200 border-b border-gray-200">
+              {/* Header Row */}
               <tr>
-                <th className="px-6 py-3 text-left w-12">
-                  <button
-                    onClick={handleSelectAll}
-                    className="p-1 hover:bg-gray-300 rounded transition-colors"
-                  >
-                    {selectAll ? (
-                      <CheckSquare className="w-5 h-5 text-blue-600" />
-                    ) : (
-                      <Square className="w-5 h-5 text-gray-500" />
-                    )}
-                  </button>
+                <th className="px-3 md:px-4 py-2 text-center w-12">
+                  <div className="text-[10px] md:text-xs font-semibold text-gray-700 uppercase tracking-wider">
+                    Select
+                  </div>
                 </th>
-                <th className="px-6 py-3 text-left">
-                  <div className="text-xs font-semibold text-gray-700 uppercase tracking-wider mb-2">
+                <th className="px-3 md:px-4 py-2 text-left">
+                  <div className="text-[10px] md:text-xs font-semibold text-gray-700 uppercase tracking-wider">
                     Code
                   </div>
+                </th>
+                <th className="px-3 md:px-4 py-2 text-left">
+                  <div className="text-[10px] md:text-xs font-semibold text-gray-700 uppercase tracking-wider">
+                    Name
+                  </div>
+                </th>
+                <th className="px-3 md:px-4 py-2 text-left">
+                  <div className="text-[10px] md:text-xs font-semibold text-gray-700 uppercase tracking-wider">
+                    Category
+                  </div>
+                </th>
+                <th className="px-3 md:px-4 py-2 text-left">
+                  <div className="text-[10px] md:text-xs font-semibold text-gray-700 uppercase tracking-wider">
+                    HSN/SAC
+                  </div>
+                </th>
+                <th className="px-3 md:px-4 py-2 text-left">
+                  <div className="text-[10px] md:text-xs font-semibold text-gray-700 uppercase tracking-wider">
+                    Unit
+                  </div>
+                </th>
+                <th className="px-3 md:px-4 py-2 text-left">
+                  <div className="text-[10px] md:text-xs font-semibold text-gray-700 uppercase tracking-wider">
+                    IGST(%)
+                  </div>
+                </th>
+                <th className="px-3 md:px-4 py-2 text-left">
+                  <div className="text-[10px] md:text-xs font-semibold text-gray-700 uppercase tracking-wider">
+                    CGST(%)
+                  </div>
+                </th>
+                <th className="px-3 md:px-4 py-2 text-left">
+                  <div className="text-[10px] md:text-xs font-semibold text-gray-700 uppercase tracking-wider">
+                    SGST(%)
+                  </div>
+                </th>
+                <th className="px-3 md:px-4 py-2 text-left">
+                  <div className="text-[10px] md:text-xs font-semibold text-gray-700 uppercase tracking-wider">
+                    Rate
+                  </div>
+                </th>
+                <th className="px-3 md:px-4 py-2 text-left">
+                  <div className="text-[10px] md:text-xs font-semibold text-gray-700 uppercase tracking-wider">
+                    Status
+                  </div>
+                </th>
+                <th className="px-3 md:px-4 py-2 text-left">
+                  <div className="text-[10px] md:text-xs font-semibold text-gray-700 uppercase tracking-wider">
+                    Actions
+                  </div>
+                </th>
+              </tr>
+              
+              {/* Search Row - Like MaterialInTransactions */}
+              <tr className="bg-gray-50 border-b border-gray-200">
+                <td className="px-3 md:px-4 py-1 text-center">
+                  <input
+                    type="checkbox"
+                    checked={selectAll}
+                    onChange={handleSelectAll}
+                    className="w-3.5 h-3.5 md:w-4 md:h-4 text-[#C62828] border-gray-300 rounded focus:ring-[#C62828]"
+                  />
+                </td>
+                
+                {/* Item Code Search */}
+                <td className="px-3 md:px-4 py-1">
                   <input
                     type="text"
                     placeholder="Search code..."
                     value={searchItemCode}
                     onChange={(e) => setSearchItemCode(e.target.value)}
-                    className="w-full px-3 py-1.5 text-sm border border-gray-300 rounded-md focus:ring-2 focus:ring-[#C62828] focus:border-transparent"
+                    className="w-full px-2 py-1 text-[9px] md:text-xs border border-gray-300 rounded focus:ring-1 focus:ring-blue-500 focus:border-transparent"
                   />
-                </th>
-                <th className="px-6 py-3 text-left">
-                  <div className="text-xs font-semibold text-gray-700 uppercase tracking-wider mb-2">
-                    Name
-                  </div>
+                </td>
+                
+                {/* Item Name Search */}
+                <td className="px-3 md:px-4 py-1">
                   <input
                     type="text"
                     placeholder="Search name..."
                     value={searchItemName}
                     onChange={(e) => setSearchItemName(e.target.value)}
-                    className="w-full px-3 py-1.5 text-sm border border-gray-300 rounded-md focus:ring-2 focus:ring-[#C62828] focus:border-transparent"
+                    className="w-full px-2 py-1 text-[9px] md:text-xs border border-gray-300 rounded focus:ring-1 focus:ring-blue-500 focus:border-transparent"
                   />
-                </th>
-                <th className="px-6 py-3 text-left">
-                  <div className="text-xs font-semibold text-gray-700 uppercase tracking-wider mb-2">
-                    Category
-                  </div>
+                </td>
+                
+                {/* Category Search */}
+                <td className="px-3 md:px-4 py-1">
                   <input
                     type="text"
                     placeholder="Search category..."
                     value={searchCategory}
                     onChange={(e) => setSearchCategory(e.target.value)}
-                    className="w-full px-3 py-1.5 text-sm border border-gray-300 rounded-md focus:ring-2 focus:ring-[#C62828] focus:border-transparent"
+                    className="w-full px-2 py-1 text-[9px] md:text-xs border border-gray-300 rounded focus:ring-1 focus:ring-blue-500 focus:border-transparent"
                   />
-                </th>
-                <th className="px-6 py-3 text-left">
-                  <div className="text-xs font-semibold text-gray-700 uppercase tracking-wider mb-2">
-                    HSN/SAC
-                  </div>
+                </td>
+                
+                {/* HSN Search */}
+                <td className="px-3 md:px-4 py-1">
                   <input
                     type="text"
                     placeholder="Search HSN..."
                     value={searchHSN}
                     onChange={(e) => setSearchHSN(e.target.value)}
-                    className="w-full px-3 py-1.5 text-sm border border-gray-300 rounded-md focus:ring-2 focus:ring-[#C62828] focus:border-transparent"
+                    className="w-full px-2 py-1 text-[9px] md:text-xs border border-gray-300 rounded focus:ring-1 focus:ring-blue-500 focus:border-transparent"
                   />
-                </th>
-                <th className="px-6 py-3 text-left">
-                  <div className="text-xs font-semibold text-gray-700 uppercase tracking-wider mb-2">
-                    Unit
-                  </div>
+                </td>
+                
+                {/* Unit Search */}
+                <td className="px-3 md:px-4 py-1">
                   <input
                     type="text"
                     placeholder="Search unit..."
                     value={searchUnit}
                     onChange={(e) => setSearchUnit(e.target.value)}
-                    className="w-full px-3 py-1.5 text-sm border border-gray-300 rounded-md focus:ring-2 focus:ring-[#C62828] focus:border-transparent"
+                    className="w-full px-2 py-1 text-[9px] md:text-xs border border-gray-300 rounded focus:ring-1 focus:ring-blue-500 focus:border-transparent"
                   />
-                </th>
-                <th className="px-6 py-3 text-left">
-                  <div className="text-xs font-semibold text-gray-700 uppercase tracking-wider">
-                    IGST(%)
-                  </div>
-                </th>
-                <th className="px-6 py-3 text-left">
-                  <div className="text-xs font-semibold text-gray-700 uppercase tracking-wider">
-                    CGST(%)
-                  </div>
-                </th>
-                <th className="px-6 py-3 text-left">
-                  <div className="text-xs font-semibold text-gray-700 uppercase tracking-wider">
-                    SGST(%)
-                  </div>
-                </th>
-                <th className="px-6 py-3 text-left">
-                  <div className="text-xs font-semibold text-gray-700 uppercase tracking-wider">
-                    Standard Rate
-                  </div>
-                </th>
-                <th className="px-6 py-3 text-left">
-                  <div className="text-xs font-semibold text-gray-700 uppercase tracking-wider">
-                    Status
-                  </div>
-                </th>
-                <th className="px-6 py-3 text-left">
-                  <div className="text-xs font-semibold text-gray-700 uppercase tracking-wider">
-                    Actions
-                  </div>
-                </th>
+                </td>
+                
+                {/* IGST Rate Search */}
+                <td className="px-3 md:px-4 py-1">
+                  <input
+                    type="text"
+                    placeholder="Search IGST..."
+                    value={searchIGST}
+                    onChange={(e) => setSearchIGST(e.target.value)}
+                    className="w-full px-2 py-1 text-[9px] md:text-xs border border-gray-300 rounded focus:ring-1 focus:ring-blue-500 focus:border-transparent"
+                  />
+                </td>
+                
+                {/* CGST Rate Search */}
+                <td className="px-3 md:px-4 py-1">
+                  <input
+                    type="text"
+                    placeholder="Search CGST..."
+                    value={searchCGST}
+                    onChange={(e) => setSearchCGST(e.target.value)}
+                    className="w-full px-2 py-1 text-[9px] md:text-xs border border-gray-300 rounded focus:ring-1 focus:ring-blue-500 focus:border-transparent"
+                  />
+                </td>
+                
+                {/* SGST Rate Search */}
+                <td className="px-3 md:px-4 py-1">
+                  <input
+                    type="text"
+                    placeholder="Search SGST..."
+                    value={searchSGST}
+                    onChange={(e) => setSearchSGST(e.target.value)}
+                    className="w-full px-2 py-1 text-[9px] md:text-xs border border-gray-300 rounded focus:ring-1 focus:ring-blue-500 focus:border-transparent"
+                  />
+                </td>
+                
+                {/* Rate Search */}
+                <td className="px-3 md:px-4 py-1">
+                  <input
+                    type="text"
+                    placeholder="Search rate..."
+                    value={searchRate}
+                    onChange={(e) => setSearchRate(e.target.value)}
+                    className="w-full px-2 py-1 text-[9px] md:text-xs border border-gray-300 rounded focus:ring-1 focus:ring-blue-500 focus:border-transparent"
+                  />
+                </td>
+                
+                {/* Status Search */}
+                <td className="px-3 md:px-4 py-1">
+                  <input
+                    type="text"
+                    placeholder="Search status..."
+                    value={searchStatus}
+                    onChange={(e) => setSearchStatus(e.target.value)}
+                    className="w-full px-2 py-1 text-[9px] md:text-xs border border-gray-300 rounded focus:ring-1 focus:ring-blue-500 focus:border-transparent"
+                  />
+                </td>
+                
+                {/* Actions - Clear Filter Button */}
+                <td className="px-3 md:px-4 py-1 text-center">
+                  <button
+                    onClick={clearAllFilters}
+                    className="inline-flex items-center px-2 py-1 border border-gray-300 rounded hover:bg-gray-50 transition text-[9px] md:text-xs font-medium text-gray-700"
+                    title="Clear Filters"
+                  >
+                    <XCircle className="w-2.5 h-2.5 md:w-3 md:h-3 mr-0.5" />
+                    Clear
+                  </button>
+                </td>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-200">
               {filteredItems.map((item) => {
                 const isSelected = selectedItems.has(item.id);
                 return (
-                  <tr 
-                    key={item.id} 
-                    className={`hover:bg-gray-50 transition ${isSelected ? 'bg-blue-50 border-l-4 border-blue-500' : ''}`}
+                  <tr
+                    key={item.id}
+                    className={`hover:bg-gray-50 transition ${
+                      isSelected ? "bg-blue-50" : ""
+                    }`}
                   >
-                    <td className="px-6 py-4">
-                      <button
-                        onClick={() => handleSelectItem(item.id)}
-                        className="p-1 hover:bg-gray-200 rounded transition-colors"
-                      >
-                        {isSelected ? (
-                          <CheckSquare className="w-5 h-5 text-blue-600" />
-                        ) : (
-                          <Square className="w-5 h-5 text-gray-400" />
-                        )}
-                      </button>
+                    <td className="px-3 md:px-4 py-3 text-center">
+                      <input
+                        type="checkbox"
+                        checked={isSelected}
+                        onChange={() => handleSelectItem(item.id)}
+                        className="w-3.5 h-3.5 md:w-4 md:h-4 text-[#C62828] border-gray-300 rounded focus:ring-[#C62828]"
+                      />
                     </td>
-                    <td className="px-6 py-4">
-                      <span className="font-medium text-gray-800">
+                    <td className="px-3 md:px-4 py-3">
+                      <span className="font-medium text-gray-800 text-xs md:text-sm">
                         {item.item_code}
                       </span>
                     </td>
-                    <td className="px-6 py-4">
+                    <td className="px-3 md:px-4 py-3">
                       <div>
-                        <p className="font-medium text-gray-800">
+                        <p className="font-medium text-gray-800 text-xs md:text-sm">
                           {item.item_name}
                         </p>
                         {item.description && (
-                          <p className="text-sm text-gray-500">
+                          <p className="text-[10px] md:text-xs text-gray-500">
                             {item.description}
                           </p>
                         )}
                       </div>
                     </td>
-                    <td className="px-6 py-4">
+                    <td className="px-3 md:px-4 py-3">
                       <span
-                        className={`px-3 py-1 rounded-full text-xs font-medium ${
+                        className={`px-2 py-0.5 md:px-3 md:py-1 rounded-full text-[10px] md:text-xs font-medium ${
                           item.category === "material"
                             ? "bg-blue-100 text-blue-700"
                             : "bg-green-100 text-green-700"
@@ -1316,20 +1449,20 @@ export default function ItemsMaster(): JSX.Element {
                         {item.category?.toUpperCase()}
                       </span>
                     </td>
-                    <td className="px-6 py-4 text-gray-700">
+                    <td className="px-3 md:px-4 py-3 text-gray-700 text-xs md:text-sm">
                       {item.hsn_code || "-"}
                     </td>
-                    <td className="px-6 py-4 text-gray-700">{item.unit}</td>
-                    <td className="px-6 py-4 text-gray-700">{item.igst_rate}%</td>
-                    <td className="px-6 py-4 text-gray-700">{item.cgst_rate}%</td>
-                    <td className="px-6 py-4 text-gray-700">{item.sgst_rate}%</td>
-                    <td className="px-6 py-4 font-medium text-gray-800">
+                    <td className="px-3 md:px-4 py-3 text-gray-700 text-xs md:text-sm">{item.unit}</td>
+                    <td className="px-3 md:px-4 py-3 text-gray-700 text-xs md:text-sm">{item.igst_rate}%</td>
+                    <td className="px-3 md:px-4 py-3 text-gray-700 text-xs md:text-sm">{item.cgst_rate}%</td>
+                    <td className="px-3 md:px-4 py-3 text-gray-700 text-xs md:text-sm">{item.sgst_rate}%</td>
+                    <td className="px-3 md:px-4 py-3 font-medium text-gray-800 text-xs md:text-sm">
                       {formatCurrency(item.standard_rate)}
                     </td>
-                    <td className="px-6 py-4">
+                    <td className="px-3 md:px-4 py-3">
                       <button
                         onClick={() => toggleActive(item.id, item.is_active)}
-                        className={`px-3 py-1 rounded-full text-xs font-medium ${
+                        className={`px-2 py-0.5 md:px-3 md:py-1 rounded-full text-[10px] md:text-xs font-medium ${
                           item.is_active
                             ? "bg-green-100 text-green-700"
                             : "bg-red-100 text-red-700"
@@ -1338,47 +1471,47 @@ export default function ItemsMaster(): JSX.Element {
                         {item.is_active ? "ACTIVE" : "INACTIVE"}
                       </button>
                     </td>
-                    <td className="px-6 py-4">
-                      <div className="flex gap-2">
+                    <td className="px-3 md:px-4 py-3">
+                      <div className="flex items-center justify-center gap-1.5 md:gap-2">
                         <button
                           onClick={() => handleEdit(item)}
-                          className="p-2 bg-blue-100 text-blue-600 hover:bg-blue-200 rounded-lg transition-all duration-200 hover:scale-105"
+                          className="p-1.5 md:p-2 text-green-600 hover:bg-green-50 rounded-lg transition"
                           title="Edit"
                         >
-                          <Edit2 className="w-4 h-4" />
+                          <Edit2 className="w-3.5 h-3.5 md:w-4 md:h-4" />
                         </button>
                         <button
                           onClick={() => handleDelete(item.id)}
-                          className="p-2 bg-red-100 text-red-600 hover:bg-red-200 rounded-lg transition-all duration-200 hover:scale-105"
+                          className="p-1.5 md:p-2 text-red-600 hover:bg-red-50 rounded-lg transition"
                           title="Delete"
                         >
-                          <Trash2 className="w-4 h-4" />
+                          <Trash2 className="w-3.5 h-3.5 md:w-4 md:h-4" />
                         </button>
                       </div>
                     </td>
                   </tr>
                 );
               })}
+              
+              {filteredItems.length === 0 && (
+                <tr>
+                  <td colSpan={12} className="px-4 py-8 text-center">
+                    <Package className="w-12 h-12 md:w-16 md:h-16 text-gray-300 mx-auto mb-3" />
+                    <p className="text-gray-600 text-sm md:text-lg font-medium">No Items Found</p>
+                    <p className="text-gray-500 text-xs md:text-sm mt-1">
+                      {searchItemCode || searchItemName || searchCategory || searchHSN || searchUnit || searchIGST || searchCGST || searchSGST || searchRate || searchStatus
+                        ? "Try a different search term"
+                        : "No items available"}
+                    </p>
+                  </td>
+                </tr>
+              )}
             </tbody>
           </table>
         </div>
-
-        {filteredItems.length === 0 && (
-          <div className="text-center py-12">
-            <Package className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-            <h3 className="text-lg font-semibold text-gray-800 mb-2">
-              No items found
-            </h3>
-            <p className="text-gray-600">
-              {searchItemCode || searchItemName || searchCategory || searchHSN || searchUnit
-                ? "Try a different search term"
-                : "No items available"}
-            </p>
-          </div>
-        )}
       </div>
 
-      {/* Add/Edit Modal */}
+      {/* Add/Edit Modal - Kept as is */}
       {showModal && (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-md flex items-center justify-center z-50 p-4 animate-fadeIn">
           <div className="bg-gradient-to-br from-gray-50 to-white rounded-2xl shadow-2xl shadow-gray-900/20 w-full max-w-3xl border border-gray-200 overflow-hidden">
@@ -1700,31 +1833,6 @@ export default function ItemsMaster(): JSX.Element {
                 </button>
               </div>
             </form>
-
-            {/* Custom scrollbar */}
-            <style jsx>{`
-              .custom-scrollbar::-webkit-scrollbar {
-                width: 6px;
-              }
-              .custom-scrollbar::-webkit-scrollbar-track {
-                background: #f1f1f1;
-                border-radius: 3px;
-              }
-              .custom-scrollbar::-webkit-scrollbar-thumb {
-                background: #c62828;
-                border-radius: 3px;
-              }
-              .custom-scrollbar::-webkit-scrollbar-thumb:hover {
-                background: #b71c1c;
-              }
-              @keyframes fadeIn {
-                from { opacity: 0; transform: translateY(10px); }
-                to { opacity: 1; transform: translateY(0); }
-              }
-              .animate-fadeIn {
-                animation: fadeIn 0.3s ease-out;
-              }
-            `}</style>
           </div>
         </div>
       )}
