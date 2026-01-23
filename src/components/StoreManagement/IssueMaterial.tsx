@@ -996,164 +996,169 @@ export default function IssueMaterial({
         </div>
 
         {/* Material Selector Modal */}
-        {showMaterialSelector && (
-          <div className="fixed inset-0 bg-black/60 backdrop-blur-md flex items-center justify-center z-[60] p-4 animate-fadeIn">
-            <div className="bg-gradient-to-br from-white to-gray-50 rounded-2xl shadow-2xl shadow-gray-900/20 w-full max-w-md border border-gray-200 overflow-hidden">
-              <div className="bg-gradient-to-r from-green-600 to-emerald-600 px-6 py-4 flex justify-between items-center border-b border-emerald-700/30">
-                <div className="flex items-center gap-3">
-                  <div className="p-2 bg-white/20 rounded-xl backdrop-blur-sm">
-                    <Package className="w-5 h-5 text-white" />
-                  </div>
-                  <div>
-                    <h3 className="text-lg font-bold text-white">Select Material</h3>
-                    <p className="text-xs text-white/90 font-medium mt-0.5">
-                      Choose materials from inventory
-                    </p>
-                  </div>
-                </div>
-                <button
-                  onClick={() => {
-                    setShowMaterialSelector(false);
-                    setMaterialSearch("");
-                  }}
-                  className="text-white hover:bg-white/20 rounded-xl p-2 transition-all duration-200"
-                >
-                  <X className="w-5 h-5" />
-                </button>
-              </div>
-
-              <div className="p-4 border-b">
-                <div className="relative group">
-                  <div className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 group-focus-within:text-green-600 transition-colors">
-                    <FileText className="w-4 h-4" />
-                  </div>
-                  <input
-                    type="text"
-                    placeholder="Search material by name or description..."
-                    value={materialSearch}
-                    onChange={(e) => setMaterialSearch(e.target.value)}
-                    className="w-full pl-10 pr-4 py-2.5 text-sm border-2 border-gray-200 rounded-xl focus:border-green-500 focus:ring-2 focus:ring-green-500/20 outline-none transition-all duration-200 hover:border-gray-300"
-                  />
-                </div>
-              </div>
-
-              <div className="p-4 max-h-96 overflow-y-auto">
-                <div className="space-y-2">
-                  {filteredInventory.length === 0 ? (
-                    <div className="p-8 text-center border-2 border-dashed border-gray-300 rounded-xl bg-gray-50/50">
-                      <Package className="w-10 h-10 text-gray-400 mx-auto mb-3" />
-                      <p className="text-gray-600 font-medium">No materials found</p>
-                      <p className="text-sm text-gray-500 mt-1">Try a different search term</p>
-                    </div>
-                  ) : (
-                    filteredInventory.map((item) => {
-                      const existingMaterial = formData.materials.find(
-                        (m: any) => m.materialId === item.id
-                      );
-                      const isLowStock = item.quantity <= item.reorder_qty;
-                      const isOutOfStock = item.quantity === 0;
-                      
-                      return (
-                        <button
-                          type="button"
-                          disabled={isOutOfStock}
-                          key={item.id}
-                          onClick={() => {
-                            addMaterial(item);
-                          }}
-                          className={`w-full p-4 text-left border-2 rounded-xl transition-all duration-200 hover:shadow-md ${
-                            existingMaterial
-                              ? "bg-blue-50 border-blue-300 hover:border-blue-400"
-                              : "border-gray-200 hover:border-gray-300 hover:bg-gray-50"
-                          } ${isOutOfStock ? "opacity-50 cursor-not-allowed" : ""}`}
-                        >
-                          <div className="flex justify-between items-center">
-                            <div className="flex-1">
-                              <div className="flex items-center gap-2 mb-1">
-                                <Package className={`w-4 h-4 ${
-                                  isOutOfStock ? "text-gray-400" : 
-                                  isLowStock ? "text-yellow-600" : "text-green-600"
-                                }`} />
-                                <div className="font-semibold text-gray-800 truncate">
-                                  {item.item_name || item.name}
-                                </div>
-                                {existingMaterial && (
-                                  <span className="px-2 py-0.5 bg-blue-100 text-blue-700 rounded-full text-xs font-medium">
-                                    Added
-                                  </span>
-                                )}
-                              </div>
-                              <div className="flex items-center gap-2">
-                                <span className="px-2 py-0.5 bg-gray-100 text-gray-700 rounded text-xs font-medium">
-                                  Stock: {item.quantity} {item.unit}
-                                </span>
-                                {isLowStock && !isOutOfStock && (
-                                  <span className="px-2 py-0.5 bg-yellow-100 text-yellow-700 rounded text-xs font-medium">
-                                    Low Stock
-                                  </span>
-                                )}
-                                {isOutOfStock && (
-                                  <span className="px-2 py-0.5 bg-red-100 text-red-700 rounded text-xs font-medium">
-                                    Out of Stock
-                                  </span>
-                                )}
-                              </div>
-                            </div>
-                            <div className={`px-3 py-1.5 rounded-lg text-xs font-medium ${
-                              existingMaterial
-                                ? "bg-green-600 text-white"
-                                : isOutOfStock
-                                ? "bg-gray-200 text-gray-600"
-                                : "bg-emerald-600 text-white"
-                            }`}>
-                              {existingMaterial ? "Add More" : "Add"}
-                            </div>
-                          </div>
-                        </button>
-                      );
-                    })
-                  )}
-                </div>
-              </div>
-
-              <div className="p-4 border-t bg-gradient-to-r from-gray-50 to-gray-100">
-                <div className="flex justify-between items-center">
-                  <div className="text-sm text-gray-600">
-                    {formData.materials.length > 0 && (
-                      <span className="font-medium">{formData.materials.length} materials selected</span>
-                    )}
-                  </div>
-                  <div className="flex gap-2">
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setShowMaterialSelector(false);
-                        setMaterialSearch("");
-                        toast.info("Material selection closed");
-                      }}
-                      className="px-4 py-2 text-sm border-2 border-gray-200 rounded-xl hover:bg-gray-50 hover:border-gray-300 transition-all duration-200 font-medium text-gray-700"
-                    >
-                      Close
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setShowMaterialSelector(false);
-                        setMaterialSearch("");
-                      }}
-                      className="px-4 py-2 bg-gradient-to-r from-blue-600 to-blue-700 text-white rounded-xl hover:from-blue-700 hover:to-blue-800 transition-all duration-200 text-sm font-medium shadow-md hover:shadow-lg"
-                    >
-                      Done
-                    </button>
-                  </div>
-                </div>
-              </div>
-            </div>
+       {showMaterialSelector && (
+  <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-[60] p-3 animate-fadeIn">
+    <div className="bg-gradient-to-br from-white to-gray-50 rounded-xl shadow-2xl shadow-gray-900/20 w-full max-w-md border border-gray-200 overflow-hidden">
+      {/* Header - Updated Color Theme */}
+      <div className="bg-gradient-to-r from-[#40423f] via-[#4a4c49] to-[#5a5d5a] px-4 py-3 flex justify-between items-center border-b border-gray-700/30">
+        <div className="flex items-center gap-2">
+          <div className="p-1.5 bg-white/20 rounded-lg backdrop-blur-sm">
+            <Package className="w-4 h-4 text-white" />
           </div>
-        )}
+          <div>
+            <h3 className="text-base font-bold text-white">Select Material</h3>
+            <p className="text-xs text-white/90 font-medium mt-0.5">
+              Choose materials from inventory
+            </p>
+          </div>
+        </div>
+        <button
+          onClick={() => {
+            setShowMaterialSelector(false);
+            setMaterialSearch("");
+          }}
+          className="text-white hover:bg-white/20 rounded-lg p-1.5 transition-all duration-200 hover:scale-105 active:scale-95"
+        >
+          <X className="w-4 h-4" />
+        </button>
+      </div>
+
+      {/* Search Bar - Compact */}
+      <div className="p-3 border-b">
+        <div className="relative group">
+          <div className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 group-focus-within:text-[#C62828] transition-colors">
+            <FileText className="w-3.5 h-3.5" />
+          </div>
+          <input
+            type="text"
+            placeholder="Search material..."
+            value={materialSearch}
+            onChange={(e) => setMaterialSearch(e.target.value)}
+            className="w-full pl-10 pr-4 py-2 text-sm border border-gray-300 rounded-lg focus:border-[#C62828] focus:ring-1 focus:ring-[#C62828]/20 outline-none transition-all duration-200 hover:border-gray-400"
+          />
+        </div>
+      </div>
+
+      {/* Materials List - Compact */}
+      <div className="p-3 max-h-80 overflow-y-auto">
+        <div className="space-y-2">
+          {filteredInventory.length === 0 ? (
+            <div className="p-6 text-center border border-dashed border-gray-300 rounded-lg bg-gray-50">
+              <Package className="w-8 h-8 text-gray-400 mx-auto mb-2" />
+              <p className="text-sm text-gray-600 font-medium">No materials found</p>
+              <p className="text-xs text-gray-500 mt-1">Try a different search term</p>
+            </div>
+          ) : (
+            filteredInventory.map((item) => {
+              const existingMaterial = formData.materials.find(
+                (m: any) => m.materialId === item.id
+              );
+              const isLowStock = item.quantity <= item.reorder_qty;
+              const isOutOfStock = item.quantity === 0;
+              
+              return (
+                <button
+                  type="button"
+                  disabled={isOutOfStock}
+                  key={item.id}
+                  onClick={() => {
+                    addMaterial(item);
+                  }}
+                  className={`w-full p-3 text-left border rounded-lg transition-all duration-150 hover:shadow-sm ${
+                    existingMaterial
+                      ? "bg-blue-50 border-blue-200 hover:border-blue-300"
+                      : "border-gray-200 hover:border-gray-300 hover:bg-gray-50"
+                  } ${isOutOfStock ? "opacity-60 cursor-not-allowed" : ""}`}
+                >
+                  <div className="flex justify-between items-center">
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-1.5 mb-1">
+                        <Package className={`w-3.5 h-3.5 ${
+                          isOutOfStock ? "text-gray-400" : 
+                          isLowStock ? "text-yellow-600" : "text-green-600"
+                        }`} />
+                        <div className="font-semibold text-gray-800 text-sm truncate">
+                          {item.item_name || item.name}
+                        </div>
+                        {existingMaterial && (
+                          <span className="px-1.5 py-0.5 bg-blue-100 text-blue-700 rounded-full text-xs font-medium whitespace-nowrap">
+                            Added
+                          </span>
+                        )}
+                      </div>
+                      <div className="flex items-center gap-1.5 flex-wrap">
+                        <span className="px-1.5 py-0.5 bg-gray-100 text-gray-700 rounded text-xs font-medium whitespace-nowrap">
+                          Stock: {item.quantity} {item.unit}
+                        </span>
+                        {isLowStock && !isOutOfStock && (
+                          <span className="px-1.5 py-0.5 bg-yellow-100 text-yellow-700 rounded text-xs font-medium whitespace-nowrap">
+                            Low Stock
+                          </span>
+                        )}
+                        {isOutOfStock && (
+                          <span className="px-1.5 py-0.5 bg-red-100 text-red-700 rounded text-xs font-medium whitespace-nowrap">
+                            Out of Stock
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                    <div className={`ml-2 px-2 py-1 rounded text-xs font-medium whitespace-nowrap ${
+                      existingMaterial
+                        ? "bg-green-600 text-white"
+                        : isOutOfStock
+                        ? "bg-gray-200 text-gray-600"
+                        : "bg-[#C62828] text-white"
+                    }`}>
+                      {existingMaterial ? "Add More" : "Add"}
+                    </div>
+                  </div>
+                </button>
+              );
+            })
+          )}
+        </div>
+      </div>
+
+      {/* Footer - Compact */}
+      <div className="p-3 border-t bg-gray-50">
+        <div className="flex justify-between items-center">
+          <div className="text-sm text-gray-600">
+            {formData.materials.length > 0 && (
+              <span className="font-medium text-xs">
+                {formData.materials.length} selected
+              </span>
+            )}
+          </div>
+          <div className="flex gap-2">
+            <button
+              type="button"
+              onClick={() => {
+                setShowMaterialSelector(false);
+                setMaterialSearch("");
+              }}
+              className="px-3 py-1.5 text-sm border border-gray-300 rounded-lg hover:bg-gray-50 transition-all duration-200 font-medium text-gray-700 text-xs"
+            >
+              Close
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                setShowMaterialSelector(false);
+                setMaterialSearch("");
+              }}
+              className="px-3 py-1.5 bg-gradient-to-r from-[#C62828] to-red-600 text-white rounded-lg hover:from-red-600 hover:to-red-700 transition-all duration-200 text-xs font-medium shadow-sm hover:shadow"
+            >
+              Done
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+)}
 
         {/* Add some custom styles for scrollbar */}
-        <style jsx>{`
+        <style >{`
           .custom-scrollbar::-webkit-scrollbar {
             width: 6px;
           }

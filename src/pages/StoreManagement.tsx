@@ -1424,7 +1424,7 @@ export default function StoreManagement({
       )}
 
       {/* Main Tabs */}
-<div className="mt-12 md:mt-0 flex bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden mb-4 md:mb-6 mx-0 md:mx-0">        <button
+<div className="mt-12 md:mt-2 flex bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden mb-4 md:mb-6 mx-0 md:mx-0">        <button
           onClick={() => setActiveTab("tracking")}
           className={`flex-1 px-3 md:px-6 py-2 md:py-4 font-medium transition-all duration-200 flex items-center justify-center gap-1.5 md:gap-3 ${
             activeTab === "tracking"

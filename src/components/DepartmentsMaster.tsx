@@ -9,6 +9,10 @@ import {
   Users,
   RefreshCw,
   Filter,
+  Search,
+  Menu,
+  ChevronLeft,
+  ChevronRight,
 } from "lucide-react";
 import {
   Department,
@@ -47,6 +51,7 @@ export default function DepartmentsMaster() {
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [totalDepartments, setTotalDepartments] = useState(0);
+  const [showMobileFilters, setShowMobileFilters] = useState(false);
 
   const itemsPerPage = 10;
 
@@ -59,43 +64,9 @@ export default function DepartmentsMaster() {
   const loadDepartments = async () => {
     setLoading(true);
     try {
-      // const filters: DepartmentFilters = {
-      //     search: search.trim() || undefined,
-      //     is_active: activeFilter !== null ? activeFilter : undefined,
-      //     sort_by: sortBy,
-      //     sort_order: sortOrder
-      // };
-
-      // const response: PaginatedDepartments = await DepartmentApi.getPaginated(
-      //     currentPage,
-      //     itemsPerPage,
-      //     filters
-      // );
-
-      // // Debug logging
-      // console.log("API Response:", response);
-      // console.log("Response data:", response.data);
-
-      // // Ensure all departments have required properties
-      // const safeDepartments = (response.data || []).map(dept => ({
-      //     id: dept?.id || '',
-      //     name: dept?.name || 'Unnamed Department',
-      //     code: dept?.code || 'N/A',
-      //     description: dept?.description || '',
-      //     manager_id: dept?.manager_id,
-      //     manager_name: dept?.manager_name,
-      //     manager_email: dept?.manager_email,
-      //     is_active: dept?.is_active !== false,
-      //     created_at: dept?.created_at,
-      //     updated_at: dept?.updated_at
-      // }));
-
       const departmentRes: any = await DepartmentApi.getAll();
-
       console.log(departmentRes.data, "asdfajsdhkj");
       setDepartments(departmentRes.data || []);
-      // setTotalDepartments(response.total || 0);
-      // setTotalPages(response.totalPages || 1);
     } catch (error: any) {
       console.error("Failed to load departments:", error);
       toast.error(error.message || "Failed to load departments");
@@ -155,20 +126,17 @@ export default function DepartmentsMaster() {
       description: dept.description || "",
       is_active: dept.is_active !== false,
     });
-    // setSelectedManager(dept.manager_id || "");
     setShowModal(true);
   };
 
   const openManagerModal = (dept: Department) => {
     setEditingDept(dept);
-    // setSelectedManager(dept.manager_id || "");
     setShowManagerModal(true);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    // Validate form data
     const name = form.name?.trim();
     const code = form.code?.trim();
 
@@ -198,7 +166,6 @@ export default function DepartmentsMaster() {
         );
         toast.success("Department updated successfully");
 
-        // Update local state with safe data
         setDepartments((prev) =>
           prev.map((dept) =>
             dept.id === updatedDept.id
@@ -222,7 +189,6 @@ export default function DepartmentsMaster() {
         const newDept = await DepartmentApi.create(createData);
         toast.success("Department created successfully");
 
-        // Add to local state with safe data
         setDepartments((prev) => [
           {
             ...newDept,
@@ -235,15 +201,17 @@ export default function DepartmentsMaster() {
       }
       loadDepartments();
       setShowModal(false);
-      loadStats(); // Refresh statistics
+      loadStats();
     } catch (error: any) {
       console.error("Failed to save department:", error);
       toast.error(error.message || "Failed to save department");
     }
   };
+  
   useEffect(() => {
     console.log(departments);
   }, [departments]);
+
   const handleAssignManager = async () => {
     if (!editingDept?.id) return;
 
@@ -261,7 +229,6 @@ export default function DepartmentsMaster() {
         toast.success("Manager removed successfully");
       }
 
-      // Update local state with safe data
       setDepartments((prev) =>
         prev.map((dept) =>
           dept.id === updatedDept.id
@@ -275,7 +242,7 @@ export default function DepartmentsMaster() {
       );
 
       setShowManagerModal(false);
-      loadStats(); // Refresh statistics
+      loadStats();
     } catch (error: any) {
       console.error("Failed to assign manager:", error);
       toast.error(error.message || "Failed to assign manager");
@@ -296,13 +263,11 @@ export default function DepartmentsMaster() {
 
     try {
       await DepartmentApi.delete(dept.id);
-
       toast.success("Department deleted successfully");
 
-      // Remove from local state
       setDepartments((prev) => prev.filter((d) => d.id !== dept.id));
       setTotalDepartments((prev) => Math.max(0, prev - 1));
-      loadStats(); // Refresh statistics
+      loadStats();
     } catch (error: any) {
       console.error("Failed to delete department:", error);
       toast.error(error.message || "Failed to delete department");
@@ -318,7 +283,6 @@ export default function DepartmentsMaster() {
         `Department ${updatedDept.is_active ? "activated" : "deactivated"} successfully`,
       );
 
-      // Update local state with safe data
       setDepartments((prev) =>
         prev.map((d) =>
           d.id === updatedDept.id
@@ -330,7 +294,7 @@ export default function DepartmentsMaster() {
             : d,
         ),
       );
-      loadStats(); // Refresh statistics
+      loadStats();
     } catch (error: any) {
       console.error("Failed to toggle department status:", error);
       toast.error(error.message || "Failed to update department status");
@@ -348,7 +312,7 @@ export default function DepartmentsMaster() {
     setSortBy("name");
     setSortOrder("asc");
     setCurrentPage(1);
-    loadDepartments(); // Reload after resetting filters
+    loadDepartments();
   };
 
   const handleSort = (column: "name" | "code") => {
@@ -358,7 +322,7 @@ export default function DepartmentsMaster() {
       setSortBy(column);
       setSortOrder("asc");
     }
-    setCurrentPage(1); // Reset to first page when sorting
+    setCurrentPage(1);
   };
 
   const paginate = (pageNumber: number) => {
@@ -367,130 +331,186 @@ export default function DepartmentsMaster() {
     }
   };
 
-  // Render department name safely
   const renderDepartmentName = (dept: Department) => {
     return dept?.name || "Unnamed Department";
   };
 
-  // Render department code safely
   const renderDepartmentCode = (dept: Department) => {
     return dept?.code || "N/A";
   };
 
   return (
-    <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+    <div className="bg-white rounded-xl shadow-sm border border-gray-200 mt-4 p-4 md:p-6">
       {/* Header */}
-      <div className="flex justify-between items-center mb-6">
+      <div className="flex flex-col md:flex-row md:justify-between md:items-center gap-4 mb-6">
         <div>
-          <h2 className="text-xl font-semibold text-gray-800">
+          <h2 className="text-lg md:text-xl font-semibold text-gray-800">
             Departments Management
           </h2>
-          <p className="text-sm text-gray-500">
+          <p className="text-xs md:text-sm text-gray-500">
             Manage organizational departments
           </p>
         </div>
 
-        <div className="flex items-center gap-3">
+        <div className="flex flex-col md:flex-row items-stretch md:items-center gap-3 w-full md:w-auto">
           <button
             onClick={handleResetFilters}
-            className="px-3 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 flex items-center gap-2 transition-colors"
+            className="px-3 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 flex items-center justify-center gap-2 transition-colors order-2 md:order-1"
             title="Reset filters"
           >
             <RefreshCw className="w-4 h-4" />
-            Reset
+            <span className="hidden md:inline">Reset</span>
           </button>
-          <div className="flex items-center gap-2">
-            <input
-              type="text"
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              onKeyPress={(e) => e.key === "Enter" && handleSearch()}
-              className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#C62828] focus:border-transparent w-64"
-              placeholder="Search departments..."
-            />
+          
+          <div className="flex items-center gap-2 order-1 md:order-2">
+            <div className="relative flex-1">
+              <input
+                type="text"
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                onKeyPress={(e) => e.key === "Enter" && handleSearch()}
+                className="w-full px-3 py-2 pl-9 md:pl-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#C62828] focus:border-transparent"
+                placeholder="Search departments..."
+              />
+              <Search className="absolute left-3 top-2.5 w-4 h-4 text-gray-400 md:hidden" />
+            </div>
             <button
               onClick={handleSearch}
-              className="px-3 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200"
+              className="px-3 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 hidden md:block"
             >
               Search
             </button>
+            <button
+              onClick={() => setShowMobileFilters(!showMobileFilters)}
+              className="px-3 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 md:hidden"
+            >
+              <Filter className="w-4 h-4" />
+            </button>
           </div>
+          
           <button
             onClick={openCreate}
-            className="bg-gradient-to-r from-[#C62828] to-red-600 text-white px-4 py-2 rounded-lg flex items-center gap-2 hover:from-red-600 hover:to-red-700 transition-all duration-200"
+            className="bg-gradient-to-r from-[#C62828] to-red-600 text-white px-4 py-2 rounded-lg flex items-center justify-center gap-2 hover:from-red-600 hover:to-red-700 transition-all duration-200 order-3"
           >
-            <Plus className="w-4 h-4" /> Add Department
+            <Plus className="w-4 h-4" />
+            <span className="text-sm md:text-base">Add Department</span>
           </button>
         </div>
       </div>
 
+      {/* Mobile Filters Panel */}
+      {showMobileFilters && (
+        <div className="md:hidden mb-4 p-4 bg-gray-50 rounded-lg border border-gray-200">
+          <div className="flex items-center justify-between mb-3">
+            <h3 className="font-medium text-gray-700">Filters</h3>
+            <button
+              onClick={() => setShowMobileFilters(false)}
+              className="text-gray-500"
+            >
+              <X className="w-4 h-4" />
+            </button>
+          </div>
+          <div className="space-y-3">
+            <div>
+              <span className="text-sm text-gray-600 mb-2 block">Status:</span>
+              <div className="flex flex-wrap gap-2">
+                <button
+                  onClick={() => setActiveFilter(null)}
+                  className={`px-3 py-1.5 rounded-full text-sm ${activeFilter === null ? "bg-[#C62828] text-white" : "bg-gray-200 text-gray-700 hover:bg-gray-300"}`}
+                >
+                  All
+                </button>
+                <button
+                  onClick={() => setActiveFilter(true)}
+                  className={`px-3 py-1.5 rounded-full text-sm ${activeFilter === true ? "bg-green-600 text-white" : "bg-gray-200 text-gray-700 hover:bg-gray-300"}`}
+                >
+                  Active
+                </button>
+                <button
+                  onClick={() => setActiveFilter(false)}
+                  className={`px-3 py-1.5 rounded-full text-sm ${activeFilter === false ? "bg-gray-600 text-white" : "bg-gray-200 text-gray-700 hover:bg-gray-300"}`}
+                >
+                  Inactive
+                </button>
+              </div>
+            </div>
+            <button
+              onClick={handleSearch}
+              className="w-full px-4 py-2 bg-[#C62828] text-white rounded-lg hover:bg-red-700"
+            >
+              Apply Filters
+            </button>
+          </div>
+        </div>
+      )}
+
       {/* Statistics Cards */}
       {statsLoading ? (
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4 mb-6">
           {[1, 2, 3, 4].map((i) => (
-            <div key={i} className="bg-gray-100 rounded-lg p-4 animate-pulse">
-              <div className="h-4 bg-gray-300 rounded w-1/2 mb-2"></div>
-              <div className="h-6 bg-gray-300 rounded w-1/4"></div>
+            <div key={i} className="bg-gray-100 rounded-lg p-3 md:p-4 animate-pulse">
+              <div className="h-3 md:h-4 bg-gray-300 rounded w-1/2 mb-2"></div>
+              <div className="h-5 md:h-6 bg-gray-300 rounded w-1/4"></div>
             </div>
           ))}
         </div>
       ) : (
         stats && (
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
-            <div className="bg-blue-50 border border-blue-100 rounded-lg p-4">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4 mb-6">
+            <div className="bg-blue-50 border border-blue-100 rounded-lg p-3 md:p-4">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm text-blue-600 font-medium">
+                  <p className="text-xs md:text-sm text-blue-600 font-medium">
                     Total Departments
                   </p>
-                  <p className="text-2xl font-bold text-blue-700">
+                  <p className="text-lg md:text-2xl font-bold text-blue-700">
                     {stats.total_departments || 0}
                   </p>
                 </div>
-                <Building className="w-8 h-8 text-blue-500" />
+                <Building className="w-6 h-6 md:w-8 md:h-8 text-blue-500" />
               </div>
             </div>
-            <div className="bg-green-50 border border-green-100 rounded-lg p-4">
+            <div className="bg-green-50 border border-green-100 rounded-lg p-3 md:p-4">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm text-green-600 font-medium">Active</p>
-                  <p className="text-2xl font-bold text-green-700">
+                  <p className="text-xs md:text-sm text-green-600 font-medium">Active</p>
+                  <p className="text-lg md:text-2xl font-bold text-green-700">
                     {stats.active_departments || 0}
                   </p>
                 </div>
-                <Users className="w-8 h-8 text-green-500" />
+                <Users className="w-6 h-6 md:w-8 md:h-8 text-green-500" />
               </div>
             </div>
-            <div className="bg-gray-50 border border-gray-100 rounded-lg p-4">
+            <div className="bg-gray-50 border border-gray-100 rounded-lg p-3 md:p-4">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm text-gray-600 font-medium">Inactive</p>
-                  <p className="text-2xl font-bold text-gray-700">
+                  <p className="text-xs md:text-sm text-gray-600 font-medium">Inactive</p>
+                  <p className="text-lg md:text-2xl font-bold text-gray-700">
                     {stats.inactive_departments || 0}
                   </p>
                 </div>
-                <Filter className="w-8 h-8 text-gray-500" />
+                <Filter className="w-6 h-6 md:w-8 md:h-8 text-gray-500" />
               </div>
             </div>
-            <div className="bg-purple-50 border border-purple-100 rounded-lg p-4">
+            <div className="bg-purple-50 border border-purple-100 rounded-lg p-3 md:p-4">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm text-purple-600 font-medium">
+                  <p className="text-xs md:text-sm text-purple-600 font-medium">
                     With Manager
                   </p>
-                  <p className="text-2xl font-bold text-purple-700">
+                  <p className="text-lg md:text-2xl font-bold text-purple-700">
                     {stats.departments_with_manager || 0}
                   </p>
                 </div>
-                <Users className="w-8 h-8 text-purple-500" />
+                <Users className="w-6 h-6 md:w-8 md:h-8 text-purple-500" />
               </div>
             </div>
           </div>
         )
       )}
 
-      {/* Filters */}
-      <div className="flex flex-wrap items-center gap-3 mb-4 p-3 bg-gray-50 rounded-lg">
+      {/* Filters - Desktop */}
+      <div className="hidden md:flex flex-wrap items-center gap-3 mb-4 p-3 bg-gray-50 rounded-lg">
         <div className="flex items-center gap-2">
           <span className="text-sm text-gray-600">Status:</span>
           <button
@@ -527,11 +547,11 @@ export default function DepartmentsMaster() {
         <>
           {/* Departments Table */}
           <div className="overflow-x-auto rounded-lg border border-gray-200">
-            <table className="w-full">
+            <table className="w-full min-w-[640px]">
               <thead className="bg-gray-50">
                 <tr>
                   <th
-                    className="px-6 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
+                    className="px-4 md:px-6 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
                     onClick={() => handleSort("name")}
                   >
                     <div className="flex items-center gap-1">
@@ -544,7 +564,7 @@ export default function DepartmentsMaster() {
                     </div>
                   </th>
                   <th
-                    className="px-6 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
+                    className="px-4 md:px-6 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
                     onClick={() => handleSort("code")}
                   >
                     <div className="flex items-center gap-1">
@@ -556,13 +576,10 @@ export default function DepartmentsMaster() {
                       )}
                     </div>
                   </th>
-                  {/* <th className="px-6 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
-                                        Manager
-                                    </th> */}
-                  <th className="px-6 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
+                  <th className="px-4 md:px-6 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
                     Status
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
+                  <th className="px-4 md:px-6 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
                     Actions
                   </th>
                 </tr>
@@ -574,39 +591,27 @@ export default function DepartmentsMaster() {
                       key={dept.id}
                       className="hover:bg-gray-50 transition-colors"
                     >
-                      <td className="px-6 py-4">
+                      <td className="px-4 md:px-6 py-4">
                         <div className="flex items-center gap-3">
-                          <div className="p-2 bg-blue-50 rounded-lg">
+                          <div className="p-1.5 md:p-2 bg-blue-50 rounded-lg">
                             <Building className="w-4 h-4 text-blue-600" />
                           </div>
-                          <div>
-                            <div className="font-medium text-gray-800">
+                          <div className="min-w-0">
+                            <div className="font-medium text-gray-800 truncate">
                               {dept.name}
                             </div>
-                            <div className="text-sm text-gray-500 truncate max-w-xs">
+                            <div className="text-xs md:text-sm text-gray-500 truncate max-w-[200px] md:max-w-xs">
                               {dept.description || "No description"}
                             </div>
                           </div>
                         </div>
                       </td>
-                      <td className="px-6 py-4">
-                        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
+                      <td className="px-4 md:px-6 py-4">
+                        <span className="inline-flex items-center px-2 py-0.5 md:px-2.5 md:py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
                           {renderDepartmentCode(dept)}
                         </span>
                       </td>
-                      {/* <td className="px-6 py-4">
-                                                    {dept.manager_name ? (
-                                                        <div className="text-sm">
-                                                            <div className="font-medium text-gray-800">{dept.manager_name}</div>
-                                                            {dept.manager_email && (
-                                                                <div className="text-gray-500">{dept.manager_email}</div>
-                                                            )}
-                                                        </div>
-                                                    ) : (
-                                                        <span className="text-gray-400 italic">No manager</span>
-                                                    )}
-                                                </td> */}
-                      <td className="px-6 py-4">
+                      <td className="px-4 md:px-6 py-4">
                         <button
                           onClick={() => handleToggleStatus(dept)}
                           className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
@@ -619,25 +624,18 @@ export default function DepartmentsMaster() {
                           {dept.is_active ? "Active" : "Inactive"}
                         </button>
                       </td>
-                      <td className="px-6 py-4">
-                        <div className="flex gap-2">
-                          {/* <button
-                            onClick={() => openManagerModal(dept)}
-                            className="p-2 bg-purple-50 text-purple-600 hover:bg-purple-100 rounded-lg transition-colors"
-                            title="Assign Manager"
-                          >
-                            <Users className="w-4 h-4" />
-                          </button> */}
+                      <td className="px-4 md:px-6 py-4">
+                        <div className="flex gap-1 md:gap-2">
                           <button
                             onClick={() => openEdit(dept)}
-                            className="p-2 bg-blue-50 text-blue-600 hover:bg-blue-100 rounded-lg transition-colors"
+                            className="p-1.5 md:p-2 bg-blue-50 text-blue-600 hover:bg-blue-100 rounded-lg transition-colors"
                             title="Edit"
                           >
                             <Edit2 className="w-4 h-4" />
                           </button>
                           <button
                             onClick={() => handleDelete(dept)}
-                            className="p-2 bg-red-50 text-red-600 hover:bg-red-100 rounded-lg transition-colors"
+                            className="p-1.5 md:p-2 bg-red-50 text-red-600 hover:bg-red-100 rounded-lg transition-colors"
                             title="Delete"
                           >
                             <Trash2 className="w-4 h-4" />
@@ -648,12 +646,12 @@ export default function DepartmentsMaster() {
                   ))
                 ) : (
                   <tr>
-                    <td colSpan={5} className="px-6 py-8 text-center">
-                      <Building className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-                      <h3 className="text-lg font-semibold text-gray-800 mb-2">
+                    <td colSpan={4} className="px-6 py-8 text-center">
+                      <Building className="w-10 h-10 md:w-12 md:h-12 text-gray-400 mx-auto mb-4" />
+                      <h3 className="text-base md:text-lg font-semibold text-gray-800 mb-2">
                         No departments found
                       </h3>
-                      <p className="text-gray-600">
+                      <p className="text-sm text-gray-600">
                         {search || activeFilter !== null
                           ? "Try adjusting your filters"
                           : 'Click "Add Department" to create your first department'}
@@ -667,61 +665,65 @@ export default function DepartmentsMaster() {
 
           {/* Pagination */}
           {totalPages > 1 && departments.length > 0 && (
-            <div className="flex items-center justify-between mt-6">
-              <div className="text-sm text-gray-700">
+            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mt-6">
+              <div className="text-sm text-gray-700 text-center md:text-left">
                 Page {currentPage} of {totalPages} • Showing{" "}
                 {departments.length} of {totalDepartments} departments
               </div>
-              <div className="flex gap-2">
+              <div className="flex items-center justify-center gap-1 md:gap-2">
                 <button
                   onClick={() => paginate(currentPage - 1)}
                   disabled={currentPage === 1}
-                  className={`px-3 py-1 rounded-lg border ${
+                  className={`p-2 md:px-3 md:py-1 rounded-lg border ${
                     currentPage === 1
                       ? "bg-gray-100 text-gray-400 cursor-not-allowed"
                       : "bg-white text-gray-700 hover:bg-gray-50 border-gray-300"
                   }`}
+                  aria-label="Previous page"
                 >
-                  Previous
+                  <ChevronLeft className="w-4 h-4" />
                 </button>
 
-                {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
-                  let pageNum;
-                  if (totalPages <= 5) {
-                    pageNum = i + 1;
-                  } else if (currentPage <= 3) {
-                    pageNum = i + 1;
-                  } else if (currentPage >= totalPages - 2) {
-                    pageNum = totalPages - 4 + i;
-                  } else {
-                    pageNum = currentPage - 2 + i;
-                  }
+                <div className="flex gap-1">
+                  {Array.from({ length: Math.min(3, totalPages) }, (_, i) => {
+                    let pageNum;
+                    if (totalPages <= 3) {
+                      pageNum = i + 1;
+                    } else if (currentPage <= 2) {
+                      pageNum = i + 1;
+                    } else if (currentPage >= totalPages - 1) {
+                      pageNum = totalPages - 2 + i;
+                    } else {
+                      pageNum = currentPage - 1 + i;
+                    }
 
-                  return (
-                    <button
-                      key={pageNum}
-                      onClick={() => paginate(pageNum)}
-                      className={`px-3 py-1 rounded-lg ${
-                        currentPage === pageNum
-                          ? "bg-[#C62828] text-white"
-                          : "bg-white text-gray-700 hover:bg-gray-50 border border-gray-300"
-                      }`}
-                    >
-                      {pageNum}
-                    </button>
-                  );
-                })}
+                    return (
+                      <button
+                        key={pageNum}
+                        onClick={() => paginate(pageNum)}
+                        className={`px-2.5 py-1 md:px-3 md:py-1 rounded-lg text-sm ${
+                          currentPage === pageNum
+                            ? "bg-[#C62828] text-white"
+                            : "bg-white text-gray-700 hover:bg-gray-50 border border-gray-300"
+                        }`}
+                      >
+                        {pageNum}
+                      </button>
+                    );
+                  })}
+                </div>
 
                 <button
                   onClick={() => paginate(currentPage + 1)}
                   disabled={currentPage === totalPages}
-                  className={`px-3 py-1 rounded-lg border ${
+                  className={`p-2 md:px-3 md:py-1 rounded-lg border ${
                     currentPage === totalPages
                       ? "bg-gray-100 text-gray-400 cursor-not-allowed"
                       : "bg-white text-gray-700 hover:bg-gray-50 border-gray-300"
                   }`}
+                  aria-label="Next page"
                 >
-                  Next
+                  <ChevronRight className="w-4 h-4" />
                 </button>
               </div>
             </div>
@@ -731,19 +733,19 @@ export default function DepartmentsMaster() {
 
       {/* Add/Edit Modal */}
       {showModal && (
-        <div className="fixed inset-0 bg-black/60 backdrop-blur-md flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-hidden">
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-md flex items-center justify-center z-50 p-2 md:p-4">
+          <div className="bg-white rounded-xl md:rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-hidden mx-2">
             {/* Modal Header */}
-            <div className="bg-gradient-to-r from-[#40423f] via-[#4a4c49] to-[#5a5d5a] px-5 py-3 flex justify-between items-center">
+            <div className="bg-gradient-to-r from-[#40423f] via-[#4a4c49] to-[#5a5d5a] px-4 md:px-5 py-3 flex justify-between items-center">
               <div className="flex items-center gap-2">
                 <div className="p-1.5 bg-white/20 rounded-xl">
                   <Building className="w-4 h-4 text-white" />
                 </div>
                 <div>
-                  <h3 className="font-bold text-white">
+                  <h3 className="font-bold text-white text-sm md:text-base">
                     {editingDept ? "Edit Department" : "Create New Department"}
                   </h3>
-                  <p className="text-xs text-white/90">
+                  <p className="text-xs text-white/90 hidden md:block">
                     {editingDept
                       ? "Update department details"
                       : "Add new department to organization"}
@@ -760,7 +762,7 @@ export default function DepartmentsMaster() {
 
             <form
               onSubmit={handleSubmit}
-              className="p-6 max-h-[calc(90vh-80px)] overflow-y-auto"
+              className="p-4 md:p-6 max-h-[calc(90vh-80px)] overflow-y-auto"
             >
               <div className="space-y-4">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -825,24 +827,6 @@ export default function DepartmentsMaster() {
                   </p>
                 </div>
 
-                {/* <div>
-                                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                                        Assign Manager (Optional)
-                                    </label>
-                                    <select
-                                        value={selectedManager}
-                                        onChange={(e) => setSelectedManager(e.target.value)}
-                                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#C62828] focus:border-transparent"
-                                    >
-                                        <option value="">Select a manager...</option>
-                                        {managers.map(manager => (
-                                            <option key={manager.id} value={manager.id}>
-                                                {manager.full_name || 'Unknown'} ({manager.email || 'No email'}) - {manager.role || 'Unknown'}
-                                            </option>
-                                        ))}
-                                    </select>
-                                </div> */}
-
                 <div className="flex items-center">
                   <input
                     type="checkbox"
@@ -863,17 +847,17 @@ export default function DepartmentsMaster() {
               </div>
 
               {/* Modal Footer */}
-              <div className="border-t pt-6 mt-6 flex justify-end gap-3">
+              <div className="border-t pt-6 mt-6 flex flex-col-reverse sm:flex-row justify-end gap-3">
                 <button
                   type="button"
                   onClick={() => setShowModal(false)}
-                  className="px-6 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
+                  className="px-4 md:px-6 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors w-full sm:w-auto"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
-                  className="bg-gradient-to-r from-[#C62828] to-red-600 text-white px-6 py-2 rounded-lg hover:from-red-600 hover:to-red-700 transition-all duration-200 font-medium"
+                  className="bg-gradient-to-r from-[#C62828] to-red-600 text-white px-4 md:px-6 py-2 rounded-lg hover:from-red-600 hover:to-red-700 transition-all duration-200 font-medium w-full sm:w-auto"
                 >
                   {editingDept ? "Update Department" : "Create Department"}
                 </button>
@@ -885,17 +869,17 @@ export default function DepartmentsMaster() {
 
       {/* Assign Manager Modal */}
       {showManagerModal && editingDept && (
-        <div className="fixed inset-0 bg-black/60 backdrop-blur-md flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md">
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-md flex items-center justify-center z-50 p-2 md:p-4">
+          <div className="bg-white rounded-xl md:rounded-2xl shadow-2xl w-full max-w-md mx-2">
             {/* Modal Header */}
-            <div className="bg-gradient-to-r from-purple-600 to-purple-700 px-5 py-3 flex justify-between items-center">
+            <div className="bg-gradient-to-r from-purple-600 to-purple-700 px-4 md:px-5 py-3 flex justify-between items-center">
               <div className="flex items-center gap-2">
                 <div className="p-1.5 bg-white/20 rounded-xl">
                   <Users className="w-4 h-4 text-white" />
                 </div>
                 <div>
-                  <h3 className="font-bold text-white">Assign Manager</h3>
-                  <p className="text-xs text-white/90">
+                  <h3 className="font-bold text-white text-sm md:text-base">Assign Manager</h3>
+                  <p className="text-xs text-white/90 hidden md:block">
                     {renderDepartmentName(editingDept)} (
                     {renderDepartmentCode(editingDept)})
                   </p>
@@ -909,7 +893,7 @@ export default function DepartmentsMaster() {
               </button>
             </div>
 
-            <div className="p-6">
+            <div className="p-4 md:p-6">
               <div className="mb-4">
                 <label className="block text-sm font-medium text-gray-700 mb-2">
                   Select Manager
@@ -937,17 +921,17 @@ export default function DepartmentsMaster() {
               )}
 
               {/* Modal Footer */}
-              <div className="border-t pt-6 flex justify-end gap-3">
+              <div className="border-t pt-6 flex flex-col-reverse sm:flex-row justify-end gap-3">
                 <button
                   type="button"
                   onClick={() => setShowManagerModal(false)}
-                  className="px-6 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
+                  className="px-4 md:px-6 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors w-full sm:w-auto"
                 >
                   Cancel
                 </button>
                 <button
                   onClick={handleAssignManager}
-                  className="bg-gradient-to-r from-purple-600 to-purple-700 text-white px-6 py-2 rounded-lg hover:from-purple-700 hover:to-purple-800 transition-all duration-200 font-medium"
+                  className="bg-gradient-to-r from-purple-600 to-purple-700 text-white px-4 md:px-6 py-2 rounded-lg hover:from-purple-700 hover:to-purple-800 transition-all duration-200 font-medium w-full sm:w-auto"
                 >
                   {selectedManager ? "Assign Manager" : "Remove Manager"}
                 </button>
@@ -959,7 +943,6 @@ export default function DepartmentsMaster() {
     </div>
   );
 }
-
 // // src/components/DepartmentsMaster.tsx
 // import React, { useEffect, useState } from "react";
 // import { Plus, Edit2, Trash2, X, Building, Users, RefreshCw, Filter } from "lucide-react";
