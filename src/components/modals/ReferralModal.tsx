@@ -1,8 +1,9 @@
-import { useState } from 'react';
-import { X, Upload } from 'lucide-react';
-import Modal from '../ui/Modal';
-import Button from '../ui/Button';
-import Input from '../ui/Input';
+import { useState } from "react";
+import { X, Upload } from "lucide-react";
+import Modal from "../ui/Modal";
+import Button from "../ui/Button";
+import Input from "../ui/Input";
+import { toast } from "sonner";
 
 interface ReferralModalProps {
   jobId: string;
@@ -17,25 +18,35 @@ export default function ReferralModal({
   jobTitle,
   isOpen,
   onClose,
-  onSuccess
+  onSuccess,
 }: ReferralModalProps) {
   const [formData, setFormData] = useState({
-    name: '',
-    email: '',
-    phone: '',
+    name: "",
+    email: "",
+    phone: "",
     resume: null as File | null,
-    notes: '',
+    notes: "",
   });
   const [submitting, setSubmitting] = useState(false);
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+  const handleChange = (
+    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>,
+  ) => {
     const { name, value } = e.target;
-    setFormData(prev => ({ ...prev, [name]: value }));
+    if (!/^\d*$/.test(value)) {
+      toast.warning("Enter Valid Phone Number.");
+      return;
+    }
+    if (value.length > 10) {
+      toast.warning("Mobile number must be 10 digit.");
+      return;
+    }
+    setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0] || null;
-    setFormData(prev => ({ ...prev, resume: file }));
+    setFormData((prev) => ({ ...prev, resume: file }));
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -44,24 +55,24 @@ export default function ReferralModal({
 
     // Mock API call simulation
     setTimeout(() => {
-      console.log('Referral submitted:', {
+      console.log("Referral submitted:", {
         jobId,
         jobTitle,
         ...formData,
       });
 
-      alert('Referral submitted successfully!');
+      alert("Referral submitted successfully!");
       setSubmitting(false);
       onSuccess();
       onClose();
 
       // Reset form
       setFormData({
-        name: '',
-        email: '',
-        phone: '',
+        name: "",
+        email: "",
+        phone: "",
         resume: null,
-        notes: '',
+        notes: "",
       });
     }, 1000);
   };
@@ -71,7 +82,9 @@ export default function ReferralModal({
       <div className="p-6">
         <div className="flex items-center justify-between mb-6">
           <div>
-            <h2 className="text-2xl font-bold text-slate-900">Refer Candidate</h2>
+            <h2 className="text-2xl font-bold text-slate-900">
+              Refer Candidate
+            </h2>
             <p className="text-slate-600 mt-1">For: {jobTitle}</p>
           </div>
           <button
@@ -142,10 +155,13 @@ export default function ReferralModal({
                 <Upload className="h-8 w-8 text-slate-400 mx-auto mb-2" />
                 <p className="text-slate-700">
                   {formData.resume ? (
-                    <span className="text-green-600">{formData.resume.name}</span>
+                    <span className="text-green-600">
+                      {formData.resume.name}
+                    </span>
                   ) : (
                     <>
-                      <span className="font-medium">Click to upload</span> or drag and drop
+                      <span className="font-medium">Click to upload</span> or
+                      drag and drop
                     </>
                   )}
                 </p>
@@ -179,7 +195,7 @@ export default function ReferralModal({
               Cancel
             </Button>
             <Button type="submit" disabled={submitting}>
-              {submitting ? 'Submitting...' : 'Submit Referral'}
+              {submitting ? "Submitting..." : "Submit Referral"}
             </Button>
           </div>
         </form>

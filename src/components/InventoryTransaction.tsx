@@ -14,6 +14,7 @@ import {
   CheckCircle,
   AlertCircle,
 } from "lucide-react";
+import { toast } from "sonner";
 
 interface InventoryTransactionProps {
   setActiveFormTab: React.Dispatch<React.SetStateAction<string>>;
@@ -167,7 +168,7 @@ export default function InventoryTransaction({
 
   // Get selected PO details
   const selectedPO = purchaseOrders.find(
-    (po) => po.poNumber === materialInForm.poNumber
+    (po) => po.poNumber === materialInForm.poNumber,
   );
 
   // Initialize items when PO is selected
@@ -194,7 +195,7 @@ export default function InventoryTransaction({
   // Handle Material Out input change
   const handleMaterialOutChange = (
     field: keyof MaterialOutForm,
-    value: string
+    value: string,
   ) => {
     setMaterialOutForm((prev) => ({ ...prev, [field]: value }));
   };
@@ -202,7 +203,7 @@ export default function InventoryTransaction({
   // Handle Material In input change
   const handleMaterialInChange = (
     field: keyof MaterialInForm,
-    value: string
+    value: string,
   ) => {
     setMaterialInForm((prev) => ({ ...prev, [field]: value }));
   };
@@ -214,7 +215,7 @@ export default function InventoryTransaction({
       items: prev.items.map((item) =>
         item.materialId === materialId
           ? { ...item, receivedQuantity: value }
-          : item
+          : item,
       ),
     }));
   };
@@ -229,7 +230,7 @@ export default function InventoryTransaction({
 
   // Get selected material details
   const selectedMaterial = allInventory.find(
-    (item) => item.id === materialOutForm.materialId
+    (item) => item.id === materialOutForm.materialId,
   );
 
   // Submit Material Out
@@ -252,14 +253,14 @@ export default function InventoryTransaction({
     }
 
     const material = allInventory.find(
-      (item) => item.id === materialOutForm.materialId
+      (item) => item.id === materialOutForm.materialId,
     );
     if (
       material &&
       Number(material.quantity) < Number(materialOutForm.quantity)
     ) {
       alert(
-        `Insufficient stock! Available: ${material.quantity} ${material.unit}`
+        `Insufficient stock! Available: ${material.quantity} ${material.unit}`,
       );
       return;
     }
@@ -300,7 +301,7 @@ export default function InventoryTransaction({
 
     // Validate all items have received quantity
     const invalidItems = materialInForm.items.filter(
-      (item) => !item.receivedQuantity || Number(item.receivedQuantity) <= 0
+      (item) => !item.receivedQuantity || Number(item.receivedQuantity) <= 0,
     );
 
     if (invalidItems.length > 0) {
@@ -463,9 +464,17 @@ export default function InventoryTransaction({
                     <input
                       type="tel"
                       value={materialInForm.receiverPhone}
-                      onChange={(e) =>
-                        handleMaterialInChange("receiverPhone", e.target.value)
-                      }
+                      onChange={(e) => {
+                        if (!/^\d*$/.test(e.target.value)) {
+                          toast.warning("Enter Valid Phone Number.");
+                          return;
+                        }
+                        if (e.target.value.length > 10) {
+                          toast.warning("Mobile number must be 10 digit.");
+                          return;
+                        }
+                        handleMaterialInChange("receiverPhone", e.target.value);
+                      }}
                       className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                       placeholder="Enter phone number"
                     />
@@ -486,7 +495,7 @@ export default function InventoryTransaction({
                       onChange={(e) =>
                         handleMaterialInChange(
                           "deliveryLocation",
-                          e.target.value
+                          e.target.value,
                         )
                       }
                       className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
@@ -550,7 +559,7 @@ export default function InventoryTransaction({
                                   onChange={(e) =>
                                     handleItemQuantityChange(
                                       item.materialId,
-                                      e.target.value
+                                      e.target.value,
                                     )
                                   }
                                   className="w-32 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
@@ -612,7 +621,7 @@ export default function InventoryTransaction({
                           </p>
                           <p className="text-xs text-green-600">
                             {(materialInForm.challanFile.size / 1024).toFixed(
-                              1
+                              1,
                             )}{" "}
                             KB
                           </p>
@@ -777,9 +786,17 @@ export default function InventoryTransaction({
                     <input
                       type="tel"
                       value={materialOutForm.phoneNumber}
-                      onChange={(e) =>
-                        handleMaterialOutChange("phoneNumber", e.target.value)
-                      }
+                      onChange={(e) => {
+                        if (!/^\d*$/.test(e.target.value)) {
+                          toast.warning("Enter Valid Phone Number.");
+                          return;
+                        }
+                        if (e.target.value.length > 10) {
+                          toast.warning("Mobile number must be 10 digit.");
+                          return;
+                        }
+                        handleMaterialOutChange("phoneNumber", e.target.value);
+                      }}
                       className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                       placeholder="Enter phone number"
                     />
@@ -801,7 +818,7 @@ export default function InventoryTransaction({
                       onChange={(e) =>
                         handleMaterialOutChange(
                           "deliveryLocation",
-                          e.target.value
+                          e.target.value,
                         )
                       }
                       className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"

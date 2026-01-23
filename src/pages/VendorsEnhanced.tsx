@@ -1228,14 +1228,9 @@
 //   );
 // }
 
-
-
-
-
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import {
   Plus,
-  Search,
   Phone,
   Mail,
   MapPin,
@@ -1267,10 +1262,10 @@ import {
 // ADD THESE DATE PICKER IMPORTS
 import DatePicker from "react-datepicker";
 import { registerLocale } from "react-datepicker";
-import { enGB } from 'date-fns/locale/en-GB';
+import { enGB } from "date-fns/locale/en-GB";
 import "react-datepicker/dist/react-datepicker.css";
 
-registerLocale('en-GB', enGB);
+registerLocale("en-GB", enGB);
 
 /* ---------------------------
    Mock Components & Utilities
@@ -1282,15 +1277,8 @@ import vendorApi from "../lib/vendorApi"; // getVendors, createVendor, updateVen
 import poTypeApi from "../lib/poTypeApi"; // getPOTypes
 import poApi from "../lib/poApi"; // getItems
 import SearchableSelect from "../components/SearchableSelect";
-
-
-
-
-
-
-
-
-
+import { toast } from "sonner";
+import locationData from "../data/india_city_state_pincode_country.json";
 
 /* ---------------------------
    Types
@@ -1353,16 +1341,99 @@ interface ItemOption {
   hsn?: string;
   category?: string;
 }
+interface LocationType {
+  city: string;
+  state: string;
+  pincode: number | string;
+  country: string;
+}
+
+// Pre-process location data for performance
+const processLocationData = () => {
+  const LOCATIONS_DATA = locationData as LocationType[];
+  const stateMap = new Map();
+  const cityPincodeMap = new Map();
+
+  // Deduplicate data - many cities appear multiple times with same pincode
+  const seenCombinations = new Set();
+
+  for (const loc of LOCATIONS_DATA) {
+    const state = loc.state.trim();
+    const city = loc.city.trim();
+    const pincode = loc.pincode.toString();
+    const key = `${state}-${city}-${pincode}`;
+
+    // Skip duplicates
+    if (seenCombinations.has(key)) continue;
+    seenCombinations.add(key);
+
+    // Add city to state map
+    if (!stateMap.has(state)) {
+      stateMap.set(state, new Set());
+    }
+    stateMap.get(state).add({ city, pincode });
+
+    // Store city to pincode mapping (take first pincode for each city)
+    const cityKey = `${state}-${city}`;
+    if (!cityPincodeMap.has(cityKey)) {
+      cityPincodeMap.set(cityKey, pincode);
+    }
+  }
+
+  // Convert to sorted arrays
+  const states = Array.from(stateMap.keys()).sort();
+  const stateCityMap = new Map();
+
+  for (const [state, cities] of stateMap.entries()) {
+    const sortedCities = Array.from(cities).sort((a: any, b: any) =>
+      a.city.localeCompare(b.city),
+    );
+    stateCityMap.set(state, sortedCities);
+  }
+
+  return { states, stateCityMap, cityPincodeMap };
+};
+
 export const INDIAN_STATES = [
-  "Andhra Pradesh", "Arunachal Pradesh", "Assam", "Bihar", "Chhattisgarh",
-  "Goa", "Gujarat", "Haryana", "Himachal Pradesh", "Jharkhand",
-  "Karnataka", "Kerala", "Madhya Pradesh", "Maharashtra", "Manipur",
-  "Meghalaya", "Mizoram", "Nagaland", "Odisha", "Punjab",
-  "Rajasthan", "Sikkim", "Tamil Nadu", "Telangana", "Tripura",
-  "Uttar Pradesh", "Uttarakhand", "West Bengal",
+  "Andhra Pradesh",
+  "Arunachal Pradesh",
+  "Assam",
+  "Bihar",
+  "Chhattisgarh",
+  "Goa",
+  "Gujarat",
+  "Haryana",
+  "Himachal Pradesh",
+  "Jharkhand",
+  "Karnataka",
+  "Kerala",
+  "Madhya Pradesh",
+  "Maharashtra",
+  "Manipur",
+  "Meghalaya",
+  "Mizoram",
+  "Nagaland",
+  "Odisha",
+  "Punjab",
+  "Rajasthan",
+  "Sikkim",
+  "Tamil Nadu",
+  "Telangana",
+  "Tripura",
+  "Uttar Pradesh",
+  "Uttarakhand",
+  "West Bengal",
 ];
 
 export default function VendorsEnhanced(): JSX.Element {
+  const { states, stateCityMap, cityPincodeMap } = useMemo(
+    () => processLocationData(),
+    [],
+  );
+
+  const [availableCities, setAvailableCities] = useState<
+    Array<{ city: string; pincode: string }>
+  >([]);
   const [vendors, setVendors] = useState<Vendor[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
   const [poTypes, setPoTypes] = useState<Category[]>([]);
@@ -1376,7 +1447,7 @@ export default function VendorsEnhanced(): JSX.Element {
   const [errors, setErrors] = useState<any>({});
   const [submitting, setSubmitting] = useState(false);
   const [showFilterSidebar, setShowFilterSidebar] = useState(false);
-  
+
   // Filter states
   const [filterCategory, setFilterCategory] = useState("");
   const [filterCity, setFilterCity] = useState("");
@@ -1391,7 +1462,9 @@ export default function VendorsEnhanced(): JSX.Element {
   const [searchLocation, setSearchLocation] = useState("");
   const [searchCategory, setSearchCategory] = useState("");
   const [searchPAN, setSearchPAN] = useState("");
-  const [selectedVendors, setSelectedVendors] = useState<Set<number | string>>(new Set());
+  const [selectedVendors, setSelectedVendors] = useState<Set<number | string>>(
+    new Set(),
+  );
 
   const [formData, setFormData] = useState<VendorFormData>({
     name: "",
@@ -1415,11 +1488,40 @@ export default function VendorsEnhanced(): JSX.Element {
     sub_item_id: "",
   });
 
+  // Load cities when state changes
+  useEffect(() => {
+    if (formData.office_state) {
+      const cities = stateCityMap.get(formData.office_state) || [];
+      setAvailableCities(cities);
+
+      // Clear city and pincode when state changes
+      setFormData((prev) => ({
+        ...prev,
+        office_city: "",
+        office_pincode: "",
+      }));
+    } else {
+      setAvailableCities([]);
+    }
+  }, [formData.office_state, stateCityMap]);
+
+  // Update pincode when city changes
+  useEffect(() => {
+    if (formData.office_city && formData.office_state) {
+      const cityKey = `${formData.office_state}-${formData.office_city}`;
+      const pincode = cityPincodeMap.get(cityKey) || "";
+      setFormData((prev) => ({
+        ...prev,
+        office_pincode: pincode,
+      }));
+    }
+  }, [formData.office_city, formData.office_state, cityPincodeMap]);
+
   useEffect(() => {
     loadData();
   }, []);
 
- async function loadData() {
+  async function loadData() {
     setLoading(true);
     try {
       // fetch vendors and PO types and items in parallel
@@ -1433,8 +1535,8 @@ export default function VendorsEnhanced(): JSX.Element {
         new Set(
           (vendors || [])
             .map((v: Vendor) => v.category_name || "")
-            .filter(Boolean)
-        )
+            .filter(Boolean),
+        ),
       );
       setCategories(unique.map((n) => ({ name: n })));
     } catch (err) {
@@ -1452,8 +1554,8 @@ export default function VendorsEnhanced(): JSX.Element {
       const list = Array.isArray(data)
         ? data
         : Array.isArray((data as any)?.data)
-        ? (data as any).data
-        : [];
+          ? (data as any).data
+          : [];
       const mapped = list.map((t: any) => ({
         name: t.name || t.type_name || String(t.id),
       }));
@@ -1474,8 +1576,8 @@ export default function VendorsEnhanced(): JSX.Element {
       const arr = Array.isArray(data)
         ? data
         : Array.isArray((data as any)?.data)
-        ? (data as any).data
-        : [];
+          ? (data as any).data
+          : [];
       // normalize each item into ItemOption
       const normalized: ItemOption[] = arr.map((it: any) => ({
         id: String(it.id || it._id || it.item_id || it.key || ""),
@@ -1485,14 +1587,14 @@ export default function VendorsEnhanced(): JSX.Element {
         category: (it.category || it.type || "").toString().toLowerCase(),
       }));
       setMaterials(
-        normalized.filter((i) => (i.category || "").includes("material"))
+        normalized.filter((i) => (i.category || "").includes("material")),
       );
       setServices(
         normalized.filter(
           (i) =>
             (i.category || "").includes("service") ||
-            (i.category || "").includes("services")
-        )
+            (i.category || "").includes("services"),
+        ),
       );
     } catch (err) {
       console.warn("loadItems failed", err);
@@ -1501,26 +1603,26 @@ export default function VendorsEnhanced(): JSX.Element {
     }
   }
 
-const handleCheckboxChange = (id: number | string) => {
-  const newSelected = new Set(selectedVendors);
-  if (newSelected.has(id)) {
-    newSelected.delete(id);
-  } else {
-    newSelected.add(id);
-  }
-  setSelectedVendors(newSelected);
-};
+  const handleCheckboxChange = (id: number | string) => {
+    const newSelected = new Set(selectedVendors);
+    if (newSelected.has(id)) {
+      newSelected.delete(id);
+    } else {
+      newSelected.add(id);
+    }
+    setSelectedVendors(newSelected);
+  };
 
-const handleSelectAll = (e: React.ChangeEvent<HTMLInputElement>) => {
-  if (e.target.checked) {
-    const allIds = new Set(filteredVendors.map(vendor => vendor.id));
-    setSelectedVendors(allIds);
-  } else {
-    setSelectedVendors(new Set());
-  }
-};
+  const handleSelectAll = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.checked) {
+      const allIds = new Set(filteredVendors.map((vendor) => vendor.id));
+      setSelectedVendors(allIds);
+    } else {
+      setSelectedVendors(new Set());
+    }
+  };
 
- const validateForm = (): boolean => {
+  const validateForm = (): boolean => {
     const newErrors: any = {};
 
     if (!formData.name.trim()) newErrors.name = errorMessages.required;
@@ -1583,14 +1685,14 @@ const handleSelectAll = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (!validateForm()) return;
     setSubmitting(true);
     try {
-const payload = {
-  ...formData,
-  sub_item_id:
-    isCategoryMaterial(formData.category_name) ||
-    isCategoryService(formData.category_name)
-      ? formData.sub_item_id
-      : null,
-};
+      const payload = {
+        ...formData,
+        sub_item_id:
+          isCategoryMaterial(formData.category_name) ||
+          isCategoryService(formData.category_name)
+            ? formData.sub_item_id
+            : null,
+      };
       if (editingId) {
         await vendorApi.updateVendor(editingId, payload);
       } else {
@@ -1686,42 +1788,71 @@ const payload = {
 
   const filteredVendors = vendors.filter((vendor) => {
     // Column searches
-    const matchesName = searchName === "" || 
+    const matchesName =
+      searchName === "" ||
       (vendor.name || "").toLowerCase().includes(searchName.toLowerCase());
-    
-    const matchesContact = searchContact === "" || 
-      (vendor.contact_person_name || "").toLowerCase().includes(searchContact.toLowerCase()) ||
+
+    const matchesContact =
+      searchContact === "" ||
+      (vendor.contact_person_name || "")
+        .toLowerCase()
+        .includes(searchContact.toLowerCase()) ||
       (vendor.contact_person_phone || "").includes(searchContact);
-    
-    const matchesLocation = searchLocation === "" || 
-      (vendor.office_city || "").toLowerCase().includes(searchLocation.toLowerCase()) ||
-      (vendor.office_state || "").toLowerCase().includes(searchLocation.toLowerCase());
-    
-    const matchesSearchCategory = searchCategory === "" || 
-      (vendor.category_name || "").toLowerCase().includes(searchCategory.toLowerCase());
-    
-    const matchesPAN = searchPAN === "" || 
-      (vendor.pan_number || "").toLowerCase().includes(searchPAN.toLowerCase()) ||
+
+    const matchesLocation =
+      searchLocation === "" ||
+      (vendor.office_city || "")
+        .toLowerCase()
+        .includes(searchLocation.toLowerCase()) ||
+      (vendor.office_state || "")
+        .toLowerCase()
+        .includes(searchLocation.toLowerCase());
+
+    const matchesSearchCategory =
+      searchCategory === "" ||
+      (vendor.category_name || "")
+        .toLowerCase()
+        .includes(searchCategory.toLowerCase());
+
+    const matchesPAN =
+      searchPAN === "" ||
+      (vendor.pan_number || "")
+        .toLowerCase()
+        .includes(searchPAN.toLowerCase()) ||
       (vendor.gst_number || "").toLowerCase().includes(searchPAN.toLowerCase());
 
     // Sidebar filters
-    const matchesCategory = filterCategory === "" || vendor.category_name === filterCategory;
-    const matchesCity = filterCity === "" || (vendor.office_city || "").toLowerCase().includes(filterCity.toLowerCase());
-    const matchesState = filterState === "" || vendor.office_state === filterState;
-    
-    return matchesName && matchesContact && matchesLocation && matchesSearchCategory && 
-           matchesPAN && matchesCategory && matchesCity && matchesState;
+    const matchesCategory =
+      filterCategory === "" || vendor.category_name === filterCategory;
+    const matchesCity =
+      filterCity === "" ||
+      (vendor.office_city || "")
+        .toLowerCase()
+        .includes(filterCity.toLowerCase());
+    const matchesState =
+      filterState === "" || vendor.office_state === filterState;
+
+    return (
+      matchesName &&
+      matchesContact &&
+      matchesLocation &&
+      matchesSearchCategory &&
+      matchesPAN &&
+      matchesCategory &&
+      matchesCity &&
+      matchesState
+    );
   });
 
   const getCategoryName = (category_name?: string) => {
     return category_name || "";
   };
 
-const categoryOptions = poTypes.length
-  ? poTypes
-  : categories.length
-  ? categories
-  : [];
+  const categoryOptions = poTypes.length
+    ? poTypes
+    : categories.length
+      ? categories
+      : [];
 
   const isCategoryMaterial = (cat?: string) =>
     (cat || "").toLowerCase().includes("material");
@@ -1729,18 +1860,16 @@ const categoryOptions = poTypes.length
     (cat || "").toLowerCase().includes("service");
 
   return (
-<div className="p-0 px-0 bg-gray-50 min-h-screen">
+    <div className="p-0 px-0 bg-gray-50 min-h-screen">
       <div className="mb-2">
         <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-        
           <div className="flex gap-3">
-           
             <button
-  onClick={() => {
-    resetForm();
-    setShowModal(true);
-  }}
-  className="
+              onClick={() => {
+                resetForm();
+                setShowModal(true);
+              }}
+              className="
     bg-[#C62828] text-white -mt-2 mb-1
     px-3 py-1.5 
     sm:px-4 sm:py-2 
@@ -1755,17 +1884,16 @@ const categoryOptions = poTypes.length
     shadow-sm
     text-xs sm:text-sm md:text-base
   "
->
-  <Plus className="w-3.5 h-3.5 sm:w-4 sm:h-4 md:w-5 md:h-5" />
-  <span>Add Vendor</span>
-</button>
-
+            >
+              <Plus className="w-3.5 h-3.5 sm:w-4 sm:h-4 md:w-5 md:h-5" />
+              <span>Add Vendor</span>
+            </button>
           </div>
         </div>
       </div>
 
       {/* Table */}
-       {/* Table */}
+      {/* Table */}
       {loading ? (
         <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-3 text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
@@ -1774,253 +1902,269 @@ const categoryOptions = poTypes.length
       ) : (
         <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
           <div className="overflow-x-auto">
-           <table className="w-full min-w-[800px]">
-  <thead className="bg-gray-200 border-b border-gray-200">
-    {/* Header Row */}
-    <tr>
-      <th className="px-3 md:px-4 py-2 text-left">
-        <input
-          type="checkbox"
-          checked={selectedVendors.size === filteredVendors.length && filteredVendors.length > 0}
-          onChange={handleSelectAll}
-          className="w-3.5 h-3.5 md:w-4 md:h-4 text-blue-600 rounded focus:ring-blue-500"
-        />
-      </th>
-      <th className="px-3 md:px-4 py-2 text-left">
-        <div className="text-[10px] md:text-xs font-semibold text-gray-700 uppercase tracking-wider">
-          Name
-        </div>
-      </th>
-      <th className="px-3 md:px-4 py-2 text-left">
-        <div className="text-[10px] md:text-xs font-semibold text-gray-700 uppercase tracking-wider">
-          Contact
-        </div>
-      </th>
-      <th className="px-3 md:px-4 py-2 text-left">
-        <div className="text-[10px] md:text-xs font-semibold text-gray-700 uppercase tracking-wider">
-          Location
-        </div>
-      </th>
-      <th className="px-3 md:px-4 py-2 text-left">
-        <div className="text-[10px] md:text-xs font-semibold text-gray-700 uppercase tracking-wider">
-          Category
-        </div>
-      </th>
-      <th className="px-3 md:px-4 py-2 text-left">
-        <div className="text-[10px] md:text-xs font-semibold text-gray-700 uppercase tracking-wider">
-          GST/PAN
-        </div>
-      </th>
-      <th className="px-3 md:px-4 py-2 text-left">
-        <div className="text-[10px] md:text-xs font-semibold text-gray-700 uppercase tracking-wider">
-          Actions
-        </div>
-      </th>
-    </tr>
-    
-    {/* Search Row - Separate Row Below Headers */}
-    <tr className="bg-gray-50 border-b border-gray-200">
-      <td className="px-3 md:px-4 py-1"></td>
-      
-      {/* Name Column Search */}
-      <td className="px-3 md:px-4 py-1">
-        <input
-          type="text"
-          placeholder="Search..."
-          value={searchName}
-          onChange={(e) => setSearchName(e.target.value)}
-          className="w-full px-2 py-1 text-[9px] md:text-xs border border-gray-300 rounded focus:ring-1 focus:ring-blue-500 focus:border-transparent"
-        />
-      </td>
-      
-      {/* Contact Column Search */}
-      <td className="px-3 md:px-4 py-1">
-        <input
-          type="text"
-          placeholder="Search..."
-          value={searchContact}
-          onChange={(e) => setSearchContact(e.target.value)}
-          className="w-full px-2 py-1 text-[9px] md:text-xs border border-gray-300 rounded focus:ring-1 focus:ring-blue-500 focus:border-transparent"
-        />
-      </td>
-      
-      {/* Location Column Search */}
-      <td className="px-3 md:px-4 py-1">
-        <input
-          type="text"
-          placeholder="Search..."
-          value={searchLocation}
-          onChange={(e) => setSearchLocation(e.target.value)}
-          className="w-full px-2 py-1 text-[9px] md:text-xs border border-gray-300 rounded focus:ring-1 focus:ring-blue-500 focus:border-transparent"
-        />
-      </td>
-      
-      {/* Category Column Search */}
-      <td className="px-3 md:px-4 py-1">
-        <input
-          type="text"
-          placeholder="Search..."
-          value={searchCategory}
-          onChange={(e) => setSearchCategory(e.target.value)}
-          className="w-full px-2 py-1 text-[9px] md:text-xs border border-gray-300 rounded focus:ring-1 focus:ring-blue-500 focus:border-transparent"
-        />
-      </td>
-      
-      {/* GST/PAN Column Search */}
-      <td className="px-3 md:px-4 py-1">
-        <input
-          type="text"
-          placeholder="Search..."
-          value={searchPAN}
-          onChange={(e) => setSearchPAN(e.target.value)}
-          className="w-full px-2 py-1 text-[9px] md:text-xs border border-gray-300 rounded focus:ring-1 focus:ring-blue-500 focus:border-transparent"
-        />
-      </td>
-      
-      {/* Actions Column - Filter Button */}
-      <td className="px-3 md:px-4 py-1 text-center">
-        <button
-          onClick={() => setShowFilterSidebar(true)}
-          className="inline-flex items-center px-2 py-1 border border-gray-300 rounded hover:bg-gray-50 transition text-[9px] md:text-xs font-medium text-gray-700"
-          title="Advanced Filters"
-        >
-          <Filter className="w-3 h-3 mr-0.5" />
-          Filters
-        </button>
-      </td>
-    </tr>
-  </thead>
-  
-  <tbody className="divide-y divide-gray-200">
-    {filteredVendors.length === 0 ? (
-      <tr>
-        <td colSpan={7} className="px-6 py-12 text-center">
-          <Building2 className="w-12 h-12 md:w-16 md:h-16 text-gray-300 mx-auto mb-3" />
-          <p className="text-gray-600 text-sm md:text-lg font-medium">No vendors found</p>
-          <p className="text-gray-500 text-xs md:text-sm mt-2">
-            Try adjusting your search or filters
-          </p>
-        </td>
-      </tr>
-    ) : (
-      filteredVendors.map((vendor, index) => (
-        <tr
-          key={vendor.id}
-          className={`hover:bg-gray-50 transition ${index % 2 === 0 ? "bg-white" : "bg-gray-50/50"}`}
-        >
-          <td className="px-3 md:px-4 py-3">
-            <input
-              type="checkbox"
-              checked={selectedVendors.has(vendor.id)}
-              onChange={() => handleCheckboxChange(vendor.id)}
-              className="w-3.5 h-3.5 md:w-4 md:h-4 text-blue-600 rounded focus:ring-blue-500"
-            />
-          </td>
-          
-          <td className="px-3 md:px-4 py-3">
-            <div className="flex items-center gap-2 md:gap-3">
-              <div className="bg-[#C62828] w-8 h-8 md:w-10 md:h-10 rounded-full flex items-center justify-center text-white font-semibold text-xs md:text-sm">
-                {vendor.name.charAt(0).toUpperCase()}
-              </div>
-              <div>
-                <p className="font-semibold text-gray-900 text-xs md:text-sm">{vendor.name}</p>
-                {vendor.sub_item_id && (
-                  <p className="text-[10px] md:text-xs text-gray-500">ID: {vendor.sub_item_id}</p>
+            <table className="w-full min-w-[800px]">
+              <thead className="bg-gray-200 border-b border-gray-200">
+                {/* Header Row */}
+                <tr>
+                  <th className="px-3 md:px-4 py-2 text-left">
+                    <input
+                      type="checkbox"
+                      checked={
+                        selectedVendors.size === filteredVendors.length &&
+                        filteredVendors.length > 0
+                      }
+                      onChange={handleSelectAll}
+                      className="w-3.5 h-3.5 md:w-4 md:h-4 text-blue-600 rounded focus:ring-blue-500"
+                    />
+                  </th>
+                  <th className="px-3 md:px-4 py-2 text-left">
+                    <div className="text-[10px] md:text-xs font-semibold text-gray-700 uppercase tracking-wider">
+                      Name
+                    </div>
+                  </th>
+                  <th className="px-3 md:px-4 py-2 text-left">
+                    <div className="text-[10px] md:text-xs font-semibold text-gray-700 uppercase tracking-wider">
+                      Contact
+                    </div>
+                  </th>
+                  <th className="px-3 md:px-4 py-2 text-left">
+                    <div className="text-[10px] md:text-xs font-semibold text-gray-700 uppercase tracking-wider">
+                      Location
+                    </div>
+                  </th>
+                  <th className="px-3 md:px-4 py-2 text-left">
+                    <div className="text-[10px] md:text-xs font-semibold text-gray-700 uppercase tracking-wider">
+                      Category
+                    </div>
+                  </th>
+                  <th className="px-3 md:px-4 py-2 text-left">
+                    <div className="text-[10px] md:text-xs font-semibold text-gray-700 uppercase tracking-wider">
+                      GST/PAN
+                    </div>
+                  </th>
+                  <th className="px-3 md:px-4 py-2 text-left">
+                    <div className="text-[10px] md:text-xs font-semibold text-gray-700 uppercase tracking-wider">
+                      Actions
+                    </div>
+                  </th>
+                </tr>
+
+                {/* Search Row - Separate Row Below Headers */}
+                <tr className="bg-gray-50 border-b border-gray-200">
+                  <td className="px-3 md:px-4 py-1"></td>
+
+                  {/* Name Column Search */}
+                  <td className="px-3 md:px-4 py-1">
+                    <input
+                      type="text"
+                      placeholder="Search..."
+                      value={searchName}
+                      onChange={(e) => setSearchName(e.target.value)}
+                      className="w-full px-2 py-1 text-[9px] md:text-xs border border-gray-300 rounded focus:ring-1 focus:ring-blue-500 focus:border-transparent"
+                    />
+                  </td>
+
+                  {/* Contact Column Search */}
+                  <td className="px-3 md:px-4 py-1">
+                    <input
+                      type="text"
+                      placeholder="Search..."
+                      value={searchContact}
+                      onChange={(e) => setSearchContact(e.target.value)}
+                      className="w-full px-2 py-1 text-[9px] md:text-xs border border-gray-300 rounded focus:ring-1 focus:ring-blue-500 focus:border-transparent"
+                    />
+                  </td>
+
+                  {/* Location Column Search */}
+                  <td className="px-3 md:px-4 py-1">
+                    <input
+                      type="text"
+                      placeholder="Search..."
+                      value={searchLocation}
+                      onChange={(e) => setSearchLocation(e.target.value)}
+                      className="w-full px-2 py-1 text-[9px] md:text-xs border border-gray-300 rounded focus:ring-1 focus:ring-blue-500 focus:border-transparent"
+                    />
+                  </td>
+
+                  {/* Category Column Search */}
+                  <td className="px-3 md:px-4 py-1">
+                    <input
+                      type="text"
+                      placeholder="Search..."
+                      value={searchCategory}
+                      onChange={(e) => setSearchCategory(e.target.value)}
+                      className="w-full px-2 py-1 text-[9px] md:text-xs border border-gray-300 rounded focus:ring-1 focus:ring-blue-500 focus:border-transparent"
+                    />
+                  </td>
+
+                  {/* GST/PAN Column Search */}
+                  <td className="px-3 md:px-4 py-1">
+                    <input
+                      type="text"
+                      placeholder="Search..."
+                      value={searchPAN}
+                      onChange={(e) => setSearchPAN(e.target.value)}
+                      className="w-full px-2 py-1 text-[9px] md:text-xs border border-gray-300 rounded focus:ring-1 focus:ring-blue-500 focus:border-transparent"
+                    />
+                  </td>
+
+                  {/* Actions Column - Filter Button */}
+                  <td className="px-3 md:px-4 py-1 text-center">
+                    <button
+                      onClick={() => setShowFilterSidebar(true)}
+                      className="inline-flex items-center px-2 py-1 border border-gray-300 rounded hover:bg-gray-50 transition text-[9px] md:text-xs font-medium text-gray-700"
+                      title="Advanced Filters"
+                    >
+                      <Filter className="w-3 h-3 mr-0.5" />
+                      Filters
+                    </button>
+                  </td>
+                </tr>
+              </thead>
+
+              <tbody className="divide-y divide-gray-200">
+                {filteredVendors.length === 0 ? (
+                  <tr>
+                    <td colSpan={7} className="px-6 py-12 text-center">
+                      <Building2 className="w-12 h-12 md:w-16 md:h-16 text-gray-300 mx-auto mb-3" />
+                      <p className="text-gray-600 text-sm md:text-lg font-medium">
+                        No vendors found
+                      </p>
+                      <p className="text-gray-500 text-xs md:text-sm mt-2">
+                        Try adjusting your search or filters
+                      </p>
+                    </td>
+                  </tr>
+                ) : (
+                  filteredVendors.map((vendor, index) => (
+                    <tr
+                      key={vendor.id}
+                      className={`hover:bg-gray-50 transition ${index % 2 === 0 ? "bg-white" : "bg-gray-50/50"}`}
+                    >
+                      <td className="px-3 md:px-4 py-3">
+                        <input
+                          type="checkbox"
+                          checked={selectedVendors.has(vendor.id)}
+                          onChange={() => handleCheckboxChange(vendor.id)}
+                          className="w-3.5 h-3.5 md:w-4 md:h-4 text-blue-600 rounded focus:ring-blue-500"
+                        />
+                      </td>
+
+                      <td className="px-3 md:px-4 py-3">
+                        <div className="flex items-center gap-2 md:gap-3">
+                          <div className="bg-[#C62828] w-8 h-8 md:w-10 md:h-10 rounded-full flex items-center justify-center text-white font-semibold text-xs md:text-sm">
+                            {vendor.name.charAt(0).toUpperCase()}
+                          </div>
+                          <div>
+                            <p className="font-semibold text-gray-900 text-xs md:text-sm">
+                              {vendor.name}
+                            </p>
+                            {vendor.sub_item_id && (
+                              <p className="text-[10px] md:text-xs text-gray-500">
+                                ID: {vendor.sub_item_id}
+                              </p>
+                            )}
+                          </div>
+                        </div>
+                      </td>
+                      <td className="px-3 md:px-4 py-3">
+                        <div className="space-y-1">
+                          <div className="flex items-center gap-1.5 md:gap-2 text-xs md:text-sm text-gray-900">
+                            <User className="w-3 h-3 md:w-4 md:h-4 text-gray-400" />
+                            {vendor.contact_person_name || "-"}
+                          </div>
+                          {vendor.contact_person_phone && (
+                            <div className="flex items-center gap-1.5 md:gap-2 text-[11px] md:text-sm text-gray-600">
+                              <Phone className="w-2.5 h-2.5 md:w-3.5 md:h-3.5 text-gray-400" />
+                              {vendor.phone_country_code}{" "}
+                              {vendor.contact_person_phone}
+                            </div>
+                          )}
+                          {vendor.contact_person_email && (
+                            <div className="flex items-center gap-1.5 md:gap-2 text-[11px] md:text-sm text-gray-600">
+                              <Mail className="w-2.5 h-2.5 md:w-3.5 md:h-3.5 text-gray-400" />
+                              <span className="truncate max-w-[120px]">
+                                {vendor.contact_person_email}
+                              </span>
+                            </div>
+                          )}
+                        </div>
+                      </td>
+                      <td className="px-3 md:px-4 py-3">
+                        <div className="flex items-center gap-1.5 md:gap-2">
+                          <MapPin className="w-3 h-3 md:w-4 md:h-4 text-gray-400" />
+                          <span className="text-xs md:text-sm text-gray-900 truncate max-w-[100px]">
+                            {[vendor.office_city, vendor.office_state]
+                              .filter(Boolean)
+                              .join(", ") || "-"}
+                          </span>
+                        </div>
+                      </td>
+                      <td className="px-3 md:px-4 py-3">
+                        <span className="inline-flex items-center px-2 py-0.5 md:px-3 md:py-1 rounded-full text-[10px] md:text-xs font-medium bg-purple-100 text-purple-800">
+                          {getCategoryName(vendor.category_name)}
+                        </span>
+                      </td>
+                      <td className="px-3 md:px-4 py-3">
+                        <div className="space-y-1">
+                          {vendor.gst_number && (
+                            <div className="flex items-center gap-1 md:gap-1.5">
+                              <FileText className="w-2.5 h-2.5 md:w-3.5 md:h-3.5 text-gray-400" />
+                              <span className="text-[10px] md:text-xs text-gray-600 truncate max-w-[80px]">
+                                GST: {vendor.gst_number}
+                              </span>
+                            </div>
+                          )}
+                          {vendor.pan_number && (
+                            <div className="flex items-center gap-1 md:gap-1.5">
+                              <FileText className="w-2.5 h-2.5 md:w-3.5 md:h-3.5 text-gray-400" />
+                              <span className="text-[10px] md:text-xs text-gray-600 truncate max-w-[80px]">
+                                PAN: {vendor.pan_number}
+                              </span>
+                            </div>
+                          )}
+                          {!vendor.gst_number && !vendor.pan_number && "-"}
+                        </div>
+                      </td>
+                      <td className="px-3 md:px-4 py-3">
+                        <div className="flex items-center justify-center gap-1.5 md:gap-2">
+                          <button
+                            onClick={() => handleEdit(vendor)}
+                            className="p-1.5 md:p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition"
+                            title="Edit vendor"
+                          >
+                            <Edit2 className="w-3.5 h-3.5 md:w-4 md:h-4" />
+                          </button>
+                          <button
+                            onClick={() => handleDelete(vendor.id)}
+                            className="p-1.5 md:p-2 text-red-600 hover:bg-red-50 rounded-lg transition"
+                            title="Delete vendor"
+                          >
+                            <Trash2 className="w-3.5 h-3.5 md:w-4 md:h-4" />
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))
                 )}
-              </div>
-            </div>
-          </td>
-          <td className="px-3 md:px-4 py-3">
-            <div className="space-y-1">
-              <div className="flex items-center gap-1.5 md:gap-2 text-xs md:text-sm text-gray-900">
-                <User className="w-3 h-3 md:w-4 md:h-4 text-gray-400" />
-                {vendor.contact_person_name || "-"}
-              </div>
-              {vendor.contact_person_phone && (
-                <div className="flex items-center gap-1.5 md:gap-2 text-[11px] md:text-sm text-gray-600">
-                  <Phone className="w-2.5 h-2.5 md:w-3.5 md:h-3.5 text-gray-400" />
-                  {vendor.phone_country_code} {vendor.contact_person_phone}
-                </div>
-              )}
-              {vendor.contact_person_email && (
-                <div className="flex items-center gap-1.5 md:gap-2 text-[11px] md:text-sm text-gray-600">
-                  <Mail className="w-2.5 h-2.5 md:w-3.5 md:h-3.5 text-gray-400" />
-                  <span className="truncate max-w-[120px]">{vendor.contact_person_email}</span>
-                </div>
-              )}
-            </div>
-          </td>
-          <td className="px-3 md:px-4 py-3">
-            <div className="flex items-center gap-1.5 md:gap-2">
-              <MapPin className="w-3 h-3 md:w-4 md:h-4 text-gray-400" />
-              <span className="text-xs md:text-sm text-gray-900 truncate max-w-[100px]">
-                {[vendor.office_city, vendor.office_state]
-                  .filter(Boolean)
-                  .join(", ") || "-"}
-              </span>
-            </div>
-          </td>
-          <td className="px-3 md:px-4 py-3">
-            <span className="inline-flex items-center px-2 py-0.5 md:px-3 md:py-1 rounded-full text-[10px] md:text-xs font-medium bg-purple-100 text-purple-800">
-              {getCategoryName(vendor.category_name)}
-            </span>
-          </td>
-          <td className="px-3 md:px-4 py-3">
-            <div className="space-y-1">
-              {vendor.gst_number && (
-                <div className="flex items-center gap-1 md:gap-1.5">
-                  <FileText className="w-2.5 h-2.5 md:w-3.5 md:h-3.5 text-gray-400" />
-                  <span className="text-[10px] md:text-xs text-gray-600 truncate max-w-[80px]">GST: {vendor.gst_number}</span>
-                </div>
-              )}
-              {vendor.pan_number && (
-                <div className="flex items-center gap-1 md:gap-1.5">
-                  <FileText className="w-2.5 h-2.5 md:w-3.5 md:h-3.5 text-gray-400" />
-                  <span className="text-[10px] md:text-xs text-gray-600 truncate max-w-[80px]">PAN: {vendor.pan_number}</span>
-                </div>
-              )}
-              {!vendor.gst_number && !vendor.pan_number && "-"}
-            </div>
-          </td>
-          <td className="px-3 md:px-4 py-3">
-            <div className="flex items-center justify-center gap-1.5 md:gap-2">
-              <button
-                onClick={() => handleEdit(vendor)}
-                className="p-1.5 md:p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition"
-                title="Edit vendor"
-              >
-                <Edit2 className="w-3.5 h-3.5 md:w-4 md:h-4" />
-              </button>
-              <button
-                onClick={() => handleDelete(vendor.id)}
-                className="p-1.5 md:p-2 text-red-600 hover:bg-red-50 rounded-lg transition"
-                title="Delete vendor"
-              >
-                <Trash2 className="w-3.5 h-3.5 md:w-4 md:h-4" />
-              </button>
-            </div>
-          </td>
-        </tr>
-      ))
-    )}
-  </tbody>
-</table>
+              </tbody>
+            </table>
           </div>
         </div>
       )}
 
       {/* Filter Sidebar */}
-    {showFilterSidebar && (
-  <div className="fixed inset-0 z-50 overflow-hidden">
-    {/* Overlay */}
-    <div
-      className="absolute inset-0 bg-black/40 backdrop-blur-[1px]"
-      onClick={() => setShowFilterSidebar(false)}
-    />
+      {showFilterSidebar && (
+        <div className="fixed inset-0 z-50 overflow-hidden">
+          {/* Overlay */}
+          <div
+            className="absolute inset-0 bg-black/40 backdrop-blur-[1px]"
+            onClick={() => setShowFilterSidebar(false)}
+          />
 
-    {/* Sidebar */}
-    <div
-      className={`
+          {/* Sidebar */}
+          <div
+            className={`
         fixed inset-y-0 right-0
         bg-white shadow-2xl flex flex-col
         transform transition-all duration-300 ease-out
@@ -2035,242 +2179,258 @@ const categoryOptions = poTypes.length
         /* SLIDE ANIMATION */
         translate-x-0
       `}
-    >
-      {/* ================= HEADER ================= */}
-      <div className="bg-[#C62828] text-white px-4 sm:px-6 py-4 flex justify-between items-center">
-        <div className="flex items-center gap-3">
-          <div className="p-2 bg-white/20 rounded-lg">
-            <Calendar className="w-5 h-5 text-white" />
-          </div>
-          <div>
-            <h2 className="text-lg sm:text-xl font-bold">Filters</h2>
-            <p className="text-xs sm:text-sm text-white/80">
-              Filter vendors by various criteria
-            </p>
-          </div>
-        </div>
-
-        <div className="flex items-center gap-2">
-          <button
-            onClick={resetFilters}
-            className="text-xs sm:text-sm hover:bg-white/20 px-3 py-1.5 rounded transition"
           >
-            Reset
-          </button>
-          <button
-            onClick={() => setShowFilterSidebar(false)}
-            className="hover:bg-white/20 rounded-lg p-1.5 transition"
-          >
-            <X className="w-5 h-5" />
-          </button>
-        </div>
-      </div>
-
-      {/* ================= CONTENT ================= */}
-      <div className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-6">
-        {/* Category + State */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Category
-            </label>
-            <select
-              value={filterCategory}
-              onChange={(e) => setFilterCategory(e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#C62828]/30"
-            >
-              <option value="">All</option>
-              {categoryOptions.map((cat) => (
-                <option key={cat.name} value={cat.name}>
-                  {cat.name}
-                </option>
-              ))}
-            </select>
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              State
-            </label>
-            <select
-              value={filterState}
-              onChange={(e) => setFilterState(e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#C62828]/30"
-            >
-              <option value="">All</option>
-              {INDIAN_STATES.map((state) => (
-                <option key={state} value={state}>
-                  {state}
-                </option>
-              ))}
-            </select>
-          </div>
-        </div>
-
-        {/* City */}
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">
-            City
-          </label>
-          <input
-            type="text"
-            placeholder="Enter city name"
-            value={filterCity}
-            onChange={(e) => setFilterCity(e.target.value)}
-            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#C62828]/30"
-          />
-        </div>
-
-        {/* ================= DATE SECTION (UNCHANGED) ================= */}
-        <div className="border-t pt-4">
-          <div className="space-y-4">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {/* From Date */}
-              <div className="space-y-2">
-                <label className="block text-sm font-semibold text-gray-700 flex items-center gap-2">
-                  <Calendar className="w-4 h-4 text-[#C62828]" />
-                  From Date
-                </label>
-                <div className="relative">
-                  <DatePicker
-                    selected={filterFromDate ? new Date(filterFromDate) : null}
-                    onChange={(date: Date | null) => {
-                      if (date) {
-                        setFilterFromDate(date.toISOString().split("T")[0]);
-                      } else {
-                        setFilterFromDate("");
-                      }
-                    }}
-                    selectsStart
-                    startDate={filterFromDate ? new Date(filterFromDate) : null}
-                    endDate={filterToDate ? new Date(filterToDate) : null}
-                    maxDate={filterToDate ? new Date(filterToDate) : new Date()}
-                    placeholderText="Select start date"
-                    className="w-full pl-10 pr-4 py-2.5 text-sm border border-gray-300 rounded-lg focus:border-[#C62828] focus:ring-2 focus:ring-[#C62828]/20"
-                    dateFormat="dd/MM/yyyy"
-                    locale="en-GB"
-                    isClearable
-                    showMonthDropdown
-                    showYearDropdown
-                    dropdownMode="select"
-                    disabled={ignoreDate}
-                  />
-                  <div className="absolute left-3 top-1/2 -translate-y-1/2">
-                    <Calendar className="w-4 h-4 text-gray-500" />
-                  </div>
+            {/* ================= HEADER ================= */}
+            <div className="bg-[#C62828] text-white px-4 sm:px-6 py-4 flex justify-between items-center">
+              <div className="flex items-center gap-3">
+                <div className="p-2 bg-white/20 rounded-lg">
+                  <Calendar className="w-5 h-5 text-white" />
+                </div>
+                <div>
+                  <h2 className="text-lg sm:text-xl font-bold">Filters</h2>
+                  <p className="text-xs sm:text-sm text-white/80">
+                    Filter vendors by various criteria
+                  </p>
                 </div>
               </div>
 
-              {/* To Date */}
-              <div className="space-y-2">
-                <label className="block text-sm font-semibold text-gray-700 flex items-center gap-2">
-                  <Calendar className="w-4 h-4 text-[#C62828]" />
-                  To Date
-                </label>
-                <div className="relative">
-                  <DatePicker
-                    selected={filterToDate ? new Date(filterToDate) : null}
-                    onChange={(date: Date | null) => {
-                      if (date) {
-                        setFilterToDate(date.toISOString().split("T")[0]);
-                      } else {
-                        setFilterToDate("");
-                      }
-                    }}
-                    selectsEnd
-                    startDate={filterFromDate ? new Date(filterFromDate) : null}
-                    endDate={filterToDate ? new Date(filterToDate) : null}
-                    minDate={filterFromDate ? new Date(filterFromDate) : undefined}
-                    maxDate={new Date()}
-                    placeholderText="Select end date"
-                    className="w-full pl-10 pr-4 py-2.5 text-sm border border-gray-300 rounded-lg focus:border-[#C62828] focus:ring-2 focus:ring-[#C62828]/20"
-                    dateFormat="dd/MM/yyyy"
-                    locale="en-GB"
-                    isClearable
-                    showMonthDropdown
-                    showYearDropdown
-                    dropdownMode="select"
-                    disabled={ignoreDate}
-                  />
-                  <div className="absolute left-3 top-1/2 -translate-y-1/2">
-                    <Calendar className="w-4 h-4 text-gray-500" />
-                  </div>
-                </div>
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={resetFilters}
+                  className="text-xs sm:text-sm hover:bg-white/20 px-3 py-1.5 rounded transition"
+                >
+                  Reset
+                </button>
+                <button
+                  onClick={() => setShowFilterSidebar(false)}
+                  className="hover:bg-white/20 rounded-lg p-1.5 transition"
+                >
+                  <X className="w-5 h-5" />
+                </button>
               </div>
             </div>
 
-            {(filterFromDate || filterToDate) && (
-              <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-sm font-medium text-gray-800">
-                      Selected Range:
-                    </p>
-                    <p className="text-xs text-gray-600">
-                      {filterFromDate || "Any"} → {filterToDate || "Any"}
-                    </p>
-                  </div>
-                  <button
-                    onClick={() => {
-                      setFilterFromDate("");
-                      setFilterToDate("");
-                    }}
-                    className="text-xs text-red-600 font-medium"
+            {/* ================= CONTENT ================= */}
+            <div className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-6">
+              {/* Category + State */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Category
+                  </label>
+                  <select
+                    value={filterCategory}
+                    onChange={(e) => setFilterCategory(e.target.value)}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#C62828]/30"
                   >
-                    Clear Dates
-                  </button>
+                    <option value="">All</option>
+                    {categoryOptions.map((cat) => (
+                      <option key={cat.name} value={cat.name}>
+                        {cat.name}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                {/* State Filter in Sidebar */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    State
+                  </label>
+                  <select
+                    value={filterState}
+                    onChange={(e) => setFilterState(e.target.value)}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#C62828]/30"
+                  >
+                    <option value="">All</option>
+                    {states.map((state) => (
+                      <option key={state} value={state}>
+                        {state}
+                      </option>
+                    ))}
+                  </select>
                 </div>
               </div>
-            )}
+
+              {/* City */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  City
+                </label>
+                <input
+                  type="text"
+                  placeholder="Enter city name"
+                  value={filterCity}
+                  onChange={(e) => setFilterCity(e.target.value)}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#C62828]/30"
+                />
+              </div>
+
+              {/* ================= DATE SECTION (UNCHANGED) ================= */}
+              <div className="border-t pt-4">
+                <div className="space-y-4">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {/* From Date */}
+                    <div className="space-y-2">
+                      <label className="block text-sm font-semibold text-gray-700 flex items-center gap-2">
+                        <Calendar className="w-4 h-4 text-[#C62828]" />
+                        From Date
+                      </label>
+                      <div className="relative">
+                        <DatePicker
+                          selected={
+                            filterFromDate ? new Date(filterFromDate) : null
+                          }
+                          onChange={(date: Date | null) => {
+                            if (date) {
+                              setFilterFromDate(
+                                date.toISOString().split("T")[0],
+                              );
+                            } else {
+                              setFilterFromDate("");
+                            }
+                          }}
+                          selectsStart
+                          startDate={
+                            filterFromDate ? new Date(filterFromDate) : null
+                          }
+                          endDate={filterToDate ? new Date(filterToDate) : null}
+                          maxDate={
+                            filterToDate ? new Date(filterToDate) : new Date()
+                          }
+                          placeholderText="Select start date"
+                          className="w-full pl-10 pr-4 py-2.5 text-sm border border-gray-300 rounded-lg focus:border-[#C62828] focus:ring-2 focus:ring-[#C62828]/20"
+                          dateFormat="dd/MM/yyyy"
+                          locale="en-GB"
+                          isClearable
+                          showMonthDropdown
+                          showYearDropdown
+                          dropdownMode="select"
+                          disabled={ignoreDate}
+                        />
+                        <div className="absolute left-3 top-1/2 -translate-y-1/2">
+                          <Calendar className="w-4 h-4 text-gray-500" />
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* To Date */}
+                    <div className="space-y-2">
+                      <label className="block text-sm font-semibold text-gray-700 flex items-center gap-2">
+                        <Calendar className="w-4 h-4 text-[#C62828]" />
+                        To Date
+                      </label>
+                      <div className="relative">
+                        <DatePicker
+                          selected={
+                            filterToDate ? new Date(filterToDate) : null
+                          }
+                          onChange={(date: Date | null) => {
+                            if (date) {
+                              setFilterToDate(date.toISOString().split("T")[0]);
+                            } else {
+                              setFilterToDate("");
+                            }
+                          }}
+                          selectsEnd
+                          startDate={
+                            filterFromDate ? new Date(filterFromDate) : null
+                          }
+                          endDate={filterToDate ? new Date(filterToDate) : null}
+                          minDate={
+                            filterFromDate
+                              ? new Date(filterFromDate)
+                              : undefined
+                          }
+                          maxDate={new Date()}
+                          placeholderText="Select end date"
+                          className="w-full pl-10 pr-4 py-2.5 text-sm border border-gray-300 rounded-lg focus:border-[#C62828] focus:ring-2 focus:ring-[#C62828]/20"
+                          dateFormat="dd/MM/yyyy"
+                          locale="en-GB"
+                          isClearable
+                          showMonthDropdown
+                          showYearDropdown
+                          dropdownMode="select"
+                          disabled={ignoreDate}
+                        />
+                        <div className="absolute left-3 top-1/2 -translate-y-1/2">
+                          <Calendar className="w-4 h-4 text-gray-500" />
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {(filterFromDate || filterToDate) && (
+                    <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <p className="text-sm font-medium text-gray-800">
+                            Selected Range:
+                          </p>
+                          <p className="text-xs text-gray-600">
+                            {filterFromDate || "Any"} → {filterToDate || "Any"}
+                          </p>
+                        </div>
+                        <button
+                          onClick={() => {
+                            setFilterFromDate("");
+                            setFilterToDate("");
+                          }}
+                          className="text-xs text-red-600 font-medium"
+                        >
+                          Clear Dates
+                        </button>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              <div className="flex items-center gap-2">
+                <input
+                  type="checkbox"
+                  checked={ignoreDate}
+                  onChange={(e) => {
+                    setIgnoreDate(e.target.checked);
+                    if (e.target.checked) {
+                      setFilterFromDate("");
+                      setFilterToDate("");
+                    }
+                  }}
+                  className="w-4 h-4 text-[#C62828] rounded"
+                />
+                <label className="text-sm text-gray-700 cursor-pointer">
+                  Ignore Date
+                </label>
+              </div>
+            </div>
+
+            {/* ================= FOOTER ================= */}
+            <div className="border-t p-4 flex gap-3">
+              <button
+                onClick={resetFilters}
+                className="flex-1 px-4 py-2.5 border rounded-lg text-sm"
+              >
+                Reset
+              </button>
+              <button
+                onClick={applyFilters}
+                className="flex-1 bg-[#C62828] text-white px-4 py-2.5 rounded-lg text-sm"
+              >
+                Apply
+              </button>
+            </div>
           </div>
         </div>
-
-        <div className="flex items-center gap-2">
-          <input
-            type="checkbox"
-            checked={ignoreDate}
-            onChange={(e) => {
-              setIgnoreDate(e.target.checked);
-              if (e.target.checked) {
-                setFilterFromDate("");
-                setFilterToDate("");
-              }
-            }}
-            className="w-4 h-4 text-[#C62828] rounded"
-          />
-          <label className="text-sm text-gray-700 cursor-pointer">
-            Ignore Date
-          </label>
-        </div>
-      </div>
-
-      {/* ================= FOOTER ================= */}
-      <div className="border-t p-4 flex gap-3">
-        <button
-          onClick={resetFilters}
-          className="flex-1 px-4 py-2.5 border rounded-lg text-sm"
-        >
-          Reset
-        </button>
-        <button
-          onClick={applyFilters}
-          className="flex-1 bg-[#C62828] text-white px-4 py-2.5 rounded-lg text-sm"
-        >
-          Apply
-        </button>
-      </div>
-    </div>
-  </div>
-)}
-
+      )}
 
       {/* Add/Edit Modal - keeping all your existing form logic */}
       {showModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-2xl shadow-2xl w-full max-w-4xl max-h-[90vh] overflow-hidden">
-  
-  {/* HEADER */}
-  <div className="
+            {/* HEADER */}
+            <div
+              className="
     bg-gradient-to-r 
     from-[#40423f] 
     via-[#151515] 
@@ -2278,769 +2438,904 @@ const categoryOptions = poTypes.length
     px-6 py-4 
     flex items-center gap-4
     rounded-t-2xl
-  ">
-    <div className="p-2 bg-white/20 rounded-xl backdrop-blur-sm">
-      <Truck className="w-5 h-5 text-white" />
-    </div>
+  "
+            >
+              <div className="p-2 bg-white/20 rounded-xl backdrop-blur-sm">
+                <Truck className="w-5 h-5 text-white" />
+              </div>
 
-    <h2 className="flex-1 text-2xl font-bold text-white">
-      {editingId ? "Edit Vendor" : "Add New Vendor"}
-    </h2>
+              <h2 className="flex-1 text-2xl font-bold text-white">
+                {editingId ? "Edit Vendor" : "Add New Vendor"}
+              </h2>
 
-    <button
-      onClick={() => {
-        setShowModal(false);
-        resetForm();
-      }}
+              <button
+                onClick={() => {
+                  setShowModal(false);
+                  resetForm();
+                }}
                 className="text-white hover:bg-white hover:bg-opacity-20 rounded-lg p-2 transition"
               >
                 <X className="w-6 h-6" />
               </button>
             </div>
 
- <form
-  onSubmit={handleSubmit}
-  className="p-2 md:p-3 overflow-y-auto max-h-[calc(85vh-60px)]"
->
-  <div className="space-y-3">
-    {/* Section 1: Company & Contact Info */}
-    <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
-      {/* Company Details Card - More Compact */}
-      <div className="bg-white rounded-md border border-gray-200 shadow-xs hover:shadow-sm transition-shadow duration-200">
-        <div className="bg-gradient-to-r from-blue-50 to-blue-100 px-2.5 py-2 border-b border-blue-100 rounded-t-md">
-          <div className="flex items-center gap-1.5">
-            <div className="p-0.5 bg-white rounded border border-blue-200">
-              <Building2 className="w-3 h-3 text-blue-600" />
-            </div>
-            <h3 className="text-xs font-semibold text-blue-800">Company</h3>
-            <span className="ml-auto text-[10px] font-medium text-blue-600 bg-white px-1.5 py-0.5 rounded-full border border-blue-200">
-              Required
-            </span>
-          </div>
-        </div>
-        <div className="p-2.5">
-          <div className="space-y-2.5">
-            {/* Company Name */}
-            <div className="space-y-1">
-              <label className="block text-[11px] font-medium text-gray-700 flex items-center gap-0.5">
-                <span>Company Name</span>
-                <span className="text-red-500">*</span>
-              </label>
-              <div className="relative">
-                <div className="absolute inset-y-0 left-0 pl-2.5 flex items-center pointer-events-none">
-                  <Building2 className="h-3 w-3 text-gray-400" />
-                </div>
-                <input
-                  type="text"
-                  value={formData.name}
-                  onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                  className={`w-full pl-8 pr-2 py-1.5 text-xs border rounded focus:ring-1 focus:ring-blue-500 focus:border-blue-500 transition-all duration-150 ${
-                    errors.name ? "border-red-300 bg-red-50" : "border-gray-300 hover:border-gray-400"
-                  }`}
-                  placeholder="Company name"
-                  required
-                />
-              </div>
-              {errors.name && (
-                <p className="text-[10px] text-red-600 flex items-center gap-1 mt-0.5">
-                  <AlertCircle className="w-2.5 h-2.5" />
-                  {errors.name}
-                </p>
-              )}
-            </div>
-
-            {/* Category & Sub-Item */}
-            <div className="grid grid-cols-2 gap-1.5">
-              {/* Category */}
-              <div className="space-y-1">
-                <label className="block text-[11px] font-medium text-gray-700 flex items-center gap-0.5">
-                  <span>Category</span>
-                  <span className="text-red-500">*</span>
-                </label>
-                <div className="relative">
-                  <div className="absolute inset-y-0 left-0 pl-2.5 flex items-center pointer-events-none">
-                    <Tag className="h-3 w-3 text-gray-400" />
-                  </div>
-                  <select
-                    value={formData.category_name}
-                    onChange={(e) => {
-                      setFormData({
-                        ...formData,
-                        category_name: e.target.value,
-                        sub_item_id: "",
-                      });
-                    }}
-                    className={`w-full pl-8 pr-6 py-1.5 text-xs border rounded focus:ring-1 focus:ring-blue-500 focus:border-blue-500 transition-all duration-150 appearance-none ${
-                      errors.category_name ? "border-red-300 bg-red-50" : "border-gray-300 hover:border-gray-400"
-                    }`}
-                    required
-                  >
-                    <option value="">Select</option>
-                    {categoryOptions.map((cat) => (
-                      <option key={cat.name} value={cat.name}>
-                        {cat.name}
-                      </option>
-                    ))}
-                  </select>
-                  <div className="absolute inset-y-0 right-0 pr-1.5 flex items-center pointer-events-none">
-                    <ChevronDown className="h-3 w-3 text-gray-400" />
-                  </div>
-                </div>
-              </div>
-
-              {/* Sub Item */}
-              <div className="space-y-1">
-                <label className="block text-[11px] font-medium text-gray-700">
-                  Sub Item
-                </label>
-                {isCategoryMaterial(formData.category_name) ? (
-                  <div className="relative">
-                    <div className="absolute inset-y-0 left-0 pl-2.5 flex items-center pointer-events-none">
-                      <Package className="h-3 w-3 text-gray-400" />
+            <form
+              onSubmit={handleSubmit}
+              className="p-2 md:p-3 overflow-y-auto max-h-[calc(85vh-60px)]"
+            >
+              <div className="space-y-3">
+                {/* Section 1: Company & Contact Info */}
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
+                  {/* Company Details Card - More Compact */}
+                  <div className="bg-white rounded-md border border-gray-200 shadow-xs hover:shadow-sm transition-shadow duration-200">
+                    <div className="bg-gradient-to-r from-blue-50 to-blue-100 px-2.5 py-2 border-b border-blue-100 rounded-t-md">
+                      <div className="flex items-center gap-1.5">
+                        <div className="p-0.5 bg-white rounded border border-blue-200">
+                          <Building2 className="w-3 h-3 text-blue-600" />
+                        </div>
+                        <h3 className="text-xs font-semibold text-blue-800">
+                          Company
+                        </h3>
+                        <span className="ml-auto text-[10px] font-medium text-blue-600 bg-white px-1.5 py-0.5 rounded-full border border-blue-200">
+                          Required
+                        </span>
+                      </div>
                     </div>
-                    <select
-                      value={formData.sub_item_id || ""}
-                      onChange={(e) => setFormData({ ...formData, sub_item_id: e.target.value })}
-                      className="w-full pl-8 pr-6 py-1.5 text-xs border border-gray-300 rounded focus:ring-1 focus:ring-blue-500 focus:border-blue-500 transition-all duration-150 hover:border-gray-400 appearance-none"
-                    >
-                      <option value="">Select Material</option>
-                      {materials.map((m) => (
-                        <option key={m.id} value={m.id}>
-                          {m.name} {m.code ? `| ${m.code}` : ""}
-                        </option>
-                      ))}
-                    </select>
-                    <div className="absolute inset-y-0 right-0 pr-1.5 flex items-center pointer-events-none">
-                      <ChevronDown className="h-3 w-3 text-gray-400" />
+                    <div className="p-2.5">
+                      <div className="space-y-2.5">
+                        {/* Company Name */}
+                        <div className="space-y-1">
+                          <label className="block text-[11px] font-medium text-gray-700 flex items-center gap-0.5">
+                            <span>Company Name</span>
+                            <span className="text-red-500">*</span>
+                          </label>
+                          <div className="relative">
+                            <div className="absolute inset-y-0 left-0 pl-2.5 flex items-center pointer-events-none">
+                              <Building2 className="h-3 w-3 text-gray-400" />
+                            </div>
+                            <input
+                              type="text"
+                              value={formData.name}
+                              onChange={(e) =>
+                                setFormData({
+                                  ...formData,
+                                  name: e.target.value,
+                                })
+                              }
+                              className={`w-full pl-8 pr-2 py-1.5 text-xs border rounded focus:ring-1 focus:ring-blue-500 focus:border-blue-500 transition-all duration-150 ${
+                                errors.name
+                                  ? "border-red-300 bg-red-50"
+                                  : "border-gray-300 hover:border-gray-400"
+                              }`}
+                              placeholder="Company name"
+                              required
+                            />
+                          </div>
+                          {errors.name && (
+                            <p className="text-[10px] text-red-600 flex items-center gap-1 mt-0.5">
+                              <AlertCircle className="w-2.5 h-2.5" />
+                              {errors.name}
+                            </p>
+                          )}
+                        </div>
+
+                        {/* Category & Sub-Item */}
+                        <div className="grid grid-cols-2 gap-1.5">
+                          {/* Category */}
+                          <div className="space-y-1">
+                            <label className="block text-[11px] font-medium text-gray-700 flex items-center gap-0.5">
+                              <span>Category</span>
+                              <span className="text-red-500">*</span>
+                            </label>
+                            <div className="relative">
+                              <div className="absolute inset-y-0 left-0 pl-2.5 flex items-center pointer-events-none">
+                                <Tag className="h-3 w-3 text-gray-400" />
+                              </div>
+                              <select
+                                value={formData.category_name}
+                                onChange={(e) => {
+                                  setFormData({
+                                    ...formData,
+                                    category_name: e.target.value,
+                                    sub_item_id: "",
+                                  });
+                                }}
+                                className={`w-full pl-8 pr-6 py-1.5 text-xs border rounded focus:ring-1 focus:ring-blue-500 focus:border-blue-500 transition-all duration-150 appearance-none ${
+                                  errors.category_name
+                                    ? "border-red-300 bg-red-50"
+                                    : "border-gray-300 hover:border-gray-400"
+                                }`}
+                                required
+                              >
+                                <option value="">Select</option>
+                                {categoryOptions.map((cat) => (
+                                  <option key={cat.name} value={cat.name}>
+                                    {cat.name}
+                                  </option>
+                                ))}
+                              </select>
+                              <div className="absolute inset-y-0 right-0 pr-1.5 flex items-center pointer-events-none">
+                                <ChevronDown className="h-3 w-3 text-gray-400" />
+                              </div>
+                            </div>
+                          </div>
+
+                          {/* Sub Item */}
+                          <div className="space-y-1">
+                            <label className="block text-[11px] font-medium text-gray-700">
+                              Sub Item
+                            </label>
+                            {isCategoryMaterial(formData.category_name) ? (
+                              <div className="relative">
+                                <div className="absolute inset-y-0 left-0 pl-2.5 flex items-center pointer-events-none">
+                                  <Package className="h-3 w-3 text-gray-400" />
+                                </div>
+                                <select
+                                  value={formData.sub_item_id || ""}
+                                  onChange={(e) =>
+                                    setFormData({
+                                      ...formData,
+                                      sub_item_id: e.target.value,
+                                    })
+                                  }
+                                  className="w-full pl-8 pr-6 py-1.5 text-xs border border-gray-300 rounded focus:ring-1 focus:ring-blue-500 focus:border-blue-500 transition-all duration-150 hover:border-gray-400 appearance-none"
+                                >
+                                  <option value="">Select Material</option>
+                                  {materials.map((m) => (
+                                    <option key={m.id} value={m.id}>
+                                      {m.name} {m.code ? `| ${m.code}` : ""}
+                                    </option>
+                                  ))}
+                                </select>
+                                <div className="absolute inset-y-0 right-0 pr-1.5 flex items-center pointer-events-none">
+                                  <ChevronDown className="h-3 w-3 text-gray-400" />
+                                </div>
+                              </div>
+                            ) : isCategoryService(formData.category_name) ? (
+                              <div className="relative">
+                                <div className="absolute inset-y-0 left-0 pl-2.5 flex items-center pointer-events-none">
+                                  <Settings className="h-3 w-3 text-gray-400" />
+                                </div>
+                                <select
+                                  value={formData.sub_item_id || ""}
+                                  onChange={(e) =>
+                                    setFormData({
+                                      ...formData,
+                                      sub_item_id: e.target.value,
+                                    })
+                                  }
+                                  className="w-full pl-8 pr-6 py-1.5 text-xs border border-gray-300 rounded focus:ring-1 focus:ring-blue-500 focus:border-blue-500 transition-all duration-150 hover:border-gray-400 appearance-none"
+                                >
+                                  <option value="">Select Service</option>
+                                  {services.map((s) => (
+                                    <option key={s.id} value={s.id}>
+                                      {s.name} {s.code ? `| ${s.code}` : ""}
+                                    </option>
+                                  ))}
+                                </select>
+                                <div className="absolute inset-y-0 right-0 pr-1.5 flex items-center pointer-events-none">
+                                  <ChevronDown className="h-3 w-3 text-gray-400" />
+                                </div>
+                              </div>
+                            ) : (
+                              <div className="flex items-center gap-1 text-[10px] text-gray-500 bg-gray-50 p-1.5 rounded border border-gray-200">
+                                <Info className="w-2.5 h-2.5 flex-shrink-0" />
+                                <span className="truncate">
+                                  Select category
+                                </span>
+                              </div>
+                            )}
+                          </div>
+                        </div>
+
+                        {/* Tax Details */}
+                        <div className="space-y-1.5">
+                          <div className="grid grid-cols-2 gap-1.5">
+                            {/* PAN Number */}
+                            <div className="space-y-1">
+                              <label className="block text-[11px] font-medium text-gray-700">
+                                PAN Number
+                              </label>
+                              <div className="relative">
+                                <div className="absolute inset-y-0 left-0 pl-2.5 flex items-center pointer-events-none">
+                                  <CreditCard className="h-3 w-3 text-gray-400" />
+                                </div>
+                                <input
+                                  type="text"
+                                  value={formData.pan_number}
+                                  onChange={(e) =>
+                                    setFormData({
+                                      ...formData,
+                                      pan_number: validators.formatPAN(
+                                        e.target.value,
+                                      ),
+                                    })
+                                  }
+                                  className={`w-full pl-8 pr-2 py-1.5 text-xs border rounded focus:ring-1 focus:ring-blue-500 focus:border-blue-500 transition-all duration-150 uppercase ${
+                                    errors.pan_number
+                                      ? "border-red-300 bg-red-50"
+                                      : "border-gray-300 hover:border-gray-400"
+                                  }`}
+                                  placeholder="ABCDE1234F"
+                                  maxLength={10}
+                                />
+                              </div>
+                              {formData.pan_number &&
+                                validators.pan(formData.pan_number) && (
+                                  <p className="text-[10px] text-green-600 flex items-center gap-1 mt-0.5">
+                                    <CheckCircle className="w-2.5 h-2.5" />
+                                    Valid PAN
+                                  </p>
+                                )}
+                            </div>
+
+                            {/* GST Number */}
+                            <div className="space-y-1">
+                              <label className="block text-[11px] font-medium text-gray-700">
+                                GST Number
+                              </label>
+                              <div className="relative">
+                                <div className="absolute inset-y-0 left-0 pl-2.5 flex items-center pointer-events-none">
+                                  <FileText className="h-3 w-3 text-gray-400" />
+                                </div>
+                                <input
+                                  type="text"
+                                  value={formData.gst_number}
+                                  onChange={(e) =>
+                                    setFormData({
+                                      ...formData,
+                                      gst_number: validators.formatGST(
+                                        e.target.value,
+                                      ),
+                                    })
+                                  }
+                                  className={`w-full pl-8 pr-2 py-1.5 text-xs border rounded focus:ring-1 focus:ring-blue-500 focus:border-blue-500 transition-all duration-150 uppercase ${
+                                    errors.gst_number
+                                      ? "border-red-300 bg-red-50"
+                                      : "border-gray-300 hover:border-gray-400"
+                                  }`}
+                                  placeholder="22ABCDE1234F1Z5"
+                                  maxLength={15}
+                                />
+                              </div>
+                              {formData.gst_number &&
+                                validators.gst(formData.gst_number) && (
+                                  <p className="text-[10px] text-green-600 flex items-center gap-1 mt-0.5">
+                                    <CheckCircle className="w-2.5 h-2.5" />
+                                    Valid GST
+                                  </p>
+                                )}
+                            </div>
+                          </div>
+                          {errors.pan_number && (
+                            <p className="text-[10px] text-red-600 flex items-center gap-1">
+                              <AlertCircle className="w-2.5 h-2.5" />
+                              {errors.pan_number}
+                            </p>
+                          )}
+                          {errors.gst_number && (
+                            <p className="text-[10px] text-red-600 flex items-center gap-1">
+                              <AlertCircle className="w-2.5 h-2.5" />
+                              {errors.gst_number}
+                            </p>
+                          )}
+                        </div>
+                      </div>
                     </div>
                   </div>
-                ) : isCategoryService(formData.category_name) ? (
-                  <div className="relative">
-                    <div className="absolute inset-y-0 left-0 pl-2.5 flex items-center pointer-events-none">
-                      <Settings className="h-3 w-3 text-gray-400" />
+
+                  {/* Contact Person Card - More Compact */}
+                  <div className="bg-white rounded-md border border-gray-200 shadow-xs hover:shadow-sm transition-shadow duration-200">
+                    <div className="bg-gradient-to-r from-indigo-50 to-purple-50 px-2.5 py-2 border-b border-indigo-100 rounded-t-md">
+                      <div className="flex items-center gap-1.5">
+                        <div className="p-0.5 bg-white rounded border border-indigo-200">
+                          <User className="w-3 h-3 text-indigo-600" />
+                        </div>
+                        <h3 className="text-xs font-semibold text-indigo-800">
+                          Contact
+                        </h3>
+                        <span className="ml-auto text-[10px] font-medium text-indigo-600 bg-white px-1.5 py-0.5 rounded-full border border-indigo-200">
+                          Required
+                        </span>
+                      </div>
                     </div>
-                    <select
-                      value={formData.sub_item_id || ""}
-                      onChange={(e) => setFormData({ ...formData, sub_item_id: e.target.value })}
-                      className="w-full pl-8 pr-6 py-1.5 text-xs border border-gray-300 rounded focus:ring-1 focus:ring-blue-500 focus:border-blue-500 transition-all duration-150 hover:border-gray-400 appearance-none"
-                    >
-                      <option value="">Select Service</option>
-                      {services.map((s) => (
-                        <option key={s.id} value={s.id}>
-                          {s.name} {s.code ? `| ${s.code}` : ""}
-                        </option>
-                      ))}
-                    </select>
-                    <div className="absolute inset-y-0 right-0 pr-1.5 flex items-center pointer-events-none">
-                      <ChevronDown className="h-3 w-3 text-gray-400" />
+                    <div className="p-2.5">
+                      <div className="space-y-2.5">
+                        {/* Contact Name */}
+                        <div className="space-y-1">
+                          <label className="block text-[11px] font-medium text-gray-700 flex items-center gap-0.5">
+                            <span>Full Name</span>
+                            <span className="text-red-500">*</span>
+                          </label>
+                          <div className="relative">
+                            <div className="absolute inset-y-0 left-0 pl-2.5 flex items-center pointer-events-none">
+                              <User className="h-3 w-3 text-gray-400" />
+                            </div>
+                            <input
+                              type="text"
+                              value={formData.contact_person_name}
+                              onChange={(e) =>
+                                setFormData({
+                                  ...formData,
+                                  contact_person_name: e.target.value,
+                                })
+                              }
+                              className={`w-full pl-8 pr-2 py-1.5 text-xs border rounded focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 transition-all duration-150 ${
+                                errors.contact_person_name
+                                  ? "border-red-300 bg-red-50"
+                                  : "border-gray-300 hover:border-gray-400"
+                              }`}
+                              placeholder="John Doe"
+                              required
+                            />
+                          </div>
+                          {errors.contact_person_name && (
+                            <p className="text-[10px] text-red-600 flex items-center gap-1 mt-0.5">
+                              <AlertCircle className="w-2.5 h-2.5" />
+                              {errors.contact_person_name}
+                            </p>
+                          )}
+                        </div>
+
+                        {/* Contact Details */}
+                        <div className="grid grid-cols-2 gap-1.5">
+                          {/* Phone */}
+                          <div className="space-y-1">
+                            <label className="block text-[11px] font-medium text-gray-700 flex items-center gap-0.5">
+                              <span>Phone</span>
+                              <span className="text-red-500">*</span>
+                            </label>
+                            <div className="relative">
+                              <div className="absolute inset-y-0 left-0 pl-2.5 flex items-center pointer-events-none">
+                                <Phone className="h-3 w-3 text-gray-400" />
+                              </div>
+                              <input
+                                type="tel"
+                                value={formData.contact_person_phone}
+                                onChange={(e) => {
+                                  if (!/^\d*$/.test(e.target.value)) {
+                                    toast.warning("Enter Valid Phone Number.");
+                                    return;
+                                  }
+                                  if (e.target.value.length > 10) {
+                                    toast.warning(
+                                      "Mobile number must be 10 digit.",
+                                    );
+                                    return;
+                                  }
+                                  setFormData({
+                                    ...formData,
+                                    contact_person_phone: e.target.value,
+                                  });
+                                }}
+                                className={`w-full pl-8 pr-2 py-1.5 text-xs border rounded focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 transition-all duration-150 ${
+                                  errors.contact_person_phone
+                                    ? "border-red-300 bg-red-50"
+                                    : "border-gray-300 hover:border-gray-400"
+                                }`}
+                                placeholder="9876543210"
+                                required
+                              />
+                            </div>
+                            {errors.contact_person_phone && (
+                              <p className="text-[10px] text-red-600 flex items-center gap-1 mt-0.5">
+                                <AlertCircle className="w-2.5 h-2.5" />
+                                {errors.contact_person_phone}
+                              </p>
+                            )}
+                          </div>
+
+                          {/* Email */}
+                          <div className="space-y-1">
+                            <label className="block text-[11px] font-medium text-gray-700 flex items-center gap-0.5">
+                              <span>Email</span>
+                              <span className="text-red-500">*</span>
+                            </label>
+                            <div className="relative">
+                              <div className="absolute inset-y-0 left-0 pl-2.5 flex items-center pointer-events-none">
+                                <Mail className="h-3 w-3 text-gray-400" />
+                              </div>
+                              <input
+                                type="email"
+                                value={formData.contact_person_email}
+                                onChange={(e) =>
+                                  setFormData({
+                                    ...formData,
+                                    contact_person_email:
+                                      e.target.value.toLowerCase(),
+                                  })
+                                }
+                                className={`w-full pl-8 pr-2 py-1.5 text-xs border rounded focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 transition-all duration-150 ${
+                                  errors.contact_person_email
+                                    ? "border-red-300 bg-red-50"
+                                    : "border-gray-300 hover:border-gray-400"
+                                }`}
+                                placeholder="john@example.com"
+                                required
+                              />
+                            </div>
+                            {errors.contact_person_email && (
+                              <p className="text-[10px] text-red-600 flex items-center gap-1 mt-0.5">
+                                <AlertCircle className="w-2.5 h-2.5" />
+                                {errors.contact_person_email}
+                              </p>
+                            )}
+                          </div>
+                        </div>
+
+                        {/* Company Contact */}
+                        <div className="grid grid-cols-2 gap-1.5">
+                          {/* Company Phone */}
+                          <div className="space-y-1">
+                            <label className="block text-[11px] font-medium text-gray-700">
+                              Company Phone
+                            </label>
+                            <div className="relative">
+                              <div className="absolute inset-y-0 left-0 pl-2.5 flex items-center pointer-events-none">
+                                <Phone className="h-3 w-3 text-gray-400" />
+                              </div>
+                              <input
+                                type="tel"
+                                value={formData.company_phone}
+                                onChange={(e) => {
+                                  if (!/^\d*$/.test(e.target.value)) {
+                                    toast.warning("Enter Valid Phone Number.");
+                                    return;
+                                  }
+                                  if (e.target.value.length > 10) {
+                                    toast.warning(
+                                      "Mobile number must be 10 digit.",
+                                    );
+                                    return;
+                                  }
+                                  setFormData({
+                                    ...formData,
+                                    company_phone: validators.formatPhone(
+                                      e.target.value,
+                                    ),
+                                  });
+                                }}
+                                className={`w-full pl-8 pr-2 py-1.5 text-xs border rounded focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 transition-all duration-150 ${
+                                  errors.company_phone
+                                    ? "border-red-300 bg-red-50"
+                                    : "border-gray-300 hover:border-gray-400"
+                                }`}
+                                placeholder="9876543210"
+                                maxLength={10}
+                              />
+                            </div>
+                          </div>
+
+                          {/* Company Email */}
+                          <div className="space-y-1">
+                            <label className="block text-[11px] font-medium text-gray-700">
+                              Company Email
+                            </label>
+                            <div className="relative">
+                              <div className="absolute inset-y-0 left-0 pl-2.5 flex items-center pointer-events-none">
+                                <Mail className="h-3 w-3 text-gray-400" />
+                              </div>
+                              <input
+                                type="email"
+                                value={formData.company_email}
+                                onChange={(e) =>
+                                  setFormData({
+                                    ...formData,
+                                    company_email: e.target.value.toLowerCase(),
+                                  })
+                                }
+                                className={`w-full pl-8 pr-2 py-1.5 text-xs border rounded focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 transition-all duration-150 ${
+                                  errors.company_email
+                                    ? "border-red-300 bg-red-50"
+                                    : "border-gray-300 hover:border-gray-400"
+                                }`}
+                                placeholder="info@company.com"
+                              />
+                            </div>
+                          </div>
+                        </div>
+                        {(errors.company_phone || errors.company_email) && (
+                          <div className="space-y-0.5">
+                            {errors.company_phone && (
+                              <p className="text-[10px] text-red-600 flex items-center gap-1">
+                                <AlertCircle className="w-2.5 h-2.5" />
+                                {errors.company_phone}
+                              </p>
+                            )}
+                            {errors.company_email && (
+                              <p className="text-[10px] text-red-600 flex items-center gap-1">
+                                <AlertCircle className="w-2.5 h-2.5" />
+                                {errors.company_email}
+                              </p>
+                            )}
+                          </div>
+                        )}
+                      </div>
                     </div>
                   </div>
-                ) : (
-                  <div className="flex items-center gap-1 text-[10px] text-gray-500 bg-gray-50 p-1.5 rounded border border-gray-200">
-                    <Info className="w-2.5 h-2.5 flex-shrink-0" />
-                    <span className="truncate">Select category</span>
-                  </div>
-                )}
-              </div>
-            </div>
+                </div>
 
-            {/* Tax Details */}
-            <div className="space-y-1.5">
-              <div className="grid grid-cols-2 gap-1.5">
-                {/* PAN Number */}
-                <div className="space-y-1">
-                  <label className="block text-[11px] font-medium text-gray-700">
-                    PAN Number
-                  </label>
-                  <div className="relative">
-                    <div className="absolute inset-y-0 left-0 pl-2.5 flex items-center pointer-events-none">
-                      <CreditCard className="h-3 w-3 text-gray-400" />
+                {/* Section 2: Address & Manager */}
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
+                  {/* Office Address Card */}
+                  {/* Office Address Card */}
+                  <div className="bg-white rounded-md border border-gray-200 shadow-xs hover:shadow-sm transition-shadow duration-200">
+                    <div className="bg-gradient-to-r from-green-50 to-emerald-50 px-2.5 py-2 border-b border-green-100 rounded-t-md">
+                      <div className="flex items-center gap-1.5">
+                        <div className="p-0.5 bg-white rounded border border-green-200">
+                          <MapPin className="w-3 h-3 text-green-600" />
+                        </div>
+                        <h3 className="text-xs font-semibold text-green-800">
+                          Address
+                        </h3>
+                      </div>
                     </div>
-                    <input
-                      type="text"
-                      value={formData.pan_number}
-                      onChange={(e) =>
-                        setFormData({
-                          ...formData,
-                          pan_number: validators.formatPAN(e.target.value),
-                        })
-                      }
-                      className={`w-full pl-8 pr-2 py-1.5 text-xs border rounded focus:ring-1 focus:ring-blue-500 focus:border-blue-500 transition-all duration-150 uppercase ${
-                        errors.pan_number ? "border-red-300 bg-red-50" : "border-gray-300 hover:border-gray-400"
-                      }`}
-                      placeholder="ABCDE1234F"
-                      maxLength={10}
-                    />
-                  </div>
-                  {formData.pan_number && validators.pan(formData.pan_number) && (
-                    <p className="text-[10px] text-green-600 flex items-center gap-1 mt-0.5">
-                      <CheckCircle className="w-2.5 h-2.5" />
-                      Valid PAN
-                    </p>
-                  )}
-                </div>
+                    <div className="p-1.5">
+                      <div className="space-y-2.5">
+                        {/* Street Address */}
+                        <div className="space-y-1">
+                          <label className="block text-[11px] font-medium text-gray-700">
+                            Street Address
+                          </label>
+                          <div className="relative">
+                            <div className="absolute top-1.5 left-2.5 pointer-events-none">
+                              <MapPin className="h-3 w-3 text-gray-400" />
+                            </div>
+                            <textarea
+                              value={formData.office_street}
+                              onChange={(e) =>
+                                setFormData({
+                                  ...formData,
+                                  office_street: e.target.value,
+                                })
+                              }
+                              className="w-full pl-8 pr-2 py-1.5 text-xs border border-gray-300 rounded focus:ring-1 focus:ring-green-500 focus:border-green-500 transition-all duration-150 hover:border-gray-400 resize-none"
+                              rows={2}
+                              placeholder="Building No, Street Name, Area"
+                            />
+                          </div>
+                        </div>
 
-                {/* GST Number */}
-                <div className="space-y-1">
-                  <label className="block text-[11px] font-medium text-gray-700">
-                    GST Number
-                  </label>
-                  <div className="relative">
-                    <div className="absolute inset-y-0 left-0 pl-2.5 flex items-center pointer-events-none">
-                      <FileText className="h-3 w-3 text-gray-400" />
+                        {/* Country & State */}
+                        <div className="grid grid-cols-2 gap-1.5">
+                          {/* Country */}
+                          <div className="space-y-1">
+                            <label className="block text-[11px] font-medium text-gray-700">
+                              Country
+                            </label>
+                            <div className="relative">
+                              <div className="absolute inset-y-0 left-0 pl-2.5 flex items-center pointer-events-none">
+                                <Flag className="h-3 w-3 text-gray-400" />
+                              </div>
+                              <input
+                                type="text"
+                                value={formData.office_country}
+                                onChange={(e) =>
+                                  setFormData({
+                                    ...formData,
+                                    office_country: e.target.value,
+                                  })
+                                }
+                                className="w-full pl-8 pr-2 py-1.5 text-xs border border-gray-300 rounded focus:ring-1 focus:ring-green-500 focus:border-green-500 transition-all duration-150 hover:border-gray-400"
+                                placeholder="India"
+                              />
+                            </div>
+                          </div>
+
+                          {/* State */}
+                          <div className="space-y-1">
+                            <label className="block text-[11px] font-medium text-gray-700">
+                              State
+                            </label>
+                            <div className="relative">
+                              <div className="absolute inset-y-0 left-0 pl-2.5 flex items-center pointer-events-none">
+                                <Flag className="h-3 w-3 text-gray-400" />
+                              </div>
+                              <select
+                                value={formData.office_state}
+                                onChange={(e) => {
+                                  const state = e.target.value;
+
+                                  setFormData({
+                                    ...formData,
+                                    office_state: state,
+                                    office_city: "",
+                                    office_pincode: "",
+                                  });
+                                }}
+                                className="w-full pl-8 pr-6 py-1.5 text-xs border border-gray-300 rounded focus:ring-1 focus:ring-green-500 focus:border-green-500 transition-all duration-150 hover:border-gray-400 appearance-none"
+                              >
+                                <option value="">Select State</option>
+                                {states.map((state: any) => (
+                                  <option key={state} value={state}>
+                                    {state}
+                                  </option>
+                                ))}
+                              </select>
+                              <div className="absolute inset-y-0 right-0 pr-1.5 flex items-center pointer-events-none">
+                                <ChevronDown className="h-3 w-3 text-gray-400" />
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* City & Pincode */}
+                        <div className="grid grid-cols-2 gap-1.5">
+                          {/* City */}
+                          <div className="space-y-1">
+                            <label className="block text-[11px] font-medium text-gray-700">
+                              City
+                            </label>
+                            <div className="relative">
+                              <div className="absolute inset-y-0 left-0 pl-2.5 flex items-center pointer-events-none">
+                                <Building className="h-3 w-3 text-gray-400" />
+                              </div>
+                              <select
+                                value={formData.office_city}
+                                onChange={(e) => {
+                                  const city = e.target.value;
+                                  setFormData({
+                                    ...formData,
+                                    office_city: city,
+                                  });
+                                }}
+                                disabled={!formData.office_state}
+                                className="w-full pl-8 pr-6 py-1.5 text-xs border border-gray-300 rounded focus:ring-1 focus:ring-green-500 focus:border-green-500 transition-all duration-150 hover:border-gray-400 appearance-none disabled:bg-gray-50 disabled:text-gray-400"
+                              >
+                                <option value="">Select City</option>
+                                {availableCities.map(({ city, pincode }) => (
+                                  <option
+                                    key={`${city}-${pincode}`}
+                                    value={city}
+                                  >
+                                    {city}
+                                  </option>
+                                ))}
+                              </select>
+                              <div className="absolute inset-y-0 right-0 pr-1.5 flex items-center pointer-events-none">
+                                <ChevronDown className="h-3 w-3 text-gray-400" />
+                              </div>
+                            </div>
+                          </div>
+
+                          {/* Pincode */}
+                          <div className="space-y-1">
+                            <label className="block text-[11px] font-medium text-gray-700">
+                              Pincode
+                            </label>
+                            <div className="relative">
+                              <div className="absolute inset-y-0 left-0 pl-2.5 flex items-center pointer-events-none">
+                                <Hash className="h-3 w-3 text-gray-400" />
+                              </div>
+                              <input
+                                type="text"
+                                value={formData.office_pincode}
+                                onChange={(e) =>
+                                  setFormData({
+                                    ...formData,
+                                    office_pincode: validators.formatPincode(
+                                      e.target.value,
+                                    ),
+                                  })
+                                }
+                                readOnly={!!formData.office_city} // Make it read-only when city is selected
+                                className={`w-full pl-8 pr-2 py-1.5 text-xs border rounded focus:ring-1 focus:ring-green-500 focus:border-green-500 transition-all duration-150 ${
+                                  errors.office_pincode
+                                    ? "border-red-300 bg-red-50"
+                                    : formData.office_city
+                                      ? "border-gray-300 bg-gray-50"
+                                      : "border-gray-300 hover:border-gray-400"
+                                }`}
+                                placeholder={
+                                  formData.office_city
+                                    ? "Auto-filled"
+                                    : "400001"
+                                }
+                                maxLength={6}
+                              />
+                            </div>
+                            {formData.office_city &&
+                              formData.office_pincode && (
+                                <p className="text-[10px] text-green-600 flex items-center gap-1 mt-0.5">
+                                  <CheckCircle className="w-2.5 h-2.5" />
+                                  Auto-filled from city
+                                </p>
+                              )}
+                            {errors.office_pincode && (
+                              <p className="text-[10px] text-red-600 flex items-center gap-1 mt-0.5">
+                                <AlertCircle className="w-2.5 h-2.5" />
+                                {errors.office_pincode}
+                              </p>
+                            )}
+                          </div>
+                        </div>
+                      </div>
                     </div>
-                    <input
-                      type="text"
-                      value={formData.gst_number}
-                      onChange={(e) =>
-                        setFormData({
-                          ...formData,
-                          gst_number: validators.formatGST(e.target.value),
-                        })
-                      }
-                      className={`w-full pl-8 pr-2 py-1.5 text-xs border rounded focus:ring-1 focus:ring-blue-500 focus:border-blue-500 transition-all duration-150 uppercase ${
-                        errors.gst_number ? "border-red-300 bg-red-50" : "border-gray-300 hover:border-gray-400"
-                      }`}
-                      placeholder="22ABCDE1234F1Z5"
-                      maxLength={15}
-                    />
                   </div>
-                  {formData.gst_number && validators.gst(formData.gst_number) && (
-                    <p className="text-[10px] text-green-600 flex items-center gap-1 mt-0.5">
-                      <CheckCircle className="w-2.5 h-2.5" />
-                      Valid GST
-                    </p>
-                  )}
-                </div>
-              </div>
-              {errors.pan_number && (
-                <p className="text-[10px] text-red-600 flex items-center gap-1">
-                  <AlertCircle className="w-2.5 h-2.5" />
-                  {errors.pan_number}
-                </p>
-              )}
-              {errors.gst_number && (
-                <p className="text-[10px] text-red-600 flex items-center gap-1">
-                  <AlertCircle className="w-2.5 h-2.5" />
-                  {errors.gst_number}
-                </p>
-              )}
-            </div>
-          </div>
-        </div>
-      </div>
 
-      {/* Contact Person Card - More Compact */}
-      <div className="bg-white rounded-md border border-gray-200 shadow-xs hover:shadow-sm transition-shadow duration-200">
-        <div className="bg-gradient-to-r from-indigo-50 to-purple-50 px-2.5 py-2 border-b border-indigo-100 rounded-t-md">
-          <div className="flex items-center gap-1.5">
-            <div className="p-0.5 bg-white rounded border border-indigo-200">
-              <User className="w-3 h-3 text-indigo-600" />
-            </div>
-            <h3 className="text-xs font-semibold text-indigo-800">Contact</h3>
-            <span className="ml-auto text-[10px] font-medium text-indigo-600 bg-white px-1.5 py-0.5 rounded-full border border-indigo-200">
-              Required
-            </span>
-          </div>
-        </div>
-        <div className="p-2.5">
-          <div className="space-y-2.5">
-            {/* Contact Name */}
-            <div className="space-y-1">
-              <label className="block text-[11px] font-medium text-gray-700 flex items-center gap-0.5">
-                <span>Full Name</span>
-                <span className="text-red-500">*</span>
-              </label>
-              <div className="relative">
-                <div className="absolute inset-y-0 left-0 pl-2.5 flex items-center pointer-events-none">
-                  <User className="h-3 w-3 text-gray-400" />
-                </div>
-                <input
-                  type="text"
-                  value={formData.contact_person_name}
-                  onChange={(e) =>
-                    setFormData({
-                      ...formData,
-                      contact_person_name: e.target.value,
-                    })
-                  }
-                  className={`w-full pl-8 pr-2 py-1.5 text-xs border rounded focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 transition-all duration-150 ${
-                    errors.contact_person_name ? "border-red-300 bg-red-50" : "border-gray-300 hover:border-gray-400"
-                  }`}
-                  placeholder="John Doe"
-                  required
-                />
-              </div>
-              {errors.contact_person_name && (
-                <p className="text-[10px] text-red-600 flex items-center gap-1 mt-0.5">
-                  <AlertCircle className="w-2.5 h-2.5" />
-                  {errors.contact_person_name}
-                </p>
-              )}
-            </div>
+                  {/* Manager Details Card */}
+                  <div className="bg-white rounded-md border border-gray-200 shadow-xs hover:shadow-sm transition-shadow duration-200">
+                    <div className="bg-gradient-to-r from-amber-50 to-orange-50 px-2.5 py-2 border-b border-amber-100 rounded-t-md">
+                      <div className="flex items-center gap-1.5">
+                        <div className="p-0.5 bg-white rounded border border-amber-200">
+                          <Users className="w-3 h-3 text-amber-600" />
+                        </div>
+                        <h3 className="text-xs font-semibold text-amber-800">
+                          Manager
+                        </h3>
+                        <span className="ml-auto text-[10px] font-medium text-gray-500 bg-white px-1.5 py-0.5 rounded-full border border-gray-200">
+                          Optional
+                        </span>
+                      </div>
+                    </div>
+                    <div className="p-2.5">
+                      <div className="space-y-2.5">
+                        {/* Manager Name */}
+                        <div className="space-y-1">
+                          <label className="block text-[11px] font-medium text-gray-700">
+                            Manager Name
+                          </label>
+                          <div className="relative">
+                            <div className="absolute inset-y-0 left-0 pl-2.5 flex items-center pointer-events-none">
+                              <User className="h-3 w-3 text-gray-400" />
+                            </div>
+                            <input
+                              type="text"
+                              value={formData.manager_name}
+                              onChange={(e) =>
+                                setFormData({
+                                  ...formData,
+                                  manager_name: e.target.value,
+                                })
+                              }
+                              className="w-full pl-8 pr-2 py-1.5 text-xs border border-gray-300 rounded focus:ring-1 focus:ring-amber-500 focus:border-amber-500 transition-all duration-150 hover:border-gray-400"
+                              placeholder="Jane Smith"
+                            />
+                          </div>
+                        </div>
 
-            {/* Contact Details */}
-            <div className="grid grid-cols-2 gap-1.5">
-              {/* Phone */}
-              <div className="space-y-1">
-                <label className="block text-[11px] font-medium text-gray-700 flex items-center gap-0.5">
-                  <span>Phone</span>
-                  <span className="text-red-500">*</span>
-                </label>
-                <div className="relative">
-                  <div className="absolute inset-y-0 left-0 pl-2.5 flex items-center pointer-events-none">
-                    <Phone className="h-3 w-3 text-gray-400" />
+                        {/* Manager Contact */}
+                        <div className="grid grid-cols-2 gap-1.5">
+                          {/* Manager Email */}
+                          <div className="space-y-1">
+                            <label className="block text-[11px] font-medium text-gray-700">
+                              Manager Email
+                            </label>
+                            <div className="relative">
+                              <div className="absolute inset-y-0 left-0 pl-2.5 flex items-center pointer-events-none">
+                                <Mail className="h-3 w-3 text-gray-400" />
+                              </div>
+                              <input
+                                type="email"
+                                value={formData.manager_email}
+                                onChange={(e) =>
+                                  setFormData({
+                                    ...formData,
+                                    manager_email: e.target.value.toLowerCase(),
+                                  })
+                                }
+                                className={`w-full pl-8 pr-2 py-1.5 text-xs border rounded focus:ring-1 focus:ring-amber-500 focus:border-amber-500 transition-all duration-150 ${
+                                  errors.manager_email
+                                    ? "border-red-300 bg-red-50"
+                                    : "border-gray-300 hover:border-gray-400"
+                                }`}
+                                placeholder="jane@company.com"
+                              />
+                            </div>
+                          </div>
+
+                          {/* Manager Phone */}
+                          <div className="space-y-1">
+                            <label className="block text-[11px] font-medium text-gray-700">
+                              Manager Phone
+                            </label>
+                            <div className="relative">
+                              <div className="absolute inset-y-0 left-0 pl-2.5 flex items-center pointer-events-none">
+                                <Phone className="h-3 w-3 text-gray-400" />
+                              </div>
+                              <input
+                                type="tel"
+                                value={formData.manager_phone}
+                                onChange={(e) => {
+                                  if (!/^\d*$/.test(e.target.value)) {
+                                    toast.warning("Enter Valid Phone Number.");
+                                    return;
+                                  }
+                                  if (e.target.value.length > 10) {
+                                    toast.warning(
+                                      "Mobile number must be 10 digit.",
+                                    );
+                                    return;
+                                  }
+                                  setFormData({
+                                    ...formData,
+                                    manager_phone: validators.formatPhone(
+                                      e.target.value,
+                                    ),
+                                  });
+                                }}
+                                className={`w-full pl-8 pr-2 py-1.5 text-xs border rounded focus:ring-1 focus:ring-amber-500 focus:border-amber-500 transition-all duration-150 ${
+                                  errors.manager_phone
+                                    ? "border-red-300 bg-red-50"
+                                    : "border-gray-300 hover:border-gray-400"
+                                }`}
+                                placeholder="9876543210"
+                                maxLength={10}
+                              />
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* Error Messages */}
+                        {(errors.manager_email || errors.manager_phone) && (
+                          <div className="space-y-0.5">
+                            {errors.manager_email && (
+                              <p className="text-[10px] text-red-600 flex items-center gap-1">
+                                <AlertCircle className="w-2.5 h-2.5" />
+                                {errors.manager_email}
+                              </p>
+                            )}
+                            {errors.manager_phone && (
+                              <p className="text-[10px] text-red-600 flex items-center gap-1">
+                                <AlertCircle className="w-2.5 h-2.5" />
+                                {errors.manager_phone}
+                              </p>
+                            )}
+                          </div>
+                        )}
+
+                        {/* Info Note */}
+                        <div className="bg-blue-50 border border-blue-100 rounded p-1.5 mt-0.5">
+                          <div className="flex items-start gap-1">
+                            <Info className="w-2.5 h-2.5 text-blue-500 mt-0.5 flex-shrink-0" />
+                            <p className="text-[10px] text-blue-700 leading-tight">
+                              Optional: Fill if you have a specific manager
+                              contact.
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
                   </div>
-                  <input
-                    type="tel"
-                    value={formData.contact_person_phone}
-                    onChange={(e) =>
-                      setFormData({
-                        ...formData,
-                        contact_person_phone: e.target.value,
-                      })
-                    }
-                    className={`w-full pl-8 pr-2 py-1.5 text-xs border rounded focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 transition-all duration-150 ${
-                      errors.contact_person_phone ? "border-red-300 bg-red-50" : "border-gray-300 hover:border-gray-400"
-                    }`}
-                    placeholder="9876543210"
-                    required
-                  />
-                </div>
-                {errors.contact_person_phone && (
-                  <p className="text-[10px] text-red-600 flex items-center gap-1 mt-0.5">
-                    <AlertCircle className="w-2.5 h-2.5" />
-                    {errors.contact_person_phone}
-                  </p>
-                )}
-              </div>
-
-              {/* Email */}
-              <div className="space-y-1">
-                <label className="block text-[11px] font-medium text-gray-700 flex items-center gap-0.5">
-                  <span>Email</span>
-                  <span className="text-red-500">*</span>
-                </label>
-                <div className="relative">
-                  <div className="absolute inset-y-0 left-0 pl-2.5 flex items-center pointer-events-none">
-                    <Mail className="h-3 w-3 text-gray-400" />
-                  </div>
-                  <input
-                    type="email"
-                    value={formData.contact_person_email}
-                    onChange={(e) =>
-                      setFormData({
-                        ...formData,
-                        contact_person_email: e.target.value.toLowerCase(),
-                      })
-                    }
-                    className={`w-full pl-8 pr-2 py-1.5 text-xs border rounded focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 transition-all duration-150 ${
-                      errors.contact_person_email ? "border-red-300 bg-red-50" : "border-gray-300 hover:border-gray-400"
-                    }`}
-                    placeholder="john@example.com"
-                    required
-                  />
-                </div>
-                {errors.contact_person_email && (
-                  <p className="text-[10px] text-red-600 flex items-center gap-1 mt-0.5">
-                    <AlertCircle className="w-2.5 h-2.5" />
-                    {errors.contact_person_email}
-                  </p>
-                )}
-              </div>
-            </div>
-
-            {/* Company Contact */}
-            <div className="grid grid-cols-2 gap-1.5">
-              {/* Company Phone */}
-              <div className="space-y-1">
-                <label className="block text-[11px] font-medium text-gray-700">
-                  Company Phone
-                </label>
-                <div className="relative">
-                  <div className="absolute inset-y-0 left-0 pl-2.5 flex items-center pointer-events-none">
-                    <Phone className="h-3 w-3 text-gray-400" />
-                  </div>
-                  <input
-                    type="tel"
-                    value={formData.company_phone}
-                    onChange={(e) =>
-                      setFormData({
-                        ...formData,
-                        company_phone: validators.formatPhone(e.target.value),
-                      })
-                    }
-                    className={`w-full pl-8 pr-2 py-1.5 text-xs border rounded focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 transition-all duration-150 ${
-                      errors.company_phone ? "border-red-300 bg-red-50" : "border-gray-300 hover:border-gray-400"
-                    }`}
-                    placeholder="9876543210"
-                    maxLength={10}
-                  />
                 </div>
               </div>
 
-              {/* Company Email */}
-              <div className="space-y-1">
-                <label className="block text-[11px] font-medium text-gray-700">
-                  Company Email
-                </label>
-                <div className="relative">
-                  <div className="absolute inset-y-0 left-0 pl-2.5 flex items-center pointer-events-none">
-                    <Mail className="h-3 w-3 text-gray-400" />
-                  </div>
-                  <input
-                    type="email"
-                    value={formData.company_email}
-                    onChange={(e) =>
-                      setFormData({
-                        ...formData,
-                        company_email: e.target.value.toLowerCase(),
-                      })
-                    }
-                    className={`w-full pl-8 pr-2 py-1.5 text-xs border rounded focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 transition-all duration-150 ${
-                      errors.company_email ? "border-red-300 bg-red-50" : "border-gray-300 hover:border-gray-400"
-                    }`}
-                    placeholder="info@company.com"
-                  />
-                </div>
-              </div>
-            </div>
-            {(errors.company_phone || errors.company_email) && (
-              <div className="space-y-0.5">
-                {errors.company_phone && (
-                  <p className="text-[10px] text-red-600 flex items-center gap-1">
-                    <AlertCircle className="w-2.5 h-2.5" />
-                    {errors.company_phone}
-                  </p>
-                )}
-                {errors.company_email && (
-                  <p className="text-[10px] text-red-600 flex items-center gap-1">
-                    <AlertCircle className="w-2.5 h-2.5" />
-                    {errors.company_email}
-                  </p>
-                )}
-              </div>
-            )}
-          </div>
-        </div>
-      </div>
-    </div>
-
-    {/* Section 2: Address & Manager */}
-    <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
-      {/* Office Address Card */}
-      <div className="bg-white rounded-md border border-gray-200 shadow-xs hover:shadow-sm transition-shadow duration-200">
-        <div className="bg-gradient-to-r from-green-50 to-emerald-50 px-2.5 py-2 border-b border-green-100 rounded-t-md">
-          <div className="flex items-center gap-1.5">
-            <div className="p-0.5 bg-white rounded border border-green-200">
-              <MapPin className="w-3 h-3 text-green-600" />
-            </div>
-            <h3 className="text-xs font-semibold text-green-800">Address</h3>
-          </div>
-        </div>
-        <div className="p-1.5">
-          <div className="space-y-2.5">
-            {/* Street Address */}
-            <div className="space-y-1">
-              <label className="block text-[11px] font-medium text-gray-700">
-                Street Address
-              </label>
-              <div className="relative">
-                <div className="absolute top-1.5 left-2.5 pointer-events-none">
-                  <MapPin className="h-3 w-3 text-gray-400" />
-                </div>
-                <textarea
-                  value={formData.office_street}
-                  onChange={(e) =>
-                    setFormData({
-                      ...formData,
-                      office_street: e.target.value,
-                    })
-                  }
-                  className="w-full pl-8 pr-2 py-1.5 text-xs border border-gray-300 rounded focus:ring-1 focus:ring-green-500 focus:border-green-500 transition-all duration-150 hover:border-gray-400 resize-none"
-                  rows={2}
-                  placeholder="Building No, Street Name, Area"
-                />
-              </div>
-            </div>
-
-            {/* City & State */}
-            <div className="grid grid-cols-2 gap-1.5">
-              {/* City */}
-              <div className="space-y-0">
-                <label className="block text-[11px] font-medium text-gray-700">
-                  City
-                </label>
-                <div className="relative">
-                  <div className="absolute inset-y-0 left-0 pl-2.5 flex items-center pointer-events-none">
-                    <Building className="h-3 w-3 text-gray-400" />
-                  </div>
-                  <input
-                    type="text"
-                    value={formData.office_city}
-                    onChange={(e) =>
-                      setFormData({
-                        ...formData,
-                        office_city: e.target.value,
-                      })
-                    }
-                    className="w-full pl-8 pr-2 py-1.5 text-xs border border-gray-300 rounded focus:ring-1 focus:ring-green-500 focus:border-green-500 transition-all duration-150 hover:border-gray-400"
-                    placeholder="Mumbai"
-                  />
-                </div>
-              </div>
-
-              {/* State */}
-              <div className="space-y-1">
-                <label className="block text-[11px] font-medium text-gray-700">
-                  State
-                </label>
-                <SearchableSelect
-                  options={INDIAN_STATES.map((s) => ({
-                    id: s,
-                    name: s || "",
-                  }))}
-                  value={formData.office_state}
-                  onChange={(val: string) => {
-                    setFormData({
-                      ...formData,
-                      office_state: val,
-                    });
-                  }}
-                  placeholder="Select State"
-                  size="xs"
-                  className="text-xs py-1.5"
-                />
-              </div>
-            </div>
-
-            {/* Country & Pincode */}
-            <div className="grid grid-cols-2 gap-1.5">
-              {/* Country */}
-              <div className="space-y-1">
-                <label className="block text-[11px] font-medium text-gray-700">
-                  Country
-                </label>
-                <div className="relative">
-                  <div className="absolute inset-y-0 left-0 pl-2.5 flex items-center pointer-events-none">
-                    <Flag className="h-3 w-3 text-gray-400" />
-                  </div>
-                  <input
-                    type="text"
-                    value={formData.office_country}
-                    onChange={(e) =>
-                      setFormData({
-                        ...formData,
-                        office_country: e.target.value,
-                      })
-                    }
-                    className="w-full pl-8 pr-2 py-1.5 text-xs border border-gray-300 rounded focus:ring-1 focus:ring-green-500 focus:border-green-500 transition-all duration-150 hover:border-gray-400"
-                    placeholder="India"
-                  />
-                </div>
-              </div>
-
-              {/* Pincode */}
-              <div className="space-y-1">
-                <label className="block text-[11px] font-medium text-gray-700">
-                  Pincode
-                </label>
-                <div className="relative">
-                  <div className="absolute inset-y-0 left-0 pl-2.5 flex items-center pointer-events-none">
-                    <Hash className="h-3 w-3 text-gray-400" />
-                  </div>
-                  <input
-                    type="text"
-                    value={formData.office_pincode}
-                    onChange={(e) =>
-                      setFormData({
-                        ...formData,
-                        office_pincode: validators.formatPincode(e.target.value),
-                      })
-                    }
-                    className={`w-full pl-8 pr-2 py-1.5 text-xs border rounded focus:ring-1 focus:ring-green-500 focus:border-green-500 transition-all duration-150 ${
-                      errors.office_pincode ? "border-red-300 bg-red-50" : "border-gray-300 hover:border-gray-400"
-                    }`}
-                    placeholder="400001"
-                    maxLength={6}
-                  />
-                </div>
-                {errors.office_pincode && (
-                  <p className="text-[10px] text-red-600 flex items-center gap-1 mt-0.5">
-                    <AlertCircle className="w-2.5 h-2.5" />
-                    {errors.office_pincode}
-                  </p>
-                )}
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Manager Details Card */}
-      <div className="bg-white rounded-md border border-gray-200 shadow-xs hover:shadow-sm transition-shadow duration-200">
-        <div className="bg-gradient-to-r from-amber-50 to-orange-50 px-2.5 py-2 border-b border-amber-100 rounded-t-md">
-          <div className="flex items-center gap-1.5">
-            <div className="p-0.5 bg-white rounded border border-amber-200">
-              <Users className="w-3 h-3 text-amber-600" />
-            </div>
-            <h3 className="text-xs font-semibold text-amber-800">Manager</h3>
-            <span className="ml-auto text-[10px] font-medium text-gray-500 bg-white px-1.5 py-0.5 rounded-full border border-gray-200">
-              Optional
-            </span>
-          </div>
-        </div>
-        <div className="p-2.5">
-          <div className="space-y-2.5">
-            {/* Manager Name */}
-            <div className="space-y-1">
-              <label className="block text-[11px] font-medium text-gray-700">
-                Manager Name
-              </label>
-              <div className="relative">
-                <div className="absolute inset-y-0 left-0 pl-2.5 flex items-center pointer-events-none">
-                  <User className="h-3 w-3 text-gray-400" />
-                </div>
-                <input
-                  type="text"
-                  value={formData.manager_name}
-                  onChange={(e) =>
-                    setFormData({
-                      ...formData,
-                      manager_name: e.target.value,
-                    })
-                  }
-                  className="w-full pl-8 pr-2 py-1.5 text-xs border border-gray-300 rounded focus:ring-1 focus:ring-amber-500 focus:border-amber-500 transition-all duration-150 hover:border-gray-400"
-                  placeholder="Jane Smith"
-                />
-              </div>
-            </div>
-
-            {/* Manager Contact */}
-            <div className="grid grid-cols-2 gap-1.5">
-              {/* Manager Email */}
-              <div className="space-y-1">
-                <label className="block text-[11px] font-medium text-gray-700">
-                  Manager Email
-                </label>
-                <div className="relative">
-                  <div className="absolute inset-y-0 left-0 pl-2.5 flex items-center pointer-events-none">
-                    <Mail className="h-3 w-3 text-gray-400" />
-                  </div>
-                  <input
-                    type="email"
-                    value={formData.manager_email}
-                    onChange={(e) =>
-                      setFormData({
-                        ...formData,
-                        manager_email: e.target.value.toLowerCase(),
-                      })
-                    }
-                    className={`w-full pl-8 pr-2 py-1.5 text-xs border rounded focus:ring-1 focus:ring-amber-500 focus:border-amber-500 transition-all duration-150 ${
-                      errors.manager_email ? "border-red-300 bg-red-50" : "border-gray-300 hover:border-gray-400"
-                    }`}
-                    placeholder="jane@company.com"
-                  />
-                </div>
-              </div>
-
-              {/* Manager Phone */}
-              <div className="space-y-1">
-                <label className="block text-[11px] font-medium text-gray-700">
-                  Manager Phone
-                </label>
-                <div className="relative">
-                  <div className="absolute inset-y-0 left-0 pl-2.5 flex items-center pointer-events-none">
-                    <Phone className="h-3 w-3 text-gray-400" />
-                  </div>
-                  <input
-                    type="tel"
-                    value={formData.manager_phone}
-                    onChange={(e) =>
-                      setFormData({
-                        ...formData,
-                        manager_phone: validators.formatPhone(e.target.value),
-                      })
-                    }
-                    className={`w-full pl-8 pr-2 py-1.5 text-xs border rounded focus:ring-1 focus:ring-amber-500 focus:border-amber-500 transition-all duration-150 ${
-                      errors.manager_phone ? "border-red-300 bg-red-50" : "border-gray-300 hover:border-gray-400"
-                    }`}
-                    placeholder="9876543210"
-                    maxLength={10}
-                  />
-                </div>
-              </div>
-            </div>
-
-            {/* Error Messages */}
-            {(errors.manager_email || errors.manager_phone) && (
-              <div className="space-y-0.5">
-                {errors.manager_email && (
-                  <p className="text-[10px] text-red-600 flex items-center gap-1">
-                    <AlertCircle className="w-2.5 h-2.5" />
-                    {errors.manager_email}
-                  </p>
-                )}
-                {errors.manager_phone && (
-                  <p className="text-[10px] text-red-600 flex items-center gap-1">
-                    <AlertCircle className="w-2.5 h-2.5" />
-                    {errors.manager_phone}
-                  </p>
-                )}
-              </div>
-            )}
-
-            {/* Info Note */}
-            <div className="bg-blue-50 border border-blue-100 rounded p-1.5 mt-0.5">
-              <div className="flex items-start gap-1">
-                <Info className="w-2.5 h-2.5 text-blue-500 mt-0.5 flex-shrink-0" />
-                <p className="text-[10px] text-blue-700 leading-tight">
-                  Optional: Fill if you have a specific manager contact.
-                </p>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  {/* Form Actions */}
- <div className="mt-4 pt-4 border-t border-gray-200">
-  <div className="flex flex-col sm:flex-row gap-1.5 justify-center items-center">
-    <button
-      type="submit"
-      disabled={submitting}
-      className="w-48 bg-red-700 text-white py-1.5 px-3 rounded // Changed from flex-1 to w-48 (fixed width)
+              {/* Form Actions */}
+              <div className="mt-4 pt-4 border-t border-gray-200">
+                <div className="flex flex-col sm:flex-row gap-1.5 justify-center items-center">
+                  <button
+                    type="submit"
+                    disabled={submitting}
+                    className="w-48 bg-red-700 text-white py-1.5 px-3 rounded // Changed from flex-1 to w-48 (fixed width)
       hover:from-red-700 hover:to-red-800 transition-all duration-150 font-medium 
       shadow-xs hover:shadow-sm disabled:opacity-50 disabled:cursor-not-allowed 
       flex items-center justify-center gap-1 text-xs"
-    >
-      {submitting ? (
-        <>
-          <Loader2 className="w-2.5 h-2.5 animate-spin" />
-          {editingId ? "Updating..." : "Creating..."}
-        </>
-      ) : (
-        <>
-          <CheckCircle className="w-1.5 h-2.5" />
-          {editingId ? "Update Vendor" : "Create Vendor"}
-        </>
-      )}
-    </button>
-    <button
-      type="button"
-      onClick={() => {
-        setShowModal(false);
-        resetForm();
-      }}
-      className="w-32 px-3 py-1.5 border border-gray-300 rounded hover:bg-gray-50 transition-all duration-150 font-medium hover:border-gray-400 text-xs" // Added w-32
-    >
-      Cancel
-    </button>
-  </div>
-</div>
-</form>
+                  >
+                    {submitting ? (
+                      <>
+                        <Loader2 className="w-2.5 h-2.5 animate-spin" />
+                        {editingId ? "Updating..." : "Creating..."}
+                      </>
+                    ) : (
+                      <>
+                        <CheckCircle className="w-1.5 h-2.5" />
+                        {editingId ? "Update Vendor" : "Create Vendor"}
+                      </>
+                    )}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setShowModal(false);
+                      resetForm();
+                    }}
+                    className="w-32 px-3 py-1.5 border border-gray-300 rounded hover:bg-gray-50 transition-all duration-150 font-medium hover:border-gray-400 text-xs" // Added w-32
+                  >
+                    Cancel
+                  </button>
+                </div>
+              </div>
+            </form>
           </div>
         </div>
       )}

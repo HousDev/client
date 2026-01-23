@@ -13,15 +13,13 @@ import {
   Users,
   Home,
   Layers,
-  Hash,
   Ruler,
   ChevronDown,
   TrendingUp,
-  CheckCircle,
-  FileText,
-  Clock,
   Pickaxe,
   Construction,
+  Package,
+  ChevronRight,
 } from "lucide-react";
 import { useAuth } from "../../contexts/AuthContext";
 
@@ -30,11 +28,12 @@ import AreaTasksApifrom from "../../lib/areaTasksApi";
 
 // Use only projectApi since it contains nested data
 import projectApi from "../../lib/projectApi";
-import { api, UsersApi } from "../../lib/Api";
-import { BiLeftArrow } from "react-icons/bi";
+import { UsersApi } from "../../lib/Api";
 import { FaLeftLong } from "react-icons/fa6";
 import { toast } from "sonner";
 import MySwal from "../../utils/swal";
+import AreaSubTasksApi from "../../lib/subTaskApi";
+import React from "react";
 
 interface AreaFormData {
   id?: string;
@@ -59,6 +58,8 @@ interface AreaFormData {
   common_area_name?: string;
   assigned_engineer_name?: string;
   created_by_name?: string;
+  expanded: boolean;
+  tasks: any;
 }
 
 interface ProjectData {
@@ -125,6 +126,8 @@ const defaultFormData: AreaFormData = {
   status: "pending",
   is_active: true,
   created_by: null,
+  tasks: [],
+  expanded: false,
 };
 
 interface SubTaskType {
@@ -149,10 +152,8 @@ export default function AreaTasks({
   const { user } = useAuth();
   const [areaTasks, setAreaTasks] = useState<AreaFormData[]>([]);
   const [loading, setLoading] = useState(true);
+  const [selectedAreaId, setSelectedAreaId] = useState<number | null>(null);
 
-  // Master data states
-  const [projects, setProjects] = useState<ProjectData[]>([]);
-  const [showCreate] = useState<boolean>(false);
   const [selectedProject, setSelectedProject] = useState<ProjectData | null>(
     null,
   );
@@ -303,6 +304,8 @@ export default function AreaTasks({
     try {
       const rows: any =
         await AreaTasksApifrom.getAreaTasksByProjectId(selectedProjectId);
+      const subTasksRes = await AreaSubTasksApi.getSubTasks();
+      console.log("sub task res", subTasksRes);
       console.log(rows, "hellow");
       // Sort by start date (newest first)
       const data = rows.data;
@@ -311,6 +314,7 @@ export default function AreaTasks({
           new Date(b.start_date).getTime() - new Date(a.start_date).getTime(),
       );
       console.log(data);
+
       const normalized = data.map((r: any) => ({
         ...r,
         id: String(r.id),
@@ -321,8 +325,12 @@ export default function AreaTasks({
         common_area_id: r.common_area_id || null,
         assigned_engineer: r.assigned_engineer || null,
         is_active: Boolean(r.is_active),
+        tasks: subTasksRes.filter(
+          (d: any) => Number(d.area_task_id) === Number(r.id),
+        ),
+        expanded: false,
       }));
-
+      console.log(normalized);
       setAreaTasks(normalized);
     } catch (err) {
       console.error("loadData error", err);
@@ -384,6 +392,47 @@ export default function AreaTasks({
       await loadData();
       setShowModal(false);
       resetForm();
+    } catch (err: any) {
+      toast.error(err?.message || "Failed to save area task");
+      console.error("handleSubmit error", err);
+    }
+  };
+
+  const handleSubmitTask = async (e: React.FormEvent) => {
+    e.preventDefault();
+    console.log(taskFormData, selectedAreaId);
+
+    // Validate required fields
+    if (
+      !selectedAreaId ||
+      !taskFormData.name ||
+      !taskFormData.unit ||
+      !taskFormData.total_work ||
+      !taskFormData.start_date ||
+      !taskFormData.end_date
+    ) {
+      toast.error(
+        "Please fill required fields: Project, Building, Floor, and Assigned Engineer",
+      );
+      return;
+    }
+
+    const taskData: any = {
+      ...taskFormData,
+      area_task_id: selectedAreaId,
+      status: "pending",
+    };
+
+    try {
+      if (editingId) {
+        await AreaSubTasksApi.updateSubTask(editingId, taskData);
+      } else {
+        await AreaSubTasksApi.createSubTask(taskData);
+      }
+
+      await loadData();
+      resetForm();
+      setShowTaskModal(false);
     } catch (err: any) {
       toast.error(err?.message || "Failed to save area task");
       console.error("handleSubmit error", err);
@@ -471,6 +520,27 @@ export default function AreaTasks({
     }
   };
 
+  const handleSubTaskDelete = async (id: string) => {
+    const result: any = await MySwal.fire({
+      title: "Delete Item?",
+      text: "This action cannot be undone",
+      icon: "warning",
+      showCancelButton: true,
+      confirmButtonColor: "#C62828",
+      cancelButtonColor: "#6b7280",
+      confirmButtonText: "Delete",
+    });
+
+    if (!result.isConfirmed) return;
+    try {
+      await AreaSubTasksApi.deleteSubTask(id);
+      await loadData();
+    } catch (err) {
+      toast.error("Delete failed");
+      console.error("handleDelete error", err);
+    }
+  };
+
   const handleToggleStatus = async (id: string) => {
     try {
       await AreaTasksApifrom.toggleAreaTaskStatus(id);
@@ -491,6 +561,20 @@ export default function AreaTasks({
     setFloors([]);
     setFlats([]);
     setCommonAreas([]);
+  };
+
+  const resetTaskForm = () => {
+    setTaskFormData({
+      area_task_id: null,
+      name: "",
+      unit: "",
+      start_date: "",
+      end_date: "",
+      total_work: "",
+      progress: "",
+      status: "",
+    });
+    setEditingId(null);
   };
 
   const resetFilters = () => {
@@ -528,6 +612,14 @@ export default function AreaTasks({
       : "bg-red-100 text-red-700 px-3 py-1 rounded-full text-xs font-medium";
   };
 
+  const togglePOExpand = (poId: string) => {
+    setAreaTasks((prev) =>
+      prev.map((po) =>
+        po.id === poId ? { ...po, expanded: !po.expanded } : po,
+      ),
+    );
+  };
+
   if (loading) {
     return (
       <div className="flex items-center justify-center h-96">
@@ -540,7 +632,7 @@ export default function AreaTasks({
   }
 
   return (
-    <div className="p-6">
+    <div className="p-3">
       {/* Header with Actions */}
 
       <button
@@ -595,6 +687,9 @@ export default function AreaTasks({
             <thead className="bg-gray-200 border-b border-gray-200">
               <tr>
                 <th className="px-6 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
+                  #
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
                   Project
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
@@ -627,114 +722,295 @@ export default function AreaTasks({
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-200">
-              {areaTasks.map((task) => (
-                <tr key={task.id} className="hover:bg-gray-50 transition">
-                  <td className="px-6 py-4">
-                    <div>
-                      <p className="font-medium text-gray-800">
-                        {task.project_name}
-                      </p>
-                    </div>
-                  </td>
-                  <td className="px-6 py-4">
-                    <div>
-                      <p className="font-medium text-gray-800">
-                        {task.building_name}
-                      </p>
-                      <p className="text-xs text-gray-500">
-                        Floor: {task.floor_name}
-                      </p>
-                    </div>
-                  </td>
-                  <td className="px-6 py-4">
-                    {task.flat_name
-                      ? task.flat_name
-                      : task.common_area_name
-                        ? task.common_area_name
-                        : "N/A"}
-                  </td>
-                  <td className="px-6 py-4">
-                    <div className="flex items-center gap-2">
-                      <UserRound className="w-4 h-4 text-gray-400" />
-                      <span>{task.assigned_engineer_name || "N/A"}</span>
-                    </div>
-                  </td>
-                  <td className="px-6 py-4">
-                    <div className="space-y-1">
-                      <div className="flex items-center gap-2 text-sm">
-                        <Calendar className="w-3 h-3 text-gray-400" />
-                        Start: {new Date(task.start_date).toLocaleDateString()}
+              {areaTasks.map((area: any) => (
+                <React.Fragment key={area.id}>
+                  <tr key={area.id} className="hover:bg-gray-50 transition">
+                    <td className="px-3 py-2">
+                      <div className="flex items-center gap-1 justify-center">
+                        <button
+                          onClick={() => togglePOExpand(area.id)}
+                          className="p-0.5 hover:bg-gray-200 rounded transition-colors"
+                        >
+                          {area.expanded ? (
+                            <ChevronDown className="w-3 h-3 text-gray-600" />
+                          ) : (
+                            <ChevronRight className="w-3 h-3 text-gray-600" />
+                          )}
+                        </button>
                       </div>
-                    </div>
-                  </td>
-                  <td className="px-6 py-4">
-                    <div className="space-y-1">
-                      <div className="flex items-center gap-2 text-sm">
-                        <Calendar className="w-3 h-3 text-gray-400" />
-                        Expected:{" "}
-                        {new Date(task.expected_end_date).toLocaleDateString()}
+                    </td>
+                    <td className="px-6 py-4">
+                      <div>
+                        <p className="font-medium text-gray-800 text text-xs">
+                          {area.project_name}
+                        </p>
                       </div>
-                    </div>
-                  </td>
-                  <td className="px-6 py-4">
-                    <div className="flex items-center gap-2">
-                      <div className="w-24 bg-gray-200 rounded-full h-2">
-                        <div
-                          className="bg-blue-600 h-2 rounded-full"
-                          style={{ width: `${task.progress}%` }}
-                        ></div>
+                    </td>
+                    <td className="px-6 py-4">
+                      <div>
+                        <p className="font-medium text-gray-800 text-xs">
+                          {area.building_name}
+                        </p>
+                        <p className="text-xs text-gray-500 ">
+                          Floor: {area.floor_name}
+                        </p>
                       </div>
-                      <span className="text-sm font-medium">
-                        {task.progress}%
+                    </td>
+                    <td className="px-6 py-4 text-xs">
+                      {area.flat_name
+                        ? area.flat_name
+                        : area.common_area_name
+                          ? area.common_area_name
+                          : "N/A"}
+                    </td>
+                    <td className="px-6 py-4 text-xs">
+                      <div className="flex items-center gap-2">
+                        <UserRound className="w-4 h-4 text-gray-400" />
+                        <span>{area.assigned_engineer_name || "N/A"}</span>
+                      </div>
+                    </td>
+                    <td className="px-6 py-4 text-xs">
+                      <div className="space-y-1">
+                        <div className="flex items-center gap-2">
+                          <Calendar className="w-3 h-3 text-gray-400" />
+                          Start:{" "}
+                          {new Date(area.start_date).toLocaleDateString()}
+                        </div>
+                      </div>
+                    </td>
+                    <td className="px-6 py-4 text-xs">
+                      <div className="space-y-1">
+                        <div className="flex items-center gap-2 ">
+                          <Calendar className="w-3 h-3 text-gray-400" />
+                          Expected:{" "}
+                          {new Date(
+                            area.expected_end_date,
+                          ).toLocaleDateString()}
+                        </div>
+                      </div>
+                    </td>
+                    <td className="px-6 py-4 text-xs">
+                      <div className="flex items-center gap-2">
+                        <div className="w-16 bg-gray-200 rounded-full h-2">
+                          <div
+                            className="bg-blue-600 h-2 rounded-full"
+                            style={{ width: `${area.progress}%` }}
+                          ></div>
+                        </div>
+                        <span className="text-sm font-medium">
+                          {area.progress}%
+                        </span>
+                      </div>
+                    </td>
+                    <td className="px-6 py-4 text-xs">
+                      <span
+                        className={`px-3 py-1 rounded-full text-xs font-medium ${getStatusBadge(area.status)}`}
+                      >
+                        {area.status.replace("_", " ").toUpperCase()}
                       </span>
-                    </div>
-                  </td>
-                  <td className="px-6 py-4">
-                    <span
-                      className={`px-3 py-1 rounded-full text-xs font-medium ${getStatusBadge(task.status)}`}
-                    >
-                      {task.status.replace("_", " ").toUpperCase()}
-                    </span>
-                  </td>
-                  <td className="px-6 py-4">
-                    <button
-                      onClick={() => handleToggleStatus(task.id!)}
-                      className={getActiveBadge(task.is_active)}
-                    >
-                      {task.is_active ? "ACTIVE" : "INACTIVE"}
-                    </button>
-                  </td>
-                  <td className="px-6 py-4">
-                    <div className="flex gap-2">
+                    </td>
+                    <td className="px-6 py-4 text-xs">
                       <button
-                        onClick={() => {
-                          resetForm();
-                          setShowTaskModal(true);
-                        }}
-                        className="p-1 bg-green-200 text-green-700 hover:bg-green-100 rounded-lg transition text-[0.8rem] flex items-center font-semibold px-2"
-                        title="Edit"
+                        onClick={() => handleToggleStatus(area.id!)}
+                        className={getActiveBadge(area.is_active)}
                       >
-                        <Plus className="w-4 h-4" />
-                        Task
+                        {area.is_active ? "ACTIVE" : "INACTIVE"}
                       </button>
-                      <button
-                        onClick={() => handleEdit(task)}
-                        className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition"
-                        title="Edit"
-                      >
-                        <Edit2 className="w-4 h-4" />
-                      </button>
+                    </td>
+                    <td className="px-6 py-4 text-xs">
+                      <div className="flex">
+                        <button
+                          onClick={() => {
+                            setSelectedAreaId(Number(area?.id) || null);
+                            resetTaskForm();
+                            setShowTaskModal(true);
+                          }}
+                          className="p-1 bg-green-200 text-green-700 hover:bg-green-100 rounded-lg transition text-[0.8rem] flex items-center font-semibold px-2"
+                          title="Add Task"
+                        >
+                          <Plus className="w-4 h-4" />
+                        </button>
+                        <button
+                          onClick={() => handleEdit(area)}
+                          className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition"
+                          title="Edit"
+                        >
+                          <Edit2 className="w-4 h-4" />
+                        </button>
 
-                      <button
-                        onClick={() => handleDelete(task.id!)}
-                        className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition"
-                        title="Delete"
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </button>
-                    </div>
-                  </td>
-                </tr>
+                        <button
+                          onClick={() => handleDelete(area.id!)}
+                          className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition"
+                          title="Delete"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+
+                  {area.expanded && area.tasks.length > 0 && (
+                    <tr className="bg-gray-50 w-full">
+                      <td colSpan={11} className="p-0 w-full">
+                        <div className="px-3 py-2 border-t border-gray-200 w-full">
+                          <h4 className="text-xs font-semibold text-gray-700 mb-2 flex items-center gap-1">
+                            <Pickaxe className="w-3 h-3" />
+                            Area Sub Tasks
+                          </h4>
+                          <div className="overflow-x-auto w-full">
+                            <table className="w-full bg-white rounded-lg border border-gray-200">
+                              <thead className="bg-gray-100 w-full">
+                                <tr className="w-full">
+                                  <th className="text-left px-2 py-1.5 text-[10px] md:text-xs font-medium text-gray-700">
+                                    Area
+                                  </th>
+                                  <th className="text-left px-2 py-1.5 text-[10px] md:text-xs font-medium text-gray-700">
+                                    Task
+                                  </th>
+                                  <th className="text-left px-2 py-1.5 text-[10px] md:text-xs font-medium text-gray-700">
+                                    Total Work
+                                  </th>
+                                  <th className="text-left px-2 py-1.5 text-[10px] md:text-xs font-medium text-gray-700">
+                                    Work Done
+                                  </th>
+                                  <th className="text-left px-2 py-1.5 text-[10px] md:text-xs font-medium text-gray-700">
+                                    Start Date
+                                  </th>
+                                  <th className="text-left px-2 py-1.5 text-[10px] md:text-xs font-medium text-gray-700">
+                                    End Date
+                                  </th>
+                                  <th className="text-left px-2 py-1.5 text-[10px] md:text-xs font-medium text-gray-700">
+                                    Predicted ED
+                                  </th>
+                                  <th className="text-left px-2 py-1.5 text-[10px] md:text-xs font-medium text-gray-700">
+                                    Progress
+                                  </th>
+                                  <th className="text-left px-2 py-1.5 text-[10px] md:text-xs font-medium text-gray-700">
+                                    Status
+                                  </th>
+                                  <th className="text-left px-2 py-1.5 text-[10px] md:text-xs font-medium text-gray-700">
+                                    Action
+                                  </th>
+                                </tr>
+                              </thead>
+                              <tbody className="divide-y divide-gray-200 w-full">
+                                {area.tasks.map((task: any, idx: number) => {
+                                  return (
+                                    <tr
+                                      key={task.id}
+                                      className={`hover:bg-gray-50 ${
+                                        idx % 2 === 0
+                                          ? "bg-white"
+                                          : "bg-gray-50/50"
+                                      } w-full`}
+                                    >
+                                      <td className="px-2 py-1.5">
+                                        <div
+                                          className="font-medium text-gray-800 text-xs truncate max-w-[150px]"
+                                          title={task.project_name || "Unknown"}
+                                        >
+                                          {`${area.project_name} ${area.building_name} ${area.floor_name} ${area.flat_name} ${area.common_area_name}` ||
+                                            "Unknown"}
+                                        </div>
+                                        <div className="text-[10px] text-gray-500">
+                                          Unit: {task.unit || "N/A"}
+                                        </div>
+                                      </td>
+                                      <td className="px-2 py-1.5 text-gray-700 text-xs">
+                                        {task.name || "-"}
+                                      </td>
+                                      <td className="px-2 py-1.5 font-medium text-gray-800 text-xs">
+                                        {task.total_work} {task.unit || "N/A"}
+                                      </td>
+                                      <td className="px-2 py-1.5 font-medium text-gray-800 text-xs">
+                                        {task.work_done} {task.unit || "N/A"}
+                                      </td>
+                                      <td className="px-2 py-1.5 font-medium text-xs">
+                                        {new Date(
+                                          task.start_date,
+                                        ).toLocaleDateString()}
+                                      </td>
+                                      <td className="px-2 py-1.5 font-medium  text-xs">
+                                        {new Date(
+                                          task.end_date,
+                                        ).toLocaleDateString()}
+                                      </td>
+                                      <td className="px-2 py-1.5 font-medium  text-xs">
+                                        {new Date(
+                                          task.predicted_date,
+                                        ).toLocaleDateString()}
+                                      </td>
+                                      <td className="px-2 py-1.5 flex items-center mt-2">
+                                        <div className="w-16 bg-gray-200 rounded-full h-1.5">
+                                          <div
+                                            className="bg-blue-600 h-1.5 rounded-full transition-all"
+                                            style={{
+                                              width: `${task.progress}%`,
+                                            }}
+                                          />
+                                        </div>
+                                        <p className="text-[10px] text-gray-600 ml-3">
+                                          {task.progress}%
+                                        </p>
+                                      </td>
+                                      <td className="px-2 py-1.5">
+                                        <span
+                                          className={`px-2 py-0.5 rounded-full text-[10px] font-medium ${getStatusBadge(
+                                            task.status,
+                                          )} whitespace-nowrap`}
+                                        >
+                                          {task.status?.toUpperCase() ||
+                                            "PENDING"}
+                                        </span>
+                                      </td>
+                                      <td className="px-6 py-4 text-xs">
+                                        <div className="flex">
+                                          <button
+                                            onClick={() => {
+                                              handleTaskEdit(task);
+                                            }}
+                                            className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition"
+                                            title="Edit"
+                                          >
+                                            <Edit2 className="w-4 h-4" />
+                                          </button>
+
+                                          <button
+                                            onClick={() =>
+                                              handleSubTaskDelete(task.id!)
+                                            }
+                                            className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition"
+                                            title="Delete"
+                                          >
+                                            <Trash2 className="w-4 h-4" />
+                                          </button>
+                                        </div>
+                                      </td>
+                                    </tr>
+                                  );
+                                })}
+                              </tbody>
+                            </table>
+                          </div>
+                        </div>
+                      </td>
+                    </tr>
+                  )}
+
+                  {/* Show message if no materials */}
+                  {area.expanded && area.tasks.length === 0 && (
+                    <tr className="bg-gray-50">
+                      <td colSpan={11} className="p-0">
+                        <div className="px-3 py-4 border-t border-gray-200 text-center">
+                          <Package className="w-6 h-6 md:w-8 md:h-8 text-gray-400 mx-auto mb-2" />
+                          <p className="text-gray-600 text-xs">
+                            No materials found for this purchase order
+                          </p>
+                        </div>
+                      </td>
+                    </tr>
+                  )}
+                </React.Fragment>
               ))}
             </tbody>
           </table>
@@ -1173,7 +1449,7 @@ export default function AreaTasks({
 
             {/* Content */}
             <div className="p-4 max-h-[70vh] overflow-y-auto custom-scrollbar">
-              <form onSubmit={handleSubmit} className="space-y-3">
+              <form onSubmit={handleSubmitTask} className="space-y-3">
                 {/* Name */}
                 <div className="space-y-1">
                   <label className="block text-xs font-semibold text-gray-800 mb-1 flex items-center gap-1.5">
@@ -1360,7 +1636,7 @@ export default function AreaTasks({
                     ) : (
                       <>
                         <Save className="w-4 h-4 group-hover:scale-110 transition-transform" />
-                        {editingId ? "Update Sub-Task" : "Create Sub-Task"}
+                        {editingId ? "Update Sub Task" : "Create Sub Task"}
                       </>
                     )}
                   </button>

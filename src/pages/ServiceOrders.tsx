@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect } from "react";
 import {
   Plus,
   Wrench,
@@ -20,9 +20,9 @@ import {
   CheckSquare,
   AlertCircle,
   Building,
-  ChevronDown
-} from 'lucide-react';
-import { useAuth } from '../contexts/AuthContext';
+  ChevronDown,
+} from "lucide-react";
+import { useAuth } from "../contexts/AuthContext";
 import {
   getServiceOrders,
   createServiceOrder,
@@ -30,12 +30,13 @@ import {
   deleteServiceOrder,
   bulkUpdateStatus,
   bulkDeleteServiceOrders,
-} from '../lib/serviceOrderApi';
+} from "../lib/serviceOrderApi";
 
 // dynamic master APIs
-import projectApi from '../lib/projectApi';
-import vendorApi from '../lib/vendorApi';
-import serviceTypeApi from '../lib/serviceTypeApi';
+import projectApi from "../lib/projectApi";
+import vendorApi from "../lib/vendorApi";
+import serviceTypeApi from "../lib/serviceTypeApi";
+import { toast } from "sonner";
 
 interface SOFormData {
   id?: string;
@@ -69,43 +70,43 @@ export default function ServiceOrders() {
   const [projects, setProjects] = useState<any[]>([]);
   const [serviceTypes, setServiceTypes] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
-  
+
   // Modal states
   const [showModal, setShowModal] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
-  
+
   // Checkbox states
   const [selectedItems, setSelectedItems] = useState<Set<string>>(new Set());
   const [selectAll, setSelectAll] = useState(false);
-  
+
   // Search filters - FIXED: Added missing state variables
-  const [searchSONumber, setSearchSONumber] = useState('');
-  const [searchServiceName, setSearchServiceName] = useState('');
-  const [searchVendor, setSearchVendor] = useState('');
-  const [searchProject, setSearchProject] = useState('');
-  const [searchLocation, setSearchLocation] = useState('');
-  const [searchDate, setSearchDate] = useState('');
-  const [searchStatus, setSearchStatus] = useState(''); // Added this
-  const [searchPriority, setSearchPriority] = useState(''); // Added this
+  const [searchSONumber, setSearchSONumber] = useState("");
+  const [searchServiceName, setSearchServiceName] = useState("");
+  const [searchVendor, setSearchVendor] = useState("");
+  const [searchProject, setSearchProject] = useState("");
+  const [searchLocation, setSearchLocation] = useState("");
+  const [searchDate, setSearchDate] = useState("");
+  const [searchStatus, setSearchStatus] = useState(""); // Added this
+  const [searchPriority, setSearchPriority] = useState(""); // Added this
 
   const [formData, setFormData] = useState<SOFormData>({
-    so_number: '',
+    so_number: "",
     vendor_id: null,
     project_id: null,
     service_type_id: null,
-    service_name: '',
-    description: '',
-    start_date: new Date().toISOString().split('T')[0],
-    end_date: '',
+    service_name: "",
+    description: "",
+    start_date: new Date().toISOString().split("T")[0],
+    end_date: "",
     duration_days: 0,
     estimated_cost: 0,
     actual_cost: 0,
-    status: 'scheduled',
-    priority: 'medium',
-    location: '',
-    supervisor_name: '',
-    supervisor_phone: '',
-    notes: '',
+    status: "scheduled",
+    priority: "medium",
+    location: "",
+    supervisor_name: "",
+    supervisor_phone: "",
+    notes: "",
     created_by: user?.id ?? null,
     created_at: new Date().toISOString(),
   });
@@ -127,7 +128,10 @@ export default function ServiceOrders() {
         setVendors(vendorRows.map((v: any) => ({ id: v.id, name: v.name })));
         setProjects(projectRows.map((p: any) => ({ id: p.id, name: p.name })));
       } catch (masterErr) {
-        console.warn('Failed to load vendors/projects from master APIs, falling back to empty lists', masterErr);
+        console.warn(
+          "Failed to load vendors/projects from master APIs, falling back to empty lists",
+          masterErr,
+        );
         setVendors([]);
         setProjects([]);
       }
@@ -138,25 +142,39 @@ export default function ServiceOrders() {
         if (Array.isArray(types) && types.length > 0) setServiceTypes(types);
         else setServiceTypes(seedServiceTypes());
       } catch (stypeErr) {
-        console.warn('serviceTypeApi.getAll failed, using seeded service types', stypeErr);
+        console.warn(
+          "serviceTypeApi.getAll failed, using seeded service types",
+          stypeErr,
+        );
         setServiceTypes(seedServiceTypes());
       }
 
       // fetch service orders
       const rows: any[] = await getServiceOrders();
-      rows.sort((a: any, b: any) => (b.created_at || '').localeCompare(a.created_at || ''));
+      rows.sort((a: any, b: any) =>
+        (b.created_at || "").localeCompare(a.created_at || ""),
+      );
 
       const normalized = rows.map((r: any) => ({
         ...r,
         id: String(r.id),
-        vendor_id: r.vendor_id !== undefined && r.vendor_id !== null ? r.vendor_id : null,
-        project_id: r.project_id !== undefined && r.project_id !== null ? r.project_id : null,
-        service_type_id: r.service_type_id !== undefined && r.service_type_id !== null ? r.service_type_id : null,
+        vendor_id:
+          r.vendor_id !== undefined && r.vendor_id !== null
+            ? r.vendor_id
+            : null,
+        project_id:
+          r.project_id !== undefined && r.project_id !== null
+            ? r.project_id
+            : null,
+        service_type_id:
+          r.service_type_id !== undefined && r.service_type_id !== null
+            ? r.service_type_id
+            : null,
       }));
 
       setServiceOrders(normalized);
     } catch (err) {
-      console.error('loadData error', err);
+      console.error("loadData error", err);
       setServiceOrders([]);
     } finally {
       setLoading(false);
@@ -166,8 +184,10 @@ export default function ServiceOrders() {
   const generateSONumber = () => {
     const now = new Date();
     const year = now.getFullYear();
-    const month = String(now.getMonth() + 1).padStart(2, '0');
-    const random = Math.floor(Math.random() * 9999).toString().padStart(4, '0');
+    const month = String(now.getMonth() + 1).padStart(2, "0");
+    const random = Math.floor(Math.random() * 9999)
+      .toString()
+      .padStart(4, "0");
     return `SO/${year}/${month}/${random}`;
   };
 
@@ -182,8 +202,12 @@ export default function ServiceOrders() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!formData.service_name || formData.vendor_id === null || formData.project_id === null) {
-      alert('Please fill required fields: Service Name, Vendor, Project');
+    if (
+      !formData.service_name ||
+      formData.vendor_id === null ||
+      formData.project_id === null
+    ) {
+      alert("Please fill required fields: Service Name, Vendor, Project");
       return;
     }
 
@@ -193,20 +217,32 @@ export default function ServiceOrders() {
       so_number: formData.so_number || generateSONumber(),
       duration_days: calculateDuration(formData.start_date, formData.end_date),
       created_by: formData.created_by ?? user?.id ?? null,
-      created_at: editingId ? formData.created_at ?? now : now,
+      created_at: editingId ? (formData.created_at ?? now) : now,
     };
 
     try {
       if (editingId) {
         const payloadToUpdate: any = { ...soEntry };
-        if (payloadToUpdate.vendor_id !== null && payloadToUpdate.vendor_id !== undefined) {
+        if (
+          payloadToUpdate.vendor_id !== null &&
+          payloadToUpdate.vendor_id !== undefined
+        ) {
           payloadToUpdate.vendor_id = Number(payloadToUpdate.vendor_id);
         }
-        if (payloadToUpdate.project_id !== null && payloadToUpdate.project_id !== undefined) {
+        if (
+          payloadToUpdate.project_id !== null &&
+          payloadToUpdate.project_id !== undefined
+        ) {
           payloadToUpdate.project_id = Number(payloadToUpdate.project_id);
         }
-        if (payloadToUpdate.service_type_id !== null && payloadToUpdate.service_type_id !== undefined && payloadToUpdate.service_type_id !== '') {
-          payloadToUpdate.service_type_id = Number(payloadToUpdate.service_type_id);
+        if (
+          payloadToUpdate.service_type_id !== null &&
+          payloadToUpdate.service_type_id !== undefined &&
+          payloadToUpdate.service_type_id !== ""
+        ) {
+          payloadToUpdate.service_type_id = Number(
+            payloadToUpdate.service_type_id,
+          );
         } else {
           payloadToUpdate.service_type_id = null;
         }
@@ -217,10 +253,15 @@ export default function ServiceOrders() {
 
         payloadToCreate.vendor_id = Number(payloadToCreate.vendor_id);
         payloadToCreate.project_id = Number(payloadToCreate.project_id);
-        payloadToCreate.service_type_id = payloadToCreate.service_type_id ? Number(payloadToCreate.service_type_id) : null;
+        payloadToCreate.service_type_id = payloadToCreate.service_type_id
+          ? Number(payloadToCreate.service_type_id)
+          : null;
 
-        if (!Number.isFinite(payloadToCreate.vendor_id) || !Number.isFinite(payloadToCreate.project_id)) {
-          alert('Vendor and Project must be valid numeric IDs.');
+        if (
+          !Number.isFinite(payloadToCreate.vendor_id) ||
+          !Number.isFinite(payloadToCreate.project_id)
+        ) {
+          alert("Vendor and Project must be valid numeric IDs.");
           return;
         }
 
@@ -231,8 +272,8 @@ export default function ServiceOrders() {
       setShowModal(false);
       resetForm();
     } catch (err: any) {
-      alert(err?.message || 'Failed to save service order');
-      console.error('handleSubmit error', err);
+      alert(err?.message || "Failed to save service order");
+      console.error("handleSubmit error", err);
     }
   };
 
@@ -240,15 +281,26 @@ export default function ServiceOrders() {
     setEditingId(so.id ?? null);
     setFormData({
       ...so,
-      vendor_id: so.vendor_id === null || so.vendor_id === undefined ? null : Number(so.vendor_id),
-      project_id: so.project_id === null || so.project_id === undefined ? null : Number(so.project_id),
-      service_type_id: so.service_type_id === null || so.service_type_id === undefined ? null : (so.service_type_id === '' ? null : Number(so.service_type_id)),
+      vendor_id:
+        so.vendor_id === null || so.vendor_id === undefined
+          ? null
+          : Number(so.vendor_id),
+      project_id:
+        so.project_id === null || so.project_id === undefined
+          ? null
+          : Number(so.project_id),
+      service_type_id:
+        so.service_type_id === null || so.service_type_id === undefined
+          ? null
+          : so.service_type_id === ""
+            ? null
+            : Number(so.service_type_id),
     });
     setShowModal(true);
   };
 
   const handleDelete = async (id: string) => {
-    if (!confirm('Are you sure you want to delete this service order?')) return;
+    if (!confirm("Are you sure you want to delete this service order?")) return;
     try {
       await deleteServiceOrder(id);
       await loadData();
@@ -258,30 +310,30 @@ export default function ServiceOrders() {
         return n;
       });
     } catch (err) {
-      alert('Delete failed');
-      console.error('handleDelete error', err);
+      alert("Delete failed");
+      console.error("handleDelete error", err);
     }
   };
 
   const resetForm = () => {
     setFormData({
-      so_number: '',
+      so_number: "",
       vendor_id: null,
       project_id: null,
       service_type_id: null,
-      service_name: '',
-      description: '',
-      start_date: new Date().toISOString().split('T')[0],
-      end_date: '',
+      service_name: "",
+      description: "",
+      start_date: new Date().toISOString().split("T")[0],
+      end_date: "",
       duration_days: 0,
       estimated_cost: 0,
       actual_cost: 0,
-      status: 'scheduled',
-      priority: 'medium',
-      location: '',
-      supervisor_name: '',
-      supervisor_phone: '',
-      notes: '',
+      status: "scheduled",
+      priority: "medium",
+      location: "",
+      supervisor_name: "",
+      supervisor_phone: "",
+      notes: "",
       created_by: user?.id ?? null,
       created_at: new Date().toISOString(),
     });
@@ -290,42 +342,54 @@ export default function ServiceOrders() {
 
   // Clear all search filters
   const clearAllFilters = () => {
-    setSearchSONumber('');
-    setSearchServiceName('');
-    setSearchVendor('');
-    setSearchProject('');
-    setSearchLocation('');
-    setSearchDate('');
-    setSearchStatus(''); // Added this
-    setSearchPriority(''); // Added this
+    setSearchSONumber("");
+    setSearchServiceName("");
+    setSearchVendor("");
+    setSearchProject("");
+    setSearchLocation("");
+    setSearchDate("");
+    setSearchStatus(""); // Added this
+    setSearchPriority(""); // Added this
   };
 
   // Filter and search logic - UPDATED with missing variables
   const filteredSOs = serviceOrders.filter((so) => {
     // Column searches
-    if (searchSONumber && !so.so_number?.toLowerCase().includes(searchSONumber.toLowerCase())) {
+    if (
+      searchSONumber &&
+      !so.so_number?.toLowerCase().includes(searchSONumber.toLowerCase())
+    ) {
       return false;
     }
-    if (searchServiceName && !so.service_name?.toLowerCase().includes(searchServiceName.toLowerCase())) {
+    if (
+      searchServiceName &&
+      !so.service_name?.toLowerCase().includes(searchServiceName.toLowerCase())
+    ) {
       return false;
     }
     if (searchVendor) {
-      const vendorName = vendors.find((v) => Number(v.id) === Number(so.vendor_id))?.name || '';
+      const vendorName =
+        vendors.find((v) => Number(v.id) === Number(so.vendor_id))?.name || "";
       if (!vendorName.toLowerCase().includes(searchVendor.toLowerCase())) {
         return false;
       }
     }
     if (searchProject) {
-      const projectName = projects.find((p) => Number(p.id) === Number(so.project_id))?.name || '';
+      const projectName =
+        projects.find((p) => Number(p.id) === Number(so.project_id))?.name ||
+        "";
       if (!projectName.toLowerCase().includes(searchProject.toLowerCase())) {
         return false;
       }
     }
-    if (searchLocation && !so.location?.toLowerCase().includes(searchLocation.toLowerCase())) {
+    if (
+      searchLocation &&
+      !so.location?.toLowerCase().includes(searchLocation.toLowerCase())
+    ) {
       return false;
     }
     if (searchDate) {
-      const soDate = new Date(so.start_date).toISOString().split('T')[0];
+      const soDate = new Date(so.start_date).toISOString().split("T")[0];
       if (soDate !== searchDate) {
         return false;
       }
@@ -366,38 +430,47 @@ export default function ServiceOrders() {
 
   const handleBulkAction = async (action: string) => {
     if (selectedItems.size === 0) {
-      alert('Please select at least one service order');
+      alert("Please select at least one service order");
       return;
     }
-    if (!confirm(`Are you sure you want to ${action} ${selectedItems.size} service order(s)?`)) return;
+    if (
+      !confirm(
+        `Are you sure you want to ${action} ${selectedItems.size} service order(s)?`,
+      )
+    )
+      return;
 
     const ids = Array.from(selectedItems);
     try {
-      if (action === 'delete') {
+      if (action === "delete") {
         await bulkDeleteServiceOrders(ids);
       } else {
-        let status = 'scheduled';
-        if (action === 'start') status = 'in_progress';
-        if (action === 'complete') status = 'completed';
-        if (action === 'cancel') status = 'cancelled';
+        let status = "scheduled";
+        if (action === "start") status = "in_progress";
+        if (action === "complete") status = "completed";
+        if (action === "cancel") status = "cancelled";
         await bulkUpdateStatus(ids, status);
       }
       await loadData();
       setSelectedItems(new Set());
       setSelectAll(false);
     } catch (err) {
-      alert('Bulk action failed');
-      console.error('handleBulkAction error', err);
+      alert("Bulk action failed");
+      console.error("handleBulkAction error", err);
     }
   };
 
   const handleBulkDelete = async () => {
     if (selectedItems.size === 0) {
-      alert('Please select service orders to delete');
+      alert("Please select service orders to delete");
       return;
     }
 
-    if (!confirm(`Are you sure you want to delete ${selectedItems.size} service order(s)? This action cannot be undone.`)) {
+    if (
+      !confirm(
+        `Are you sure you want to delete ${selectedItems.size} service order(s)? This action cannot be undone.`,
+      )
+    ) {
       return;
     }
 
@@ -408,8 +481,8 @@ export default function ServiceOrders() {
       setSelectAll(false);
       await loadData();
     } catch (error) {
-      console.error('Error deleting service orders:', error);
-      alert('Failed to delete service orders');
+      console.error("Error deleting service orders:", error);
+      alert("Failed to delete service orders");
     }
   };
 
@@ -430,39 +503,43 @@ export default function ServiceOrders() {
       }
     } else {
       await navigator.clipboard.writeText(url);
-      alert('Link copied to clipboard');
+      alert("Link copied to clipboard");
     }
   };
 
   const getStatusBadge = (status: string) => {
     const map: any = {
-      scheduled: 'bg-blue-100 text-blue-700',
-      in_progress: 'bg-yellow-100 text-yellow-700',
-      completed: 'bg-green-100 text-green-700',
-      cancelled: 'bg-red-100 text-red-700',
-      on_hold: 'bg-gray-100 text-gray-700',
+      scheduled: "bg-blue-100 text-blue-700",
+      in_progress: "bg-yellow-100 text-yellow-700",
+      completed: "bg-green-100 text-green-700",
+      cancelled: "bg-red-100 text-red-700",
+      on_hold: "bg-gray-100 text-gray-700",
     };
-    return map[status] || 'bg-gray-100 text-gray-700';
+    return map[status] || "bg-gray-100 text-gray-700";
   };
 
   const getPriorityBadge = (priority: string) => {
     const map: any = {
-      low: 'bg-green-100 text-green-700',
-      medium: 'bg-yellow-100 text-yellow-700',
-      high: 'bg-orange-100 text-orange-700',
-      urgent: 'bg-red-100 text-red-700',
+      low: "bg-green-100 text-green-700",
+      medium: "bg-yellow-100 text-yellow-700",
+      high: "bg-orange-100 text-orange-700",
+      urgent: "bg-red-100 text-red-700",
     };
-    return map[priority] || 'bg-gray-100 text-gray-700';
+    return map[priority] || "bg-gray-100 text-gray-700";
   };
 
   const formatCurrency = (amount: number) =>
-    new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR', maximumFractionDigits: 2 }).format(amount || 0);
+    new Intl.NumberFormat("en-IN", {
+      style: "currency",
+      currency: "INR",
+      maximumFractionDigits: 2,
+    }).format(amount || 0);
 
   const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString('en-IN', {
-      day: '2-digit',
-      month: 'short',
-      year: 'numeric'
+    return new Date(dateString).toLocaleDateString("en-IN", {
+      day: "2-digit",
+      month: "short",
+      year: "numeric",
     });
   };
 
@@ -478,10 +555,10 @@ export default function ServiceOrders() {
   }
 
   return (
-<div className="p-2 px-0 md:px-0 -mt-4">      {/* Header with Actions */}
+    <div className="p-2 px-0 md:px-0 -mt-4">
+      {" "}
+      {/* Header with Actions */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6 px-0">
-        
-        
         <button
           onClick={() => {
             resetForm();
@@ -493,7 +570,6 @@ export default function ServiceOrders() {
           Create Service Order
         </button>
       </div>
-
       {/* Bulk Actions Bar */}
       {selectedItems.size > 0 && (
         <div className="mb-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 px-3">
@@ -502,24 +578,24 @@ export default function ServiceOrders() {
               {selectedItems.size} selected
             </div>
           </div>
-          
+
           <div className="flex flex-wrap gap-2">
             <button
-              onClick={() => handleBulkAction('start')}
+              onClick={() => handleBulkAction("start")}
               className="bg-blue-600 text-white px-3 md:px-4 py-1.5 md:py-2 rounded-lg hover:bg-blue-700 transition-all duration-200 text-sm flex items-center gap-1.5"
             >
               <Clock className="w-3.5 h-3.5" />
               Start Selected
             </button>
             <button
-              onClick={() => handleBulkAction('complete')}
+              onClick={() => handleBulkAction("complete")}
               className="bg-green-600 text-white px-3 md:px-4 py-1.5 md:py-2 rounded-lg hover:bg-green-700 transition-all duration-200 text-sm flex items-center gap-1.5"
             >
               <CheckSquare className="w-3.5 h-3.5" />
               Complete Selected
             </button>
             <button
-              onClick={() => handleBulkAction('cancel')}
+              onClick={() => handleBulkAction("cancel")}
               className="bg-orange-600 text-white px-3 md:px-4 py-1.5 md:py-2 rounded-lg hover:bg-orange-700 transition-all duration-200 text-sm flex items-center gap-1.5"
             >
               <X className="w-3.5 h-3.5" />
@@ -535,7 +611,6 @@ export default function ServiceOrders() {
           </div>
         </div>
       )}
-
       {/* Main Table */}
       <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden mx-0">
         <div className="overflow-x-auto">
@@ -702,7 +777,7 @@ export default function ServiceOrders() {
                 </td>
               </tr>
             </thead>
-            
+
             <tbody className="divide-y divide-gray-200">
               {filteredSOs.map((so) => (
                 <tr key={so.id} className="hover:bg-gray-50 transition">
@@ -721,14 +796,19 @@ export default function ServiceOrders() {
                       {so.service_name}
                     </span>
                     <p className="text-[10px] md:text-xs text-gray-500 mt-0.5">
-                      {serviceTypes.find((s) => Number(s.id) === Number(so.service_type_id))?.name || 'N/A'}
+                      {serviceTypes.find(
+                        (s) => Number(s.id) === Number(so.service_type_id),
+                      )?.name || "N/A"}
                     </p>
                   </td>
                   <td className="px-3 md:px-4 py-3 text-gray-700 text-xs md:text-sm truncate max-w-[120px]">
-                    {vendors.find((v) => Number(v.id) === Number(so.vendor_id))?.name || "N/A"}
+                    {vendors.find((v) => Number(v.id) === Number(so.vendor_id))
+                      ?.name || "N/A"}
                   </td>
                   <td className="px-3 md:px-4 py-3 text-gray-700 text-xs md:text-sm truncate max-w-[120px]">
-                    {projects.find((p) => Number(p.id) === Number(so.project_id))?.name || "N/A"}
+                    {projects.find(
+                      (p) => Number(p.id) === Number(so.project_id),
+                    )?.name || "N/A"}
                   </td>
                   <td className="px-3 md:px-4 py-3 text-gray-700 text-xs md:text-sm">
                     <div className="flex items-center gap-1">
@@ -737,16 +817,20 @@ export default function ServiceOrders() {
                     </div>
                   </td>
                   <td className="px-3 md:px-4 py-3 text-gray-700 text-xs md:text-sm truncate max-w-[120px]">
-                    {so.location || 'N/A'}
+                    {so.location || "N/A"}
                   </td>
                   <td className="px-3 md:px-4 py-3">
-                    <span className={`px-2 py-0.5 md:px-3 md:py-1 rounded-full text-[10px] md:text-xs font-medium ${getPriorityBadge(so.priority)}`}>
+                    <span
+                      className={`px-2 py-0.5 md:px-3 md:py-1 rounded-full text-[10px] md:text-xs font-medium ${getPriorityBadge(so.priority)}`}
+                    >
                       {so.priority?.toUpperCase()}
                     </span>
                   </td>
                   <td className="px-3 md:px-4 py-3">
-                    <span className={`px-2 py-0.5 md:px-3 md:py-1 rounded-full text-[10px] md:text-xs font-medium ${getStatusBadge(so.status)}`}>
-                      {so.status?.replace('_', ' ').toUpperCase()}
+                    <span
+                      className={`px-2 py-0.5 md:px-3 md:py-1 rounded-full text-[10px] md:text-xs font-medium ${getStatusBadge(so.status)}`}
+                    >
+                      {so.status?.replace("_", " ").toUpperCase()}
                     </span>
                   </td>
                   <td className="px-3 md:px-4 py-3">
@@ -789,17 +873,24 @@ export default function ServiceOrders() {
           {filteredSOs.length === 0 && (
             <div className="text-center py-12 px-3">
               <Wrench className="w-16 h-16 text-gray-300 mx-auto mb-4" />
-              <h3 className="text-lg font-semibold text-gray-800 mb-2">No service orders found</h3>
+              <h3 className="text-lg font-semibold text-gray-800 mb-2">
+                No service orders found
+              </h3>
               <p className="text-gray-600 text-sm">
-                {searchSONumber || searchServiceName || searchVendor || searchProject || searchLocation || searchStatus || searchPriority
-                  ? 'Try different search criteria'
+                {searchSONumber ||
+                searchServiceName ||
+                searchVendor ||
+                searchProject ||
+                searchLocation ||
+                searchStatus ||
+                searchPriority
+                  ? "Try different search criteria"
                   : 'Click "Create Service Order" to get started'}
               </p>
             </div>
           )}
         </div>
       </div>
-
       {/* Modal */}
       {showModal && (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-md flex items-center justify-center z-50 p-4 animate-fadeIn">
@@ -813,15 +904,20 @@ export default function ServiceOrders() {
                 </div>
                 <div>
                   <h2 className="text-base font-bold text-white flex items-center gap-1.5">
-                    {editingId ? 'Edit Service Order' : 'Create Service Order'}
+                    {editingId ? "Edit Service Order" : "Create Service Order"}
                   </h2>
                   <p className="text-xs text-white/90 font-medium mt-0.5">
-                    {editingId ? 'Update service order details' : 'Add new service order'}
+                    {editingId
+                      ? "Update service order details"
+                      : "Add new service order"}
                   </p>
                 </div>
               </div>
               <button
-                onClick={() => { setShowModal(false); resetForm(); }}
+                onClick={() => {
+                  setShowModal(false);
+                  resetForm();
+                }}
                 className="text-white hover:bg-white/20 rounded-xl p-1.5 transition-all duration-200 hover:scale-105 active:scale-95"
               >
                 <X className="w-4 h-4" />
@@ -846,7 +942,12 @@ export default function ServiceOrders() {
                       <input
                         type="text"
                         value={formData.service_name}
-                        onChange={(e) => setFormData({ ...formData, service_name: e.target.value })}
+                        onChange={(e) =>
+                          setFormData({
+                            ...formData,
+                            service_name: e.target.value,
+                          })
+                        }
                         className="w-full pl-9 pr-3 py-2 text-sm border-2 border-gray-200 rounded-xl focus:border-[#C62828] focus:ring-2 focus:ring-[#C62828]/20 outline-none transition-all duration-200 hover:border-gray-300"
                         required
                         placeholder="Enter service name"
@@ -865,13 +966,28 @@ export default function ServiceOrders() {
                         <Layers className="w-3.5 h-3.5" />
                       </div>
                       <select
-                        value={formData.service_type_id !== null ? String(formData.service_type_id) : ''}
-                        onChange={(e) => setFormData({ ...formData, service_type_id: e.target.value ? Number(e.target.value) : null })}
+                        value={
+                          formData.service_type_id !== null
+                            ? String(formData.service_type_id)
+                            : ""
+                        }
+                        onChange={(e) =>
+                          setFormData({
+                            ...formData,
+                            service_type_id: e.target.value
+                              ? Number(e.target.value)
+                              : null,
+                          })
+                        }
                         className="w-full pl-9 pr-8 py-2 text-sm border-2 border-gray-200 rounded-xl focus:border-[#C62828] focus:ring-2 focus:ring-[#C62828]/20 bg-white outline-none transition-all duration-200 appearance-none hover:border-gray-300"
                       >
-                        <option value="" className="text-gray-400">Select Type</option>
+                        <option value="" className="text-gray-400">
+                          Select Type
+                        </option>
                         {serviceTypes.map((t) => (
-                          <option key={t.id} value={t.id} className="py-1">{t.name}</option>
+                          <option key={t.id} value={t.id} className="py-1">
+                            {t.name}
+                          </option>
                         ))}
                       </select>
                       <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none">
@@ -891,14 +1007,29 @@ export default function ServiceOrders() {
                         <Truck className="w-3.5 h-3.5" />
                       </div>
                       <select
-                        value={formData.vendor_id !== null ? String(formData.vendor_id) : ''}
-                        onChange={(e) => setFormData({ ...formData, vendor_id: e.target.value ? Number(e.target.value) : null })}
+                        value={
+                          formData.vendor_id !== null
+                            ? String(formData.vendor_id)
+                            : ""
+                        }
+                        onChange={(e) =>
+                          setFormData({
+                            ...formData,
+                            vendor_id: e.target.value
+                              ? Number(e.target.value)
+                              : null,
+                          })
+                        }
                         className="w-full pl-9 pr-8 py-2 text-sm border-2 border-gray-200 rounded-xl focus:border-[#C62828] focus:ring-2 focus:ring-[#C62828]/20 bg-white outline-none transition-all duration-200 appearance-none hover:border-gray-300"
                         required
                       >
-                        <option value="" className="text-gray-400">Select Vendor</option>
+                        <option value="" className="text-gray-400">
+                          Select Vendor
+                        </option>
                         {vendors.map((v) => (
-                          <option key={v.id} value={v.id} className="py-1">{v.name}</option>
+                          <option key={v.id} value={v.id} className="py-1">
+                            {v.name}
+                          </option>
                         ))}
                       </select>
                       <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none">
@@ -918,14 +1049,29 @@ export default function ServiceOrders() {
                         <Building className="w-3.5 h-3.5" />
                       </div>
                       <select
-                        value={formData.project_id !== null ? String(formData.project_id) : ''}
-                        onChange={(e) => setFormData({ ...formData, project_id: e.target.value ? Number(e.target.value) : null })}
+                        value={
+                          formData.project_id !== null
+                            ? String(formData.project_id)
+                            : ""
+                        }
+                        onChange={(e) =>
+                          setFormData({
+                            ...formData,
+                            project_id: e.target.value
+                              ? Number(e.target.value)
+                              : null,
+                          })
+                        }
                         className="w-full pl-9 pr-8 py-2 text-sm border-2 border-gray-200 rounded-xl focus:border-[#C62828] focus:ring-2 focus:ring-[#C62828]/20 bg-white outline-none transition-all duration-200 appearance-none hover:border-gray-300"
                         required
                       >
-                        <option value="" className="text-gray-400">Select Project</option>
+                        <option value="" className="text-gray-400">
+                          Select Project
+                        </option>
                         {projects.map((p) => (
-                          <option key={p.id} value={p.id} className="py-1">{p.name}</option>
+                          <option key={p.id} value={p.id} className="py-1">
+                            {p.name}
+                          </option>
                         ))}
                       </select>
                       <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none">
@@ -947,7 +1093,12 @@ export default function ServiceOrders() {
                       <input
                         type="date"
                         value={formData.start_date}
-                        onChange={(e) => setFormData({ ...formData, start_date: e.target.value })}
+                        onChange={(e) =>
+                          setFormData({
+                            ...formData,
+                            start_date: e.target.value,
+                          })
+                        }
                         className="w-full pl-9 pr-3 py-2 text-sm border-2 border-gray-200 rounded-xl focus:border-[#C62828] focus:ring-2 focus:ring-[#C62828]/20 outline-none transition-all duration-200 hover:border-gray-300"
                         required
                       />
@@ -967,7 +1118,9 @@ export default function ServiceOrders() {
                       <input
                         type="date"
                         value={formData.end_date}
-                        onChange={(e) => setFormData({ ...formData, end_date: e.target.value })}
+                        onChange={(e) =>
+                          setFormData({ ...formData, end_date: e.target.value })
+                        }
                         className="w-full pl-9 pr-3 py-2 text-sm border-2 border-gray-200 rounded-xl focus:border-[#C62828] focus:ring-2 focus:ring-[#C62828]/20 outline-none transition-all duration-200 hover:border-gray-300"
                       />
                     </div>
@@ -985,7 +1138,9 @@ export default function ServiceOrders() {
                       </div>
                       <select
                         value={formData.priority}
-                        onChange={(e) => setFormData({ ...formData, priority: e.target.value })}
+                        onChange={(e) =>
+                          setFormData({ ...formData, priority: e.target.value })
+                        }
                         className="w-full pl-9 pr-8 py-2 text-sm border-2 border-gray-200 rounded-xl focus:border-[#C62828] focus:ring-2 focus:ring-[#C62828]/20 bg-white outline-none transition-all duration-200 appearance-none hover:border-gray-300"
                         required
                       >
@@ -1012,7 +1167,9 @@ export default function ServiceOrders() {
                       </div>
                       <select
                         value={formData.status}
-                        onChange={(e) => setFormData({ ...formData, status: e.target.value })}
+                        onChange={(e) =>
+                          setFormData({ ...formData, status: e.target.value })
+                        }
                         className="w-full pl-9 pr-8 py-2 text-sm border-2 border-gray-200 rounded-xl focus:border-[#C62828] focus:ring-2 focus:ring-[#C62828]/20 bg-white outline-none transition-all duration-200 appearance-none hover:border-gray-300"
                       >
                         <option value="scheduled">Scheduled</option>
@@ -1040,7 +1197,12 @@ export default function ServiceOrders() {
                       <input
                         type="number"
                         value={formData.estimated_cost}
-                        onChange={(e) => setFormData({ ...formData, estimated_cost: parseFloat(e.target.value) || 0 })}
+                        onChange={(e) =>
+                          setFormData({
+                            ...formData,
+                            estimated_cost: parseFloat(e.target.value) || 0,
+                          })
+                        }
                         className="w-full pl-9 pr-3 py-2 text-sm border-2 border-gray-200 rounded-xl focus:border-[#C62828] focus:ring-2 focus:ring-[#C62828]/20 outline-none transition-all duration-200 hover:border-gray-300"
                         min="0"
                         step="0.01"
@@ -1062,7 +1224,12 @@ export default function ServiceOrders() {
                       <input
                         type="number"
                         value={formData.actual_cost}
-                        onChange={(e) => setFormData({ ...formData, actual_cost: parseFloat(e.target.value) || 0 })}
+                        onChange={(e) =>
+                          setFormData({
+                            ...formData,
+                            actual_cost: parseFloat(e.target.value) || 0,
+                          })
+                        }
                         className="w-full pl-9 pr-3 py-2 text-sm border-2 border-gray-200 rounded-xl focus:border-[#C62828] focus:ring-2 focus:ring-[#C62828]/20 outline-none transition-all duration-200 hover:border-gray-300"
                         min="0"
                         step="0.01"
@@ -1084,7 +1251,9 @@ export default function ServiceOrders() {
                       <input
                         type="text"
                         value={formData.location}
-                        onChange={(e) => setFormData({ ...formData, location: e.target.value })}
+                        onChange={(e) =>
+                          setFormData({ ...formData, location: e.target.value })
+                        }
                         className="w-full pl-9 pr-3 py-2 text-sm border-2 border-gray-200 rounded-xl focus:border-[#C62828] focus:ring-2 focus:ring-[#C62828]/20 outline-none transition-all duration-200 hover:border-gray-300"
                         placeholder="Enter location"
                       />
@@ -1104,7 +1273,12 @@ export default function ServiceOrders() {
                       <input
                         type="text"
                         value={formData.supervisor_name}
-                        onChange={(e) => setFormData({ ...formData, supervisor_name: e.target.value })}
+                        onChange={(e) =>
+                          setFormData({
+                            ...formData,
+                            supervisor_name: e.target.value,
+                          })
+                        }
                         className="w-full pl-9 pr-3 py-2 text-sm border-2 border-gray-200 rounded-xl focus:border-[#C62828] focus:ring-2 focus:ring-[#C62828]/20 outline-none transition-all duration-200 hover:border-gray-300"
                         placeholder="Enter name"
                       />
@@ -1124,7 +1298,20 @@ export default function ServiceOrders() {
                       <input
                         type="tel"
                         value={formData.supervisor_phone}
-                        onChange={(e) => setFormData({ ...formData, supervisor_phone: e.target.value })}
+                        onChange={(e) => {
+                          if (!/^\d*$/.test(e.target.value)) {
+                            toast.warning("Enter Valid Phone Number.");
+                            return;
+                          }
+                          if (e.target.value.length > 10) {
+                            toast.warning("Mobile number must be 10 digit.");
+                            return;
+                          }
+                          setFormData({
+                            ...formData,
+                            supervisor_phone: e.target.value,
+                          });
+                        }}
                         className="w-full pl-9 pr-3 py-2 text-sm border-2 border-gray-200 rounded-xl focus:border-[#C62828] focus:ring-2 focus:ring-[#C62828]/20 outline-none transition-all duration-200 hover:border-gray-300"
                         placeholder="Enter phone number"
                       />
@@ -1144,7 +1331,12 @@ export default function ServiceOrders() {
                     </div>
                     <textarea
                       value={formData.description}
-                      onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                      onChange={(e) =>
+                        setFormData({
+                          ...formData,
+                          description: e.target.value,
+                        })
+                      }
                       className="w-full pl-9 pr-3 py-2 text-sm border-2 border-gray-200 rounded-xl focus:border-[#C62828] focus:ring-2 focus:ring-[#C62828]/20 outline-none transition-all duration-200 hover:border-gray-300 min-h-[80px] resize-vertical"
                       placeholder="Enter description"
                     />
@@ -1163,7 +1355,9 @@ export default function ServiceOrders() {
                     </div>
                     <textarea
                       value={formData.notes}
-                      onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
+                      onChange={(e) =>
+                        setFormData({ ...formData, notes: e.target.value })
+                      }
                       className="w-full pl-9 pr-3 py-2 text-sm border-2 border-gray-200 rounded-xl focus:border-[#C62828] focus:ring-2 focus:ring-[#C62828]/20 outline-none transition-all duration-200 hover:border-gray-300 min-h-[60px] resize-vertical"
                       placeholder="Additional notes"
                     />
@@ -1185,13 +1379,18 @@ export default function ServiceOrders() {
                     ) : (
                       <>
                         <Save className="w-4 h-4 group-hover:scale-110 transition-transform" />
-                        {editingId ? 'Update Service Order' : 'Create Service Order'}
+                        {editingId
+                          ? "Update Service Order"
+                          : "Create Service Order"}
                       </>
                     )}
                   </button>
                   <button
                     type="button"
-                    onClick={() => { setShowModal(false); resetForm(); }}
+                    onClick={() => {
+                      setShowModal(false);
+                      resetForm();
+                    }}
                     className="px-4 py-2.5 text-sm border-2 border-gray-200 rounded-xl hover:bg-gray-50 hover:border-gray-300 transition-all duration-200 font-medium text-gray-700 hover:text-gray-900"
                   >
                     Cancel
@@ -1201,7 +1400,7 @@ export default function ServiceOrders() {
             </div>
 
             {/* Add some custom styles for scrollbar */}
-            <style >{`
+            <style>{`
               .custom-scrollbar::-webkit-scrollbar {
                 width: 6px;
               }
