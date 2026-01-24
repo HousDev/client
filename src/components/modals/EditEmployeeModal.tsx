@@ -1,382 +1,31 @@
-// import { useState, useEffect } from "react";
-// import Modal from "../ui/Modal";
-// import Button from "../ui/Button";
-// import Input from "../ui/Input";
-// import Select from "../ui/Select";
-// import { toast } from "sonner";
-// import projectApi from "../../lib/projectApi";
-// import rolesApi from "../../lib/rolesApi";
-// import { departmentsApi } from "../../lib/departmentApi";
-// import HrmsEmployeesApi from "../../lib/employeeApi";
-// // import { employeeAPI } from '../../api/employee.api';
-
-// interface AddEmployeeModalProps {
-//   isOpen: boolean;
-//   onClose: () => void;
-//   onSuccess: () => void;
-// }
-
-// export default function AddEmployeeModal({
-//   isOpen,
-//   onClose,
-//   onSuccess,
-// }: AddEmployeeModalProps) {
-//   const [loading, setLoading] = useState(false);
-//   const [roles, setRoles] = useState<any[]>([]);
-//   const [departments, setDepartments] = useState<any[]>([]);
-//   const [projects, setProjects] = useState<any[]>([]);
-//   const [formData, setFormData] = useState({
-//     first_name: "",
-//     last_name: "",
-//     email: "",
-//     mobile: "",
-//     role_id: "",
-//     department_id: "",
-//     designation: "",
-//     date_of_joining: new Date().toISOString().split("T")[0],
-//     gender: "male",
-//     project_id: "",
-//     office_location: "",
-//     attendance_location: "",
-//   });
-
-//   const loadProjects = async () => {
-//     try {
-//       const data: any = await projectApi.getProjects();
-//       console.log(data);
-//       setProjects(data.data);
-//     } catch (err) {
-//       console.log(err);
-//       toast.error("Something went wrong.");
-//     }
-//   };
-
-//   const loadRoles = async () => {
-//     try {
-//       const data: any = await rolesApi.getAllRoles();
-//       console.log(data);
-//       setRoles(data.data);
-//     } catch (err) {
-//       console.log(err);
-//       toast.error("Something went wrong.");
-//     }
-//   };
-//   const loadDepartments = async () => {
-//     try {
-//       const data: any = await departmentsApi.getAll();
-//       console.log(data);
-//       setDepartments(data.data);
-//     } catch (err) {
-//       console.log(err);
-//       toast.error("Something went wrong.");
-//     }
-//   };
-
-//   useEffect(() => {
-//     loadProjects();
-//     loadRoles();
-//     loadDepartments();
-//   }, []);
-
-//   const handleSubmit = async (e: React.FormEvent) => {
-//     e.preventDefault();
-//     setLoading(true);
-
-//     try {
-//       await HrmsEmployeesApi.createEmployee({
-//         first_name: formData.first_name,
-//         last_name: formData.last_name,
-//         email: formData.email,
-//         phone: formData.mobile,
-//         role_id: Number(formData.role_id),
-//         department_id: formData.department_id,
-//         designation: formData.designation,
-//         joining_date: formData.date_of_joining,
-//         gender: formData.gender,
-//         allotted_project: Number(formData.project_id),
-//         office_location: formData.office_location || null,
-//         attendence_location: formData.attendance_location,
-//       });
-
-//       setFormData({
-//         first_name: "",
-//         last_name: "",
-//         email: "",
-//         mobile: "",
-//         role_id: "",
-//         department_id: "",
-//         designation: "",
-//         date_of_joining: new Date().toISOString().split("T")[0],
-//         gender: "male",
-//         project_id: "",
-//         office_location: "",
-//         attendance_location: "",
-//       });
-//       onSuccess();
-//       onClose();
-//     } catch (error: any) {
-//       console.error("Error adding employee:", error);
-//       alert(error.message || "Failed to add employee");
-//     } finally {
-//       setLoading(false);
-//     }
-//   };
-
-//   return (
-//     <Modal isOpen={isOpen} onClose={onClose} title="Add New Employee">
-//       <form onSubmit={handleSubmit} className="space-y-4">
-//         <div className="grid grid-cols-2 gap-4">
-//           <div>
-//             <label className="block text-sm font-medium text-slate-700 mb-2">
-//               First Name *
-//             </label>
-//             <Input
-//               type="text"
-//               value={formData.first_name}
-//               onChange={(e) =>
-//                 setFormData({ ...formData, first_name: e.target.value })
-//               }
-//               placeholder="Enter first name"
-//               required
-//             />
-//           </div>
-
-//           <div>
-//             <label className="block text-sm font-medium text-slate-700 mb-2">
-//               Last Name *
-//             </label>
-//             <Input
-//               type="text"
-//               value={formData.last_name}
-//               onChange={(e) =>
-//                 setFormData({ ...formData, last_name: e.target.value })
-//               }
-//               placeholder="Enter last name"
-//               required
-//             />
-//           </div>
-//         </div>
-
-//         <div className="grid grid-cols-2 gap-4">
-//           <div>
-//             <label className="block text-sm font-medium text-slate-700 mb-2">
-//               Email *
-//             </label>
-//             <Input
-//               type="email"
-//               value={formData.email}
-//               onChange={(e) =>
-//                 setFormData({ ...formData, email: e.target.value })
-//               }
-//               placeholder="email@company.com"
-//               required
-//             />
-//           </div>
-
-//           <div>
-//             <label className="block text-sm font-medium text-slate-700 mb-2">
-//               Mobile *
-//             </label>
-//             <Input
-//               type="tel"
-//               value={formData.mobile}
-//               onChange={(e) => {
-//                 if (!/^\d*$/.test(e.target.value)) {
-//                   toast.warning("Enter Valid Phone Number.");
-//                   return;
-//                 }
-//                 if (e.target.value.length > 10) {
-//                   toast.warning("Mobile number must be 10 digit.");
-//                   return;
-//                 }
-//                 setFormData({ ...formData, mobile: e.target.value });
-//               }}
-//               placeholder="+91 XXXXX XXXXX"
-//               required
-//             />
-//           </div>
-//         </div>
-
-//         <div className="grid grid-cols-2 gap-4">
-//           <div>
-//             <label className="block text-sm font-medium text-slate-700 mb-2">
-//               Role *
-//             </label>
-//             <Select
-//               value={formData.role_id}
-//               onChange={(e) =>
-//                 setFormData({ ...formData, role_id: e.target.value })
-//               }
-//               required
-//             >
-//               <option value="">Select role</option>
-//               {roles.map((role) => (
-//                 <option key={role.id} value={role.id}>
-//                   {role.name}
-//                 </option>
-//               ))}
-//             </Select>
-//           </div>
-
-//           <div>
-//             <label className="block text-sm font-medium text-slate-700 mb-2">
-//               Department *
-//             </label>
-//             <Select
-//               value={formData.department_id}
-//               onChange={(e) =>
-//                 setFormData({ ...formData, department_id: e.target.value })
-//               }
-//               required
-//             >
-//               <option value="">Select department</option>
-//               {departments.map((dept) => (
-//                 <option key={dept.id} value={dept.id}>
-//                   {dept.name}
-//                 </option>
-//               ))}
-//             </Select>
-//           </div>
-//         </div>
-
-//         <div className="grid grid-cols-2 gap-4">
-//           <div>
-//             <label className="block text-sm font-medium text-slate-700 mb-2">
-//               Designation *
-//             </label>
-//             <Input
-//               type="text"
-//               value={formData.designation}
-//               onChange={(e) =>
-//                 setFormData({ ...formData, designation: e.target.value })
-//               }
-//               placeholder="e.g. Software Engineer"
-//               required
-//             />
-//           </div>
-
-//           <div>
-//             <label className="block text-sm font-medium text-slate-700 mb-2">
-//               Date of Joining *
-//             </label>
-//             <Input
-//               type="date"
-//               value={formData.date_of_joining}
-//               onChange={(e) =>
-//                 setFormData({ ...formData, date_of_joining: e.target.value })
-//               }
-//               required
-//             />
-//           </div>
-//         </div>
-
-//         <div>
-//           <label className="block text-sm font-medium text-slate-700 mb-2">
-//             Gender *
-//           </label>
-//           <Select
-//             value={formData.gender}
-//             onChange={(e) =>
-//               setFormData({ ...formData, gender: e.target.value })
-//             }
-//             required
-//           >
-//             <option value="">Select Gender</option>
-//             <option value="male">Male</option>
-//             <option value="female">Female</option>
-//             <option value="other">Other</option>
-//           </Select>
-//         </div>
-
-//         <div className="grid grid-cols-2 gap-4">
-//           <div>
-//             <label className="block text-sm font-medium text-slate-700 mb-2">
-//               Allotted Project
-//             </label>
-//             <Select
-//               value={formData.project_id}
-//               onChange={(e) =>
-//                 setFormData({ ...formData, project_id: e.target.value })
-//               }
-//             >
-//               <option value="">Select project</option>
-//               {projects.map((project) => (
-//                 <option key={project.id} value={project.id}>
-//                   {project.name}
-//                 </option>
-//               ))}
-//             </Select>
-//           </div>
-
-//           <div>
-//             <label className="block text-sm font-medium text-slate-700 mb-2">
-//               Office Location
-//             </label>
-//             <Input
-//               type="text"
-//               value={formData.office_location}
-//               onChange={(e) =>
-//                 setFormData({ ...formData, office_location: e.target.value })
-//               }
-//               placeholder="e.g. Mumbai Office"
-//             />
-//           </div>
-//         </div>
-
-//         <div>
-//           <label className="block text-sm font-medium text-slate-700 mb-2">
-//             Attendance Location
-//           </label>
-//           <Input
-//             type="text"
-//             value={formData.attendance_location}
-//             onChange={(e) =>
-//               setFormData({ ...formData, attendance_location: e.target.value })
-//             }
-//             placeholder="e.g. Head Office, Branch A"
-//           />
-//         </div>
-
-//         <div className="flex justify-end gap-3 pt-4">
-//           <Button type="button" variant="secondary" onClick={onClose}>
-//             Cancel
-//           </Button>
-//           <Button type="submit" disabled={loading}>
-//             {loading ? "Adding..." : "Add Employee"}
-//           </Button>
-//         </div>
-//       </form>
-//     </Modal>
-//   );
-// }
-
-
-// components/modals/AddEmployeeModal.tsx
 import { useState, useEffect, useRef } from "react";
-import { Plus, X, Upload, User, Mail, Phone, Briefcase, Building, MapPin, Calendar, Users } from "lucide-react";
+import { X, Upload, User, Mail, Phone, Briefcase, Building, MapPin, Calendar, Users, Save } from "lucide-react";
 import { toast } from "sonner";
 import projectApi from "../../lib/projectApi";
 import rolesApi from "../../lib/rolesApi";
 import { departmentsApi } from "../../lib/departmentApi";
 import employeeAPI from "../../lib/employeeApi";
 
-interface AddEmployeeModalProps {
+interface EditEmployeeModalProps {
   isOpen: boolean;
   onClose: () => void;
+  employeeId: string;
   onSuccess: () => void;
 }
 
-export default function AddEmployeeModal({
+export default function EditEmployeeModal({
   isOpen,
   onClose,
+  employeeId,
   onSuccess,
-}: AddEmployeeModalProps) {
+}: EditEmployeeModalProps) {
   const [loading, setLoading] = useState(false);
   const [roles, setRoles] = useState<any[]>([]);
   const [departments, setDepartments] = useState<any[]>([]);
   const [projects, setProjects] = useState<any[]>([]);
   const [profilePicture, setProfilePicture] = useState<File | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+  const [existingImage, setExistingImage] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const [formData, setFormData] = useState({
@@ -387,12 +36,39 @@ export default function AddEmployeeModal({
     role_id: "",
     department_id: "",
     designation: "",
-    joining_date: new Date().toISOString().split("T")[0],
+    joining_date: "",
     gender: "male",
     allotted_project: "",
     office_location: "",
     attendence_location: "",
   });
+
+  const loadEmployee = async () => {
+    try {
+      const data: any = await employeeAPI.getEmployee(employeeId);
+      setFormData({
+        first_name: data.first_name || "",
+        last_name: data.last_name || "",
+        email: data.email || "",
+        phone: data.phone || "",
+        role_id: data.role_id?.toString() || "",
+        department_id: data.department_id?.toString() || "",
+        designation: data.designation || "",
+        joining_date: data.joining_date ? new Date(data.joining_date).toISOString().split("T")[0] : "",
+        gender: data.gender || "male",
+        allotted_project: data.allotted_project?.toString() || "",
+        office_location: data.office_location || "",
+        attendence_location: data.attendence_location || "",
+      });
+      
+      if (data.profile_picture) {
+        setExistingImage(data.profile_picture);
+      }
+    } catch (err) {
+      console.log(err);
+      toast.error("Failed to load employee data");
+    }
+  };
 
   const loadProjects = async () => {
     try {
@@ -426,22 +102,21 @@ export default function AddEmployeeModal({
 
   useEffect(() => {
     if (isOpen) {
+      loadEmployee();
       loadProjects();
       loadRoles();
       loadDepartments();
     }
-  }, [isOpen]);
+  }, [isOpen, employeeId]);
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
-      // Check file size (5MB limit)
       if (file.size > 5 * 1024 * 1024) {
         toast.error("File size must be less than 5MB");
         return;
       }
 
-      // Check file type
       const validTypes = ['image/jpeg', 'image/png', 'image/webp'];
       if (!validTypes.includes(file.type)) {
         toast.error("Only JPG, PNG, and WebP files are allowed");
@@ -460,6 +135,7 @@ export default function AddEmployeeModal({
     }
     setProfilePicture(null);
     setPreviewUrl(null);
+    setExistingImage(null);
     if (fileInputRef.current) {
       fileInputRef.current.value = '';
     }
@@ -472,49 +148,29 @@ export default function AddEmployeeModal({
     try {
       const formDataObj = new FormData();
       
-      // Append form data
       Object.entries(formData).forEach(([key, value]) => {
         if (value) {
           formDataObj.append(key, value.toString());
         }
       });
 
-      // Append profile picture if exists
       if (profilePicture) {
         formDataObj.append('profile_picture', profilePicture);
       }
 
-      await employeeAPI.createEmployee(formDataObj);
+      await employeeAPI.updateEmployee(employeeId, formDataObj);
 
-      toast.success("Employee added successfully!");
+      toast.success("Employee updated successfully!");
       
-      // Reset form
-      setFormData({
-        first_name: "",
-        last_name: "",
-        email: "",
-        phone: "",
-        role_id: "",
-        department_id: "",
-        designation: "",
-        joining_date: new Date().toISOString().split("T")[0],
-        gender: "male",
-        allotted_project: "",
-        office_location: "",
-        attendence_location: "",
-      });
-
       if (previewUrl) {
         URL.revokeObjectURL(previewUrl);
       }
-      setProfilePicture(null);
-      setPreviewUrl(null);
       
       onSuccess();
       onClose();
     } catch (error: any) {
-      console.error("Error adding employee:", error);
-      toast.error(error.message || "Failed to add employee");
+      console.error("Error updating employee:", error);
+      toast.error(error.message || "Failed to update employee");
     } finally {
       setLoading(false);
     }
@@ -531,33 +187,23 @@ export default function AddEmployeeModal({
 
   if (!isOpen) return null;
 
+  const displayImage = previewUrl || (existingImage ? `${import.meta.env.VITE_API_URL || 'http://localhost:4000'}${existingImage}` : null);
+
   return (
     <div className="fixed inset-0 bg-black/60 backdrop-blur-md flex items-center justify-center z-50 p-4 animate-fadeIn">
       <div className="bg-gradient-to-br from-gray-50 to-white rounded-2xl shadow-2xl shadow-gray-900/20 w-full max-w-4xl border border-gray-200 overflow-hidden">
         {/* Modal Header */}
-        <div className="bg-gradient-to-r from-[#40423f] via-[#4a4c49] to-[#5a5d5a] px-5 py-3 flex justify-between items-center border-b border-gray-700/30 relative overflow-hidden">
+        <div className="bg-gradient-to-r from-[#40423f] via-[#4a4c49] to-[#5a5d5a] px-5 py-3 flex justify-between items-center border-b border-gray-700/30">
           <div className="flex items-center gap-2.5">
             <div className="p-1.5 bg-white/20 rounded-xl backdrop-blur-sm">
               <User className="w-4 h-4 text-white" />
             </div>
             <div>
-              <h2 className="text-base font-bold text-white flex items-center gap-1.5">
-                Add New Employee
-              </h2>
-              <p className="text-xs text-white/90 font-medium mt-0.5">
-                Fill in employee details
-              </p>
+              <h2 className="text-base font-bold text-white">Edit Employee</h2>
+              <p className="text-xs text-white/90 font-medium mt-0.5">Update employee details</p>
             </div>
           </div>
-          <button
-            onClick={() => {
-              if (previewUrl) {
-                URL.revokeObjectURL(previewUrl);
-              }
-              onClose();
-            }}
-            className="text-white hover:bg-white/20 rounded-xl p-1.5 transition-all duration-200 hover:scale-105 active:scale-95"
-          >
+          <button onClick={onClose} className="text-white hover:bg-white/20 rounded-xl p-1.5 transition-all">
             <X className="w-4 h-4" />
           </button>
         </div>
@@ -570,9 +216,9 @@ export default function AddEmployeeModal({
               <div className="flex flex-col items-center justify-center p-6 border-2 border-dashed border-gray-300 rounded-xl hover:border-[#C62828] transition-all duration-200 bg-gray-50/50">
                 <div className="text-center mb-4">
                   <div className="w-20 h-20 rounded-full bg-gradient-to-br from-gray-200 to-gray-300 flex items-center justify-center mx-auto mb-3 overflow-hidden border-4 border-white shadow-lg">
-                    {previewUrl ? (
+                    {displayImage ? (
                       <img 
-                        src={previewUrl} 
+                        src={displayImage} 
                         alt="Profile Preview" 
                         className="w-full h-full object-cover"
                       />
@@ -581,11 +227,9 @@ export default function AddEmployeeModal({
                     )}
                   </div>
                   <p className="text-sm font-medium text-gray-700 mb-2">
-                    {previewUrl ? "Profile Picture" : "Upload Profile Picture"}
+                    {displayImage ? "Profile Picture" : "Upload Profile Picture"}
                   </p>
-                  <p className="text-xs text-gray-500 mb-3">
-                    JPG, PNG or WebP (Max 5MB)
-                  </p>
+                  <p className="text-xs text-gray-500 mb-3">JPG, PNG or WebP (Max 5MB)</p>
                   <div className="flex gap-2 justify-center">
                     <input
                       type="file"
@@ -593,16 +237,16 @@ export default function AddEmployeeModal({
                       onChange={handleFileChange}
                       accept="image/jpeg,image/png,image/webp"
                       className="hidden"
-                      id="profile-upload"
+                      id="profile-upload-edit"
                     />
                     <label
-                      htmlFor="profile-upload"
+                      htmlFor="profile-upload-edit"
                       className="px-4 py-2 bg-[#C62828] text-white rounded-lg hover:bg-[#A62222] transition-all duration-200 font-medium text-sm flex items-center gap-2 cursor-pointer"
                     >
                       <Upload className="w-4 h-4" />
-                      {previewUrl ? "Change" : "Upload"}
+                      {displayImage ? "Change" : "Upload"}
                     </label>
-                    {previewUrl && (
+                    {displayImage && (
                       <button
                         type="button"
                         onClick={handleRemoveProfilePicture}
@@ -627,9 +271,7 @@ export default function AddEmployeeModal({
                   <input
                     type="text"
                     value={formData.first_name}
-                    onChange={(e) =>
-                      setFormData({ ...formData, first_name: e.target.value })
-                    }
+                    onChange={(e) => setFormData({ ...formData, first_name: e.target.value })}
                     className="w-full px-4 py-2.5 text-sm border-2 border-gray-200 rounded-xl focus:border-[#C62828] focus:ring-2 focus:ring-[#C62828]/20 outline-none transition-all duration-200 hover:border-gray-300 bg-white"
                     placeholder="Enter first name"
                     required
@@ -645,9 +287,7 @@ export default function AddEmployeeModal({
                   <input
                     type="text"
                     value={formData.last_name}
-                    onChange={(e) =>
-                      setFormData({ ...formData, last_name: e.target.value })
-                    }
+                    onChange={(e) => setFormData({ ...formData, last_name: e.target.value })}
                     className="w-full px-4 py-2.5 text-sm border-2 border-gray-200 rounded-xl focus:border-[#C62828] focus:ring-2 focus:ring-[#C62828]/20 outline-none transition-all duration-200 hover:border-gray-300 bg-white"
                     placeholder="Enter last name"
                     required
@@ -663,9 +303,7 @@ export default function AddEmployeeModal({
                   <input
                     type="email"
                     value={formData.email}
-                    onChange={(e) =>
-                      setFormData({ ...formData, email: e.target.value })
-                    }
+                    onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                     className="w-full px-4 py-2.5 text-sm border-2 border-gray-200 rounded-xl focus:border-[#C62828] focus:ring-2 focus:ring-[#C62828]/20 outline-none transition-all duration-200 hover:border-gray-300 bg-white"
                     placeholder="email@company.com"
                     required
@@ -696,17 +334,13 @@ export default function AddEmployeeModal({
                   </label>
                   <select
                     value={formData.role_id}
-                    onChange={(e) =>
-                      setFormData({ ...formData, role_id: e.target.value })
-                    }
+                    onChange={(e) => setFormData({ ...formData, role_id: e.target.value })}
                     className="w-full px-4 py-2.5 text-sm border-2 border-gray-200 rounded-xl focus:border-[#C62828] focus:ring-2 focus:ring-[#C62828]/20 bg-white outline-none transition-all duration-200 appearance-none hover:border-gray-300"
                     required
                   >
                     <option value="">Select role</option>
                     {roles.map((role) => (
-                      <option key={role.id} value={role.id}>
-                        {role.name}
-                      </option>
+                      <option key={role.id} value={role.id}>{role.name}</option>
                     ))}
                   </select>
                 </div>
@@ -719,17 +353,13 @@ export default function AddEmployeeModal({
                   </label>
                   <select
                     value={formData.department_id}
-                    onChange={(e) =>
-                      setFormData({ ...formData, department_id: e.target.value })
-                    }
+                    onChange={(e) => setFormData({ ...formData, department_id: e.target.value })}
                     className="w-full px-4 py-2.5 text-sm border-2 border-gray-200 rounded-xl focus:border-[#C62828] focus:ring-2 focus:ring-[#C62828]/20 bg-white outline-none transition-all duration-200 appearance-none hover:border-gray-300"
                     required
                   >
                     <option value="">Select department</option>
                     {departments.map((dept) => (
-                      <option key={dept.id} value={dept.id}>
-                        {dept.name}
-                      </option>
+                      <option key={dept.id} value={dept.id}>{dept.name}</option>
                     ))}
                   </select>
                 </div>
@@ -743,9 +373,7 @@ export default function AddEmployeeModal({
                   <input
                     type="text"
                     value={formData.designation}
-                    onChange={(e) =>
-                      setFormData({ ...formData, designation: e.target.value })
-                    }
+                    onChange={(e) => setFormData({ ...formData, designation: e.target.value })}
                     className="w-full px-4 py-2.5 text-sm border-2 border-gray-200 rounded-xl focus:border-[#C62828] focus:ring-2 focus:ring-[#C62828]/20 outline-none transition-all duration-200 hover:border-gray-300 bg-white"
                     placeholder="e.g. Software Engineer"
                     required
@@ -761,9 +389,7 @@ export default function AddEmployeeModal({
                   <input
                     type="date"
                     value={formData.joining_date}
-                    onChange={(e) =>
-                      setFormData({ ...formData, joining_date: e.target.value })
-                    }
+                    onChange={(e) => setFormData({ ...formData, joining_date: e.target.value })}
                     className="w-full px-4 py-2.5 text-sm border-2 border-gray-200 rounded-xl focus:border-[#C62828] focus:ring-2 focus:ring-[#C62828]/20 outline-none transition-all duration-200 hover:border-gray-300 bg-white"
                     required
                   />
@@ -777,9 +403,7 @@ export default function AddEmployeeModal({
                   </label>
                   <select
                     value={formData.gender}
-                    onChange={(e) =>
-                      setFormData({ ...formData, gender: e.target.value })
-                    }
+                    onChange={(e) => setFormData({ ...formData, gender: e.target.value })}
                     className="w-full px-4 py-2.5 text-sm border-2 border-gray-200 rounded-xl focus:border-[#C62828] focus:ring-2 focus:ring-[#C62828]/20 bg-white outline-none transition-all duration-200 appearance-none hover:border-gray-300"
                     required
                   >
@@ -797,16 +421,12 @@ export default function AddEmployeeModal({
                   </label>
                   <select
                     value={formData.allotted_project}
-                    onChange={(e) =>
-                      setFormData({ ...formData, allotted_project: e.target.value })
-                    }
+                    onChange={(e) => setFormData({ ...formData, allotted_project: e.target.value })}
                     className="w-full px-4 py-2.5 text-sm border-2 border-gray-200 rounded-xl focus:border-[#C62828] focus:ring-2 focus:ring-[#C62828]/20 bg-white outline-none transition-all duration-200 appearance-none hover:border-gray-300"
                   >
                     <option value="">Select project</option>
                     {projects.map((project) => (
-                      <option key={project.id} value={project.id}>
-                        {project.name}
-                      </option>
+                      <option key={project.id} value={project.id}>{project.name}</option>
                     ))}
                   </select>
                 </div>
@@ -820,9 +440,7 @@ export default function AddEmployeeModal({
                   <input
                     type="text"
                     value={formData.office_location}
-                    onChange={(e) =>
-                      setFormData({ ...formData, office_location: e.target.value })
-                    }
+                    onChange={(e) => setFormData({ ...formData, office_location: e.target.value })}
                     className="w-full px-4 py-2.5 text-sm border-2 border-gray-200 rounded-xl focus:border-[#C62828] focus:ring-2 focus:ring-[#C62828]/20 outline-none transition-all duration-200 hover:border-gray-300 bg-white"
                     placeholder="e.g. Mumbai Office"
                   />
@@ -837,9 +455,7 @@ export default function AddEmployeeModal({
                   <input
                     type="text"
                     value={formData.attendence_location}
-                    onChange={(e) =>
-                      setFormData({ ...formData, attendence_location: e.target.value })
-                    }
+                    onChange={(e) => setFormData({ ...formData, attendence_location: e.target.value })}
                     className="w-full px-4 py-2.5 text-sm border-2 border-gray-200 rounded-xl focus:border-[#C62828] focus:ring-2 focus:ring-[#C62828]/20 outline-none transition-all duration-200 hover:border-gray-300 bg-white"
                     placeholder="e.g. Head Office, Branch A"
                     required
@@ -857,17 +473,12 @@ export default function AddEmployeeModal({
               disabled={loading}
               className="flex-1 bg-gradient-to-r from-[#C62828] to-red-600 text-white py-3 px-4 rounded-xl hover:from-red-600 hover:to-red-700 transition-all duration-200 font-semibold shadow-lg hover:shadow-xl flex items-center justify-center gap-2 group transform hover:-translate-y-0.5 active:translate-y-0 disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              <Plus className="w-4 h-4 group-hover:scale-110 transition-transform" />
-              {loading ? "Adding..." : "Add Employee"}
+              <Save className="w-4 h-4 group-hover:scale-110 transition-transform" />
+              {loading ? "Updating..." : "Update Employee"}
             </button>
             <button
               type="button"
-              onClick={() => {
-                if (previewUrl) {
-                  URL.revokeObjectURL(previewUrl);
-                }
-                onClose();
-              }}
+              onClick={onClose}
               className="px-6 py-3 text-sm border-2 border-gray-200 rounded-xl hover:bg-gray-50 hover:border-gray-300 transition-all duration-200 font-medium text-gray-700 hover:text-gray-900"
             >
               Cancel
