@@ -1,3 +1,5 @@
+
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import axios, { AxiosInstance, AxiosError } from "axios";
 
 /* ---------------- types ---------------- */
@@ -16,6 +18,7 @@ export interface UserProfile {
   is_active: boolean;
   permissions: Permissions;
   password?: string;
+  profile_picture?: string; // Added profile picture
   created_at?: string;
   updated_at?: string;
 }
@@ -105,7 +108,6 @@ export async function unwrap<T>(p: Promise<any>): Promise<T> {
 }
 
 /* ---------------- Users API ---------------- */
-
 export const UsersApi = {
   list: async (): Promise<UserProfile[]> => {
     const response = await api.get("/users");
@@ -116,10 +118,15 @@ export const UsersApi = {
 
   get: async (id: string): Promise<UserProfile> =>
     unwrap(api.get(`/users/${id}`)),
+  
+  getById: async (id: string): Promise<UserProfile> => {
+    const response = await api.get(`/users/${id}`);
+    if (response.data.success && response.data.data) return response.data.data;
+    return response.data;
+  },
 
   getByRole: async (role: string): Promise<UserProfile> =>
     unwrap(api.get(`/users/role/${role}`)),
-
   create: async (payload: any): Promise<UserProfile> =>
     unwrap(api.post("/users", payload)),
 
@@ -131,6 +138,20 @@ export const UsersApi = {
 
   toggleActive: async (id: string): Promise<UserProfile> =>
     unwrap(api.put(`/users/${id}/toggle-active`)),
+
+  // Add profile picture upload method
+  uploadProfilePicture: async (id: string, file: File): Promise<any> => {
+    const formData = new FormData();
+    formData.append("profile_picture", file);
+    
+    const response = await api.patch(`/users/${id}/profile-picture`, formData, {
+      headers: {
+        "Content-Type": "multipart/form-data",
+      },
+    });
+    
+    return response.data;
+  },
 
   login: async (
     email: string,

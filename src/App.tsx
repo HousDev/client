@@ -38,6 +38,7 @@ import HrSettings from "./pages/HrmsSettings";
 import SystemSettings from "./pages/SystemSettings"; // System-wide Settings
 import ProjectsMaster from "./pages/ProjectsMaster";
 
+import GeneralSettings from "./pages/settings/GeneralSettings";
 function AppContent() {
   const { user, loading } = useAuth();
   const [activeTab, setActiveTab] = useState("dashboard");
@@ -120,6 +121,10 @@ function AppContent() {
         return <RolesPermissions />;
       case "hr-settings":
         return <HrSettings />;
+
+        // Settings Submenu Pages - ADD THESE
+    case "general-settings":
+      return <GeneralSettings />;
 
       // Main sidebar Pages
       case "system-settings":
