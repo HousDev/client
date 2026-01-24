@@ -633,35 +633,6 @@
 //   );
 // }
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 // import { useState, useEffect } from "react";
 // import {
 //   Package,
@@ -1588,11 +1559,6 @@
 //   );
 // }
 
-
-
-
-
-
 // import React, { useState, useEffect } from "react";
 // import {
 //   Package,
@@ -1702,7 +1668,7 @@
 //       const vendorsRes: any = await vendorApi.getVendors();
 //       const itemsRes: any = await ItemsApi.getItems();
 //       const projectsData: any = await projectApi.getProjects();
-      
+
 //       const poWithVendors = posRes.map((po: any) => {
 //         const vendorData = vendorsRes.find((v: any) => v.id === po.vendor_id);
 //         return { ...po, vendor: vendorData };
@@ -1834,8 +1800,8 @@
 
 //   // Handle PO selection
 //   const togglePOSelection = (poId: string) => {
-//     setSelectedPOs(prev => 
-//       prev.includes(poId) 
+//     setSelectedPOs(prev =>
+//       prev.includes(poId)
 //         ? prev.filter(id => id !== poId)
 //         : [...prev, poId]
 //     );
@@ -1853,18 +1819,18 @@
 
 //   // Filter function
 //   const filteredPOs = poData.filter((po) => {
-//     const matchesPONumber = searchPONumber === "" || 
+//     const matchesPONumber = searchPONumber === "" ||
 //       (po.po_number || "").toLowerCase().includes(searchPONumber.toLowerCase());
-    
-//     const matchesVendor = searchVendor === "" || 
+
+//     const matchesVendor = searchVendor === "" ||
 //       (po.vendor?.name || "").toLowerCase().includes(searchVendor.toLowerCase());
-    
-//     const matchesProject = searchProject === "" || 
+
+//     const matchesProject = searchProject === "" ||
 //       (po.project || "").toLowerCase().includes(searchProject.toLowerCase());
-    
-//     const matchesStatus = searchStatus === "" || 
+
+//     const matchesStatus = searchStatus === "" ||
 //       (po.overall_status || "").toLowerCase().includes(searchStatus.toLowerCase());
-    
+
 //     return matchesPONumber && matchesVendor && matchesProject && matchesStatus;
 //   });
 
@@ -1937,7 +1903,6 @@
 //   return (
 //     <div className="p-0 bg-gray-50 min-h-screen">
 //       {/* Header - Simple */}
-      
 
 //       {/* Delete Button (Appears when checkboxes are selected) */}
 //       {selectedPOs.length > 0 && (
@@ -2158,7 +2123,7 @@
 //                                 <Square className="w-5 h-5 text-gray-400" />
 //                               )}
 //                             </button>
-//                             <button 
+//                             <button
 //                               onClick={() => togglePOExpand(po.id)}
 //                               className="p-1 hover:bg-gray-200 rounded transition-colors"
 //                             >
@@ -2472,7 +2437,6 @@ type POData = {
 };
 
 export default function MaterialsEnhanced() {
-  const { user } = useAuth();
   const [poData, setPoData] = useState<POData[]>([]);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
@@ -2486,9 +2450,9 @@ export default function MaterialsEnhanced() {
   const [searchVendor, setSearchVendor] = useState("");
   const [searchProject, setSearchProject] = useState("");
   const [searchStatus, setSearchStatus] = useState("");
-const [searchAmount, setSearchAmount] = useState("");
-const [searchPOStatus, setSearchPOStatus] = useState("");
-const [searchPaymentStatus, setSearchPaymentStatus] = useState("");
+  const [searchAmount, setSearchAmount] = useState("");
+  const [searchPOStatus, setSearchPOStatus] = useState("");
+  const [searchPaymentStatus, setSearchPaymentStatus] = useState("");
   const loadAllPOs = async () => {
     try {
       const posRes: any = await poApi.getPOs();
@@ -2496,7 +2460,7 @@ const [searchPaymentStatus, setSearchPaymentStatus] = useState("");
       const vendorsRes: any = await vendorApi.getVendors();
       const itemsRes: any = await ItemsApi.getItems();
       const projectsData: any = await projectApi.getProjects();
-      
+
       const poWithVendors = posRes.map((po: any) => {
         const vendorData = vendorsRes.find((v: any) => v.id === po.vendor_id);
         return { ...po, vendor: vendorData };
@@ -2504,7 +2468,7 @@ const [searchPaymentStatus, setSearchPaymentStatus] = useState("");
 
       const idsSet = new Set(posRes.map((item: any) => item.id));
       const filteredPoMaterialTracking = poMaterialTrackRes.filter(
-        (item: any) => idsSet.has(item.po_id)
+        (item: any) => idsSet.has(item.po_id),
       );
 
       // Group materials by PO
@@ -2516,7 +2480,7 @@ const [searchPaymentStatus, setSearchPaymentStatus] = useState("");
           : [];
 
         const project = proData.find(
-          (project: any) => project.id === Number(po.project_id)
+          (project: any) => project.id === Number(po.project_id),
         );
 
         poMap.set(po.id, {
@@ -2545,7 +2509,7 @@ const [searchPaymentStatus, setSearchPaymentStatus] = useState("");
         const po = poMap.get(mt.po_id);
         if (po) {
           const itemData = itemsRes.find(
-            (i: any) => i.id === Number(mt.item_id)
+            (i: any) => i.id === Number(mt.item_id),
           );
 
           const material: POMaterial = {
@@ -2578,7 +2542,7 @@ const [searchPaymentStatus, setSearchPaymentStatus] = useState("");
           po.overall_status = "completed";
         } else if (
           po.materials.some(
-            (m) => m.status === "partial" || m.status === "completed"
+            (m) => m.status === "partial" || m.status === "completed",
           )
         ) {
           po.overall_status = "partial";
@@ -2605,8 +2569,8 @@ const [searchPaymentStatus, setSearchPaymentStatus] = useState("");
   const togglePOExpand = (poId: string) => {
     setPoData((prev) =>
       prev.map((po) =>
-        po.id === poId ? { ...po, expanded: !po.expanded } : po
-      )
+        po.id === poId ? { ...po, expanded: !po.expanded } : po,
+      ),
     );
   };
 
@@ -2628,10 +2592,8 @@ const [searchPaymentStatus, setSearchPaymentStatus] = useState("");
 
   // Handle PO selection
   const togglePOSelection = (poId: string) => {
-    setSelectedPOs(prev => 
-      prev.includes(poId) 
-        ? prev.filter(id => id !== poId)
-        : [...prev, poId]
+    setSelectedPOs((prev) =>
+      prev.includes(poId) ? prev.filter((id) => id !== poId) : [...prev, poId],
     );
   };
 
@@ -2640,39 +2602,61 @@ const [searchPaymentStatus, setSearchPaymentStatus] = useState("");
     if (selectAll) {
       setSelectedPOs([]);
     } else {
-      setSelectedPOs(filteredPOs.map(po => po.id));
+      setSelectedPOs(filteredPOs.map((po) => po.id));
     }
     setSelectAll(!selectAll);
   };
 
   // Filter function
   // Update the filter function
-const filteredPOs = poData.filter((po) => {
-  const matchesPONumber = searchPONumber === "" || 
-    (po.po_number || "").toLowerCase().includes(searchPONumber.toLowerCase());
-  
-  const matchesVendor = searchVendor === "" || 
-    (po.vendor?.name || "").toLowerCase().includes(searchVendor.toLowerCase());
-  
-  const matchesProject = searchProject === "" || 
-    (po.project || "").toLowerCase().includes(searchProject.toLowerCase());
-  
-  const matchesStatus = searchStatus === "" || 
-    (po.overall_status || "").toLowerCase().includes(searchStatus.toLowerCase());
-  
-  // New filters
-  const matchesAmount = searchAmount === "" || 
-    formatCurrency(Number(po.amount)).toLowerCase().includes(searchAmount.toLowerCase());
-  
-  const matchesPOStatus = searchPOStatus === "" || 
-    (po.po_status || "").toLowerCase().includes(searchPOStatus.toLowerCase());
-  
-  const matchesPaymentStatus = searchPaymentStatus === "" || 
-    (po.payment_status || "").toLowerCase().includes(searchPaymentStatus.toLowerCase());
-  
-  return matchesPONumber && matchesVendor && matchesProject && matchesStatus && 
-         matchesAmount && matchesPOStatus && matchesPaymentStatus;
-});
+  const filteredPOs = poData.filter((po) => {
+    const matchesPONumber =
+      searchPONumber === "" ||
+      (po.po_number || "").toLowerCase().includes(searchPONumber.toLowerCase());
+
+    const matchesVendor =
+      searchVendor === "" ||
+      (po.vendor?.name || "")
+        .toLowerCase()
+        .includes(searchVendor.toLowerCase());
+
+    const matchesProject =
+      searchProject === "" ||
+      (po.project || "").toLowerCase().includes(searchProject.toLowerCase());
+
+    const matchesStatus =
+      searchStatus === "" ||
+      (po.overall_status || "")
+        .toLowerCase()
+        .includes(searchStatus.toLowerCase());
+
+    // New filters
+    const matchesAmount =
+      searchAmount === "" ||
+      formatCurrency(Number(po.amount))
+        .toLowerCase()
+        .includes(searchAmount.toLowerCase());
+
+    const matchesPOStatus =
+      searchPOStatus === "" ||
+      (po.po_status || "").toLowerCase().includes(searchPOStatus.toLowerCase());
+
+    const matchesPaymentStatus =
+      searchPaymentStatus === "" ||
+      (po.payment_status || "")
+        .toLowerCase()
+        .includes(searchPaymentStatus.toLowerCase());
+
+    return (
+      matchesPONumber &&
+      matchesVendor &&
+      matchesProject &&
+      matchesStatus &&
+      matchesAmount &&
+      matchesPOStatus &&
+      matchesPaymentStatus
+    );
+  });
 
   // Bulk delete POs
   const handleBulkDelete = async () => {
@@ -2681,7 +2665,11 @@ const filteredPOs = poData.filter((po) => {
       return;
     }
 
-    if (!window.confirm(`Are you sure you want to delete ${selectedPOs.length} purchase order(s)?\n\nThis action cannot be undone and will permanently delete the selected POs.`)) {
+    if (
+      !window.confirm(
+        `Are you sure you want to delete ${selectedPOs.length} purchase order(s)?\n\nThis action cannot be undone and will permanently delete the selected POs.`,
+      )
+    ) {
       return;
     }
 
@@ -2705,7 +2693,9 @@ const filteredPOs = poData.filter((po) => {
       }
 
       if (successCount > 0) {
-        toast.success(`Successfully deleted ${successCount} purchase order(s).`);
+        toast.success(
+          `Successfully deleted ${successCount} purchase order(s).`,
+        );
       }
       if (errorCount > 0) {
         toast.error(`Failed to delete ${errorCount} purchase order(s).`);
@@ -2753,7 +2743,8 @@ const filteredPOs = poData.filter((po) => {
                 </div>
                 <div>
                   <p className="font-medium text-gray-800 text-sm">
-                    {selectedPOs.length} purchase order{selectedPOs.length > 1 ? 's' : ''} selected
+                    {selectedPOs.length} purchase order
+                    {selectedPOs.length > 1 ? "s" : ""} selected
                   </p>
                   <p className="text-xs text-gray-600">
                     Click delete to remove selected items
@@ -2783,52 +2774,51 @@ const filteredPOs = poData.filter((po) => {
       )}
 
       {/* Summary Cards - Responsive */}
-     <div className="grid grid-cols-2 md:grid-cols-4 gap-2 mb-2 mx-0">
-  {/* Total POs */}
-  <div className="bg-white px-2.5 py-2 rounded-lg border border-gray-200 flex items-center justify-between">
-    <div>
-      <p className="text-[11px] text-gray-500 leading-none">Total POs</p>
-      <p className="text-sm font-semibold text-gray-800">
-        {poData.length}
-      </p>
-    </div>
-    <Package className="w-5 h-5 text-blue-500/30" />
-  </div>
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-2 mb-2 mx-0">
+        {/* Total POs */}
+        <div className="bg-white px-2.5 py-2 rounded-lg border border-gray-200 flex items-center justify-between">
+          <div>
+            <p className="text-[11px] text-gray-500 leading-none">Total POs</p>
+            <p className="text-sm font-semibold text-gray-800">
+              {poData.length}
+            </p>
+          </div>
+          <Package className="w-5 h-5 text-blue-500/30" />
+        </div>
 
-  {/* Pending */}
-  <div className="bg-white px-2.5 py-2 rounded-lg border border-gray-200 flex items-center justify-between">
-    <div>
-      <p className="text-[11px] text-gray-500 leading-none">Pending</p>
-      <p className="text-sm font-semibold text-gray-800">
-        {poData.filter(po => po.overall_status === "pending").length}
-      </p>
-    </div>
-    <Clock className="w-5 h-5 text-gray-400/40" />
-  </div>
+        {/* Pending */}
+        <div className="bg-white px-2.5 py-2 rounded-lg border border-gray-200 flex items-center justify-between">
+          <div>
+            <p className="text-[11px] text-gray-500 leading-none">Pending</p>
+            <p className="text-sm font-semibold text-gray-800">
+              {poData.filter((po) => po.overall_status === "pending").length}
+            </p>
+          </div>
+          <Clock className="w-5 h-5 text-gray-400/40" />
+        </div>
 
-  {/* Partial */}
-  <div className="bg-white px-2.5 py-2 rounded-lg border border-gray-200 flex items-center justify-between">
-    <div>
-      <p className="text-[11px] text-gray-500 leading-none">Partial</p>
-      <p className="text-sm font-semibold text-yellow-600">
-        {poData.filter(po => po.overall_status === "partial").length}
-      </p>
-    </div>
-    <Truck className="w-5 h-5 text-yellow-500/40" />
-  </div>
+        {/* Partial */}
+        <div className="bg-white px-2.5 py-2 rounded-lg border border-gray-200 flex items-center justify-between">
+          <div>
+            <p className="text-[11px] text-gray-500 leading-none">Partial</p>
+            <p className="text-sm font-semibold text-yellow-600">
+              {poData.filter((po) => po.overall_status === "partial").length}
+            </p>
+          </div>
+          <Truck className="w-5 h-5 text-yellow-500/40" />
+        </div>
 
-  {/* Completed */}
-  <div className="bg-white px-2.5 py-2 rounded-lg border border-gray-200 flex items-center justify-between">
-    <div>
-      <p className="text-[11px] text-gray-500 leading-none">Completed</p>
-      <p className="text-sm font-semibold text-green-600">
-        {poData.filter(po => po.overall_status === "completed").length}
-      </p>
-    </div>
-    <CheckCircle className="w-5 h-5 text-green-500/40" />
-  </div>
-</div>
-
+        {/* Completed */}
+        <div className="bg-white px-2.5 py-2 rounded-lg border border-gray-200 flex items-center justify-between">
+          <div>
+            <p className="text-[11px] text-gray-500 leading-none">Completed</p>
+            <p className="text-sm font-semibold text-green-600">
+              {poData.filter((po) => po.overall_status === "completed").length}
+            </p>
+          </div>
+          <CheckCircle className="w-5 h-5 text-green-500/40" />
+        </div>
+      </div>
 
       {/* Table */}
       <div className="bg-white rounded-xl px-0 shadow-sm border border-gray-200 overflow-hidden">
@@ -2886,82 +2876,84 @@ const filteredPOs = poData.filter((po) => {
                   </div>
                 </th>
               </tr>
-              
+
               {/* Search Row - Compact height */}
-             {/* Search Row - Compact height */}
-<tr className="bg-gray-50 border-b border-gray-200">
-  <td className="px-3 py-1.5"></td>
-  <td className="px-3 py-1.5">
-    <input
-      type="text"
-      placeholder="Search PO..."
-      value={searchPONumber}
-      onChange={(e) => setSearchPONumber(e.target.value)}
-      className="w-full px-2 py-1 text-xs border border-gray-300 rounded-md focus:ring-1 focus:ring-blue-500 focus:border-transparent"
-    />
-  </td>
-  <td className="px-3 py-1.5">
-    <input
-      type="text"
-      placeholder="Search vendor..."
-      value={searchVendor}
-      onChange={(e) => setSearchVendor(e.target.value)}
-      className="w-full px-2 py-1 text-xs border border-gray-300 rounded-md focus:ring-1 focus:ring-blue-500 focus:border-transparent"
-    />
-  </td>
-  <td className="px-3 py-1.5">
-    <input
-      type="text"
-      placeholder="Search project..."
-      value={searchProject}
-      onChange={(e) => setSearchProject(e.target.value)}
-      className="w-full px-2 py-1 text-xs border border-gray-300 rounded-md focus:ring-1 focus:ring-blue-500 focus:border-transparent"
-    />
-  </td>
-  <td className="px-3 py-1.5">
-    <input
-      type="text"
-      placeholder="Search amount..."
-      value={searchAmount}
-      onChange={(e) => setSearchAmount(e.target.value)}
-      className="w-full px-2 py-1 text-xs border border-gray-300 rounded-md focus:ring-1 focus:ring-blue-500 focus:border-transparent"
-    />
-  </td>
-  <td className="px-3 py-1.5">
-    <input
-      type="text"
-      placeholder="Search PO status..."
-      value={searchPOStatus}
-      onChange={(e) => setSearchPOStatus(e.target.value)}
-      className="w-full px-2 py-1 text-xs border border-gray-300 rounded-md focus:ring-1 focus:ring-blue-500 focus:border-transparent"
-    />
-  </td>
-  <td className="px-3 py-1.5">
-    <input
-      type="text"
-      placeholder="Search status..."
-      value={searchStatus}
-      onChange={(e) => setSearchStatus(e.target.value)}
-      className="w-full px-2 py-1 text-xs border border-gray-300 rounded-md focus:ring-1 focus:ring-blue-500 focus:border-transparent"
-    />
-  </td>
-  <td className="px-3 py-1.5">
-    <input
-      type="text"
-      placeholder="Search payment..."
-      value={searchPaymentStatus}
-      onChange={(e) => setSearchPaymentStatus(e.target.value)}
-      className="w-full px-2 py-1 text-xs border border-gray-300 rounded-md focus:ring-1 focus:ring-blue-500 focus:border-transparent"
-    />
-  </td>
-</tr>
+              {/* Search Row - Compact height */}
+              <tr className="bg-gray-50 border-b border-gray-200">
+                <td className="px-3 py-1.5"></td>
+                <td className="px-3 py-1.5">
+                  <input
+                    type="text"
+                    placeholder="Search PO..."
+                    value={searchPONumber}
+                    onChange={(e) => setSearchPONumber(e.target.value)}
+                    className="w-full px-2 py-1 text-xs border border-gray-300 rounded-md focus:ring-1 focus:ring-blue-500 focus:border-transparent"
+                  />
+                </td>
+                <td className="px-3 py-1.5">
+                  <input
+                    type="text"
+                    placeholder="Search vendor..."
+                    value={searchVendor}
+                    onChange={(e) => setSearchVendor(e.target.value)}
+                    className="w-full px-2 py-1 text-xs border border-gray-300 rounded-md focus:ring-1 focus:ring-blue-500 focus:border-transparent"
+                  />
+                </td>
+                <td className="px-3 py-1.5">
+                  <input
+                    type="text"
+                    placeholder="Search project..."
+                    value={searchProject}
+                    onChange={(e) => setSearchProject(e.target.value)}
+                    className="w-full px-2 py-1 text-xs border border-gray-300 rounded-md focus:ring-1 focus:ring-blue-500 focus:border-transparent"
+                  />
+                </td>
+                <td className="px-3 py-1.5">
+                  <input
+                    type="text"
+                    placeholder="Search amount..."
+                    value={searchAmount}
+                    onChange={(e) => setSearchAmount(e.target.value)}
+                    className="w-full px-2 py-1 text-xs border border-gray-300 rounded-md focus:ring-1 focus:ring-blue-500 focus:border-transparent"
+                  />
+                </td>
+                <td className="px-3 py-1.5">
+                  <input
+                    type="text"
+                    placeholder="Search PO status..."
+                    value={searchPOStatus}
+                    onChange={(e) => setSearchPOStatus(e.target.value)}
+                    className="w-full px-2 py-1 text-xs border border-gray-300 rounded-md focus:ring-1 focus:ring-blue-500 focus:border-transparent"
+                  />
+                </td>
+                <td className="px-3 py-1.5">
+                  <input
+                    type="text"
+                    placeholder="Search status..."
+                    value={searchStatus}
+                    onChange={(e) => setSearchStatus(e.target.value)}
+                    className="w-full px-2 py-1 text-xs border border-gray-300 rounded-md focus:ring-1 focus:ring-blue-500 focus:border-transparent"
+                  />
+                </td>
+                <td className="px-3 py-1.5">
+                  <input
+                    type="text"
+                    placeholder="Search payment..."
+                    value={searchPaymentStatus}
+                    onChange={(e) => setSearchPaymentStatus(e.target.value)}
+                    className="w-full px-2 py-1 text-xs border border-gray-300 rounded-md focus:ring-1 focus:ring-blue-500 focus:border-transparent"
+                  />
+                </td>
+              </tr>
             </thead>
             <tbody className="divide-y divide-gray-200">
               {filteredPOs.length === 0 ? (
                 <tr>
                   <td colSpan={8} className="px-3 py-8 text-center">
                     <Package className="w-10 h-10 md:w-12 md:h-12 text-gray-300 mx-auto mb-3" />
-                    <p className="text-gray-600 text-sm font-medium">No purchase orders found</p>
+                    <p className="text-gray-600 text-sm font-medium">
+                      No purchase orders found
+                    </p>
                     <p className="text-gray-500 text-xs mt-1">
                       Try adjusting your search
                     </p>
@@ -2971,7 +2963,7 @@ const filteredPOs = poData.filter((po) => {
                 filteredPOs.map((po, index) => {
                   const overallPercentage = calculatePercentage(
                     po.total_received,
-                    po.total_ordered
+                    po.total_ordered,
                   );
                   const isSelected = selectedPOs.includes(po.id);
 
@@ -2981,7 +2973,7 @@ const filteredPOs = poData.filter((po) => {
                       <tr
                         className={`hover:bg-gray-50 transition ${
                           index % 2 === 0 ? "bg-white" : "bg-gray-50/50"
-                        } ${isSelected ? 'bg-blue-50 border-l-4 border-blue-500' : ''}`}
+                        } ${isSelected ? "bg-blue-50 border-l-4 border-blue-500" : ""}`}
                       >
                         <td className="px-3 py-2">
                           <div className="flex items-center gap-1 justify-center">
@@ -2995,7 +2987,7 @@ const filteredPOs = poData.filter((po) => {
                                 <Square className="w-3 h-3 text-gray-400" />
                               )}
                             </button>
-                            <button 
+                            <button
                               onClick={() => togglePOExpand(po.id)}
                               className="p-0.5 hover:bg-gray-200 rounded transition-colors"
                             >
@@ -3024,14 +3016,20 @@ const filteredPOs = poData.filter((po) => {
                         </td>
                         <td className="px-3 py-2">
                           <div className="min-w-0">
-                            <span className="text-gray-900 text-xs truncate block max-w-[120px]" title={po.vendor?.name || "--"}>
+                            <span
+                              className="text-gray-900 text-xs truncate block max-w-[120px]"
+                              title={po.vendor?.name || "--"}
+                            >
                               {po.vendor?.name || "--"}
                             </span>
                           </div>
                         </td>
                         <td className="px-3 py-2">
                           <div className="min-w-0">
-                            <span className="font-medium text-gray-900 text-xs truncate block max-w-[120px]" title={po.project || "--"}>
+                            <span
+                              className="font-medium text-gray-900 text-xs truncate block max-w-[120px]"
+                              title={po.project || "--"}
+                            >
                               {po.project || "--"}
                             </span>
                           </div>
@@ -3044,7 +3042,7 @@ const filteredPOs = poData.filter((po) => {
                         <td className="px-3 py-2">
                           <span
                             className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-medium ${getStatusColor(
-                              po.po_status
+                              po.po_status,
                             )} whitespace-nowrap`}
                           >
                             {po.po_status?.toUpperCase()}
@@ -3054,7 +3052,7 @@ const filteredPOs = poData.filter((po) => {
                           <div className="space-y-0.5 min-w-0">
                             <span
                               className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-medium ${getStatusColor(
-                                po.material_status
+                                po.material_status,
                               )} truncate`}
                             >
                               {po.material_status?.toUpperCase() || "PENDING"}
@@ -3075,29 +3073,31 @@ const filteredPOs = poData.filter((po) => {
                             )}
                           </div>
                         </td>
-                       <td className="px-3 py-2">
-  <div className="space-y-1 min-w-0">
-    <div className="flex flex-col items-center gap-0.5">
-      <span
-        className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-medium ${getStatusColor(
-          po.payment_status
-        )} truncate`}
-      >
-        {po.payment_status?.toUpperCase() || "PENDING"}
-      </span>
+                        <td className="px-3 py-2">
+                          <div className="space-y-1 min-w-0">
+                            <div className="flex flex-col items-center gap-0.5">
+                              <span
+                                className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-medium ${getStatusColor(
+                                  po.payment_status,
+                                )} truncate`}
+                              >
+                                {po.payment_status?.toUpperCase() || "PENDING"}
+                              </span>
 
-      {Number(po.balance_amount) > 0 && (
-        <span
-          className="text-[10px] text-gray-600 whitespace-nowrap"
-          title={`Balance: ${formatCurrency(Number(po.balance_amount))}`}
-        >
-          Bal: {formatCurrency(Number(po.balance_amount)).replace("₹", "₹ ")}
-        </span>
-      )}
-    </div>
-  </div>
-</td>
-
+                              {Number(po.balance_amount) > 0 && (
+                                <span
+                                  className="text-[10px] text-gray-600 whitespace-nowrap"
+                                  title={`Balance: ${formatCurrency(Number(po.balance_amount))}`}
+                                >
+                                  Bal:{" "}
+                                  {formatCurrency(
+                                    Number(po.balance_amount),
+                                  ).replace("₹", "₹ ")}
+                                </span>
+                              )}
+                            </div>
+                          </div>
+                        </td>
                       </tr>
 
                       {/* Expanded Items Row */}
@@ -3141,18 +3141,25 @@ const filteredPOs = poData.filter((po) => {
                                       const materialPercentage =
                                         calculatePercentage(
                                           material.quantity_received,
-                                          material.quantity_ordered
+                                          material.quantity_ordered,
                                         );
 
                                       return (
                                         <tr
                                           key={material.id}
                                           className={`hover:bg-gray-50 ${
-                                            idx % 2 === 0 ? "bg-white" : "bg-gray-50/50"
+                                            idx % 2 === 0
+                                              ? "bg-white"
+                                              : "bg-gray-50/50"
                                           }`}
                                         >
                                           <td className="px-2 py-1.5">
-                                            <div className="font-medium text-gray-800 text-xs truncate max-w-[150px]" title={material.item_name || "Unknown"}>
+                                            <div
+                                              className="font-medium text-gray-800 text-xs truncate max-w-[150px]"
+                                              title={
+                                                material.item_name || "Unknown"
+                                              }
+                                            >
                                               {material.item_name || "Unknown"}
                                             </div>
                                             <div className="text-[10px] text-gray-500">
@@ -3194,7 +3201,7 @@ const filteredPOs = poData.filter((po) => {
                                           <td className="px-2 py-1.5">
                                             <span
                                               className={`px-2 py-0.5 rounded-full text-[10px] font-medium ${getStatusColor(
-                                                material.status
+                                                material.status,
                                               )} whitespace-nowrap`}
                                             >
                                               {material.status?.toUpperCase() ||

@@ -1,26 +1,27 @@
-// // src/components/InventoryTransaction.tsx
-// import React, { useState, useEffect } from "react";
-// import {
-//   X,
-//   Save,
-//   Package,
-//   Truck,
-//   Download,
-//   Calendar,
-//   Phone,
-//   MapPin,
-//   FileText,
-//   Upload,
-//   CheckCircle,
-//   AlertCircle,
-// } from "lucide-react";
+// src/components/InventoryTransaction.tsx
+import React, { useState, useEffect } from "react";
+import {
+  X,
+  Save,
+  Package,
+  Truck,
+  Download,
+  Calendar,
+  Phone,
+  MapPin,
+  FileText,
+  Upload,
+  CheckCircle,
+  AlertCircle,
+} from "lucide-react";
+import { toast } from "sonner";
 
-// interface InventoryTransactionProps {
-//   setActiveFormTab: React.Dispatch<React.SetStateAction<string>>;
-//   activeFormTab: string;
-//   allInventory: any[];
-//   loadAllData: () => void;
-// }
+interface InventoryTransactionProps {
+  setActiveFormTab: React.Dispatch<React.SetStateAction<string>>;
+  activeFormTab: string;
+  allInventory: any[];
+  loadAllData: () => void;
+}
 
 // interface MaterialItem {
 //   id: number;
@@ -914,239 +915,243 @@ export default function RolesMaster() {
                 { key: "approve_pos", label: "Approve POs", description: "Approve/reject purchase orders" },
             ],
         },
-        {
-            category: "Service Orders",
-            permissions: [
-                { key: "view_service_orders", label: "View Service Orders" },
-                { key: "create_service_orders", label: "Create Service Orders" },
-                { key: "edit_service_orders", label: "Edit Service Orders" },
-            ],
-        },
-        {
-            category: "Inventory & Materials",
-            permissions: [
-                { key: "view_inventory", label: "View Inventory" },
-                { key: "create_inventory", label: "Create Inventory" },
-                { key: "edit_inventory", label: "Edit Inventory" },
-                { key: "delete_inventory", label: "Delete Inventory" },
-                { key: "view_materials", label: "View Materials" },
-                { key: "receive_materials", label: "Receive Materials" },
-                { key: "view_materials_requests", label: "View Material Requests" },
-                { key: "update_materials_requests", label: "Update Material Requests" },
-            ],
-        },
-        {
-            category: "Payments",
-            permissions: [
-                { key: "view_payments", label: "View Payments" },
-                { key: "make_payments", label: "Make Payments" },
-                { key: "verify_payments", label: "Verify Payments" },
-            ],
-        },
-        {
-            category: "Reports",
-            permissions: [
-                { key: "view_reports", label: "View Reports" },
-                { key: "export_reports", label: "Export Reports" },
-            ],
-        },
-        {
-            category: "Administration",
-            permissions: [
-                { key: "manage_users", label: "Manage Users", description: "Create/edit/delete users" },
-                { key: "manage_roles", label: "Manage Roles", description: "Create/edit/delete roles" },
-                { key: "manage_permissions", label: "Manage Permissions", description: "Configure permissions" },
-                { key: "manage_masters", label: "Manage Masters", description: "Manage master data" },
-            ],
-        },
-        {
-            category: "Notifications",
-            permissions: [
-                { key: "view_notifications", label: "View Notifications" },
-            ],
-        },
-    ];
+      ],
+    },
+  ]);
 
-    useEffect(() => {
-        loadRoles();
-    }, []);
+  const [deliveryLocations] = useState([
+    "Main Site - Building A",
+    "Main Site - Building B",
+    "Warehouse - Sector 5",
+    "Site Office - North Wing",
+    "Storage Yard - East Block",
+  ]);
 
-    const loadRoles = async () => {
-        setLoading(true);
-        try {
-            const data = await rolesApi.getAllRoles();
+  // Material Out Form
+  const [materialOutForm, setMaterialOutForm] = useState<MaterialOutForm>({
+    materialId: 0,
+    quantity: "",
+    issuedTo: "",
+    phoneNumber: "",
+    deliveryLocation: "",
+    issueDate: new Date().toISOString().split("T")[0],
+  });
 
-            // FIX: Ensure data is always an array
-            let rolesArray: RoleType[] = [];
+  // Material In Form
+  const [materialInForm, setMaterialInForm] = useState<MaterialInForm>({
+    poNumber: "",
+    challanNumber: "",
+    vendor: "",
+    receivingDate: new Date().toISOString().split("T")[0],
+    receiverPhone: "",
+    receiverName: "",
+    deliveryLocation: "",
+    challanFile: null,
+    items: [],
+  });
 
-            if (Array.isArray(data)) {
-                rolesArray = data;
-            } else if (data && typeof data === 'object') {
-                // Handle different API response formats
-                if (data.data && Array.isArray(data.data)) {
-                    rolesArray = data.data;
-                } else if (data.roles && Array.isArray(data.roles)) {
-                    rolesArray = data.roles;
-                } else if (data.items && Array.isArray(data.items)) {
-                    rolesArray = data.items;
-                } else if (data.results && Array.isArray(data.results)) {
-                    rolesArray = data.results;
-                } else {
-                    // If it's an object but not in expected format, convert to array
-                    rolesArray = Object.values(data).filter(item =>
-                        item && typeof item === 'object' && 'id' in item
-                    ) as RoleType[];
-                }
-            }
+  const resetForm = () => {
+    setMaterialOutForm({
+      materialId: 0,
+      quantity: "",
+      issuedTo: "",
+      phoneNumber: "",
+      deliveryLocation: "",
+      issueDate: new Date().toISOString().split("T")[0],
+    });
+    setMaterialInForm({
+      poNumber: "",
+      challanNumber: "",
+      vendor: "",
+      receivingDate: new Date().toISOString().split("T")[0],
+      receiverPhone: "",
+      receiverName: "",
+      deliveryLocation: "",
+      challanFile: null,
+      items: [],
+    });
+  };
 
-            console.log("Loaded roles:", rolesArray);
-            setRoles(rolesArray);
+  // Get selected PO details
+  const selectedPO = purchaseOrders.find(
+    (po) => po.poNumber === materialInForm.poNumber,
+  );
 
-        } catch (error: any) {
-            console.error("Failed to load roles:", error);
-            toast.error(error?.response?.data?.message || "Failed to load roles");
-            setRoles([]); // CRITICAL: Set empty array on error
-        } finally {
-            setLoading(false);
-        }
-    };
+  // Initialize items when PO is selected
+  useEffect(() => {
+    if (selectedPO) {
+      const updatedItems = selectedPO.items.map((item) => ({
+        materialId: item.materialId,
+        receivedQuantity: "",
+      }));
+      setMaterialInForm((prev) => ({
+        ...prev,
+        vendor: selectedPO.vendor,
+        items: updatedItems,
+      }));
+    } else {
+      setMaterialInForm((prev) => ({
+        ...prev,
+        vendor: "",
+        items: [],
+      }));
+    }
+  }, [selectedPO]);
 
-    const openCreate = () => {
-        setEditingRole(null);
-        setForm({ name: "", description: "", is_active: true });
-        setPermissions({});
-        setShowModal(true);
-    };
+  // Handle Material Out input change
+  const handleMaterialOutChange = (
+    field: keyof MaterialOutForm,
+    value: string,
+  ) => {
+    setMaterialOutForm((prev) => ({ ...prev, [field]: value }));
+  };
 
-    const openEdit = (role: RoleType) => {
-        setEditingRole(role);
-        setForm({
-            name: role.name,
-            description: role.description || "",
-            is_active: role.is_active,
-        });
-        setPermissions(role.permissions || {});
-        setShowModal(true);
-    };
+  // Handle Material In input change
+  const handleMaterialInChange = (
+    field: keyof MaterialInForm,
+    value: string,
+  ) => {
+    setMaterialInForm((prev) => ({ ...prev, [field]: value }));
+  };
 
-    const handleSubmit = async (e: React.FormEvent) => {
-        e.preventDefault();
+  // Handle received quantity change for items
+  const handleItemQuantityChange = (materialId: number, value: string) => {
+    setMaterialInForm((prev) => ({
+      ...prev,
+      items: prev.items.map((item) =>
+        item.materialId === materialId
+          ? { ...item, receivedQuantity: value }
+          : item,
+      ),
+    }));
+  };
 
-        if (!form.name.trim()) {
-            toast.error("Role name is required");
-            return;
-        }
+  // Handle file upload
+  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      setMaterialInForm((prev) => ({ ...prev, challanFile: file }));
+    }
+  };
 
-        try {
-            const payload = {
-                ...form,
-                permissions,
-            };
+  // Get selected material details
+  const selectedMaterial = allInventory.find(
+    (item) => item.id === materialOutForm.materialId,
+  );
 
-            if (editingRole) {
-                await rolesApi.updateRole(editingRole.id, payload);
-                toast.success("Role updated successfully");
-            } else {
-                await rolesApi.createRole(payload);
-                toast.success("Role created successfully");
-            }
+  // Submit Material Out
+  const handleMaterialOutSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
 
-            setShowModal(false);
-            loadRoles();
-        } catch (error: any) {
-            console.error("Failed to save role:", error);
-            toast.error(
-                error?.response?.data?.message ||
-                error?.response?.data?.error ||
-                "Failed to save role"
-            );
-        }
-    };
+    if (!materialOutForm.materialId) {
+      alert("Please select a material");
+      return;
+    }
 
-    const handleDelete = async (role: RoleType) => {
-        if (!confirm(`Are you sure you want to delete the role "${role.name}"?`)) return;
+    if (!materialOutForm.quantity || Number(materialOutForm.quantity) <= 0) {
+      alert("Please enter a valid quantity");
+      return;
+    }
 
-        try {
-            await rolesApi.deleteRole(role.id);
-            toast.success("Role deleted successfully");
-            loadRoles();
-        } catch (error: any) {
-            console.error("Failed to delete role:", error);
-            toast.error(
-                error?.response?.data?.message ||
-                error?.response?.data?.error ||
-                "Failed to delete role"
-            );
-        }
-    };
+    if (!materialOutForm.issuedTo) {
+      alert("Please enter who the material is issued to");
+      return;
+    }
 
-    const togglePermission = (key: string) => {
-        setPermissions(prev => ({
-            ...prev,
-            [key]: !prev[key]
-        }));
-    };
+    const material = allInventory.find(
+      (item) => item.id === materialOutForm.materialId,
+    );
+    if (
+      material &&
+      Number(material.quantity) < Number(materialOutForm.quantity)
+    ) {
+      alert(
+        `Insufficient stock! Available: ${material.quantity} ${material.unit}`,
+      );
+      return;
+    }
 
-    const toggleAllPermissions = (value: boolean) => {
-        const allPermissions: Record<string, boolean> = {};
-        permissionCategories.forEach(category => {
-            category.permissions.forEach(perm => {
-                allPermissions[perm.key] = value;
-            });
-        });
-        setPermissions(allPermissions);
-    };
+    try {
+      setLoading(true);
+      // TODO: API call for material out
+      console.log("Material Out:", materialOutForm);
+      alert("Material issued successfully!");
+      setActiveFormTab("");
+      loadAllData();
+    } catch (error) {
+      console.error("Error issuing material:", error);
+      alert("Failed to issue material");
+    } finally {
+      setLoading(false);
+    }
+  };
 
-    const handleToggleActive = async (roleId: string, currentStatus: boolean) => {
-        try {
-            await rolesApi.updateRole(roleId, { is_active: !currentStatus });
-            toast.success(`Role ${currentStatus ? "deactivated" : "activated"} successfully`);
-            loadRoles();
-        } catch (error: any) {
-            console.error("Failed to toggle role status:", error);
-            toast.error(
-                error?.response?.data?.message ||
-                error?.response?.data?.error ||
-                "Failed to update role status"
-            );
-        }
-    };
+  // Submit Material In
+  const handleMaterialInSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
 
-    // FIXED: Safe filteredRoles calculation with useMemo
-    const filteredRoles = useMemo(() => {
-        // Safety check - ensure roles is always an array
-        if (!Array.isArray(roles)) {
-            console.warn("Roles is not an array, returning empty array", roles);
-            return [];
-        }
+    if (!materialInForm.poNumber) {
+      alert("Please select a PO number");
+      return;
+    }
 
-        return roles.filter(role => {
-            if (!role || typeof role !== 'object') return false;
+    if (!materialInForm.challanNumber) {
+      alert("Please enter challan number");
+      return;
+    }
 
-            const name = role.name || "";
-            const description = role.description || "";
-            const searchTerm = search.toLowerCase();
+    if (!materialInForm.deliveryLocation) {
+      alert("Please select delivery location");
+      return;
+    }
 
-            return name.toLowerCase().includes(searchTerm) ||
-                description.toLowerCase().includes(searchTerm);
-        });
-    }, [roles, search]);
+    // Validate all items have received quantity
+    const invalidItems = materialInForm.items.filter(
+      (item) => !item.receivedQuantity || Number(item.receivedQuantity) <= 0,
+    );
 
-    const getPermissionCount = (role: RoleType) => {
-        if (!role.permissions) return 0;
-        return Object.values(role.permissions).filter(Boolean).length;
-    };
+    if (invalidItems.length > 0) {
+      alert("Please enter received quantity for all items");
+      return;
+    }
 
-    return (
-        <div className="px-0 bg-gray-50 min-h-screen p-2 sm:p-4 md:p-6">
-            {/* Header */}
-            <div className="mb-4 sm:mb-6 px-0">
-                <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-4 md:p-6">
-                    <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 px-0">
-                        <div className="px-0">
-                            <h2 className="text-xl md:text-2xl font-bold text-gray-800 px-0">Roles Management</h2>
-                            <p className="text-sm text-gray-500 mt-1 px-0">Define and manage user roles and permissions</p>
-                        </div>
+    try {
+      setLoading(true);
+      // TODO: API call for material in
+      console.log("Material In:", materialInForm);
+      alert("Material received successfully!");
+      setActiveFormTab("");
+      loadAllData();
+    } catch (error) {
+      console.error("Error receiving material:", error);
+      alert("Failed to receive material");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Get current PO items
+  const getPOItem = (materialId: number) => {
+    return selectedPO?.items.find((item) => item.materialId === materialId);
+  };
+
+  return (
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4 overflow-y-auto">
+      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-5xl my-8">
+        {/* Header */}
+        <div className="bg-gradient-to-r from-blue-600 to-blue-700 px-6 py-4 flex justify-between items-center rounded-t-2xl sticky top-0 z-10 ">
+          <h2 className="text-xl font-bold text-white flex items-center gap-2">
+            <Truck className="w-5 h-5" />
+            Material{" "}
+            {activeFormTab.charAt(0).toUpperCase() + activeFormTab.slice(1)}
+          </h2>
+          <button
+            onClick={() => setActiveFormTab("")}
+            className="text-white hover:bg-white hover:bg-opacity-20 rounded-lg p-2 transition"
+          >
+            <X className="w-5 h-5" />
+          </button>
+        </div>
 
                         <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 w-full md:w-auto px-0">
                             <input
@@ -1180,14 +1185,116 @@ export default function RolesMaster() {
                 </div>
             </div>
 
-            {/* Bulk Actions (if needed) */}
-            <div className="mb-4 sm:mb-6 px-0"></div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Vendor
+                  </label>
+                  <div className="flex items-center gap-2 px-4 py-3 border border-gray-300 rounded-lg bg-gray-50">
+                    <Truck className="w-4 h-4 text-gray-500" />
+                    <span className="text-gray-700">
+                      {materialInForm.vendor || "Select PO to auto-fill"}
+                    </span>
+                  </div>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Challan Number <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    type="text"
+                    value={materialInForm.challanNumber}
+                    onChange={(e) =>
+                      handleMaterialInChange("challanNumber", e.target.value)
+                    }
+                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    placeholder="Enter challan number"
+                    required
+                  />
+                </div>
+              </div>
 
-            {/* Loading State */}
-            {loading ? (
-                <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 md:p-8 text-center px-0">
-                    <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#C62828] mx-auto mb-4"></div>
-                    <p className="text-gray-600">Loading roles...</p>
+              {/* Challan Number & Receiving Date */}
+              <div className="grid grid-cols-3 gap-6">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Receiving Date
+                  </label>
+                  <div className="relative">
+                    <Calendar className="absolute left-3 top-3.5 w-5 h-5 text-gray-400" />
+                    <input
+                      type="date"
+                      value={materialInForm.receivingDate}
+                      onChange={(e) =>
+                        handleMaterialInChange("receivingDate", e.target.value)
+                      }
+                      className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    />
+                  </div>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Receiver Name <span className="text-red-500">*</span>
+                  </label>
+                  <div className="relative">
+                    <MapPin className="absolute left-3 top-3.5 w-5 h-5 text-gray-400" />
+                    <input
+                      type="text"
+                      value={materialInForm.receiverName}
+                      onChange={(e) =>
+                        handleMaterialInChange("receiverName", e.target.value)
+                      }
+                      className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      placeholder="Receiver Name"
+                    />
+                  </div>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Receiver Phone
+                  </label>
+                  <div className="relative">
+                    <Phone className="absolute left-3 top-3.5 w-5 h-5 text-gray-400" />
+                    <input
+                      type="tel"
+                      value={materialInForm.receiverPhone}
+                      onChange={(e) => {
+                        if (!/^\d*$/.test(e.target.value)) {
+                          toast.warning("Enter Valid Phone Number.");
+                          return;
+                        }
+                        if (e.target.value.length > 10) {
+                          toast.warning("Mobile number must be 10 digit.");
+                          return;
+                        }
+                        handleMaterialInChange("receiverPhone", e.target.value);
+                      }}
+                      className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      placeholder="Enter phone number"
+                    />
+                  </div>
+                </div>
+              </div>
+              {/* Location */}
+              <div className="grid grid-cols-3 gap-6">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Delivery Location <span className="text-red-500">*</span>
+                  </label>
+                  <div className="relative">
+                    <MapPin className="absolute left-3 top-3.5 w-5 h-5 text-gray-400" />
+                    <input
+                      type="text"
+                      value={materialInForm.deliveryLocation}
+                      onChange={(e) =>
+                        handleMaterialInChange(
+                          "deliveryLocation",
+                          e.target.value,
+                        )
+                      }
+                      className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      placeholder="Location"
+                    />
+                  </div>
                 </div>
             ) : (
                 <>
@@ -1238,13 +1345,179 @@ export default function RolesMaster() {
                                         {getPermissionCount(role)} permissions
                                     </span>
                                 </div>
-
-                                <div className="text-xs text-gray-500 mb-4 px-0">
-                                    <div className="flex items-center gap-1 px-0">
-                                        <span>Created:</span>
-                                        <span>{new Date(role.created_at || "").toLocaleDateString()}</span>
-                                    </div>
+                              </td>
+                              <td className="px-4 py-3">
+                                <input
+                                  type="number"
+                                  min="0"
+                                  max={poItem?.quantity}
+                                  value={item.receivedQuantity}
+                                  onChange={(e) =>
+                                    handleItemQuantityChange(
+                                      item.materialId,
+                                      e.target.value,
+                                    )
+                                  }
+                                  className="w-32 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                  placeholder="0"
+                                  required
+                                />
+                              </td>
+                              <td className="px-4 py-3">
+                                <div className="text-gray-700">
+                                  {poItem?.unit || "N/A"}
                                 </div>
+                              </td>
+                            </tr>
+                          );
+                        })}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              )}
+
+              {/* File Upload */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Challan Receipt
+                </label>
+                <div className="border-2 border-dashed border-gray-300 rounded-lg p-3 text-center hover:border-blue-400 transition-colors">
+                  <input
+                    type="file"
+                    id="challanFile"
+                    onChange={handleFileUpload}
+                    className="hidden"
+                    accept=".pdf,.jpg,.jpeg,.png"
+                  />
+                  <label htmlFor="challanFile" className="cursor-pointer">
+                    <div className="flex flex-col items-center gap-3">
+                      <div className="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center">
+                        <Upload className="w-6 h-6 text-blue-600" />
+                      </div>
+                      <div>
+                        <p className="font-medium text-gray-700">
+                          {materialInForm.challanFile
+                            ? materialInForm.challanFile.name
+                            : "Upload Challan Receipt"}
+                        </p>
+                        <p className="text-sm text-gray-500 mt-1">
+                          PDF, JPG, or PNG up to 5MB
+                        </p>
+                      </div>
+                    </div>
+                  </label>
+                  {materialInForm.challanFile && (
+                    <div className="mt-4 flex items-center justify-between bg-green-50 border border-green-200 rounded-lg p-3">
+                      <div className="flex items-center gap-3">
+                        <FileText className="w-5 h-5 text-green-600" />
+                        <div>
+                          <p className="font-medium text-green-800">
+                            {materialInForm.challanFile.name}
+                          </p>
+                          <p className="text-xs text-green-600">
+                            {(materialInForm.challanFile.size / 1024).toFixed(
+                              1,
+                            )}{" "}
+                            KB
+                          </p>
+                        </div>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() =>
+                          setMaterialInForm((prev) => ({
+                            ...prev,
+                            challanFile: null,
+                          }))
+                        }
+                        className="text-red-600 hover:text-red-800"
+                      >
+                        Remove
+                      </button>
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* Submit Button */}
+              <div className="">
+                <button
+                  type="submit"
+                  disabled={loading}
+                  className="w-full bg-blue-600 text-white py-3 rounded-lg hover:bg-blue-700 transition font-medium shadow-sm disabled:opacity-50 flex items-center justify-center gap-2"
+                >
+                  <Save className="w-4 h-4" />
+                  {loading ? "Processing..." : "Receive Material"}
+                </button>
+              </div>
+            </form>
+          )}
+
+          {/* Material Out Form */}
+          {activeFormTab === "out" && (
+            <form
+              onSubmit={handleMaterialOutSubmit}
+              className="space-y-6 my-3 px-6 py-3"
+            >
+              <div className="grid grid-cols-2 gap-6">
+                {/* Material Selection */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Material Name <span className="text-red-500">*</span>
+                  </label>
+                  <div className="relative">
+                    <Package className="absolute left-3 top-3.5 w-5 h-5 text-gray-400" />
+                    <select
+                      value={materialOutForm.materialId}
+                      onChange={(e) =>
+                        handleMaterialOutChange("materialId", e.target.value)
+                      }
+                      className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent appearance-none bg-white"
+                      required
+                    >
+                      <option value="">Select Material</option>
+                      {allInventory.map((item) => (
+                        <option key={item.id} value={item.id}>
+                          {item.name || item.item_name} - Stock: {item.quantity}{" "}
+                          {item.unit}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+
+                  {/* Material Details Card */}
+                  {selectedMaterial && (
+                    <div className="mt-4 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+                      <div className="grid grid-cols-2 gap-4">
+                        <div>
+                          <p className="text-sm text-gray-600">Current Stock</p>
+                          <p className="font-semibold text-gray-800">
+                            {selectedMaterial.quantity} {selectedMaterial.unit}
+                          </p>
+                        </div>
+                        <div>
+                          <p className="text-sm text-gray-600">
+                            Min. Stock Level
+                          </p>
+                          <p className="font-semibold text-gray-800">
+                            {selectedMaterial.reorder_qty}{" "}
+                            {selectedMaterial.unit}
+                          </p>
+                        </div>
+                      </div>
+                      {selectedMaterial.quantity <=
+                        selectedMaterial.reorder_qty && (
+                        <div className="mt-3 flex items-center gap-2 text-yellow-600 bg-yellow-50 p-2 rounded">
+                          <AlertCircle className="w-4 h-4" />
+                          <span className="text-sm font-medium">
+                            Low Stock Alert!
+                          </span>
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </div>
 
                                 <div className="flex flex-col sm:flex-row gap-2 px-0">
                                     <button
@@ -1367,130 +1640,56 @@ export default function RolesMaster() {
                             </button>
                         </div>
 
-                        <form onSubmit={handleSubmit} className="p-4 sm:p-6 max-h-[calc(90vh-80px)] overflow-y-auto">
-                            {/* Basic Information */}
-                            <div className="mb-6 sm:mb-8">
-                                <h4 className="text-base sm:text-lg font-semibold text-gray-800 mb-4 flex items-center gap-2 px-0">
-                                    <span className="bg-gray-100 p-1.5 rounded-lg">
-                                        <Shield className="w-4 h-4 text-gray-600" />
-                                    </span>
-                                    Basic Information
-                                </h4>
-                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
-                                    <div className="px-0">
-                                        <label className="block text-sm font-medium text-gray-700 mb-2 px-0">
-                                            Role Name *
-                                        </label>
-                                        <input
-                                            type="text"
-                                            value={form.name}
-                                            onChange={(e) => setForm({ ...form, name: e.target.value })}
-                                            className="
-                                                w-full 
-                                                px-3 sm:px-4 
-                                                py-2.5 
-                                                border border-gray-300 
-                                                rounded-lg 
-                                                focus:ring-2 focus:ring-[#C62828] focus:border-transparent 
-                                                transition-all
-                                                text-sm sm:text-base
-                                                px-0
-                                            "
-                                            placeholder="e.g., Administrator, Manager"
-                                            required
-                                            autoFocus
-                                        />
-                                    </div>
-                                    <div className="px-0">
-                                        <label className="block text-sm font-medium text-gray-700 mb-2 px-0">
-                                            Description
-                                        </label>
-                                        <input
-                                            type="text"
-                                            value={form.description}
-                                            onChange={(e) => setForm({ ...form, description: e.target.value })}
-                                            className="
-                                                w-full 
-                                                px-3 sm:px-4 
-                                                py-2.5 
-                                                border border-gray-300 
-                                                rounded-lg 
-                                                focus:ring-2 focus:ring-[#C62828] focus:border-transparent 
-                                                transition-all
-                                                text-sm sm:text-base
-                                                px-0
-                                            "
-                                            placeholder="Brief description of this role"
-                                        />
-                                    </div>
-                                </div>
-                                <div className="flex flex-col sm:flex-row sm:items-center mt-4 sm:mt-6 px-0">
-                                    <div className="flex items-center mb-2 sm:mb-0 px-0">
-                                        <input
-                                            type="checkbox"
-                                            id="is_active"
-                                            checked={form.is_active}
-                                            onChange={(e) => setForm({ ...form, is_active: e.target.checked })}
-                                            className="w-5 h-5 text-[#C62828] rounded focus:ring-[#C62828]"
-                                        />
-                                        <label htmlFor="is_active" className="ml-3 text-sm text-gray-700 font-medium px-0">
-                                            Active Role
-                                        </label>
-                                    </div>
-                                    <span className="text-xs text-gray-500 sm:ml-2 px-0">
-                                        (Inactive roles cannot be assigned to users)
-                                    </span>
-                                </div>
-                            </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Phone Number
+                  </label>
+                  <div className="relative">
+                    <Phone className="absolute left-3 top-3.5 w-5 h-5 text-gray-400" />
+                    <input
+                      type="tel"
+                      value={materialOutForm.phoneNumber}
+                      onChange={(e) => {
+                        if (!/^\d*$/.test(e.target.value)) {
+                          toast.warning("Enter Valid Phone Number.");
+                          return;
+                        }
+                        if (e.target.value.length > 10) {
+                          toast.warning("Mobile number must be 10 digit.");
+                          return;
+                        }
+                        handleMaterialOutChange("phoneNumber", e.target.value);
+                      }}
+                      className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      placeholder="Enter phone number"
+                    />
+                  </div>
+                </div>
+              </div>
 
-                            {/* Permissions */}
-                            <div className="mb-6 sm:mb-8">
-                                <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center mb-4 sm:mb-6 gap-3 px-0">
-                                    <h4 className="text-base sm:text-lg font-semibold text-gray-800 flex items-center gap-2 px-0">
-                                        <span className="bg-gray-100 p-1.5 rounded-lg">
-                                            <Shield className="w-4 h-4 text-gray-600" />
-                                        </span>
-                                        Permissions
-                                    </h4>
-                                    <div className="flex gap-2 px-0">
-                                        <button
-                                            type="button"
-                                            onClick={() => toggleAllPermissions(true)}
-                                            className="
-                                                px-3 sm:px-4 
-                                                py-2 
-                                                bg-green-50 text-green-600 
-                                                text-sm 
-                                                rounded-lg 
-                                                hover:bg-green-100 
-                                                transition-colors 
-                                                font-medium
-                                                w-full sm:w-auto
-                                                px-0
-                                            "
-                                        >
-                                            Select All
-                                        </button>
-                                        <button
-                                            type="button"
-                                            onClick={() => toggleAllPermissions(false)}
-                                            className="
-                                                px-3 sm:px-4 
-                                                py-2 
-                                                bg-gray-50 text-gray-600 
-                                                text-sm 
-                                                rounded-lg 
-                                                hover:bg-gray-100 
-                                                transition-colors 
-                                                font-medium
-                                                w-full sm:w-auto
-                                                px-0
-                                            "
-                                        >
-                                            Clear All
-                                        </button>
-                                    </div>
-                                </div>
+              {/* Delivery Location & Issue Date */}
+              <div className="grid grid-cols-2 gap-6">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Delivery Location <span className="text-red-500">*</span>
+                  </label>
+                  <div className="relative">
+                    <MapPin className="absolute left-3 top-3.5 w-5 h-5 text-gray-400" />
+                    <input
+                      type="text"
+                      value={materialOutForm.deliveryLocation}
+                      onChange={(e) =>
+                        handleMaterialOutChange(
+                          "deliveryLocation",
+                          e.target.value,
+                        )
+                      }
+                      className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      placeholder="Enter delivery location"
+                      required
+                    />
+                  </div>
+                </div>
 
                                 <div className="space-y-4 sm:space-y-6">
                                     {permissionCategories.map((category) => (

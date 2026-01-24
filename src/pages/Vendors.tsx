@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { Plus, Search, Phone, Mail, MapPin, X } from "lucide-react";
+import { toast } from "sonner";
 
 const VENDORS_KEY = "vendors_local_v1";
 const CATEGORIES_KEY = "vendor_categories_local_v1";
@@ -107,7 +108,7 @@ export default function Vendors() {
   const filteredVendors = vendors.filter(
     (vendor) =>
       vendor.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      vendor.phone.includes(searchTerm)
+      vendor.phone.includes(searchTerm),
   );
 
   if (loading) {
@@ -258,9 +259,17 @@ export default function Vendors() {
                   <input
                     type="tel"
                     value={formData.phone}
-                    onChange={(e) =>
-                      setFormData({ ...formData, phone: e.target.value })
-                    }
+                    onChange={(e) => {
+                      if (!/^\d*$/.test(e.target.value)) {
+                        toast.warning("Enter Valid Phone Number.");
+                        return;
+                      }
+                      if (e.target.value.length > 10) {
+                        toast.warning("Mobile number must be 10 digit.");
+                        return;
+                      }
+                      setFormData({ ...formData, phone: e.target.value });
+                    }}
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                     required
                   />

@@ -217,35 +217,35 @@
 
 // export default MaterialOutTransactions;
 
-
 import { Eye, Package, Filter, Trash2, X, Calendar } from "lucide-react";
 import { useEffect, useState } from "react";
 import DatePicker from "react-datepicker";
 import { registerLocale } from "react-datepicker";
-import { enGB } from 'date-fns/locale/en-GB';
+import { enGB } from "date-fns/locale/en-GB";
 import "react-datepicker/dist/react-datepicker.css";
 import inventoryTransactionApi from "../../lib/inventoryTransactionApi";
 import poApi from "../../lib/poApi";
 import vendorApi from "../../lib/vendorApi";
 import ViewTransaction from "../StoreManagement/ViewTransaction";
+import { toast } from "sonner";
 
-registerLocale('en-GB', enGB);
+registerLocale("en-GB", enGB);
 
 const MaterialOutTransactions = (loadTableData: any) => {
   const [filteredTransactions, setFilteredTransactions] = useState<any>([]);
   const [selectedTransaction, setSelectedTransaction] = useState<any | null>(
-    null
+    null,
   );
   const [isOpen, setIsOpen] = useState<boolean>(false);
   const [transactions, setTransactions] = useState<any>([]);
-  
+
   // Checkbox states
   const [selectedItems, setSelectedItems] = useState<Set<number>>(new Set());
   const [selectAll, setSelectAll] = useState(false);
-  
+
   // Filter sidebar state
   const [showFilterSidebar, setShowFilterSidebar] = useState(false);
-  
+
   // Column search states
   const [searchContact, setSearchContact] = useState("");
   const [searchPhone, setSearchPhone] = useState("");
@@ -300,7 +300,7 @@ const MaterialOutTransactions = (loadTableData: any) => {
       const enhancedTransactions = transactions.map((transaction: any) => {
         const poData = allPOsData.find((i: any) => i.id === transaction.po_id);
         const vendorData = allVendorsData.find(
-          (i: any) => i.id === transaction.vendor_id
+          (i: any) => i.id === transaction.vendor_id,
         );
 
         return {
@@ -323,42 +323,52 @@ const MaterialOutTransactions = (loadTableData: any) => {
   }, [loadTableData]);
 
   useEffect(() => {
-    let filtered = transactions.filter((d: any) => d.trasaction_type === "OUTWARD");
+    let filtered = transactions.filter(
+      (d: any) => d.trasaction_type === "OUTWARD",
+    );
 
     // Column searches
     if (searchContact) {
       filtered = filtered.filter((transaction: any) =>
-        (transaction.receiver_name || "").toLowerCase().includes(searchContact.toLowerCase())
+        (transaction.receiver_name || "")
+          .toLowerCase()
+          .includes(searchContact.toLowerCase()),
       );
     }
 
     if (searchPhone) {
       filtered = filtered.filter((transaction: any) =>
-        (transaction.receiver_phone || "").includes(searchPhone)
+        (transaction.receiver_phone || "").includes(searchPhone),
       );
     }
 
     if (searchLocation) {
       filtered = filtered.filter((transaction: any) =>
-        (transaction.delivery_location || "").toLowerCase().includes(searchLocation.toLowerCase())
+        (transaction.delivery_location || "")
+          .toLowerCase()
+          .includes(searchLocation.toLowerCase()),
       );
     }
 
     if (searchDate) {
       filtered = filtered.filter((transaction: any) =>
-        (transaction.receiving_date || "").includes(searchDate)
+        (transaction.receiving_date || "").includes(searchDate),
       );
     }
 
     if (searchPurpose) {
       filtered = filtered.filter((transaction: any) =>
-        (transaction.remark || "").toLowerCase().includes(searchPurpose.toLowerCase())
+        (transaction.remark || "")
+          .toLowerCase()
+          .includes(searchPurpose.toLowerCase()),
       );
     }
 
     if (searchTransType) {
       filtered = filtered.filter((transaction: any) =>
-        (transaction.trasaction_type || "").toLowerCase().includes(searchTransType.toLowerCase())
+        (transaction.trasaction_type || "")
+          .toLowerCase()
+          .includes(searchTransType.toLowerCase()),
       );
     }
 
@@ -382,14 +392,27 @@ const MaterialOutTransactions = (loadTableData: any) => {
     }
 
     setFilteredTransactions(filtered);
-  }, [searchContact, searchPhone, searchLocation, searchDate, searchPurpose, searchTransType, startDate, endDate, ignoreDate, transactions]);
+  }, [
+    searchContact,
+    searchPhone,
+    searchLocation,
+    searchDate,
+    searchPurpose,
+    searchTransType,
+    startDate,
+    endDate,
+    ignoreDate,
+    transactions,
+  ]);
 
   // Checkbox handlers
   const handleSelectAll = () => {
     if (selectAll) {
       setSelectedItems(new Set());
     } else {
-      const allIds = new Set(filteredTransactions.map((transaction: any) => transaction.id));
+      const allIds = new Set(
+        filteredTransactions.map((transaction: any) => transaction.id),
+      );
       setSelectedItems(allIds);
     }
     setSelectAll(!selectAll);
@@ -412,13 +435,19 @@ const MaterialOutTransactions = (loadTableData: any) => {
       return;
     }
 
-    if (!confirm(`Are you sure you want to delete ${selectedItems.size} transaction(s)? This action cannot be undone.`)) {
+    if (
+      !confirm(
+        `Are you sure you want to delete ${selectedItems.size} transaction(s)? This action cannot be undone.`,
+      )
+    ) {
       return;
     }
 
     try {
       await Promise.all(
-        Array.from(selectedItems).map((id) => inventoryTransactionApi.deleteTransaction(id))
+        Array.from(selectedItems).map((id) =>
+          inventoryTransactionApi.deleteTransaction(id),
+        ),
       );
       alert(`${selectedItems.size} transaction(s) deleted successfully!`);
       setSelectedItems(new Set());
@@ -453,7 +482,8 @@ const MaterialOutTransactions = (loadTableData: any) => {
                 </div>
                 <div>
                   <p className="font-medium text-gray-800 text-sm">
-                    {selectedItems.size} transaction{selectedItems.size > 1 ? 's' : ''} selected
+                    {selectedItems.size} transaction
+                    {selectedItems.size > 1 ? "s" : ""} selected
                   </p>
                   <p className="text-xs text-gray-600">
                     Click delete to remove selected items
@@ -525,11 +555,11 @@ const MaterialOutTransactions = (loadTableData: any) => {
                   </div>
                 </th>
               </tr>
-              
+
               {/* Search Row */}
               <tr className="bg-gray-50 border-b border-gray-200">
                 <td className="px-2 md:px-4 py-1"></td>
-                
+
                 {/* Contact Person Column */}
                 <td className="px-2 md:px-4 py-1">
                   <input
@@ -540,18 +570,28 @@ const MaterialOutTransactions = (loadTableData: any) => {
                     className="w-full px-2 py-1 text-[10px] md:text-xs border border-gray-300 rounded focus:ring-1 focus:ring-[#C62828] focus:border-transparent"
                   />
                 </td>
-                
+
                 {/* Phone Number Column */}
                 <td className="px-2 md:px-4 py-1">
                   <input
                     type="text"
                     placeholder="Search phone..."
                     value={searchPhone}
-                    onChange={(e) => setSearchPhone(e.target.value)}
+                    onChange={(e) => {
+                      if (!/^\d*$/.test(e.target.value)) {
+                        toast.warning("Enter Valid Phone Number.");
+                        return;
+                      }
+                      if (e.target.value.length > 10) {
+                        toast.warning("Mobile number must be 10 digit.");
+                        return;
+                      }
+                      setSearchPhone(e.target.value);
+                    }}
                     className="w-full px-2 py-1 text-[10px] md:text-xs border border-gray-300 rounded focus:ring-1 focus:ring-[#C62828] focus:border-transparent"
                   />
                 </td>
-                
+
                 {/* Delivery Location Column */}
                 <td className="px-2 md:px-4 py-1">
                   <input
@@ -562,7 +602,7 @@ const MaterialOutTransactions = (loadTableData: any) => {
                     className="w-full px-2 py-1 text-[10px] md:text-xs border border-gray-300 rounded focus:ring-1 focus:ring-[#C62828] focus:border-transparent"
                   />
                 </td>
-                
+
                 {/* Issue Date Column */}
                 <td className="px-2 md:px-4 py-1">
                   <input
@@ -573,7 +613,7 @@ const MaterialOutTransactions = (loadTableData: any) => {
                     className="w-full px-2 py-1 text-[10px] md:text-xs border border-gray-300 rounded focus:ring-1 focus:ring-[#C62828] focus:border-transparent"
                   />
                 </td>
-                
+
                 {/* Purpose Column */}
                 <td className="px-2 md:px-4 py-1">
                   <input
@@ -584,7 +624,7 @@ const MaterialOutTransactions = (loadTableData: any) => {
                     className="w-full px-2 py-1 text-[10px] md:text-xs border border-gray-300 rounded focus:ring-1 focus:ring-[#C62828] focus:border-transparent"
                   />
                 </td>
-                
+
                 {/* Transaction Type Column */}
                 <td className="px-2 md:px-4 py-1">
                   <input
@@ -595,7 +635,7 @@ const MaterialOutTransactions = (loadTableData: any) => {
                     className="w-full px-2 py-1 text-[10px] md:text-xs border border-gray-300 rounded focus:ring-1 focus:ring-[#C62828] focus:border-transparent"
                   />
                 </td>
-                
+
                 {/* Action Column - Filter icon */}
                 <td className="px-2 md:px-4 py-1 text-center">
                   <button
@@ -640,12 +680,18 @@ const MaterialOutTransactions = (loadTableData: any) => {
                       </button>
                     </td>
                     <td className="px-2 md:px-4 py-2">
-                      <div className="text-gray-800 text-xs md:text-sm truncate max-w-[120px]" title={transaction.receiver_phone || "N/A"}>
+                      <div
+                        className="text-gray-800 text-xs md:text-sm truncate max-w-[120px]"
+                        title={transaction.receiver_phone || "N/A"}
+                      >
                         {transaction.receiver_phone || "N/A"}
                       </div>
                     </td>
                     <td className="px-2 md:px-4 py-2">
-                      <div className="text-xs md:text-sm truncate max-w-[120px]" title={transaction.delivery_location || "N/A"}>
+                      <div
+                        className="text-xs md:text-sm truncate max-w-[120px]"
+                        title={transaction.delivery_location || "N/A"}
+                      >
                         {transaction.delivery_location || "N/A"}
                       </div>
                     </td>
@@ -655,14 +701,17 @@ const MaterialOutTransactions = (loadTableData: any) => {
                       </div>
                     </td>
                     <td className="px-2 md:px-4 py-2">
-                      <div className="text-gray-800 text-xs md:text-sm truncate max-w-[120px]" title={transaction.remark ?? "N/A"}>
+                      <div
+                        className="text-gray-800 text-xs md:text-sm truncate max-w-[120px]"
+                        title={transaction.remark ?? "N/A"}
+                      >
                         {transaction.remark ?? "N/A"}
                       </div>
                     </td>
                     <td className="px-2 md:px-4 py-2">
                       <span
                         className={`px-1.5 py-0.5 rounded-full text-[10px] font-medium ${getTransactionTypeColor(
-                          transaction.trasaction_type
+                          transaction.trasaction_type,
                         )} truncate`}
                         title={transaction.trasaction_type}
                       >
@@ -684,14 +733,19 @@ const MaterialOutTransactions = (loadTableData: any) => {
                   </tr>
                 );
               })}
-              
+
               {filteredTransactions.length === 0 && (
                 <tr>
                   <td colSpan={8} className="px-4 py-8 text-center">
                     <Package className="w-12 h-12 md:w-16 md:h-16 text-gray-300 mx-auto mb-3" />
-                    <p className="text-gray-600 text-sm md:text-lg font-medium">No Transactions Found</p>
+                    <p className="text-gray-600 text-sm md:text-lg font-medium">
+                      No Transactions Found
+                    </p>
                     <p className="text-gray-500 text-xs md:text-sm mt-1">
-                      {searchContact || searchPhone || searchLocation || searchPurpose
+                      {searchContact ||
+                      searchPhone ||
+                      searchLocation ||
+                      searchPurpose
                         ? "Try a different search term"
                         : "No material out transactions available"}
                     </p>
@@ -704,18 +758,17 @@ const MaterialOutTransactions = (loadTableData: any) => {
       </div>
 
       {/* Updated Filter Sidebar with react-datepicker */}
-     {showFilterSidebar && (
-  <div className="fixed inset-0 z-50 overflow-hidden">
-    
-    {/* Overlay */}
-    <div
-      className="absolute inset-0 bg-black bg-opacity-50 transition-opacity duration-300"
-      onClick={() => setShowFilterSidebar(false)}
-    />
+      {showFilterSidebar && (
+        <div className="fixed inset-0 z-50 overflow-hidden">
+          {/* Overlay */}
+          <div
+            className="absolute inset-0 bg-black bg-opacity-50 transition-opacity duration-300"
+            onClick={() => setShowFilterSidebar(false)}
+          />
 
-    {/* Sidebar */}
-    <div
-      className={`
+          {/* Sidebar */}
+          <div
+            className={`
         absolute inset-y-0 right-0
         bg-white shadow-2xl flex flex-col
         transition-transform duration-300 ease-out
@@ -727,164 +780,164 @@ const MaterialOutTransactions = (loadTableData: any) => {
         /* DESKTOP (unchanged) */
         md:max-w-md md:w-full
       `}
-    >
-      {/* Header */}
-      <div className="bg-gradient-to-r from-[#C62828] to-[#D32F2F] px-4 md:px-6 py-3 md:py-4 flex justify-between items-center">
-        <div className="flex items-center gap-3">
-          <div className="p-2 bg-white/20 rounded-lg">
-            <Calendar className="w-4 h-4 md:w-5 md:h-5 text-white" />
-          </div>
-          <div>
-            <h2 className="text-sm md:text-xl font-bold text-white">
-              Date Filters
-            </h2>
-            <p className="text-xs md:text-sm text-white/80">
-              Select a date range to filter transactions
-            </p>
-          </div>
-        </div>
-
-        <div className="flex items-center gap-2 md:gap-3">
-          <button
-            onClick={resetFilters}
-            className="text-white text-xs md:text-sm hover:bg-white hover:bg-opacity-20 px-2 md:px-3 py-1 md:py-1.5 rounded transition font-medium"
           >
-            Reset
-          </button>
-          <button
-            onClick={() => setShowFilterSidebar(false)}
-            className="text-white hover:bg-white hover:bg-opacity-20 rounded-lg p-1 md:p-1.5 transition"
-          >
-            <X className="w-4 h-4 md:w-5 md:h-5" />
-          </button>
-        </div>
-      </div>
+            {/* Header */}
+            <div className="bg-gradient-to-r from-[#C62828] to-[#D32F2F] px-4 md:px-6 py-3 md:py-4 flex justify-between items-center">
+              <div className="flex items-center gap-3">
+                <div className="p-2 bg-white/20 rounded-lg">
+                  <Calendar className="w-4 h-4 md:w-5 md:h-5 text-white" />
+                </div>
+                <div>
+                  <h2 className="text-sm md:text-xl font-bold text-white">
+                    Date Filters
+                  </h2>
+                  <p className="text-xs md:text-sm text-white/80">
+                    Select a date range to filter transactions
+                  </p>
+                </div>
+              </div>
 
-      {/* Content */}
-      <div className="flex-1 overflow-y-auto p-4 md:p-6 space-y-4 md:space-y-6">
-        <div className="space-y-4">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            
-            {/* From Date */}
-            <div className="space-y-2">
-              <label className="block text-xs md:text-sm font-semibold text-gray-700 flex items-center gap-2">
-                <Calendar className="w-4 h-4 text-[#C62828]" />
-                From Date
-              </label>
-              <div className="relative">
-                <DatePicker
-                  selected={startDate}
-                  onChange={(date) => setStartDate(date)}
-                  selectsStart
-                  startDate={startDate}
-                  endDate={endDate}
-                  maxDate={endDate || new Date()}
-                  placeholderText="Select start date"
-                  className="w-full pl-9 md:pl-10 pr-3 md:pr-4 py-2 text-xs md:text-sm border border-gray-300 rounded-lg focus:border-[#C62828] focus:ring-2 focus:ring-[#C62828]/20 outline-none transition-all"
-                  dateFormat="dd/MM/yyyy"
-                  locale="en-GB"
-                  isClearable
-                  showMonthDropdown
-                  showYearDropdown
-                  dropdownMode="select"
-                />
-                <div className="absolute left-3 top-1/2 -translate-y-1/2">
-                  <Calendar className="w-4 h-4 text-gray-500" />
+              <div className="flex items-center gap-2 md:gap-3">
+                <button
+                  onClick={resetFilters}
+                  className="text-white text-xs md:text-sm hover:bg-white hover:bg-opacity-20 px-2 md:px-3 py-1 md:py-1.5 rounded transition font-medium"
+                >
+                  Reset
+                </button>
+                <button
+                  onClick={() => setShowFilterSidebar(false)}
+                  className="text-white hover:bg-white hover:bg-opacity-20 rounded-lg p-1 md:p-1.5 transition"
+                >
+                  <X className="w-4 h-4 md:w-5 md:h-5" />
+                </button>
+              </div>
+            </div>
+
+            {/* Content */}
+            <div className="flex-1 overflow-y-auto p-4 md:p-6 space-y-4 md:space-y-6">
+              <div className="space-y-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {/* From Date */}
+                  <div className="space-y-2">
+                    <label className="block text-xs md:text-sm font-semibold text-gray-700 flex items-center gap-2">
+                      <Calendar className="w-4 h-4 text-[#C62828]" />
+                      From Date
+                    </label>
+                    <div className="relative">
+                      <DatePicker
+                        selected={startDate}
+                        onChange={(date) => setStartDate(date)}
+                        selectsStart
+                        startDate={startDate}
+                        endDate={endDate}
+                        maxDate={endDate || new Date()}
+                        placeholderText="Select start date"
+                        className="w-full pl-9 md:pl-10 pr-3 md:pr-4 py-2 text-xs md:text-sm border border-gray-300 rounded-lg focus:border-[#C62828] focus:ring-2 focus:ring-[#C62828]/20 outline-none transition-all"
+                        dateFormat="dd/MM/yyyy"
+                        locale="en-GB"
+                        isClearable
+                        showMonthDropdown
+                        showYearDropdown
+                        dropdownMode="select"
+                      />
+                      <div className="absolute left-3 top-1/2 -translate-y-1/2">
+                        <Calendar className="w-4 h-4 text-gray-500" />
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* To Date */}
+                  <div className="space-y-2">
+                    <label className="block text-xs md:text-sm font-semibold text-gray-700 flex items-center gap-2">
+                      <Calendar className="w-4 h-4 text-[#C62828]" />
+                      To Date
+                    </label>
+                    <div className="relative">
+                      <DatePicker
+                        selected={endDate}
+                        onChange={(date) => setEndDate(date)}
+                        selectsEnd
+                        startDate={startDate}
+                        endDate={endDate}
+                        minDate={startDate || undefined}
+                        maxDate={new Date()}
+                        placeholderText="Select end date"
+                        className="w-full pl-9 md:pl-10 pr-3 md:pr-4 py-2 text-xs md:text-sm border border-gray-300 rounded-lg focus:border-[#C62828] focus:ring-2 focus:ring-[#C62828]/20 outline-none transition-all"
+                        dateFormat="dd/MM/yyyy"
+                        locale="en-GB"
+                        isClearable
+                        showMonthDropdown
+                        showYearDropdown
+                        dropdownMode="select"
+                      />
+                      <div className="absolute left-3 top-1/2 -translate-y-1/2">
+                        <Calendar className="w-4 h-4 text-gray-500" />
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Date Summary */}
+                {(startDate || endDate) && (
+                  <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
+                    <p className="text-xs md:text-sm font-medium text-gray-800">
+                      Selected Range
+                    </p>
+                    <p className="text-[11px] md:text-xs text-gray-600">
+                      {startDate
+                        ? startDate.toLocaleDateString("en-GB")
+                        : "Any"}{" "}
+                      → {endDate ? endDate.toLocaleDateString("en-GB") : "Any"}
+                    </p>
+                  </div>
+                )}
+              </div>
+
+              {/* Ignore Date */}
+              <div className="border-t pt-4">
+                <div className="flex items-start gap-3 p-3 bg-gray-50 rounded-lg">
+                  <input
+                    type="checkbox"
+                    checked={ignoreDate}
+                    onChange={(e) => {
+                      setIgnoreDate(e.target.checked);
+                      if (e.target.checked) {
+                        setStartDate(null);
+                        setEndDate(null);
+                      }
+                    }}
+                    className="w-4 h-4 md:w-5 md:h-5 text-[#C62828]"
+                  />
+                  <div>
+                    <p className="text-xs md:text-sm font-medium text-gray-700">
+                      Ignore Date Filters
+                    </p>
+                    <p className="text-[11px] md:text-xs text-gray-500">
+                      Show all data regardless of date
+                    </p>
+                  </div>
                 </div>
               </div>
             </div>
 
-            {/* To Date */}
-            <div className="space-y-2">
-              <label className="block text-xs md:text-sm font-semibold text-gray-700 flex items-center gap-2">
-                <Calendar className="w-4 h-4 text-[#C62828]" />
-                To Date
-              </label>
-              <div className="relative">
-                <DatePicker
-                  selected={endDate}
-                  onChange={(date) => setEndDate(date)}
-                  selectsEnd
-                  startDate={startDate}
-                  endDate={endDate}
-                  minDate={startDate || undefined}
-                  maxDate={new Date()}
-                  placeholderText="Select end date"
-                  className="w-full pl-9 md:pl-10 pr-3 md:pr-4 py-2 text-xs md:text-sm border border-gray-300 rounded-lg focus:border-[#C62828] focus:ring-2 focus:ring-[#C62828]/20 outline-none transition-all"
-                  dateFormat="dd/MM/yyyy"
-                  locale="en-GB"
-                  isClearable
-                  showMonthDropdown
-                  showYearDropdown
-                  dropdownMode="select"
-                />
-                <div className="absolute left-3 top-1/2 -translate-y-1/2">
-                  <Calendar className="w-4 h-4 text-gray-500" />
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* Date Summary */}
-          {(startDate || endDate) && (
-            <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
-              <p className="text-xs md:text-sm font-medium text-gray-800">
-                Selected Range
-              </p>
-              <p className="text-[11px] md:text-xs text-gray-600">
-                {startDate ? startDate.toLocaleDateString("en-GB") : "Any"} →{" "}
-                {endDate ? endDate.toLocaleDateString("en-GB") : "Any"}
-              </p>
-            </div>
-          )}
-        </div>
-
-        {/* Ignore Date */}
-        <div className="border-t pt-4">
-          <div className="flex items-start gap-3 p-3 bg-gray-50 rounded-lg">
-            <input
-              type="checkbox"
-              checked={ignoreDate}
-              onChange={(e) => {
-                setIgnoreDate(e.target.checked);
-                if (e.target.checked) {
-                  setStartDate(null);
-                  setEndDate(null);
-                }
-              }}
-              className="w-4 h-4 md:w-5 md:h-5 text-[#C62828]"
-            />
-            <div>
-              <p className="text-xs md:text-sm font-medium text-gray-700">
-                Ignore Date Filters
-              </p>
-              <p className="text-[11px] md:text-xs text-gray-500">
-                Show all data regardless of date
-              </p>
+            {/* Footer */}
+            <div className="border-t p-3 md:p-4 flex gap-2 md:gap-3">
+              <button
+                onClick={resetFilters}
+                className="flex-1 px-3 md:px-4 py-2 text-xs md:text-sm border border-gray-300 rounded-lg hover:bg-gray-50 font-medium"
+              >
+                Reset All
+              </button>
+              <button
+                onClick={applyFilters}
+                className="flex-1 bg-gradient-to-r from-[#C62828] to-[#D32F2F] text-white px-3 md:px-4 py-2 text-xs md:text-sm rounded-lg hover:shadow-lg font-medium"
+              >
+                Apply Filters
+              </button>
             </div>
           </div>
         </div>
-      </div>
-
-      {/* Footer */}
-      <div className="border-t p-3 md:p-4 flex gap-2 md:gap-3">
-        <button
-          onClick={resetFilters}
-          className="flex-1 px-3 md:px-4 py-2 text-xs md:text-sm border border-gray-300 rounded-lg hover:bg-gray-50 font-medium"
-        >
-          Reset All
-        </button>
-        <button
-          onClick={applyFilters}
-          className="flex-1 bg-gradient-to-r from-[#C62828] to-[#D32F2F] text-white px-3 md:px-4 py-2 text-xs md:text-sm rounded-lg hover:shadow-lg font-medium"
-        >
-          Apply Filters
-        </button>
-      </div>
-    </div>
-  </div>
-)}
-
+      )}
 
       {/* View Transaction Modal */}
       {isOpen && (
