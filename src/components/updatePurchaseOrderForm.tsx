@@ -1,7 +1,22 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 // src/components/PurchaseOrdersPro.tsx
 import React, { useEffect, useState, useRef, SetStateAction } from "react";
-import { Plus, X, Trash2, Package, Save, Truck, Layers, ClipboardCheck, Calendar, User, MapPin, ChevronDown, Search, Box } from "lucide-react";
+import {
+  Plus,
+  X,
+  Trash2,
+  Package,
+  Save,
+  Truck,
+  Layers,
+  ClipboardCheck,
+  Calendar,
+  User,
+  MapPin,
+  ChevronDown,
+  Search,
+  Box,
+} from "lucide-react";
 import { useAuth } from "../contexts/AuthContext";
 import poApi from "../lib/poApi";
 import poTypeApi from "../lib/poTypeApi";
@@ -84,13 +99,13 @@ function SearchableSelect({
 
   // Normalize options to {id,name}
   const normalized = options.map((opt) =>
-    typeof opt === "string" ? { id: opt, name: opt } : opt
+    typeof opt === "string" ? { id: opt, name: opt } : opt,
   );
 
   const selected = normalized.find((o) => o.id === value) || null;
 
   const filtered = normalized.filter((o) =>
-    o.name.toLowerCase().includes(filter.toLowerCase())
+    o.name.toLowerCase().includes(filter.toLowerCase()),
   );
 
   useEffect(() => {
@@ -133,7 +148,9 @@ function SearchableSelect({
     <div ref={containerRef} className="relative">
       <div
         className={`w-full flex items-center gap-2 px-3 py-2 border border-gray-300 rounded-xl bg-white/50 cursor-pointer text-sm ${
-          disabled ? "opacity-50 cursor-not-allowed" : "hover:shadow-sm hover:border-gray-400"
+          disabled
+            ? "opacity-50 cursor-not-allowed"
+            : "hover:shadow-sm hover:border-gray-400"
         }`}
         onClick={() => !disabled && setOpen((s) => !s)}
         role="button"
@@ -302,7 +319,7 @@ export default function UpdatePurchaseOrderForm({
       setVendors(
         Array.isArray(data)
           ? data.filter((d: any) => d.category_name === "Material")
-          : []
+          : [],
       );
     } catch (err) {
       console.warn("loadVendors failed, fallback to empty", err);
@@ -327,8 +344,8 @@ export default function UpdatePurchaseOrderForm({
       const list = Array.isArray(data)
         ? data
         : Array.isArray((data as any)?.data)
-        ? (data as any).data
-        : [];
+          ? (data as any).data
+          : [];
       setPOTypes(list);
     } catch (err) {
       console.warn("loadPOTypes failed, fallback to empty", err);
@@ -347,7 +364,7 @@ export default function UpdatePurchaseOrderForm({
           id: String(item.id),
         }));
         const onlyMaterial = updatedData.filter(
-          (d: any) => d.category === "material"
+          (d: any) => d.category === "material",
         );
         setItems(onlyMaterial);
       } else {
@@ -363,7 +380,7 @@ export default function UpdatePurchaseOrderForm({
   const loadTerms = async () => {
     try {
       const data: any = await TermsConditionsApi.getByIdVendorTC(
-        selectedPO.vendor_id
+        selectedPO.vendor_id,
       );
 
       if (!Array.isArray(data)) return;
@@ -386,7 +403,7 @@ export default function UpdatePurchaseOrderForm({
 
           if (!exists) {
             const group = terms.find(
-              (g: any) => g.category === element.category
+              (g: any) => g.category === element.category,
             );
 
             if (group) {
@@ -440,7 +457,7 @@ export default function UpdatePurchaseOrderForm({
   // --- Items helpers (keep existing functions) ---
   const addItemFromMaster = (item: any) => {
     const existingIndex = formData.items.findIndex(
-      (i) => Number(i.item_id) === item.id
+      (i) => Number(i.item_id) === item.id,
     );
 
     let updatedItems: POItem[];
@@ -490,7 +507,7 @@ export default function UpdatePurchaseOrderForm({
     calculateTotals(
       updatedItems,
       formData.discount_percentage,
-      formData.is_interstate
+      formData.is_interstate,
     );
 
     setShowItemSelector(false);
@@ -510,17 +527,16 @@ export default function UpdatePurchaseOrderForm({
     calculateTotals(
       newItems,
       formData.discount_percentage,
-      formData.is_interstate
+      formData.is_interstate,
     );
   };
-
 
   const deletePOItems = async (poItemId: any, poMaterialTrackingId: any) => {
     // console.log("ids for delete", poItemId, poMaterialTrackingId);
     try {
       const response: any = await poApi.deletePurchaseOrderItem(
         poItemId,
-        poMaterialTrackingId
+        poMaterialTrackingId,
       );
 
       await loadAllData();
@@ -536,7 +552,7 @@ export default function UpdatePurchaseOrderForm({
   const calculateTotals = (
     itemsList: POItem[],
     discountPercentage: number,
-    isInterstate: boolean
+    isInterstate: boolean,
   ) => {
     let subtotal = 0;
     let discountAmount = 0;
@@ -594,10 +610,6 @@ export default function UpdatePurchaseOrderForm({
       grand_total: grandTotal,
     }));
   };
-
-
-
-
 
   // Helper: derive 'material' or 'service' from selected PO Type
   const getselectedPOSTypeCategory = (): string | null => {
@@ -777,7 +789,7 @@ export default function UpdatePurchaseOrderForm({
         <div className="bg-gradient-to-r from-[#40423f] via-[#4a4c49] to-[#5a5d5a] px-4 md:px-6 py-4 flex justify-between items-center border-b border-gray-700/30 relative overflow-hidden flex-shrink-0">
           <div className="absolute inset-0 bg-gradient-to-r from-gray-900/10 via-transparent to-gray-900/10"></div>
           <div className="absolute -right-10 top-0 bottom-0 w-40 bg-gradient-to-l from-[#b52124]/20 to-transparent -skew-x-12"></div>
-          
+
           <div className="flex items-center gap-3 relative z-10">
             <div className="p-2.5 bg-white/10 backdrop-blur-sm rounded-2xl border border-gray-400/30">
               <Package className="w-4 h-4 md:w-5 md:h-5 text-gray-100" />
@@ -804,7 +816,10 @@ export default function UpdatePurchaseOrderForm({
           </button>
         </div>
 
-        <form className="p-4 md:p-6 overflow-y-auto flex-grow" onSubmit={handleSubmit}>
+        <form
+          className="p-4 md:p-6 overflow-y-auto flex-grow"
+          onSubmit={handleSubmit}
+        >
           {/* Basic Details */}
           <div className="mb-6">
             <h3 className="text-base font-semibold text-[#40423f] mb-3 flex items-center gap-2">
@@ -825,7 +840,7 @@ export default function UpdatePurchaseOrderForm({
                   onChange={(id) => {
                     const interState =
                       vendors.find((d) => d.id === id).office_state !==
-                      "Maharashtra";
+                      "MAHARASHTRA";
                     setFormData({
                       ...formData,
                       vendor_id: id,
@@ -991,28 +1006,25 @@ export default function UpdatePurchaseOrderForm({
                           });
 
                           if (!result.isConfirmed) return;
-                          if (
-                            result.isConfirmed &&
-                            item.materialTrackingId
-                          ) {
+                          if (result.isConfirmed && item.materialTrackingId) {
                             deletePOItems(item.id, item.materialTrackingId);
                             const items = formData.items.filter(
-                              (i: any) => i.id !== item.id
+                              (i: any) => i.id !== item.id,
                             );
                             calculateTotals(
                               items,
                               formData.discount_percentage,
-                              formData.is_interstate
+                              formData.is_interstate,
                             );
                           } else {
                             if (result.isConfirmed) {
                               const items = formData.items.filter(
-                                (i: any) => i.id !== item.id
+                                (i: any) => i.id !== item.id,
                               );
                               calculateTotals(
                                 items,
                                 formData.discount_percentage,
-                                formData.is_interstate
+                                formData.is_interstate,
                               );
                             }
                           }
@@ -1022,7 +1034,7 @@ export default function UpdatePurchaseOrderForm({
                         <Trash2 className="w-3.5 h-3.5" />
                       </button>
                     </div>
-                    
+
                     <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
                       <div>
                         <label className="text-xs text-[#5a5d5a]">Qty</label>
@@ -1038,7 +1050,7 @@ export default function UpdatePurchaseOrderForm({
                             handleItemChange(
                               index,
                               "quantity",
-                              parseFloat(e.target.value) || 0
+                              parseFloat(e.target.value) || 0,
                             );
                           }}
                           className="w-full px-2 py-1.5 text-xs border border-gray-300 rounded-lg focus:border-[#b52124] focus:ring-1 focus:ring-[#b52124]/20 outline-none"
@@ -1064,7 +1076,7 @@ export default function UpdatePurchaseOrderForm({
                             handleItemChange(
                               index,
                               "rate",
-                              parseFloat(e.target.value) || 0
+                              parseFloat(e.target.value) || 0,
                             );
                           }}
                           className="w-full px-2 py-1.5 text-xs border border-gray-300 rounded-lg focus:border-[#b52124] focus:ring-1 focus:ring-[#b52124]/20 outline-none"
@@ -1077,7 +1089,7 @@ export default function UpdatePurchaseOrderForm({
                         </div>
                       </div>
                     </div>
-                    
+
                     <div className="mt-2 text-xs text-[#5a5d5a]">
                       {formData.is_interstate
                         ? `IGST: ${item.igst_rate}%`
@@ -1117,7 +1129,7 @@ export default function UpdatePurchaseOrderForm({
               </div>
             </div>
           </div>
-          
+
           <div className="mb-6">
             <div>
               {formData.terms_and_conditions.length > 0 && (
@@ -1130,7 +1142,7 @@ export default function UpdatePurchaseOrderForm({
                 <ul className="px-4 list-decimal text-xs text-[#5a5d5a]">
                   {formData.terms_and_conditions.map((d, indx: number) => {
                     const displayTerms = d.content.filter((dtc: any) =>
-                      Boolean(dtc.is_default)
+                      Boolean(dtc.is_default),
                     );
                     if (displayTerms.length > 0) {
                       return (
@@ -1145,7 +1157,11 @@ export default function UpdatePurchaseOrderForm({
                           </div>
                           <ul className="ml-3 list-disc">
                             {displayTerms.map((term: any, idx: number) => {
-                              return <li key={idx} className="mb-1">{term.content}</li>;
+                              return (
+                                <li key={idx} className="mb-1">
+                                  {term.content}
+                                </li>
+                              );
                             })}
                           </ul>
                         </li>
@@ -1201,8 +1217,12 @@ export default function UpdatePurchaseOrderForm({
                   <Package className="w-4 h-4 md:w-5 md:h-5 text-gray-100" />
                 </div>
                 <div>
-                  <h3 className="font-bold text-white text-sm md:text-base">Select Item</h3>
-                  <p className="text-xs text-gray-300/80 hidden md:block">Choose from available items</p>
+                  <h3 className="font-bold text-white text-sm md:text-base">
+                    Select Item
+                  </h3>
+                  <p className="text-xs text-gray-300/80 hidden md:block">
+                    Choose from available items
+                  </p>
                 </div>
               </div>
               <button
@@ -1302,8 +1322,12 @@ export default function UpdatePurchaseOrderForm({
                   <ClipboardCheck className="w-4 h-4 md:w-5 md:h-5 text-gray-100" />
                 </div>
                 <div>
-                  <h3 className="font-bold text-white text-sm md:text-base">Terms & Conditions</h3>
-                  <p className="text-xs text-gray-300/80 hidden md:block">Manage terms and conditions</p>
+                  <h3 className="font-bold text-white text-sm md:text-base">
+                    Terms & Conditions
+                  </h3>
+                  <p className="text-xs text-gray-300/80 hidden md:block">
+                    Manage terms and conditions
+                  </p>
                 </div>
               </div>
               <div className="flex">
@@ -1324,15 +1348,18 @@ export default function UpdatePurchaseOrderForm({
             <div className="p-4 overflow-y-auto flex-grow">
               <ul className="space-y-3">
                 {formData.terms_and_conditions.map((d, indx: number) => (
-                  <li key={indx} className="border border-gray-300 rounded-xl p-3">
+                  <li
+                    key={indx}
+                    className="border border-gray-300 rounded-xl p-3"
+                  >
                     <div className="flex items-start gap-2 mb-2">
                       <input
                         type="checkbox"
                         onChange={() => {
                           setFormData((prev) => ({
                             ...prev,
-                            terms_and_conditions:
-                              prev.terms_and_conditions.map((tc) =>
+                            terms_and_conditions: prev.terms_and_conditions.map(
+                              (tc) =>
                                 tc.category === d.category
                                   ? {
                                       ...tc,
@@ -1342,8 +1369,8 @@ export default function UpdatePurchaseOrderForm({
                                         is_default: !tc.isActive,
                                       })),
                                     }
-                                  : tc
-                              ),
+                                  : tc,
+                            ),
                           }));
                         }}
                         checked={
@@ -1372,23 +1399,24 @@ export default function UpdatePurchaseOrderForm({
                                     tc.category === d.category
                                       ? {
                                           ...tc,
-                                          content: tc.content.map(
-                                            (i: any) =>
-                                              i.content === term.content
-                                                ? {
-                                                    ...i,
-                                                    is_default: !i.is_default,
-                                                  }
-                                                : i
+                                          content: tc.content.map((i: any) =>
+                                            i.content === term.content
+                                              ? {
+                                                  ...i,
+                                                  is_default: !i.is_default,
+                                                }
+                                              : i,
                                           ),
                                         }
-                                      : tc
+                                      : tc,
                                   ),
                               }));
                             }}
                             className="w-3.5 h-3.5 accent-[#b52124] cursor-pointer mt-0.5"
                           />
-                          <span className="text-xs text-[#5a5d5a]">{term.content}</span>
+                          <span className="text-xs text-[#5a5d5a]">
+                            {term.content}
+                          </span>
                         </li>
                       ))}
                     </ul>
@@ -1399,7 +1427,7 @@ export default function UpdatePurchaseOrderForm({
           </div>
         </div>
       )}
-      
+
       {showAddTerm && (
         <div className="fixed inset-0 bg-gray-900/70 backdrop-blur-md flex items-center justify-center z-[80] p-2 md:p-4">
           <div className="bg-gradient-to-br from-gray-50 to-white rounded-2xl shadow-2xl shadow-gray-900/30 w-full max-w-md border border-gray-300/50 overflow-hidden max-h-[90vh] flex flex-col">
@@ -1409,8 +1437,12 @@ export default function UpdatePurchaseOrderForm({
                   <Plus className="w-4 h-4 md:w-5 md:h-5 text-gray-100" />
                 </div>
                 <div>
-                  <h3 className="font-bold text-white text-sm md:text-base">Add Term</h3>
-                  <p className="text-xs text-gray-300/80 hidden md:block">Add new terms & conditions</p>
+                  <h3 className="font-bold text-white text-sm md:text-base">
+                    Add Term
+                  </h3>
+                  <p className="text-xs text-gray-300/80 hidden md:block">
+                    Add new terms & conditions
+                  </p>
                 </div>
               </div>
               <button
@@ -1497,7 +1529,7 @@ export default function UpdatePurchaseOrderForm({
                           } else {
                             return tc;
                           }
-                        }
+                        },
                       ),
                     }));
                     setExtraTermData({
