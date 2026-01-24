@@ -18,6 +18,12 @@ import {
   FaConciergeBell,
   FaChevronDown,
   FaChevronRight,
+  FaEnvelope,
+  FaPhone,
+  FaRobot,
+  FaCalendarAlt,
+  FaPlug,
+  FaCreditCard,
 } from "react-icons/fa";
 import {
   MdBusiness,
@@ -39,6 +45,10 @@ import {
   MdStore,
   MdReceipt,
   MdAccountCircle,
+  MdAnalytics,
+  MdEmail,
+  MdChat,
+  MdSchedule,
 } from "react-icons/md";
 import {
   Menu,
@@ -73,6 +83,11 @@ import {
   Receipt,
   Ticket,
   Building2,
+  Settings,
+  Mail,
+  MessageSquare,
+  CreditCard,
+  Zap,
 } from "lucide-react";
 import NotificationsApi from "../lib/notificationApi";
 import { toast } from "sonner";
@@ -112,6 +127,58 @@ const hrmsSubmenuItems = [
   { id: "hr-settings", label: "HR Settings", icon: MdSettings },
 ];
 
+// Settings submenu items
+const settingsSubmenuItems = [
+  { 
+    id: "general-settings", 
+    label: "General Settings", 
+    icon: Settings,
+    permissionRequired: false, // Available to all users
+  },
+  { 
+    id: "integration", 
+    label: "Integration", 
+    icon: Zap,
+    permissionRequired: true, // Admin only
+  },
+  { 
+    id: "email", 
+    label: "Email", 
+    icon: Mail,
+    permissionRequired: true, // Admin only
+  },
+  { 
+    id: "communication", 
+    label: "Communication", 
+    icon: MessageSquare,
+    permissionRequired: true, // Admin only
+  },
+  { 
+    id: "payment", 
+    label: "Payment", 
+    icon: CreditCard,
+    permissionRequired: true, // Admin only
+  },
+  { 
+    id: "analytics", 
+    label: "Analytics", 
+    icon: BarChart3,
+    permissionRequired: true, // Admin only
+  },
+  { 
+    id: "scheduling", 
+    label: "Scheduling", 
+    icon: Calendar,
+    permissionRequired: true, // Admin only
+  },
+  { 
+    id: "automation", 
+    label: "Automation", 
+    icon: FaRobot,
+    permissionRequired: true, // Admin only
+  },
+];
+
 export default function Layout({
   children,
   activeTab,
@@ -141,6 +208,16 @@ export default function Layout({
   const profileRef = useRef<HTMLDivElement>(null);
   const notifRef = useRef<HTMLDivElement>(null);
   const materialActionsRef = useRef<HTMLDivElement>(null);
+
+  // Check if user is admin
+  const isAdmin = useMemo(() => {
+    const role =
+      (profile as any)?.role_name ??
+      (profile as any)?.role ??
+      (user as any)?.role ??
+      "";
+    return role === "admin" || role === "Admin";
+  }, [profile, user]);
 
   const menuItems = [
     {
@@ -270,11 +347,12 @@ export default function Layout({
       submenu: null,
     },
     {
-      id: "system-settings",
-      label: "System Settings",
+      id: "settings",
+      label: "Settings",
       icon: FaCog,
-      value: ["view_system_settings", "edit_system_settings"],
-      submenu: null,
+      headerIcon: FaCog,
+      value: ["view_settings", "edit_settings"],
+      submenu: settingsSubmenuItems,
     },
     {
       id: "masters",
@@ -311,6 +389,10 @@ export default function Layout({
     // Check if activeTab is an HRMS submenu
     const hrmsSubItem = hrmsSubmenuItems.find((item) => item.id === activeTab);
     if (hrmsSubItem) return hrmsSubItem.label;
+
+    // Check if activeTab is a Settings submenu
+    const settingsSubItem = settingsSubmenuItems.find((item) => item.id === activeTab);
+    if (settingsSubItem) return settingsSubItem.label;
 
     const activeItem = menuItems.find((item) => item.id === activeTab);
     return activeItem ? activeItem.label : "Dashboard";
@@ -511,6 +593,23 @@ export default function Layout({
     setMobileSidebarOpen(false);
   };
 
+  // Handle Settings submenu item click
+  const handleSettingsSubmenuClick = (subItemId: string) => {
+    onTabChange(subItemId);
+    setMobileSidebarOpen(false);
+  };
+
+  // Filter settings submenu items based on user role
+  const filteredSettingsSubmenuItems = useMemo(() => {
+    return settingsSubmenuItems.filter(item => {
+      // Always show General Settings
+      if (item.id === "general-settings") return true;
+      
+      // For other items, check if user is admin
+      return isAdmin;
+    });
+  }, [isAdmin]);
+
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Mobile Sidebar Overlay */}
@@ -636,8 +735,12 @@ export default function Layout({
                 const Icon = item.icon;
                 const isActive =
                   activeTab === item.id ||
-                  (item.submenu &&
-                    item.submenu.some((sub) => sub.id === activeTab));
+                  (item.id === "hrms" &&
+                    item.submenu &&
+                    item.submenu.some((sub: any) => sub.id === activeTab)) ||
+                  (item.id === "settings" &&
+                    item.submenu &&
+                    item.submenu.some((sub: any) => sub.id === activeTab));
                 const hasPermission =
                   item.value.some((d) => userMenus.includes(d)) ||
                   userMenus.includes("full_access");
@@ -673,9 +776,9 @@ export default function Layout({
                     </button>
 
                     {/* HRMS Submenu Dropdown */}
-                    {item.submenu && openSubmenu === item.id && (
+                    {item.id === "hrms" && item.submenu && openSubmenu === item.id && (
                       <div className="ml-8 pl-2 border-l border-gray-600 space-y-1">
-                        {item.submenu.map((subItem) => (
+                        {item.submenu.map((subItem: any) => (
                           <button
                             key={subItem.id}
                             onClick={() => handleHRMSSubmenuClick(subItem.id)}
@@ -690,6 +793,34 @@ export default function Layout({
                             <span className="font-medium text-xs truncate">
                               {subItem.label}
                             </span>
+                          </button>
+                        ))}
+                      </div>
+                    )}
+
+                    {/* Settings Submenu Dropdown */}
+                    {item.id === "settings" && item.submenu && openSubmenu === item.id && (
+                      <div className="ml-8 pl-2 border-l border-gray-600 space-y-1">
+                        {filteredSettingsSubmenuItems.map((subItem) => (
+                          <button
+                            key={subItem.id}
+                            onClick={() => handleSettingsSubmenuClick(subItem.id)}
+                            className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg transition-all
+                              ${
+                                activeTab === subItem.id
+                                  ? "bg-[#C62828] text-white"
+                                  : "text-gray-400 hover:bg-[#3D3D3D] hover:text-white"
+                              }`}
+                          >
+                            <subItem.icon className="w-4 h-4 flex-shrink-0" />
+                            <span className="font-medium text-xs truncate">
+                              {subItem.label}
+                            </span>
+                            {subItem.permissionRequired && !isAdmin && (
+                              <span className="ml-auto text-[10px] text-gray-500 bg-gray-800 px-1.5 py-0.5 rounded">
+                                Admin
+                              </span>
+                            )}
                           </button>
                         ))}
                       </div>
