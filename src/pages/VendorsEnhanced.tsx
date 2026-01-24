@@ -1348,13 +1348,11 @@ interface LocationType {
   country: string;
 }
 
-// Pre-process location data for performance
-const processLocationData = () => {
+// ADD THIS AT THE TOP (after imports, before component)
+const { states, stateCityMap, cityPincodeMap } = (() => {
   const LOCATIONS_DATA = locationData as LocationType[];
   const stateMap = new Map();
   const cityPincodeMap = new Map();
-
-  // Deduplicate data - many cities appear multiple times with same pincode
   const seenCombinations = new Set();
 
   for (const loc of LOCATIONS_DATA) {
@@ -1363,24 +1361,20 @@ const processLocationData = () => {
     const pincode = loc.pincode.toString();
     const key = `${state}-${city}-${pincode}`;
 
-    // Skip duplicates
     if (seenCombinations.has(key)) continue;
     seenCombinations.add(key);
 
-    // Add city to state map
     if (!stateMap.has(state)) {
       stateMap.set(state, new Set());
     }
     stateMap.get(state).add({ city, pincode });
 
-    // Store city to pincode mapping (take first pincode for each city)
     const cityKey = `${state}-${city}`;
     if (!cityPincodeMap.has(cityKey)) {
       cityPincodeMap.set(cityKey, pincode);
     }
   }
 
-  // Convert to sorted arrays
   const states = Array.from(stateMap.keys()).sort();
   const stateCityMap = new Map();
 
@@ -1392,7 +1386,9 @@ const processLocationData = () => {
   }
 
   return { states, stateCityMap, cityPincodeMap };
-};
+})();
+
+// Pre-process location data for performance
 
 export const INDIAN_STATES = [
   "Andhra Pradesh",
@@ -1426,11 +1422,6 @@ export const INDIAN_STATES = [
 ];
 
 export default function VendorsEnhanced(): JSX.Element {
-  const { states, stateCityMap, cityPincodeMap } = useMemo(
-    () => processLocationData(),
-    [],
-  );
-
   const [availableCities, setAvailableCities] = useState<
     Array<{ city: string; pincode: string }>
   >([]);
@@ -1441,7 +1432,6 @@ export default function VendorsEnhanced(): JSX.Element {
   const [materials, setMaterials] = useState<ItemOption[]>([]);
   const [services, setServices] = useState<ItemOption[]>([]);
   const [loading, setLoading] = useState(true);
-  const [searchTerm, setSearchTerm] = useState("");
   const [showModal, setShowModal] = useState(false);
   const [editingId, setEditingId] = useState<number | string | null>(null);
   const [errors, setErrors] = useState<any>({});
@@ -1497,13 +1487,13 @@ export default function VendorsEnhanced(): JSX.Element {
       // Clear city and pincode when state changes
       setFormData((prev) => ({
         ...prev,
-        office_city: "",
+        office_city: formData.office_city || "",
         office_pincode: "",
       }));
     } else {
       setAvailableCities([]);
     }
-  }, [formData.office_state, stateCityMap]);
+  }, [formData.office_state]);
 
   // Update pincode when city changes
   useEffect(() => {
@@ -1515,7 +1505,7 @@ export default function VendorsEnhanced(): JSX.Element {
         office_pincode: pincode,
       }));
     }
-  }, [formData.office_city, formData.office_state, cityPincodeMap]);
+  }, [formData.office_city, formData.office_state]);
 
   useEffect(() => {
     loadData();
@@ -1732,6 +1722,12 @@ export default function VendorsEnhanced(): JSX.Element {
       phone_country_code: vendor.phone_country_code || "+91",
       sub_item_id: vendor.sub_item_id || "",
     });
+
+    if (vendor.office_state) {
+      const cities = stateCityMap.get(vendor.office_state) || [];
+      setAvailableCities(cities);
+    }
+
     setShowModal(true);
   };
 
@@ -3083,6 +3079,14 @@ export default function VendorsEnhanced(): JSX.Element {
                                 className="w-full pl-8 pr-6 py-1.5 text-xs border border-gray-300 rounded focus:ring-1 focus:ring-green-500 focus:border-green-500 transition-all duration-150 hover:border-gray-400 appearance-none disabled:bg-gray-50 disabled:text-gray-400"
                               >
                                 <option value="">Select City</option>
+                                {formData.office_city && (
+                                  <option
+                                    value={formData.office_city}
+                                    key="current-city"
+                                  >
+                                    {formData.office_city}
+                                  </option>
+                                )}
                                 {availableCities.map(({ city, pincode }) => (
                                   <option
                                     key={`${city}-${pincode}`}
