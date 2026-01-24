@@ -20,6 +20,36 @@ interface ManageLocationsModalProps {
   onClose: () => void;
 }
 
+// API helper functions
+const api = {
+  async getAttendanceLocations(branchId: string) {
+    const response = await fetch(`/api/branches/${branchId}/attendance-locations`, {
+      headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
+    });
+    return response.json();
+  },
+
+  async createAttendanceLocation(data: any) {
+    const response = await fetch('/api/attendance-locations', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${localStorage.getItem('token')}`
+      },
+      body: JSON.stringify(data)
+    });
+    return response.json();
+  },
+
+  async deleteAttendanceLocation(id: string) {
+    const response = await fetch(`/api/attendance-locations/${id}`, {
+      method: 'DELETE',
+      headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
+    });
+    return response.json();
+  }
+};
+
 export default function ManageLocationsModal({ branchId, branchName, onClose }: ManageLocationsModalProps) {
   const [loading, setLoading] = useState(false);
   const [locations, setLocations] = useState<AttendanceLocation[]>([]);
@@ -39,7 +69,8 @@ export default function ManageLocationsModal({ branchId, branchName, onClose }: 
 
   const loadLocations = async () => {
     try {
-      setLocations([]);
+      const data = await api.getAttendanceLocations(branchId);
+      setLocations(data || []);
     } catch (error) {
       console.error('Error loading locations:', error);
     }
@@ -83,7 +114,17 @@ export default function ManageLocationsModal({ branchId, branchName, onClose }: 
         throw new Error('Please get location coordinates');
       }
 
-      alert('Location management requires backend API integration');
+      await api.createAttendanceLocation({
+        office_location_id: branchId,
+        name: formData.name,
+        location_type: formData.location_type,
+        latitude: formData.latitude,
+        longitude: formData.longitude,
+        geofence_radius_meters: formData.geofence_radius_meters,
+        is_active: true,
+      });
+
+      alert('Attendance location added successfully!');
       setFormData({
         name: '',
         location_type: 'punch_point',
@@ -105,7 +146,8 @@ export default function ManageLocationsModal({ branchId, branchName, onClose }: 
     if (!confirm('Are you sure you want to delete this attendance location?')) return;
 
     try {
-      alert('Location deletion requires backend API integration');
+      await api.deleteAttendanceLocation(id);
+      alert('Attendance location deleted successfully!');
       loadLocations();
     } catch (error: any) {
       console.error('Error deleting location:', error);

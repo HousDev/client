@@ -16,8 +16,8 @@ interface Coordinates {
 }
 
 const OFFICE_LOCATION: Coordinates = {
-  latitude: 19.0760,
-  longitude: 72.8777
+  latitude: 18.6055756,
+  longitude: 73.7842205
 };
 
 const MAX_DISTANCE_METERS = 500;
