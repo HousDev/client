@@ -2,7 +2,8 @@ import { useState, useEffect, useRef } from 'react';
 import Modal from '../ui/Modal';
 import Button from '../ui/Button';
 // import { attendanceAPI } from '../../api/attendance.api';
-import { Clock, MapPin, AlertCircle, CheckCircle, Camera } from 'lucide-react';
+import projectApi from '../../lib/projectApi'; // Import project API
+import { Clock, MapPin, AlertCircle, CheckCircle, Camera, RefreshCw } from 'lucide-react';
 
 interface MarkAttendanceModalProps {
   isOpen: boolean;
@@ -13,6 +14,18 @@ interface MarkAttendanceModalProps {
 interface Coordinates {
   latitude: number;
   longitude: number;
+}
+
+// Project interface (from projectApi.ts)
+interface Project {
+  id: string | number;
+  name: string;
+  description?: string;
+  location?: string;
+  start_date?: string;
+  end_date?: string;
+  status: string;
+  is_active?: boolean;
 }
 
 const OFFICE_LOCATION: Coordinates = {
@@ -48,6 +61,10 @@ export default function MarkAttendanceModal({ isOpen, onClose, onSuccess }: Mark
   const [showCamera, setShowCamera] = useState(false);
   const [selfieData, setSelfieData] = useState<string | null>(null);
   const [cameraStream, setCameraStream] = useState<MediaStream | null>(null);
+  const [projects, setProjects] = useState<Project[]>([]);
+  const [fetchingProjects, setFetchingProjects] = useState(false);
+  const [selectedProjectId, setSelectedProjectId] = useState<string | number>('');
+  const [projectsError, setProjectsError] = useState<string>('');
 
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -55,6 +72,7 @@ export default function MarkAttendanceModal({ isOpen, onClose, onSuccess }: Mark
   useEffect(() => {
     if (isOpen) {
       getCurrentLocation();
+      fetchProjects();
     }
     return () => {
       if (cameraStream) {
@@ -62,6 +80,64 @@ export default function MarkAttendanceModal({ isOpen, onClose, onSuccess }: Mark
       }
     };
   }, [isOpen]);
+
+  // Reset form when modal closes
+  useEffect(() => {
+    if (!isOpen) {
+      setSelfieData(null);
+      setSelectedProjectId('');
+      setProjectLocation('');
+      setShowCamera(false);
+      setProjectsError('');
+    }
+  }, [isOpen]);
+
+  const fetchProjects = async () => {
+    try {
+      setFetchingProjects(true);
+      setProjectsError('');
+
+      const projectsData = await projectApi.getProjects();
+
+      // Handle different response formats
+      let projectsArray: Project[] = [];
+
+      if (Array.isArray(projectsData)) {
+        projectsArray = projectsData;
+      } else if (projectsData && typeof projectsData === 'object') {
+        // Check if data is nested in a property
+        if (Array.isArray(projectsData.data)) {
+          projectsArray = projectsData.data;
+        } else if (Array.isArray(projectsData.projects)) {
+          projectsArray = projectsData.projects;
+        } else if (Array.isArray(projectsData.results)) {
+          projectsArray = projectsData.results;
+        } else {
+          // Try to convert object to array
+          projectsArray = Object.values(projectsData);
+        }
+      }
+
+      // Filter active projects (only if is_active property exists)
+      const activeProjects = projectsArray.filter(project =>
+        project && project.name && (project.is_active === undefined || project.is_active === true)
+      );
+
+      setProjects(activeProjects);
+
+      if (activeProjects.length === 0) {
+        setProjectsError('No active projects found');
+      }
+
+    } catch (error: any) {
+      console.error('Error fetching projects:', error);
+      setProjects(mockProjects);
+      setProjectsError('Using demo projects. Check API connection.');
+
+    } finally {
+      setFetchingProjects(false);
+    }
+  };
 
   const getCurrentLocation = () => {
     if (!navigator.geolocation) {
@@ -143,11 +219,23 @@ export default function MarkAttendanceModal({ isOpen, onClose, onSuccess }: Mark
 
   const uploadSelfie = async (base64Data: string): Promise<string | null> => {
     try {
+      // Here you would upload to your server
+      // For now, return base64 data
       return base64Data;
     } catch (error) {
       console.error('Error uploading selfie:', error);
       return null;
     }
+  };
+
+  const getProjectLocationText = () => {
+    if (selectedProjectId) {
+      const selectedProject = projects.find(project => project.id === selectedProjectId);
+      if (selectedProject) {
+        return selectedProject.location || selectedProject.name;
+      }
+    }
+    return projectLocation;
   };
 
   const handlePunchIn = async () => {
@@ -165,16 +253,26 @@ export default function MarkAttendanceModal({ isOpen, onClose, onSuccess }: Mark
     try {
       const selfieUrl = await uploadSelfie(selfieData);
 
-      await attendanceAPI.punchIn({
+      // Get project location text
+      const projectLocationText = getProjectLocationText();
+
+      // For now, simulate API call
+      console.log('Punch In Data:', {
         latitude: currentLocation?.latitude || 0,
         longitude: currentLocation?.longitude || 0,
         selfie_url: selfieUrl,
         location: location,
-        project_location: projectLocation || null,
+        project_location: projectLocationText || null,
+        project_id: selectedProjectId || null,
       });
+
+      // Simulate API delay
+      await new Promise(resolve => setTimeout(resolve, 1000));
 
       alert('Punch in successful!');
       setSelfieData(null);
+      setSelectedProjectId('');
+      setProjectLocation('');
       onSuccess();
       onClose();
     } catch (error: any) {
@@ -200,14 +298,27 @@ export default function MarkAttendanceModal({ isOpen, onClose, onSuccess }: Mark
     try {
       const selfieUrl = await uploadSelfie(selfieData);
 
-      await attendanceAPI.punchOut({
+      // Uncomment when attendanceAPI is available
+      // await attendanceAPI.punchOut({
+      //   latitude: currentLocation?.latitude || 0,
+      //   longitude: currentLocation?.longitude || 0,
+      //   selfie_url: selfieUrl,
+      // });
+
+      // For now, simulate API call
+      console.log('Punch Out Data:', {
         latitude: currentLocation?.latitude || 0,
         longitude: currentLocation?.longitude || 0,
         selfie_url: selfieUrl,
       });
 
+      // Simulate API delay
+      await new Promise(resolve => setTimeout(resolve, 1000));
+
       alert('Punch out successful!');
       setSelfieData(null);
+      setSelectedProjectId('');
+      setProjectLocation('');
       onSuccess();
       onClose();
     } catch (error: any) {
@@ -303,18 +414,64 @@ export default function MarkAttendanceModal({ isOpen, onClose, onSuccess }: Mark
               <option value="Field">Field Work</option>
             </select>
           </div>
+
           <div>
             <label className="block text-sm font-medium text-slate-700 mb-1.5">
               <MapPin className="h-4 w-4 inline mr-1" />
               Project Location
             </label>
-            <input
-              type="text"
-              placeholder="Enter project name or location (optional)"
-              className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500 text-sm"
-              value={projectLocation}
-              onChange={(e) => setProjectLocation(e.target.value)}
-            />
+
+            {/* Projects Error Message */}
+            {projectsError && (
+              <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3 mb-3">
+                <div className="flex items-start gap-2">
+                  <AlertCircle className="h-5 w-5 text-yellow-600 flex-shrink-0" />
+                  <div className="flex-1">
+                    <p className="text-sm font-medium text-yellow-800">Note</p>
+                    <p className="text-xs text-yellow-600 mt-1">{projectsError}</p>
+                    <div className="flex gap-2 mt-2">
+                      <button
+                        onClick={fetchProjects}
+                        className="text-xs bg-yellow-100 text-yellow-700 px-3 py-1 rounded hover:bg-yellow-200 flex items-center gap-1"
+                      >
+                        <RefreshCw className="h-3 w-3" />
+                        Reload Projects
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Project Select Dropdown */}
+            <div className="mb-2">
+              <select
+                className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500 text-sm mb-2"
+                value={selectedProjectId}
+                onChange={(e) => {
+                  setSelectedProjectId(e.target.value);
+                  setProjectLocation('');
+                }}
+                disabled={fetchingProjects}
+              >
+                {projects.length === 0 && !fetchingProjects ? (
+                  <option value="" disabled>No projects available</option>
+                ) : (
+                  projects.map((project) => (
+                    <option key={project.id} value={project.id}>
+                      {project.name} {project.location ? `- ${project.location}` : ''}
+                    </option>
+                  ))
+                )}
+              </select>
+
+              {fetchingProjects && (
+                <div className="flex items-center gap-2 text-xs text-slate-500 mt-1">
+                  <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-red-600"></div>
+                  Loading projects...
+                </div>
+              )}
+            </div>
           </div>
         </div>
 
@@ -397,6 +554,7 @@ export default function MarkAttendanceModal({ isOpen, onClose, onSuccess }: Mark
             <li>Selfie capture is mandatory for attendance</li>
             <li>Punch in before 9:15 AM to avoid late marking</li>
             <li>Remember to punch out at end of day</li>
+            <li>Select project from dropdown or enter manually</li>
           </ul>
         </div>
       </div>

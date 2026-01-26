@@ -7,8 +7,6 @@ import {
   FaCamera,
   FaSave,
   FaUpload,
-  FaEye,
-  FaEyeSlash,
   FaTrash,
   FaCheckCircle,
 } from "react-icons/fa";
@@ -20,13 +18,8 @@ import {
   Bell,
   Shield,
   Settings as SettingsIcon,
-  Palette,
-  Smartphone,
   Mail,
   MessageSquare,
-  Lock,
-  Upload,
-  Calendar,
   Globe,
   Monitor,
   Smartphone as PhoneIcon,
@@ -40,8 +33,6 @@ import {
   Sun,
   Eye,
   EyeOff,
-  Check,
-  X,
   Globe as GlobeIcon,
   FileText,
 } from "lucide-react";
@@ -63,7 +54,6 @@ interface NotificationPreferences {
   sms: boolean;
   push: boolean;
   whatsapp: boolean;
-  telegram: boolean;
 }
 
 interface SecuritySettings {
@@ -111,7 +101,6 @@ const GeneralSettings: React.FC = () => {
     sms: false,
     push: true,
     whatsapp: false,
-    telegram: false,
   });
 
   // Security Settings State
@@ -603,9 +592,8 @@ const GeneralSettings: React.FC = () => {
                         {[
                           { key: 'email', label: 'Email', icon: Mail, color: 'bg-blue-100 text-blue-600' },
                           { key: 'sms', label: 'SMS', icon: MessageSquare, color: 'bg-green-100 text-green-600' },
-                          { key: 'push', label: 'Push', icon: Bell, color: 'bg-purple-100 text-purple-600' },
                           { key: 'whatsapp', label: 'WhatsApp', icon: PhoneIcon, color: 'bg-green-100 text-green-600' },
-                          { key: 'telegram', label: 'Telegram', icon: MessageSquare, color: 'bg-blue-100 text-blue-600' },
+                          { key: 'push', label: 'Push', icon: Bell, color: 'bg-purple-100 text-purple-600' },
                         ].map((channel) => {
                           const Icon = channel.icon;
                           const isActive = notifications[channel.key as keyof NotificationPreferences];

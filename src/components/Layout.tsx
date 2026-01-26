@@ -7,48 +7,16 @@ import {
   FaSignOutAlt,
   FaCog,
   FaBars,
-  FaTruck,
-  FaHardHat,
-  FaBoxOpen,
-  FaTools,
-  FaChartLine,
-  FaUserShield,
-  FaDollarSign,
-  FaClipboardList,
   FaConciergeBell,
   FaChevronDown,
   FaChevronRight,
-  FaEnvelope,
-  FaPhone,
-  FaRobot,
-  FaCalendarAlt,
-  FaPlug,
-  FaCreditCard,
 } from "react-icons/fa";
 import {
-  MdBusiness,
-  MdDashboard,
-  MdLocalShipping,
-  MdDescription,
-  MdConstruction,
-  MdWarehouse,
-  MdInventory2,
   MdRequestQuote,
-  MdPayment,
-  MdNotifications,
   MdChecklist,
-  MdAssessment,
   MdSettings,
-  MdSecurity,
   MdClose,
-  MdAdd,
-  MdStore,
-  MdReceipt,
   MdAccountCircle,
-  MdAnalytics,
-  MdEmail,
-  MdChat,
-  MdSchedule,
 } from "react-icons/md";
 import {
   Menu,
@@ -57,20 +25,13 @@ import {
   PackagePlus,
   PackageMinus,
   UserCheck,
-  MoreVertical,
   Home,
-  Building,
   FileText,
-  Truck,
-  Wrench,
-  Package,
   BarChart3,
   Shield,
   Users,
   PackageSearch,
   ClipboardCheck,
-  DollarSign,
-  TrendingUp,
   Handshake,
   FileCheck,
   Calculator,
@@ -85,9 +46,8 @@ import {
   Building2,
   Settings,
   Mail,
-  MessageSquare,
-  CreditCard,
   Zap,
+  Package,
 } from "lucide-react";
 import NotificationsApi from "../lib/notificationApi";
 import { toast } from "sonner";
@@ -101,7 +61,6 @@ interface LayoutProps {
   activeFormTab?: string;
   setActiveFormTab?: (tab: string) => void;
 }
-
 interface NotificationType {
   id: number;
   title: string;
@@ -110,7 +69,6 @@ interface NotificationType {
   seen: boolean;
   created_at: string;
 }
-
 // HRMS submenu items
 const hrmsSubmenuItems = [
   { id: "hrms-dashboard", label: "Dashboard", icon: LayoutDashboard },
@@ -129,54 +87,9 @@ const hrmsSubmenuItems = [
 
 // Settings submenu items
 const settingsSubmenuItems = [
-  { 
-    id: "general-settings", 
-    label: "General Settings", 
-    icon: Settings,
-    permissionRequired: false, // Available to all users
-  },
-  { 
-    id: "integration", 
-    label: "Integration", 
-    icon: Zap,
-    permissionRequired: true, // Admin only
-  },
-  { 
-    id: "email", 
-    label: "Email", 
-    icon: Mail,
-    permissionRequired: true, // Admin only
-  },
-  { 
-    id: "communication", 
-    label: "Communication", 
-    icon: MessageSquare,
-    permissionRequired: true, // Admin only
-  },
-  { 
-    id: "payment", 
-    label: "Payment", 
-    icon: CreditCard,
-    permissionRequired: true, // Admin only
-  },
-  { 
-    id: "analytics", 
-    label: "Analytics", 
-    icon: BarChart3,
-    permissionRequired: true, // Admin only
-  },
-  { 
-    id: "scheduling", 
-    label: "Scheduling", 
-    icon: Calendar,
-    permissionRequired: true, // Admin only
-  },
-  { 
-    id: "automation", 
-    label: "Automation", 
-    icon: FaRobot,
-    permissionRequired: true, // Admin only
-  },
+  { id: "general-settings", label: "General Settings", icon: Settings },
+  { id: "integration", label: "Integration", icon: Zap },
+
 ];
 
 export default function Layout({
@@ -816,11 +729,6 @@ export default function Layout({
                             <span className="font-medium text-xs truncate">
                               {subItem.label}
                             </span>
-                            {subItem.permissionRequired && !isAdmin && (
-                              <span className="ml-auto text-[10px] text-gray-500 bg-gray-800 px-1.5 py-0.5 rounded">
-                                Admin
-                              </span>
-                            )}
                           </button>
                         ))}
                       </div>
@@ -882,9 +790,6 @@ export default function Layout({
                     <h1 className="font-bold text-[#2D2D2D] text-lg leading-tight">
                       {activeMenuLabel}
                     </h1>
-                    <p className="text-xs text-gray-500">
-                      Nayash Group Management
-                    </p>
                   </div>
                 </div>
               </div>

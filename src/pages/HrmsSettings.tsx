@@ -26,6 +26,44 @@ import companyApi, { Company, OfficeLocation } from '../lib/companyApi';
 import { toast } from 'sonner';
 import MySwal from '../utils/swal';
 
+
+interface OrgData {
+    id?: string;
+    name: string;
+    contact_email: string;
+    contact_phone: string;
+    website: string;
+    address: string;
+}
+
+interface Company {
+    id: string;
+    name: string;
+    code: string;
+    email: string;
+    phone: string;
+    address: string;
+    city: string;
+    state: string;
+    country: string;
+    latitude: number;
+    longitude: number;
+    logo_url: string;
+    is_active: boolean;
+}
+
+interface OfficeLocation {
+    id: string;
+    name: string;
+    address: string;
+    city: string;
+    latitude: number;
+    longitude: number;
+    geofence_radius_meters: number;
+    is_active: boolean;
+    company_id?: string;
+}
+
 interface SecuritySettings {
   auto_punchout_enabled: boolean;
   auto_punchout_radius_km: number;

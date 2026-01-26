@@ -39,6 +39,8 @@ import SystemSettings from "./pages/SystemSettings"; // System-wide Settings
 import ProjectsMaster from "./pages/ProjectsMaster";
 
 import GeneralSettings from "./pages/settings/GeneralSettings";
+import IntegrationPage from "./pages/settings/IntegrationPage";
+
 function AppContent() {
   const { user, loading } = useAuth();
   const [activeTab, setActiveTab] = useState("dashboard");
@@ -123,8 +125,10 @@ function AppContent() {
         return <HrSettings />;
 
         // Settings Submenu Pages - ADD THESE
-    case "general-settings":
-      return <GeneralSettings />;
+      case "general-settings":
+        return <GeneralSettings />;
+      case "integration":
+        return <IntegrationPage />;
 
       // Main sidebar Pages
       case "system-settings":
