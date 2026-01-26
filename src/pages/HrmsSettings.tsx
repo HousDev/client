@@ -6,6 +6,7 @@ import Input from '../components/ui/Input';
 import Modal from '../components/ui/Modal';
 import CreateBranchModal from '../components/modals/CreateBranchModal';
 
+
 interface OrgData {
     id?: string;
     name: string;
