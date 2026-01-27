@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { X, MapPin, Save, CheckCircle, XCircle } from "lucide-react";
 import Input from "../ui/Input";
 import { toast } from "sonner";
@@ -38,8 +38,8 @@ export default function CreateBranchModal({
     is_active: true,
   });
 
-  // Initialize form data if editing
-  useState(() => {
+  // Initialize form data if editing - useEffect का use करें
+  useEffect(() => {
     if (branch && mode === "edit") {
       setFormData({
         name: branch.name || "",
@@ -71,7 +71,7 @@ export default function CreateBranchModal({
         is_active: true,
       });
     }
-  });
+  }, [branch, mode]);
 
   const getLocation = async () => {
     setGeoError(null);
@@ -134,9 +134,9 @@ export default function CreateBranchModal({
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     if (!validateForm()) return;
-    
+
     if (!companyId && mode === "create") {
       toast.error("Company ID is required to create a branch");
       return;
@@ -154,7 +154,7 @@ export default function CreateBranchModal({
         await companyApi.createOfficeLocation(companyId, formData);
         toast.success("Branch created successfully!");
       }
-      
+
       onSuccess();
       resetForm();
     } catch (error: any) {
@@ -194,8 +194,8 @@ export default function CreateBranchModal({
     <div className="fixed inset-0 z-50 overflow-y-auto">
       <div className="flex items-center justify-center min-h-screen px-4 pt-4 pb-20 text-center sm:block sm:p-0">
         {/* Background overlay */}
-        <div 
-          className="fixed inset-0 transition-opacity bg-gray-500 bg-opacity-75" 
+        <div
+          className="fixed inset-0 transition-opacity bg-gray-500 bg-opacity-75"
           onClick={handleClose}
         />
 
@@ -357,36 +357,26 @@ export default function CreateBranchModal({
                 </div>
               </div>
 
-              {/* Status Toggle */}
-              <div>
-                <label className="block text-sm font-semibold text-gray-800 mb-2">
-                  Branch Status
-                </label>
-                <div className="flex items-center gap-3">
-                  <button
-                    type="button"
-                    onClick={() => setFormData({ ...formData, is_active: true })}
-                    className={`flex-1 py-2.5 px-4 rounded-lg sm:rounded-xl flex items-center justify-center gap-2 transition-all duration-200 ${
-                      formData.is_active
-                        ? 'bg-green-100 border-2 border-green-500 text-green-700'
-                        : 'bg-gray-100 border-2 border-gray-300 text-gray-600 hover:bg-gray-200'
-                    }`}
-                  >
-                    <CheckCircle className="w-4 h-4" />
-                    <span className="font-medium">Active</span>
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setFormData({ ...formData, is_active: false })}
-                    className={`flex-1 py-2.5 px-4 rounded-lg sm:rounded-xl flex items-center justify-center gap-2 transition-all duration-200 ${
-                      !formData.is_active
-                        ? 'bg-red-100 border-2 border-red-500 text-red-700'
-                        : 'bg-gray-100 border-2 border-gray-300 text-gray-600 hover:bg-gray-200'
-                    }`}
-                  >
-                    <XCircle className="w-4 h-4" />
-                    <span className="font-medium">Inactive</span>
-                  </button>
+              {/* Status Toggle - Checkbox Style */}
+              <div className="flex items-center p-3 bg-gray-50 border border-gray-200 rounded-lg sm:rounded-xl">
+                <div className="flex items-center h-5">
+                  <input
+                    id="branch-status"
+                    type="checkbox"
+                    checked={formData.is_active}
+                    onChange={(e) => setFormData({ ...formData, is_active: e.target.checked })}
+                    className="w-4 h-4 sm:w-5 sm:h-5 text-[#C62828] bg-gray-100 border-gray-300 rounded focus:ring-[#C62828] focus:ring-2"
+                  />
+                </div>
+                <div className="ml-3 text-sm">
+                  <label htmlFor="branch-status" className="font-medium text-gray-900">
+                    Active Branch
+                  </label>
+                  <p className="text-gray-500">
+                    {formData.is_active
+                      ? "This branch is currently active and visible"
+                      : "This branch is currently inactive and hidden"}
+                  </p>
                 </div>
               </div>
 

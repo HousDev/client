@@ -1,7 +1,6 @@
-import { X, Mail, Phone, MapPin, RefreshCw, Trash2, CheckCircle, Edit, XCircle, AlertCircle, ToggleLeft, ToggleRight } from 'lucide-react';
+import { X, Mail, Phone, MapPin, RefreshCw, Trash2, CheckCircle, Edit, XCircle, ToggleLeft, ToggleRight } from 'lucide-react';
 import Button from '../ui/Button';
 import { OfficeLocation } from '../../lib/companyApi';
-import { toast } from 'sonner';
 import MySwal from "../../utils/swal";
 
 interface ViewBranchModalProps {
@@ -14,7 +13,7 @@ interface ViewBranchModalProps {
   onDeleteLocation: (locationId: string) => void;
   onAddBranch: () => void;
   onEditBranch: (location: OfficeLocation) => void;
-  onToggleStatus: (locationId: string, currentStatus: boolean) => void;
+  onToggleStatus: (locationId: string, currentStatus: boolean) => void; // ✅ यह important है
 }
 
 export default function ViewBranchModal({
@@ -27,7 +26,7 @@ export default function ViewBranchModal({
   onDeleteLocation,
   onAddBranch,
   onEditBranch,
-  onToggleStatus,
+  onToggleStatus, // ✅ यह prop receive करें
 }: ViewBranchModalProps) {
   if (!isOpen) return null;
 
@@ -60,6 +59,7 @@ export default function ViewBranchModal({
 
     if (!result.isConfirmed) return;
     
+    // ✅ यहाँ onToggleStatus function call करें
     onToggleStatus(locationId, currentStatus);
   };
 
@@ -160,13 +160,13 @@ export default function ViewBranchModal({
                           </div>
                         </div>
                         <div className="flex items-center gap-1">
-                          {/* Status Toggle */}
+                          {/* Status Toggle Button */}
                           <button
                             onClick={() => handleToggleStatus(String(location.id), location.is_active, location.name)}
-                            className={`p-1.5 rounded-full ${
+                            className={`p-1.5 rounded-full transition-colors ${
                               location.is_active 
-                                ? 'bg-green-100 hover:bg-green-200 text-green-700' 
-                                : 'bg-gray-100 hover:bg-gray-200 text-gray-500'
+                                ? 'bg-green-100 hover:bg-green-200 text-green-700 hover:text-green-800' 
+                                : 'bg-gray-100 hover:bg-gray-200 text-gray-500 hover:text-gray-700'
                             }`}
                             title={location.is_active ? "Active - Click to deactivate" : "Inactive - Click to activate"}
                           >
@@ -179,14 +179,14 @@ export default function ViewBranchModal({
                           
                           <button
                             onClick={() => onEditBranch(location)}
-                            className="p-1 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+                            className="p-1.5 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
                             title="Edit Branch"
                           >
                             <Edit className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
                           </button>
                           <button
                             onClick={() => handleDelete(String(location.id), location.name)}
-                            className="p-1 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                            className="p-1.5 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
                             title="Delete Branch"
                           >
                             <Trash2 className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
