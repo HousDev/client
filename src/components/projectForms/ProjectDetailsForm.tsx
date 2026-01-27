@@ -38,6 +38,7 @@ export default function ProjectDetailsForm({
 
   const categories = [
     { value: "floor", label: "Floor" },
+    { value: "flat", label: "Flat" },
     {
       value: "common area",
       label: "Common Area",
