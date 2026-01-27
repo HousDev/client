@@ -1,6 +1,4 @@
-
-
-// components/Employees.tsx
+// pages/Employees.tsx - FIXED VERSION
 import { useState, useEffect } from "react";
 import {
   Users,
@@ -29,7 +27,6 @@ import MySwal from "../utils/swal";
 import ViewEmployeeModal from "../components/modals/ViewEmployeeModal";
 import EditEmployeeModal from "../components/modals/EditEmployeeModal";
 import AddMoreDetailsModal from "../components/modals/AddMoreDetailsModal";
-import { useNavigate } from "react-router-dom";
 
 // Update the Employee interface
 interface Employee {
@@ -49,14 +46,14 @@ interface Employee {
   attendance_location?: string;
   employee_status: string;
   profile_picture?: string;
-  
+
   // Personal Details
   blood_group?: string;
   date_of_birth?: string;
   marital_status?: string;
   emergency_contact?: string;
   nationality?: string;
-  
+
   // Address Details
   current_address?: string;
   permanent_address?: string;
@@ -64,17 +61,17 @@ interface Employee {
   state?: string;
   pincode?: string;
   same_as_permanent?: boolean;
-  
+
   // Identification
   aadhar_number?: string;
   pan_number?: string;
-  
+
   // Educational Details
   highest_qualification?: string;
   university?: string;
   passing_year?: string;
   percentage?: string;
-  
+
   // Employment Details
   employee_type?: string;
   branch?: string;
@@ -82,14 +79,14 @@ interface Employee {
   work_mode?: string;
   job_title?: string;
   notice_period?: string;
-  
+
   // System Details
   laptop_assigned?: string;
   system_login_id?: string;
   system_password?: string;
   office_email_id?: string;
   office_email_password?: string;
-  
+
   // Bank Details
   bank_account_number?: string;
   bank_name?: string;
@@ -97,7 +94,11 @@ interface Employee {
   upi_id?: string;
 }
 
-export default function Employees() {
+interface EmployeesProps {
+  onViewProfile?: (id: string) => void;
+}
+
+export default function Employees({ onViewProfile }: EmployeesProps) {
   const [searchTerm, setSearchTerm] = useState("");
   const [employees, setEmployees] = useState<Employee[]>([]);
   const [loading, setLoading] = useState(true);
@@ -106,7 +107,6 @@ export default function Employees() {
   const [showEditModal, setShowEditModal] = useState(false);
   const [showAddMoreDetailsModal, setShowAddMoreDetailsModal] = useState(false);
   const [selectedEmployee, setSelectedEmployee] = useState<Employee | null>(null);
-    const navigate = useNavigate();
 
   const [stats, setStats] = useState({
     total: 0,
@@ -161,7 +161,7 @@ export default function Employees() {
           office_location: emp.office_location,
           attendance_location: emp.attendence_location,
           profile_picture: emp.profile_picture || null,
-          
+
           // Additional fields
           blood_group: emp.blood_group,
           date_of_birth: emp.date_of_birth,
@@ -270,7 +270,7 @@ export default function Employees() {
       const total = employees.length;
       const active = employees.filter((emp: any) => emp.employee_status === 'active').length;
       const onLeave = employees.filter((emp: any) => emp.employee_status === 'on_leave').length;
-      
+
       // Calculate new this month
       const currentMonth = new Date().getMonth();
       const currentYear = new Date().getFullYear();
@@ -386,7 +386,7 @@ export default function Employees() {
   // Filter employees based on column filters
   const filteredEmployees = employees.filter((emp) => {
     const fullName = `${emp.first_name} ${emp.last_name}`.toLowerCase();
-    
+
     // Check each column filter
     if (columnFilters.name && !fullName.includes(columnFilters.name.toLowerCase())) return false;
     if (columnFilters.email && !emp.email.toLowerCase().includes(columnFilters.email.toLowerCase())) return false;
@@ -396,10 +396,10 @@ export default function Employees() {
     if (columnFilters.status && !emp.employee_status.toLowerCase().includes(columnFilters.status.toLowerCase())) return false;
 
     // Keep global search functionality
-    if (searchTerm && 
-        !fullName.includes(searchTerm.toLowerCase()) &&
-        !emp.email.toLowerCase().includes(searchTerm.toLowerCase()) &&
-        !emp.employee_code.toLowerCase().includes(searchTerm.toLowerCase())) {
+    if (searchTerm &&
+      !fullName.includes(searchTerm.toLowerCase()) &&
+      !emp.email.toLowerCase().includes(searchTerm.toLowerCase()) &&
+      !emp.employee_code.toLowerCase().includes(searchTerm.toLowerCase())) {
       return false;
     }
 
@@ -676,7 +676,7 @@ export default function Employees() {
               {filteredEmployees.map((employee) => {
                 const isSelected = selectedItems.has(employee.id);
                 const hasDetails = hasAdditionalDetails(employee);
-                
+
                 return (
                   <tr
                     key={employee.id}
@@ -694,8 +694,8 @@ export default function Employees() {
                       <div className="flex items-center gap-3">
                         <div className="w-8 h-8 rounded-full overflow-hidden bg-slate-100 flex-shrink-0 border border-gray-200">
                           {employee.profile_picture ? (
-                            <img 
-                              src={`http://localhost:4000${employee.profile_picture}`} 
+                            <img
+                              src={`http://localhost:4000${employee.profile_picture}`}
                               alt={`${employee.first_name} ${employee.last_name}`}
                               className="w-full h-full object-cover"
                               onError={(e) => {
@@ -746,61 +746,69 @@ export default function Employees() {
                     <td className="px-4 py-3">
                       {getStatusBadge(employee.employee_status)}
                     </td>
-                  <td className="px-4 py-3">
-  <div className="flex items-center justify-end gap-1">
-    <button
-      onClick={() => navigate(`/employee/${employee.id}`)}
-      className="p-1.5 hover:bg-slate-100 rounded transition-colors"
-      title="View Profile"
-    >
-      <Eye className="h-4 w-4 text-slate-600" />
-    </button>
-    <button
-      onClick={() => {
-        setSelectedEmployee(employee);
-        setShowEditModal(true);
-      }}
-      className="p-1.5 hover:bg-slate-100 rounded transition-colors"
-      title="Edit Basic Info"
-    >
-      <Edit className="h-4 w-4 text-slate-600" />
-    </button>
-    <button
-      onClick={() => {
-        setSelectedEmployee(employee);
-        setShowAddMoreDetailsModal(true);
-      }}
-      className="p-1.5 hover:bg-slate-100 rounded transition-colors group relative"
-      title={hasDetails ? "Edit Additional Details" : "Add More Details"}
-    >
-      {/* Show different icons based on whether details exist */}
-      {hasDetails ? (
-        <>
-          <FileEdit className="h-4 w-4 text-green-600" />
-          {/* Tooltip for editing */}
-          <div className="absolute bottom-full right-0 mb-2 hidden group-hover:block bg-gray-800 text-white text-xs rounded py-1 px-2 whitespace-nowrap z-10">
-            Edit Additional Details
-          </div>
-        </>
-      ) : (
-        <>
-          <FilePlus className="h-4 w-4 text-blue-600" />
-          {/* Tooltip for adding */}
-          <div className="absolute bottom-full right-0 mb-2 hidden group-hover:block bg-gray-800 text-white text-xs rounded py-1 px-2 whitespace-nowrap z-10">
-            Add More Details
-          </div>
-        </>
-      )}
-    </button>
-    <button
-      onClick={() => deleteEmployee(Number(employee.id))}
-      className="p-1.5 hover:bg-slate-100 rounded transition-colors"
-      title="Delete"
-    >
-      <Trash2 className="h-4 w-4 text-red-600" />
-    </button>
-  </div>
-</td>
+                    <td className="px-4 py-3">
+                      <div className="flex items-center justify-end gap-1">
+                        {/* View Profile Button */}
+                        <button
+                          onClick={() => {
+                            if (onViewProfile) {
+                              onViewProfile(employee.id);
+                            }
+                          }}
+                          className="p-1.5 hover:bg-slate-100 rounded transition-colors"
+                          title="View Profile"
+                        >
+                          <Eye className="h-4 w-4 text-slate-600" />
+                        </button>
+
+                        {/* Edit Basic Info Button */}
+                        <button
+                          onClick={() => {
+                            setSelectedEmployee(employee);
+                            setShowEditModal(true);
+                          }}
+                          className="p-1.5 hover:bg-slate-100 rounded transition-colors"
+                          title="Edit Basic Info"
+                        >
+                          <Edit className="h-4 w-4 text-slate-600" />
+                        </button>
+
+                        {/* Add/Edit Details Button */}
+                        <button
+                          onClick={() => {
+                            setSelectedEmployee(employee);
+                            setShowAddMoreDetailsModal(true);
+                          }}
+                          className="p-1.5 hover:bg-slate-100 rounded transition-colors group relative"
+                          title={hasDetails ? "Edit Additional Details" : "Add More Details"}
+                        >
+                          {hasDetails ? (
+                            <>
+                              <FileEdit className="h-4 w-4 text-green-600" />
+                              <div className="absolute bottom-full right-0 mb-2 hidden group-hover:block bg-gray-800 text-white text-xs rounded py-1 px-2 whitespace-nowrap z-10">
+                                Edit Additional Details
+                              </div>
+                            </>
+                          ) : (
+                            <>
+                              <FilePlus className="h-4 w-4 text-blue-600" />
+                              <div className="absolute bottom-full right-0 mb-2 hidden group-hover:block bg-gray-800 text-white text-xs rounded py-1 px-2 whitespace-nowrap z-10">
+                                Add More Details
+                              </div>
+                            </>
+                          )}
+                        </button>
+
+                        {/* Delete Button */}
+                        <button
+                          onClick={() => deleteEmployee(Number(employee.id))}
+                          className="p-1.5 hover:bg-slate-100 rounded transition-colors"
+                          title="Delete"
+                        >
+                          <Trash2 className="h-4 w-4 text-red-600" />
+                        </button>
+                      </div>
+                    </td>
                   </tr>
                 );
               })}
@@ -814,7 +822,7 @@ export default function Employees() {
                 No employees found
               </p>
               <p className="text-gray-500 text-sm mt-2">
-                {searchTerm || Object.values(columnFilters).some(val => val) 
+                {searchTerm || Object.values(columnFilters).some(val => val)
                   ? "Try a different search term or clear filters"
                   : "Click 'Add Employee' to get started"}
               </p>
@@ -830,7 +838,7 @@ export default function Employees() {
             className="absolute inset-0 bg-black bg-opacity-50 transition-opacity duration-300"
             onClick={() => setShowFilterSidebar(false)}
           />
-          
+
           <div className="absolute inset-y-0 right-0 bg-white shadow-2xl flex flex-col transition-transform duration-300 ease-out translate-x-0 w-[90vw] md:max-w-md">
             {/* Header */}
             <div className="bg-gradient-to-r from-[#C62828] to-[#D32F2F] px-4 md:px-6 py-3 md:py-4 flex justify-between items-center">

@@ -1,3 +1,4 @@
+// App.tsx - FIXED VERSION (No React Router)
 import { useState } from "react";
 import { AuthProvider, useAuth } from "./contexts/AuthContext";
 import Layout from "./components/Layout";
@@ -10,7 +11,7 @@ import ServiceOrders from "./pages/ServiceOrders";
 import MaterialsEnhanced from "./pages/MaterialsEnhanced";
 import PaymentsEnhanced from "./pages/PaymentsEnhanced";
 import Notifications from "./pages/Notifications";
-import Reports from "./pages/Reports"; // General Reports
+import Reports from "./pages/Reports";
 import Masters from "./pages/Masters";
 import Permissions from "./pages/Permissions";
 import StoreManagement from "./pages/StoreManagement";
@@ -30,21 +31,24 @@ import Payroll from "./pages/Payroll";
 import Expenses from "./pages/Expenses";
 import Tickets from "./pages/Tickets";
 import Documents from "./pages/Documents";
-import HrReports from "./pages/HrmsReports"; // HR-specific Reports
+import HrReports from "./pages/HrmsReports";
 import RolesPermissions from "./pages/RolesPermissions";
 
 // Settings Pages Import
 import HrSettings from "./pages/HrmsSettings";
-import SystemSettings from "./pages/SystemSettings"; // System-wide Settings
+import SystemSettings from "./pages/SystemSettings";
 import ProjectsMaster from "./pages/ProjectsMaster";
-
 import GeneralSettings from "./pages/settings/GeneralSettings";
 import IntegrationPage from "./pages/settings/IntegrationPage";
+
+// Employee Profile
+import EmployeeProfile from "./pages/EmployeeProfile";
 
 function AppContent() {
   const { user, loading } = useAuth();
   const [activeTab, setActiveTab] = useState("dashboard");
   const [activeFormTab, setActiveFormTab] = useState("");
+  const [selectedEmployeeId, setSelectedEmployeeId] = useState<string | null>(null);
 
   // Reset activeFormTab when switching tabs
   const handleTabChange = (tab: string) => {
@@ -52,6 +56,22 @@ function AppContent() {
     if (tab !== "store-management") {
       setActiveFormTab("");
     }
+    // Clear selected employee when switching tabs
+    if (tab !== "employee-profile") {
+      setSelectedEmployeeId(null);
+    }
+  };
+
+  // Handle viewing employee profile
+  const handleViewEmployeeProfile = (id: string) => {
+    setSelectedEmployeeId(id);
+    setActiveTab("employee-profile");
+  };
+
+  // Handle back from employee profile
+  const handleBackFromProfile = () => {
+    setActiveTab("employees");
+    setSelectedEmployeeId(null);
   };
 
   if (loading) {
@@ -70,6 +90,16 @@ function AppContent() {
   }
 
   const renderContent = () => {
+    // If we have a selected employee ID and we're on the employee profile tab
+    if (activeTab === "employee-profile" && selectedEmployeeId) {
+      return (
+        <EmployeeProfile
+          employeeId={selectedEmployeeId}
+          onBack={handleBackFromProfile}
+        />
+      );
+    }
+
     switch (activeTab) {
       case "dashboard":
         return <Dashboard />;
@@ -102,7 +132,7 @@ function AppContent() {
       case "hrms-dashboard":
         return <HrmsDashboard />;
       case "employees":
-        return <Employees />;
+        return <Employees onViewProfile={handleViewEmployeeProfile} />;
       case "recruitment":
         return <Recruitment />;
       case "attendance":
@@ -123,13 +153,11 @@ function AppContent() {
         return <RolesPermissions />;
       case "hr-settings":
         return <HrSettings />;
-
-        // Settings Submenu Pages - ADD THESE
+      // Settings Submenu Pages
       case "general-settings":
         return <GeneralSettings />;
       case "integration":
         return <IntegrationPage />;
-
       // Main sidebar Pages
       case "system-settings":
         return <SystemSettings />;
@@ -179,6 +207,3 @@ function App() {
 }
 
 export default App;
-
-
-

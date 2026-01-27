@@ -1,12 +1,11 @@
-// pages/EmployeeProfile.tsx
+// pages/EmployeeProfile.tsx - FIXED VERSION (No useNavigate)
 import { useState, useEffect } from "react";
-import { useParams, useNavigate } from "react-router-dom";
-import { 
-  ArrowLeft, User, Mail, Phone, Briefcase, Building, MapPin, 
-  Calendar, Heart, Home, GraduationCap, CreditCard, 
+import {
+  ArrowLeft, User, Mail, Phone, Briefcase, Building, MapPin,
+  Calendar, Heart, Home, GraduationCap, CreditCard,
   Laptop, Edit, Download, FileText, Globe,
-  Smartphone, Award, School, Clock, CheckCircle, 
-  XCircle, ChevronRight, ExternalLink, MoreVertical, 
+  Smartphone, Award, School, Clock, CheckCircle,
+  XCircle, ChevronRight, ExternalLink, MoreVertical,
   Printer, Share2, IdCard, Building2, Wallet, Lock, AtSign
 } from "lucide-react";
 import { toast } from "sonner";
@@ -14,34 +13,40 @@ import employeeAPI from "../lib/employeeApi";
 import EditEmployeeModal from "../components/modals/EditEmployeeModal";
 import AddMoreDetailsModal from "../components/modals/AddMoreDetailsModal";
 
-export default function EmployeeProfile() {
-  const { id } = useParams<{ id: string }>();
-  const navigate = useNavigate();
+interface EmployeeProfileProps {
+  employeeId: string;
+  onBack?: () => void;
+}
+
+export default function EmployeeProfile({ employeeId, onBack }: EmployeeProfileProps) {
   const [employee, setEmployee] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState("overview");
   const [showEditModal, setShowEditModal] = useState(false);
   const [showAddDetailsModal, setShowAddDetailsModal] = useState(false);
-  
+
   const loadEmployee = async () => {
     try {
       setLoading(true);
-      const data = await employeeAPI.getEmployee(Number(id));
+      const data = await employeeAPI.getEmployee(Number(employeeId));
       setEmployee(data);
     } catch (error) {
       console.error("Error loading employee:", error);
       toast.error("Failed to load employee data");
-      navigate("/employees");
+      // Call onBack if provided
+      if (onBack) {
+        onBack();
+      }
     } finally {
       setLoading(false);
     }
   };
 
   useEffect(() => {
-    if (id) {
+    if (employeeId) {
       loadEmployee();
     }
-  }, [id]);
+  }, [employeeId]);
 
   const calculateAge = (dob: string) => {
     if (!dob) return "";
@@ -61,12 +66,12 @@ export default function EmployeeProfile() {
     const today = new Date();
     let years = today.getFullYear() - joinDate.getFullYear();
     let months = today.getMonth() - joinDate.getMonth();
-    
+
     if (months < 0) {
       years--;
       months += 12;
     }
-    
+
     return `${years} year${years !== 1 ? 's' : ''} ${months} month${months !== 1 ? 's' : ''}`;
   };
 
@@ -78,7 +83,7 @@ export default function EmployeeProfile() {
       terminated: { bg: "bg-gradient-to-r from-red-500 to-red-600", text: "text-white", icon: XCircle }
     };
     const { bg, text, icon: Icon } = config[status] || config.inactive;
-    
+
     return (
       <span className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold ${bg} ${text} shadow-sm`}>
         <Icon className="w-3 h-3" />
@@ -98,7 +103,7 @@ export default function EmployeeProfile() {
       pink: "from-pink-500 to-pink-600",
       yellow: "from-amber-500 to-amber-600"
     };
-    
+
     return (
       <div className="group bg-white rounded-xl p-4 hover:shadow-lg transition-all duration-300 border border-gray-100 hover:border-transparent">
         <div className="flex items-start gap-3">
@@ -176,7 +181,7 @@ export default function EmployeeProfile() {
           <h2 className="text-2xl font-bold text-gray-800 mb-3">Employee Not Found</h2>
           <p className="text-gray-500 mb-6">The profile you're looking for doesn't exist or has been removed.</p>
           <button
-            onClick={() => navigate("/employees")}
+            onClick={onBack}
             className="inline-flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-blue-600 to-blue-700 text-white rounded-xl hover:shadow-lg transition-all hover:scale-[1.02] active:scale-[0.98] font-medium"
           >
             <ArrowLeft className="w-4 h-4" />
@@ -194,8 +199,8 @@ export default function EmployeeProfile() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-4">
-              <button 
-                onClick={() => navigate("/employees")}
+              <button
+                onClick={onBack}
                 className="flex items-center gap-2 text-gray-600 hover:text-gray-900 transition-colors group"
               >
                 <div className="p-2 bg-gray-100 rounded-lg group-hover:bg-gray-200 transition-colors">
@@ -206,7 +211,7 @@ export default function EmployeeProfile() {
               <div className="h-4 w-px bg-gray-200"></div>
               <span className="text-sm font-medium text-gray-500">Profile</span>
             </div>
-            
+
             <div className="flex items-center gap-2">
               <button className="p-2 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-lg transition-colors">
                 <Printer className="w-4 h-4" />
@@ -228,7 +233,7 @@ export default function EmployeeProfile() {
         <div className="mb-8">
           <div className="bg-gradient-to-br from-gray-900 to-gray-800 rounded-3xl p-8 shadow-2xl relative overflow-hidden">
             <div className="absolute top-0 right-0 w-64 h-64 bg-gradient-to-br from-white/5 to-transparent rounded-full -translate-y-32 translate-x-32"></div>
-            
+
             <div className="relative z-10">
               <div className="flex flex-col lg:flex-row items-start lg:items-center gap-8">
                 {/* Profile Picture Section */}
@@ -238,8 +243,8 @@ export default function EmployeeProfile() {
                       {employee.profile_picture ? (
                         <img
                           src={
-                            employee.profile_picture.startsWith('http') 
-                              ? employee.profile_picture 
+                            employee.profile_picture.startsWith('http')
+                              ? employee.profile_picture
                               : `${import.meta.env.VITE_API_URL || 'http://localhost:4000'}${employee.profile_picture}`
                           }
                           alt={`${employee.first_name} ${employee.last_name}`}
@@ -268,7 +273,7 @@ export default function EmployeeProfile() {
                     </div>
                   </div>
                 </div>
-                
+
                 {/* Profile Info */}
                 <div className="flex-1 text-white">
                   <div className="flex flex-wrap items-center gap-3 mb-2">
@@ -276,42 +281,42 @@ export default function EmployeeProfile() {
                       {employee.first_name} {employee.last_name}
                     </h1>
                   </div>
-                  
+
                   <p className="text-xl text-gray-300 mb-6">{employee.designation || 'N/A'}</p>
-                  
+
                   <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
                     <div className="bg-white/10 backdrop-blur-sm rounded-xl px-4 py-3 border border-white/20">
                       <p className="text-xs text-gray-300 mb-1">Employee ID</p>
                       <p className="font-semibold text-lg">{employee.employee_code || 'N/A'}</p>
                     </div>
-                    
+
                     <div className="bg-white/10 backdrop-blur-sm rounded-xl px-4 py-3 border border-white/20">
                       <p className="text-xs text-gray-300 mb-1">Department</p>
                       <p className="font-semibold text-lg">{employee.department_name || 'N/A'}</p>
                     </div>
-                    
+
                     <div className="bg-white/10 backdrop-blur-sm rounded-xl px-4 py-3 border border-white/20">
                       <p className="text-xs text-gray-300 mb-1">Tenure</p>
                       <p className="font-semibold text-lg">{getTenure(employee.joining_date)}</p>
                     </div>
-                    
+
                     <div className="bg-white/10 backdrop-blur-sm rounded-xl px-4 py-3 border border-white/20">
                       <p className="text-xs text-gray-300 mb-1">Role</p>
                       <p className="font-semibold text-lg">{employee.role_name || 'N/A'}</p>
                     </div>
                   </div>
                 </div>
-                
+
                 {/* Action Buttons */}
                 <div className="flex flex-col gap-3">
-                  <button 
+                  <button
                     onClick={() => setShowEditModal(true)}
                     className="flex items-center justify-center gap-2 px-6 py-3 bg-white text-gray-900 rounded-xl hover:shadow-lg transition-all hover:scale-[1.02] active:scale-[0.98] font-medium"
                   >
                     <Edit className="w-4 h-4" />
                     Edit Profile
                   </button>
-                  <button 
+                  <button
                     onClick={() => setShowAddDetailsModal(true)}
                     className="flex items-center justify-center gap-2 px-6 py-3 bg-gradient-to-r from-blue-600 to-blue-700 text-white rounded-xl hover:shadow-lg transition-all hover:scale-[1.02] active:scale-[0.98] font-medium"
                   >
@@ -334,11 +339,10 @@ export default function EmployeeProfile() {
                 <button
                   key={tab.id}
                   onClick={() => setActiveTab(tab.id)}
-                  className={`group flex items-center gap-2 px-5 py-3 rounded-xl font-medium text-sm transition-all whitespace-nowrap ${
-                    isActive
+                  className={`group flex items-center gap-2 px-5 py-3 rounded-xl font-medium text-sm transition-all whitespace-nowrap ${isActive
                       ? 'bg-white text-gray-900 shadow-lg border border-gray-100'
                       : 'text-gray-600 hover:text-gray-900 hover:bg-white/50'
-                  }`}
+                    }`}
                 >
                   <div className={`p-2 rounded-lg ${isActive ? `bg-gradient-to-br ${tab.color}` : 'bg-gray-100 group-hover:bg-gray-200'}`}>
                     <Icon className={`w-4 h-4 ${isActive ? 'text-white' : 'text-gray-600'}`} />
@@ -534,7 +538,7 @@ export default function EmployeeProfile() {
                       <School className="w-8 h-8 text-gray-400" />
                     </div>
                     <p className="text-gray-500">No educational information available</p>
-                    <button 
+                    <button
                       onClick={() => setShowAddDetailsModal(true)}
                       className="mt-4 text-blue-600 hover:text-blue-700 font-medium"
                     >
@@ -591,15 +595,14 @@ export default function EmployeeProfile() {
                       </div>
                       <span className="font-medium text-gray-900">Laptop Assigned</span>
                     </div>
-                    <span className={`px-3 py-1 rounded-full text-sm font-medium ${
-                      employee.laptop_assigned === 'yes' 
-                        ? 'bg-emerald-100 text-emerald-700' 
+                    <span className={`px-3 py-1 rounded-full text-sm font-medium ${employee.laptop_assigned === 'yes'
+                        ? 'bg-emerald-100 text-emerald-700'
                         : 'bg-gray-100 text-gray-700'
-                    }`}>
+                      }`}>
                       {employee.laptop_assigned === 'yes' ? 'Yes' : 'No'}
                     </span>
                   </div>
-                  
+
                   <InfoRow label="System Login ID" value={employee.system_login_id} />
                   <InfoRow label="System Password" value={employee.system_password ? '••••••••' : null} />
                   <InfoRow label="Office Email ID" value={employee.office_email_id} icon={Mail} />
@@ -618,7 +621,7 @@ export default function EmployeeProfile() {
                       <p className="text-sm text-gray-600">Access details and permissions</p>
                     </div>
                   </div>
-                  
+
                   <div className="space-y-3">
                     <div className="flex items-center justify-between">
                       <span className="text-sm text-gray-600">Login Status</span>
