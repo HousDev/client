@@ -1,6 +1,6 @@
 
 
-
+// components/Employees.tsx
 import { useState, useEffect } from "react";
 import {
   Users,
@@ -12,6 +12,10 @@ import {
   Trash2,
   Eye,
   X,
+  FileText,
+  MoreHorizontal,
+  FileEdit,
+  FilePlus,
 } from "lucide-react";
 import Card from "../components/ui/Card";
 import Button from "../components/ui/Button";
@@ -24,8 +28,10 @@ import { toast } from "sonner";
 import MySwal from "../utils/swal";
 import ViewEmployeeModal from "../components/modals/ViewEmployeeModal";
 import EditEmployeeModal from "../components/modals/EditEmployeeModal";
+import AddMoreDetailsModal from "../components/modals/AddMoreDetailsModal";
+import { useNavigate } from "react-router-dom";
 
-// Update the Employee interface in Employees.tsx
+// Update the Employee interface
 interface Employee {
   id: string;
   employee_code: string;
@@ -42,7 +48,53 @@ interface Employee {
   office_location?: string;
   attendance_location?: string;
   employee_status: string;
-  profile_picture?: string; // Add this line
+  profile_picture?: string;
+  
+  // Personal Details
+  blood_group?: string;
+  date_of_birth?: string;
+  marital_status?: string;
+  emergency_contact?: string;
+  nationality?: string;
+  
+  // Address Details
+  current_address?: string;
+  permanent_address?: string;
+  city?: string;
+  state?: string;
+  pincode?: string;
+  same_as_permanent?: boolean;
+  
+  // Identification
+  aadhar_number?: string;
+  pan_number?: string;
+  
+  // Educational Details
+  highest_qualification?: string;
+  university?: string;
+  passing_year?: string;
+  percentage?: string;
+  
+  // Employment Details
+  employee_type?: string;
+  branch?: string;
+  probation_period?: string;
+  work_mode?: string;
+  job_title?: string;
+  notice_period?: string;
+  
+  // System Details
+  laptop_assigned?: string;
+  system_login_id?: string;
+  system_password?: string;
+  office_email_id?: string;
+  office_email_password?: string;
+  
+  // Bank Details
+  bank_account_number?: string;
+  bank_name?: string;
+  ifsc_code?: string;
+  upi_id?: string;
 }
 
 export default function Employees() {
@@ -52,7 +104,10 @@ export default function Employees() {
   const [showAddModal, setShowAddModal] = useState(false);
   const [showViewModal, setShowViewModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
+  const [showAddMoreDetailsModal, setShowAddMoreDetailsModal] = useState(false);
   const [selectedEmployee, setSelectedEmployee] = useState<Employee | null>(null);
+    const navigate = useNavigate();
+
   const [stats, setStats] = useState({
     total: 0,
     active: 0,
@@ -89,7 +144,7 @@ export default function Employees() {
       setEmployees(
         data.map((emp: any) => ({
           id: emp.id,
-          employee_code: emp.employee_code,
+          employee_code: emp.employee_code || `EMP${emp.id}`,
           first_name: emp.first_name,
           last_name: emp.last_name,
           email: emp.email,
@@ -105,12 +160,46 @@ export default function Employees() {
           project: emp.project_name ? { name: emp.project_name } : null,
           office_location: emp.office_location,
           attendance_location: emp.attendence_location,
-                  profile_picture: emp.profile_picture || null, // Add this line
-
+          profile_picture: emp.profile_picture || null,
+          
+          // Additional fields
+          blood_group: emp.blood_group,
+          date_of_birth: emp.date_of_birth,
+          marital_status: emp.marital_status,
+          emergency_contact: emp.emergency_contact,
+          nationality: emp.nationality,
+          current_address: emp.current_address,
+          permanent_address: emp.permanent_address,
+          city: emp.city,
+          state: emp.state,
+          pincode: emp.pincode,
+          same_as_permanent: emp.same_as_permanent || false,
+          aadhar_number: emp.aadhar_number,
+          pan_number: emp.pan_number,
+          highest_qualification: emp.highest_qualification,
+          university: emp.university,
+          passing_year: emp.passing_year,
+          percentage: emp.percentage,
+          employee_type: emp.employee_type,
+          branch: emp.branch,
+          probation_period: emp.probation_period,
+          work_mode: emp.work_mode,
+          job_title: emp.job_title,
+          notice_period: emp.notice_period,
+          laptop_assigned: emp.laptop_assigned,
+          system_login_id: emp.system_login_id,
+          system_password: emp.system_password,
+          office_email_id: emp.office_email_id,
+          office_email_password: emp.office_email_password,
+          bank_account_number: emp.bank_account_number,
+          bank_name: emp.bank_name,
+          ifsc_code: emp.ifsc_code,
+          upi_id: emp.upi_id,
         })),
       );
     } catch (error) {
       console.error("Error loading employees:", error);
+      toast.error("Failed to load employees");
     } finally {
       setLoading(false);
     }
@@ -177,15 +266,29 @@ export default function Employees() {
 
   const loadStats = async () => {
     try {
-      const data: any = {};
+      const employees = await employeeAPI.getEmployees();
+      const total = employees.length;
+      const active = employees.filter((emp: any) => emp.employee_status === 'active').length;
+      const onLeave = employees.filter((emp: any) => emp.employee_status === 'on_leave').length;
+      
+      // Calculate new this month
+      const currentMonth = new Date().getMonth();
+      const currentYear = new Date().getFullYear();
+      const newThisMonth = employees.filter((emp: any) => {
+        if (!emp.joining_date) return false;
+        const joinDate = new Date(emp.joining_date);
+        return joinDate.getMonth() === currentMonth && joinDate.getFullYear() === currentYear;
+      }).length;
+
       setStats({
-        total: data.total || 0,
-        active: data.active || 0,
-        onLeave: data.onLeave || 0,
-        newThisMonth: data.newThisMonth || 0,
+        total,
+        active,
+        onLeave,
+        newThisMonth,
       });
     } catch (error) {
       console.error("Error loading stats:", error);
+      toast.error("Failed to load statistics");
     }
   };
 
@@ -243,6 +346,43 @@ export default function Employees() {
     return <Badge variant={statusConfig.variant as any}>{statusConfig.label}</Badge>;
   };
 
+  // Check if employee has additional details
+  const hasAdditionalDetails = (employee: Employee) => {
+    return (
+      employee.blood_group ||
+      employee.date_of_birth ||
+      employee.marital_status ||
+      employee.emergency_contact ||
+      employee.nationality ||
+      employee.current_address ||
+      employee.permanent_address ||
+      employee.city ||
+      employee.state ||
+      employee.pincode ||
+      employee.aadhar_number ||
+      employee.pan_number ||
+      employee.highest_qualification ||
+      employee.university ||
+      employee.passing_year ||
+      employee.percentage ||
+      employee.employee_type ||
+      employee.branch ||
+      employee.probation_period ||
+      employee.work_mode ||
+      employee.job_title ||
+      employee.notice_period ||
+      employee.laptop_assigned ||
+      employee.system_login_id ||
+      employee.system_password ||
+      employee.office_email_id ||
+      employee.office_email_password ||
+      employee.bank_account_number ||
+      employee.bank_name ||
+      employee.ifsc_code ||
+      employee.upi_id
+    );
+  };
+
   // Filter employees based on column filters
   const filteredEmployees = employees.filter((emp) => {
     const fullName = `${emp.first_name} ${emp.last_name}`.toLowerCase();
@@ -276,8 +416,7 @@ export default function Employees() {
 
   return (
     <div className="space-y-5">
-      <div className="flex items-center justify-end py-0 -mt-2 -mb-2 ">
-       
+      <div className="flex items-center justify-end py-0 -mt-2 -mb-2">
         <Button onClick={() => setShowAddModal(true)} className="text-sm">
           <Plus className="h-4 w-4 mr-1.5" />
           Add Employee
@@ -285,77 +424,84 @@ export default function Employees() {
       </div>
 
       <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-4 gap-2 md:gap-3">
-  <Card className="p-2 sm:p-3 md:p-3.5">
-    <div className="flex items-center justify-between">
-      <div>
-        <p className="text-[10px] sm:text-xs text-slate-600 font-medium">
-          Total Employees
-        </p>
-        <p className="text-lg sm:text-xl md:text-xl font-bold text-slate-900 mt-0.5">
-          {stats.total}
-        </p>
-      </div>
-      <div className="w-8 h-8 sm:w-9 sm:h-9 md:w-9 md:h-9 bg-blue-100 rounded-md flex items-center justify-center">
-        <Users className="h-4 w-4 text-blue-600" />
-      </div>
-    </div>
-  </Card>
+        <Card className="p-2 sm:p-3 md:p-3.5">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-[10px] sm:text-xs text-slate-600 font-medium">
+                Total Employees
+              </p>
+              <p className="text-lg sm:text-xl md:text-xl font-bold text-slate-900 mt-0.5">
+                {stats.total}
+              </p>
+            </div>
+            <div className="w-8 h-8 sm:w-9 sm:h-9 md:w-9 md:h-9 bg-blue-100 rounded-md flex items-center justify-center">
+              <Users className="h-4 w-4 text-blue-600" />
+            </div>
+          </div>
+        </Card>
 
-  <Card className="p-2 sm:p-3 md:p-3.5">
-    <div className="flex items-center justify-between">
-      <div>
-        <p className="text-[10px] sm:text-xs text-slate-600 font-medium">
-          Active
-        </p>
-        <p className="text-lg sm:text-xl md:text-xl font-bold text-green-600 mt-0.5">
-          {stats.active}
-        </p>
-      </div>
-      <div className="w-8 h-8 sm:w-9 sm:h-9 md:w-9 md:h-9 bg-green-100 rounded-md flex items-center justify-center">
-        <Users className="h-4 w-4 text-green-600" />
-      </div>
-    </div>
-  </Card>
+        <Card className="p-2 sm:p-3 md:p-3.5">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-[10px] sm:text-xs text-slate-600 font-medium">
+                Active
+              </p>
+              <p className="text-lg sm:text-xl md:text-xl font-bold text-green-600 mt-0.5">
+                {stats.active}
+              </p>
+            </div>
+            <div className="w-8 h-8 sm:w-9 sm:h-9 md:w-9 md:h-9 bg-green-100 rounded-md flex items-center justify-center">
+              <Users className="h-4 w-4 text-green-600" />
+            </div>
+          </div>
+        </Card>
 
-  <Card className="p-2 sm:p-3 md:p-3.5">
-    <div className="flex items-center justify-between">
-      <div>
-        <p className="text-[10px] sm:text-xs text-slate-600 font-medium">
-          On Leave
-        </p>
-        <p className="text-lg sm:text-xl md:text-xl font-bold text-yellow-600 mt-0.5">
-          {stats.onLeave}
-        </p>
-      </div>
-      <div className="w-8 h-8 sm:w-9 sm:h-9 md:w-9 md:h-9 bg-yellow-100 rounded-md flex items-center justify-center">
-        <Users className="h-4 w-4 text-yellow-600" />
-      </div>
-    </div>
-  </Card>
+        <Card className="p-2 sm:p-3 md:p-3.5">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-[10px] sm:text-xs text-slate-600 font-medium">
+                On Leave
+              </p>
+              <p className="text-lg sm:text-xl md:text-xl font-bold text-yellow-600 mt-0.5">
+                {stats.onLeave}
+              </p>
+            </div>
+            <div className="w-8 h-8 sm:w-9 sm:h-9 md:w-9 md:h-9 bg-yellow-100 rounded-md flex items-center justify-center">
+              <Users className="h-4 w-4 text-yellow-600" />
+            </div>
+          </div>
+        </Card>
 
-  <Card className="p-2 sm:p-3 md:p-3.5">
-    <div className="flex items-center justify-between">
-      <div>
-        <p className="text-[10px] sm:text-xs text-slate-600 font-medium">
-          New This Month
-        </p>
-        <p className="text-lg sm:text-xl md:text-xl font-bold text-blue-600 mt-0.5">
-          {stats.newThisMonth}
-        </p>
+        <Card className="p-2 sm:p-3 md:p-3.5">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-[10px] sm:text-xs text-slate-600 font-medium">
+                New This Month
+              </p>
+              <p className="text-lg sm:text-xl md:text-xl font-bold text-blue-600 mt-0.5">
+                {stats.newThisMonth}
+              </p>
+            </div>
+            <div className="w-8 h-8 sm:w-9 sm:h-9 md:w-9 md:h-9 bg-blue-100 rounded-md flex items-center justify-center">
+              <Users className="h-4 w-4 text-blue-600" />
+            </div>
+          </div>
+        </Card>
       </div>
-      <div className="w-8 h-8 sm:w-9 sm:h-9 md:w-9 md:h-9 bg-blue-100 rounded-md flex items-center justify-center">
-        <Users className="h-4 w-4 text-blue-600" />
-      </div>
-    </div>
-  </Card>
-</div>
-
 
       <Card>
         <div className="p-4 border-b border-slate-200">
-          {/* Compact Search and Action Bar */}
           <div className="flex flex-col md:flex-row gap-3 items-center justify-end">
-            
+            {/* Global Search */}
+            <div className="w-full md:w-auto">
+              <Input
+                placeholder="Search employees..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="w-full md:w-64"
+                startIcon={<Search className="h-4 w-4" />}
+              />
+            </div>
 
             {/* Action Buttons */}
             <div className="flex gap-2 w-full md:w-auto">
@@ -529,6 +675,8 @@ export default function Employees() {
             <tbody className="divide-y divide-slate-100">
               {filteredEmployees.map((employee) => {
                 const isSelected = selectedItems.has(employee.id);
+                const hasDetails = hasAdditionalDetails(employee);
+                
                 return (
                   <tr
                     key={employee.id}
@@ -542,42 +690,41 @@ export default function Employees() {
                         className="w-4 h-4 text-[#C62828] border-gray-300 rounded focus:ring-[#C62828]"
                       />
                     </td>
-<td className="px-4 py-3">
-  <div className="flex items-center gap-3">
-    <div className="w-8 h-8 rounded-full overflow-hidden bg-slate-100 flex-shrink-0 border border-gray-200">
-      {employee.profile_picture ? (
-        <img 
-          src={`http://localhost:4000${employee.profile_picture}`} 
-          alt={`${employee.first_name} ${employee.last_name}`}
-          className="w-full h-full object-cover"
-          onError={(e) => {
-            // If image fails to load, show initials
-            e.currentTarget.style.display = 'none';
-            const parent = e.currentTarget.parentElement;
-            if (parent) {
-              const fallback = document.createElement('div');
-              fallback.className = 'w-full h-full flex items-center justify-center bg-blue-100';
-              fallback.innerHTML = `<span class="text-xs font-medium text-blue-700">${employee.first_name.charAt(0)}${employee.last_name.charAt(0)}</span>`;
-              parent.appendChild(fallback);
-            }
-          }}
-        />
-      ) : (
-        <div className="w-full h-full flex items-center justify-center bg-blue-100">
-          <span className="text-xs font-medium text-blue-700">
-            {employee.first_name.charAt(0)}{employee.last_name.charAt(0)}
-          </span>
-        </div>
-      )}
-    </div>
-    <div>
-      <p className="text-sm font-medium text-slate-900">
-        {employee.first_name} {employee.last_name}
-      </p>
-      <p className="text-xs text-slate-600">{employee.designation}</p>
-    </div>
-  </div>
-</td>
+                    <td className="px-4 py-3">
+                      <div className="flex items-center gap-3">
+                        <div className="w-8 h-8 rounded-full overflow-hidden bg-slate-100 flex-shrink-0 border border-gray-200">
+                          {employee.profile_picture ? (
+                            <img 
+                              src={`http://localhost:4000${employee.profile_picture}`} 
+                              alt={`${employee.first_name} ${employee.last_name}`}
+                              className="w-full h-full object-cover"
+                              onError={(e) => {
+                                e.currentTarget.style.display = 'none';
+                                const parent = e.currentTarget.parentElement;
+                                if (parent) {
+                                  const fallback = document.createElement('div');
+                                  fallback.className = 'w-full h-full flex items-center justify-center bg-blue-100';
+                                  fallback.innerHTML = `<span class="text-xs font-medium text-blue-700">${employee.first_name.charAt(0)}${employee.last_name.charAt(0)}</span>`;
+                                  parent.appendChild(fallback);
+                                }
+                              }}
+                            />
+                          ) : (
+                            <div className="w-full h-full flex items-center justify-center bg-blue-100">
+                              <span className="text-xs font-medium text-blue-700">
+                                {employee.first_name.charAt(0)}{employee.last_name.charAt(0)}
+                              </span>
+                            </div>
+                          )}
+                        </div>
+                        <div>
+                          <p className="text-sm font-medium text-slate-900">
+                            {employee.first_name} {employee.last_name}
+                          </p>
+                          <p className="text-xs text-slate-600">{employee.designation}</p>
+                        </div>
+                      </div>
+                    </td>
                     <td className="px-4 py-3">
                       <span className="text-xs font-mono text-slate-700 bg-slate-100 px-2 py-1 rounded">
                         {employee.employee_code || "EMP" + employee.id}
@@ -599,37 +746,61 @@ export default function Employees() {
                     <td className="px-4 py-3">
                       {getStatusBadge(employee.employee_status)}
                     </td>
-                    <td className="px-4 py-3">
-                      <div className="flex items-center justify-end gap-1">
-                        <button
-                          onClick={() => {
-                            setSelectedEmployee(employee);
-                            setShowViewModal(true);
-                          }}
-                          className="p-1.5 hover:bg-slate-100 rounded transition-colors"
-                          title="View"
-                        >
-                          <Eye className="h-4 w-4 text-slate-600" />
-                        </button>
-                        <button
-                          onClick={() => {
-                            setSelectedEmployee(employee);
-                            setShowEditModal(true);
-                          }}
-                          className="p-1.5 hover:bg-slate-100 rounded transition-colors"
-                          title="Edit"
-                        >
-                          <Edit className="h-4 w-4 text-slate-600" />
-                        </button>
-                        <button
-                          onClick={() => deleteEmployee(Number(employee.id))}
-                          className="p-1.5 hover:bg-slate-100 rounded transition-colors"
-                          title="Delete"
-                        >
-                          <Trash2 className="h-4 w-4 text-red-600" />
-                        </button>
-                      </div>
-                    </td>
+                  <td className="px-4 py-3">
+  <div className="flex items-center justify-end gap-1">
+    <button
+      onClick={() => navigate(`/employee/${employee.id}`)}
+      className="p-1.5 hover:bg-slate-100 rounded transition-colors"
+      title="View Profile"
+    >
+      <Eye className="h-4 w-4 text-slate-600" />
+    </button>
+    <button
+      onClick={() => {
+        setSelectedEmployee(employee);
+        setShowEditModal(true);
+      }}
+      className="p-1.5 hover:bg-slate-100 rounded transition-colors"
+      title="Edit Basic Info"
+    >
+      <Edit className="h-4 w-4 text-slate-600" />
+    </button>
+    <button
+      onClick={() => {
+        setSelectedEmployee(employee);
+        setShowAddMoreDetailsModal(true);
+      }}
+      className="p-1.5 hover:bg-slate-100 rounded transition-colors group relative"
+      title={hasDetails ? "Edit Additional Details" : "Add More Details"}
+    >
+      {/* Show different icons based on whether details exist */}
+      {hasDetails ? (
+        <>
+          <FileEdit className="h-4 w-4 text-green-600" />
+          {/* Tooltip for editing */}
+          <div className="absolute bottom-full right-0 mb-2 hidden group-hover:block bg-gray-800 text-white text-xs rounded py-1 px-2 whitespace-nowrap z-10">
+            Edit Additional Details
+          </div>
+        </>
+      ) : (
+        <>
+          <FilePlus className="h-4 w-4 text-blue-600" />
+          {/* Tooltip for adding */}
+          <div className="absolute bottom-full right-0 mb-2 hidden group-hover:block bg-gray-800 text-white text-xs rounded py-1 px-2 whitespace-nowrap z-10">
+            Add More Details
+          </div>
+        </>
+      )}
+    </button>
+    <button
+      onClick={() => deleteEmployee(Number(employee.id))}
+      className="p-1.5 hover:bg-slate-100 rounded transition-colors"
+      title="Delete"
+    >
+      <Trash2 className="h-4 w-4 text-red-600" />
+    </button>
+  </div>
+</td>
                   </tr>
                 );
               })}
@@ -772,6 +943,14 @@ export default function Employees() {
             setSelectedEmployee(null);
           }}
           employee={selectedEmployee}
+          onEditClick={() => {
+            setShowViewModal(false);
+            setShowEditModal(true);
+          }}
+          onAddDetailsClick={() => {
+            setShowViewModal(false);
+            setShowAddMoreDetailsModal(true);
+          }}
         />
       )}
 
@@ -787,6 +966,22 @@ export default function Employees() {
           onSuccess={() => {
             loadEmployees();
             loadStats();
+          }}
+        />
+      )}
+
+      {/* Add More Details Modal */}
+      {showAddMoreDetailsModal && selectedEmployee && (
+        <AddMoreDetailsModal
+          isOpen={showAddMoreDetailsModal}
+          onClose={() => {
+            setShowAddMoreDetailsModal(false);
+            setSelectedEmployee(null);
+          }}
+          employeeId={selectedEmployee.id}
+          onSuccess={() => {
+            loadEmployees();
+            toast.success("Additional details updated successfully!");
           }}
         />
       )}
