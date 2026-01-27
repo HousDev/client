@@ -1,6 +1,8 @@
-import { api } from "./api";
+import { api } from "./Api";
 
 export interface Company {
+  active_branch_count: number;
+  active_branch_count: any;
   id: string;
   name: string;
   code: string;
