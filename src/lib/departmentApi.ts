@@ -1,4 +1,4 @@
-//
+// src/lib/departmentApi.ts
 import { api } from "./Api";
 
 // Or if you want to keep it separate, re-export all interfaces

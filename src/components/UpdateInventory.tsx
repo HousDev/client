@@ -276,11 +276,21 @@
 //   );
 // }
 
-
-
-
 import React, { SetStateAction, useState } from "react";
-import { X, Save, Package, AlertTriangle, Layers, Tag, Hash, MapPin, Building, FileText, Scale, IndianRupee } from "lucide-react";
+import {
+  X,
+  Save,
+  Package,
+  AlertTriangle,
+  Layers,
+  Tag,
+  Hash,
+  MapPin,
+  Building,
+  FileText,
+  Scale,
+  IndianRupee,
+} from "lucide-react";
 import inventoryApi from "../lib/inventoryApi";
 
 interface InventoryFormData {
@@ -522,7 +532,7 @@ export default function UpdateInventoryForm({
                 <div className="flex items-center gap-3">
                   <span
                     className={`px-4 py-2 rounded-full text-xs font-medium ${getStatusColor(
-                      formData.status
+                      formData.status,
                     )} border border-transparent`}
                   >
                     {formData.status}
@@ -594,7 +604,8 @@ export default function UpdateInventoryForm({
                     Update Item Information
                   </p>
                   <p className="text-xs text-blue-600 mt-0.5">
-                    Modify the item details as needed. Current quantity cannot be changed directly.
+                    Modify the item details as needed. Current quantity cannot
+                    be changed directly.
                   </p>
                 </div>
               </div>
@@ -631,7 +642,7 @@ export default function UpdateInventoryForm({
         </div>
 
         {/* Add custom styles for scrollbar */}
-        <style jsx>{`
+        <style>{`
           .custom-scrollbar::-webkit-scrollbar {
             width: 6px;
           }

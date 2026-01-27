@@ -585,8 +585,6 @@
 //   );
 // }
 
-
-
 // // src/components/ProjectsMaster.tsx
 // import { useState, useEffect } from "react";
 // import {
@@ -637,12 +635,12 @@
 //   const [loading, setLoading] = useState(true);
 //   const [searchTerm, setSearchTerm] = useState("");
 //   const [searchTermForProjectDetails, setSearchTermForProjectDetails] = useState("");
-  
+
 //   // Column search states for projects
 //   const [searchName, setSearchName] = useState("");
 //   const [searchLocation, setSearchLocation] = useState("");
 //   const [searchStatus, setSearchStatus] = useState("");
-  
+
 //   // Column search states for project details
 //   const [searchDetailsName, setSearchDetailsName] = useState("");
 //   const [searchDetailsCategory, setSearchDetailsCategory] = useState("");
@@ -651,16 +649,16 @@
 //   const [activeTab, setActiveTab] = useState<string>("project");
 //   const [viewProjectDetails, setViewProjectDetails] = useState(false);
 //   const [updateProjectDetails, setUpdateProjectDetails] = useState(false);
-  
+
 //   // Checkbox states for bulk operations
 //   const [selectedItems, setSelectedItems] = useState<Set<string>>(new Set());
 //   const [selectedDetailItems, setSelectedDetailItems] = useState<Set<string>>(new Set());
 //   const [selectAll, setSelectAll] = useState(false);
 //   const [selectAllDetails, setSelectAllDetails] = useState(false);
-  
+
 //   // Filter sidebar state
 //   const [showFilterSidebar, setShowFilterSidebar] = useState(false);
-  
+
 //   // Filter states
 //   const [filterFromDate, setFilterFromDate] = useState("");
 //   const [filterToDate, setFilterToDate] = useState("");
@@ -742,7 +740,7 @@
 //           (floor) => floor.category === "common area"
 //         );
 //         setAllCommonArea(filteredCommonArea || []);
-        
+
 //         setAllProjectFloorsCommonAreas(res || []);
 //         setFilteredProjectsDetails(res || []);
 //       }
@@ -927,7 +925,7 @@
 //     });
 
 //     if (!result.isConfirmed) return;
-    
+
 //     try {
 //       const res: any = await ProjectDetailsApi.delete(id);
 //       if (res.status) {
@@ -1590,8 +1588,6 @@
 //   );
 // }
 
-
-
 // src/components/ProjectsMaster.tsx
 import { useState, useEffect } from "react";
 import {
@@ -1609,6 +1605,7 @@ import {
   Filter,
   X,
   XCircle,
+  Home,
 } from "lucide-react";
 import projectApi from "../lib/projectApi";
 import CreateProjects from "../components/projectForms/CreateProjects";
@@ -1620,11 +1617,11 @@ import ProjectDetailsForm from "../components/projectForms/ProjectDetailsForm";
 import ProjectDetailsApi from "../lib/projectDetailsApi";
 import DatePicker from "react-datepicker";
 import { registerLocale } from "react-datepicker";
-import { enGB } from 'date-fns/locale/en-GB';
+import { enGB } from "date-fns/locale/en-GB";
 import "react-datepicker/dist/react-datepicker.css";
 import { Calendar } from "lucide-react";
 
-registerLocale('en-GB', enGB);
+registerLocale("en-GB", enGB);
 
 interface ProjectFormDataLocal {
   name: string;
@@ -1641,14 +1638,15 @@ type ProjectLocal = ProjectFormDataLocal & { id: string };
 export default function ProjectsMaster() {
   const [projects, setProjects] = useState<ProjectLocal[]>([]);
   const [selectedProject, setSelectedProject] = useState<any>();
-  const [allProjectFloorsCommonAreas, setAllProjectFloorsCommonAreas] = useState<any[]>([]);
+  const [allProjectFloorsCommonAreas, setAllProjectFloorsCommonAreas] =
+    useState<any[]>([]);
   const [selectedProjectDetails, setSelectedProjectDetails] = useState({
     id: "",
     name: "",
     category: "floor",
   });
   const [loading, setLoading] = useState(true);
-  
+
   // Column search states for projects
   const [searchFilters, setSearchFilters] = useState({
     name: "",
@@ -1657,7 +1655,7 @@ export default function ProjectsMaster() {
     startDate: "",
     endDate: "",
   });
-  
+
   // Column search states for project details
   const [searchDetailFilters, setSearchDetailFilters] = useState({
     name: "",
@@ -1668,25 +1666,30 @@ export default function ProjectsMaster() {
   const [activeTab, setActiveTab] = useState<string>("project");
   const [viewProjectDetails, setViewProjectDetails] = useState(false);
   const [updateProjectDetails, setUpdateProjectDetails] = useState(false);
-  
+
   // Checkbox states for bulk operations
   const [selectedItems, setSelectedItems] = useState<Set<string>>(new Set());
-  const [selectedDetailItems, setSelectedDetailItems] = useState<Set<string>>(new Set());
+  const [selectedDetailItems, setSelectedDetailItems] = useState<Set<string>>(
+    new Set(),
+  );
   const [selectAll, setSelectAll] = useState(false);
   const [selectAllDetails, setSelectAllDetails] = useState(false);
-  
+
   // Filter sidebar state
   const [showFilterSidebar, setShowFilterSidebar] = useState(false);
-  
+
   // Filter states
   const [filterFromDate, setFilterFromDate] = useState("");
   const [filterToDate, setFilterToDate] = useState("");
   const [ignoreDate, setIgnoreDate] = useState(false);
 
   const [filteredProjects, setFilteredProjects] = useState<ProjectLocal[]>([]);
-  const [filteredProjectsDetails, setFilteredProjectsDetails] = useState<any[]>([]);
+  const [filteredProjectsDetails, setFilteredProjectsDetails] = useState<any[]>(
+    [],
+  );
 
   const [allFloors, setAllFloors] = useState<any[]>([]);
+  const [allFlats, setAllFlats] = useState<any[]>([]);
   const [allCommonArea, setAllCommonArea] = useState<any[]>([]);
 
   const [showProjectDetailsForm, setShowProjectDetailsForm] = useState(false);
@@ -1752,14 +1755,20 @@ export default function ProjectsMaster() {
     try {
       const res: any = await ProjectDetailsApi.getAll();
       if (Array.isArray(res)) {
-        const filteredFloors = res.filter((floor) => floor.category === "floor");
+        const filteredFloors = res.filter(
+          (floor) => floor.category === "floor",
+        );
         setAllFloors(filteredFloors || []);
 
+        const filteredFlats = res.filter((floor) => floor.category === "flat");
+        console.log(filteredFlats);
+        setAllFlats(filteredFlats);
+
         const filteredCommonArea = res.filter(
-          (floor) => floor.category === "common area"
+          (floor) => floor.category === "common area",
         );
         setAllCommonArea(filteredCommonArea || []);
-        
+
         setAllProjectFloorsCommonAreas(res || []);
         setFilteredProjectsDetails(res || []);
       }
@@ -1780,31 +1789,41 @@ export default function ProjectsMaster() {
     // Apply search filters
     if (searchFilters.name) {
       filtered = filtered.filter((project) =>
-        (project.name || "").toLowerCase().includes(searchFilters.name.toLowerCase())
+        (project.name || "")
+          .toLowerCase()
+          .includes(searchFilters.name.toLowerCase()),
       );
     }
 
     if (searchFilters.location) {
       filtered = filtered.filter((project) =>
-        (project.location || "").toLowerCase().includes(searchFilters.location.toLowerCase())
+        (project.location || "")
+          .toLowerCase()
+          .includes(searchFilters.location.toLowerCase()),
       );
     }
 
     if (searchFilters.status) {
       filtered = filtered.filter((project) =>
-        (project.status || "").toLowerCase().includes(searchFilters.status.toLowerCase())
+        (project.status || "")
+          .toLowerCase()
+          .includes(searchFilters.status.toLowerCase()),
       );
     }
 
     if (searchFilters.startDate) {
       filtered = filtered.filter((project) =>
-        new Date(project.start_date).toLocaleDateString().includes(searchFilters.startDate)
+        new Date(project.start_date)
+          .toLocaleDateString()
+          .includes(searchFilters.startDate),
       );
     }
 
     if (searchFilters.endDate) {
       filtered = filtered.filter((project) =>
-        new Date(project.end_date).toLocaleDateString().includes(searchFilters.endDate)
+        new Date(project.end_date)
+          .toLocaleDateString()
+          .includes(searchFilters.endDate),
       );
     }
 
@@ -1837,13 +1856,17 @@ export default function ProjectsMaster() {
     // Apply search filters for project details
     if (searchDetailFilters.name) {
       filtered = filtered.filter((detail) =>
-        (detail.name || "").toLowerCase().includes(searchDetailFilters.name.toLowerCase())
+        (detail.name || "")
+          .toLowerCase()
+          .includes(searchDetailFilters.name.toLowerCase()),
       );
     }
 
     if (searchDetailFilters.category) {
       filtered = filtered.filter((detail) =>
-        (detail.category || "").toLowerCase().includes(searchDetailFilters.category.toLowerCase())
+        (detail.category || "")
+          .toLowerCase()
+          .includes(searchDetailFilters.category.toLowerCase()),
       );
     }
 
@@ -1851,17 +1874,23 @@ export default function ProjectsMaster() {
   }, [allProjectFloorsCommonAreas, searchDetailFilters]);
 
   // Handlers for search filter changes
-  const handleProjectSearchFilterChange = (column: keyof typeof searchFilters, value: string) => {
-    setSearchFilters(prev => ({
+  const handleProjectSearchFilterChange = (
+    column: keyof typeof searchFilters,
+    value: string,
+  ) => {
+    setSearchFilters((prev) => ({
       ...prev,
-      [column]: value
+      [column]: value,
     }));
   };
 
-  const handleDetailSearchFilterChange = (column: keyof typeof searchDetailFilters, value: string) => {
-    setSearchDetailFilters(prev => ({
+  const handleDetailSearchFilterChange = (
+    column: keyof typeof searchDetailFilters,
+    value: string,
+  ) => {
+    setSearchDetailFilters((prev) => ({
       ...prev,
-      [column]: value
+      [column]: value,
     }));
   };
 
@@ -1944,7 +1973,7 @@ export default function ProjectsMaster() {
 
     try {
       await Promise.all(
-        Array.from(selectedItems).map((id) => projectApi.deleteProject(id))
+        Array.from(selectedItems).map((id) => projectApi.deleteProject(id)),
       );
       toast.success(`${selectedItems.size} project(s) deleted successfully!`);
       setSelectedItems(new Set());
@@ -1969,7 +1998,7 @@ export default function ProjectsMaster() {
     });
 
     if (!result.isConfirmed) return;
-    
+
     try {
       const res: any = await ProjectDetailsApi.delete(id);
       if (res.status) {
@@ -2010,9 +2039,13 @@ export default function ProjectsMaster() {
 
     try {
       await Promise.all(
-        Array.from(selectedDetailItems).map((id) => ProjectDetailsApi.delete(id))
+        Array.from(selectedDetailItems).map((id) =>
+          ProjectDetailsApi.delete(id),
+        ),
       );
-      toast.success(`${selectedDetailItems.size} item(s) deleted successfully!`);
+      toast.success(
+        `${selectedDetailItems.size} item(s) deleted successfully!`,
+      );
       setSelectedDetailItems(new Set());
       setSelectAllDetails(false);
       await loadAllProjectFloorCommonAreaDetails();
@@ -2049,7 +2082,9 @@ export default function ProjectsMaster() {
     if (selectAllDetails) {
       setSelectedDetailItems(new Set());
     } else {
-      const allIds = new Set(filteredProjectsDetails.map((detail) => detail.id));
+      const allIds = new Set(
+        filteredProjectsDetails.map((detail) => detail.id),
+      );
       setSelectedDetailItems(allIds);
     }
     setSelectAllDetails(!selectAllDetails);
@@ -2077,13 +2112,13 @@ export default function ProjectsMaster() {
   };
 
   const resetFilters = () => {
-  setFilterFromDate("");
-  setFilterToDate("");
-  setIgnoreDate(false);
-  // Clear any search date input in the table
-  handleProjectSearchFilterChange('startDate', '');
-  handleProjectSearchFilterChange('endDate', '');
-};
+    setFilterFromDate("");
+    setFilterToDate("");
+    setIgnoreDate(false);
+    // Clear any search date input in the table
+    handleProjectSearchFilterChange("startDate", "");
+    handleProjectSearchFilterChange("endDate", "");
+  };
   const applyFilters = () => {
     setShowFilterSidebar(false);
   };
@@ -2175,17 +2210,16 @@ export default function ProjectsMaster() {
       {activeTab === "project" && (
         <div>
           {/* Header with Actions */}
-     <div className="-mb-3 md:mb-2 flex flex-col md:flex-row md:items-end md:justify-between gap-4">
-  
-  {/* Left spacer */}
-  <div />
+          <div className="-mb-3 md:mb-2 flex flex-col md:flex-row md:items-end md:justify-between gap-4">
+            {/* Left spacer */}
+            <div />
 
-  {/* Right side Delete Button */}
-  <div className="flex justify-end">
-    {selectedItems.size > 0 && (
-      <button
-        onClick={handleBulkDelete}
-        className="
+            {/* Right side Delete Button */}
+            <div className="flex justify-end">
+              {selectedItems.size > 0 && (
+                <button
+                  onClick={handleBulkDelete}
+                  className="
           flex items-center gap-1.5
           bg-red-600 hover:bg-red-700
           text-white font-medium
@@ -2195,16 +2229,13 @@ export default function ProjectsMaster() {
           transition-all
           shadow-sm
         "
-      >
-        <Trash2 className="w-4 h-4" />
-        Delete ({selectedItems.size})
-      </button>
-    )}
-  </div>
-
-</div>
-
-
+                >
+                  <Trash2 className="w-4 h-4" />
+                  Delete ({selectedItems.size})
+                </button>
+              )}
+            </div>
+          </div>
 
           {/* Main Table */}
           <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden md:-mt-1 ">
@@ -2268,7 +2299,12 @@ export default function ProjectsMaster() {
                         type="text"
                         placeholder="Search name..."
                         value={searchFilters.name}
-                        onChange={(e) => handleProjectSearchFilterChange('name', e.target.value)}
+                        onChange={(e) =>
+                          handleProjectSearchFilterChange(
+                            "name",
+                            e.target.value,
+                          )
+                        }
                         className="w-full px-2 py-1 text-[9px] md:text-xs border border-gray-300 rounded focus:ring-1 focus:ring-blue-500 focus:border-transparent"
                       />
                     </td>
@@ -2279,7 +2315,12 @@ export default function ProjectsMaster() {
                         type="text"
                         placeholder="Search location..."
                         value={searchFilters.location}
-                        onChange={(e) => handleProjectSearchFilterChange('location', e.target.value)}
+                        onChange={(e) =>
+                          handleProjectSearchFilterChange(
+                            "location",
+                            e.target.value,
+                          )
+                        }
                         className="w-full px-2 py-1 text-[9px] md:text-xs border border-gray-300 rounded focus:ring-1 focus:ring-blue-500 focus:border-transparent"
                       />
                     </td>
@@ -2290,7 +2331,12 @@ export default function ProjectsMaster() {
                         type="text"
                         placeholder="Search start date..."
                         value={searchFilters.startDate}
-                        onChange={(e) => handleProjectSearchFilterChange('startDate', e.target.value)}
+                        onChange={(e) =>
+                          handleProjectSearchFilterChange(
+                            "startDate",
+                            e.target.value,
+                          )
+                        }
                         className="w-full px-2 py-1 text-[9px] md:text-xs border border-gray-300 rounded focus:ring-1 focus:ring-blue-500 focus:border-transparent"
                       />
                     </td>
@@ -2301,7 +2347,12 @@ export default function ProjectsMaster() {
                         type="text"
                         placeholder="Search end date..."
                         value={searchFilters.endDate}
-                        onChange={(e) => handleProjectSearchFilterChange('endDate', e.target.value)}
+                        onChange={(e) =>
+                          handleProjectSearchFilterChange(
+                            "endDate",
+                            e.target.value,
+                          )
+                        }
                         className="w-full px-2 py-1 text-[9px] md:text-xs border border-gray-300 rounded focus:ring-1 focus:ring-blue-500 focus:border-transparent"
                       />
                     </td>
@@ -2312,23 +2363,28 @@ export default function ProjectsMaster() {
                         type="text"
                         placeholder="Search status..."
                         value={searchFilters.status}
-                        onChange={(e) => handleProjectSearchFilterChange('status', e.target.value)}
+                        onChange={(e) =>
+                          handleProjectSearchFilterChange(
+                            "status",
+                            e.target.value,
+                          )
+                        }
                         className="w-full px-2 py-1 text-[9px] md:text-xs border border-gray-300 rounded focus:ring-1 focus:ring-blue-500 focus:border-transparent"
                       />
                     </td>
 
                     {/* Actions Column - Clear Filter Button */}
-                  {/* Actions Column - Clear Filter Button */}
-<td className="px-3 md:px-4 py-1 text-center">
-  <button
-    onClick={() => setShowFilterSidebar(true)}
-    className="inline-flex items-center px-2 py-1 border border-gray-300 rounded hover:bg-gray-50 transition text-[9px] md:text-xs font-medium text-gray-700"
-    title="Advanced Filters"
-  >
-    <Filter className="w-2.5 h-2.5 md:w-3 md:h-3 mr-0.5" />
-    Filters
-  </button>
-</td>
+                    {/* Actions Column - Clear Filter Button */}
+                    <td className="px-3 md:px-4 py-1 text-center">
+                      <button
+                        onClick={() => setShowFilterSidebar(true)}
+                        className="inline-flex items-center px-2 py-1 border border-gray-300 rounded hover:bg-gray-50 transition text-[9px] md:text-xs font-medium text-gray-700"
+                        title="Advanced Filters"
+                      >
+                        <Filter className="w-2.5 h-2.5 md:w-3 md:h-3 mr-0.5" />
+                        Filters
+                      </button>
+                    </td>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-200">
@@ -2377,7 +2433,7 @@ export default function ProjectsMaster() {
                         <td className="px-3 md:px-4 py-3">
                           <span
                             className={`px-2 py-0.5 md:px-3 md:py-1 rounded-full text-[10px] md:text-xs font-medium ${getStatusColor(
-                              project.status
+                              project.status,
                             )}`}
                           >
                             {project.status.toUpperCase()}
@@ -2395,7 +2451,9 @@ export default function ProjectsMaster() {
                               <Eye className="w-3.5 h-3.5 md:w-4 md:h-4" />
                             </button>
                             <button
-                              onClick={() => loadProjectDetails(project.id, true)}
+                              onClick={() =>
+                                loadProjectDetails(project.id, true)
+                              }
                               className="p-1.5 md:p-2 text-green-600 hover:bg-green-50 rounded-lg transition"
                               title="Edit"
                             >
@@ -2432,278 +2490,280 @@ export default function ProjectsMaster() {
         </div>
       )}
 
-{activeTab === "projectDetails" && (
-  <div>
-    {/* Search Bar with Filters */}
-    <div className="mb-3">
-  <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
-    <div className="p-2 md:p-4 border-b border-gray-200">
-
-      {/* MOBILE: ONE LINE */}
-    {/* MOBILE: ONE LINE COMPACT */}
-<div className="flex md:hidden items-center gap-1.5">
-
-  {/* Name */}
-  <input
-    type="text"
-    placeholder="Name"
-    value={searchDetailFilters.name}
-    onChange={(e) =>
-      handleDetailSearchFilterChange("name", e.target.value)
-    }
-    className="flex-1 min-w-0 px-2 py-1 text-[10px]
+      {activeTab === "projectDetails" && (
+        <div>
+          {/* Search Bar with Filters */}
+          <div className="mb-3">
+            <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
+              <div className="p-2 md:p-4 border-b border-gray-200">
+                {/* MOBILE: ONE LINE */}
+                {/* MOBILE: ONE LINE COMPACT */}
+                <div className="flex md:hidden items-center gap-1.5">
+                  {/* Name */}
+                  <input
+                    type="text"
+                    placeholder="Name"
+                    value={searchDetailFilters.name}
+                    onChange={(e) =>
+                      handleDetailSearchFilterChange("name", e.target.value)
+                    }
+                    className="flex-1 min-w-0 px-2 py-1 text-[10px]
       border border-gray-300 rounded-md
       focus:ring-1 focus:ring-blue-500"
-  />
+                  />
 
-  {/* Category */}
-  <input
-    type="text"
-    placeholder="Category"
-    value={searchDetailFilters.category}
-    onChange={(e) =>
-      handleDetailSearchFilterChange("category", e.target.value)
-    }
-    className="flex-1 min-w-0 px-2 py-1 text-[10px]
+                  {/* Category */}
+                  <input
+                    type="text"
+                    placeholder="Category"
+                    value={searchDetailFilters.category}
+                    onChange={(e) =>
+                      handleDetailSearchFilterChange("category", e.target.value)
+                    }
+                    className="flex-1 min-w-0 px-2 py-1 text-[10px]
       border border-gray-300 rounded-md
       focus:ring-1 focus:ring-blue-500"
-  />
+                  />
 
-  {/* Clear */}
-  <button
-    onClick={clearAllDetailFilters}
-    className="shrink-0 px-2 py-1
+                  {/* Clear */}
+                  <button
+                    onClick={clearAllDetailFilters}
+                    className="shrink-0 px-2 py-1
       border border-gray-300 rounded-md
       text-[10px]"
-  >
-    Clear
-  </button>
+                  >
+                    Clear
+                  </button>
 
-  {/* Delete (ALWAYS VISIBLE) */}
-  {selectedDetailItems.size > 0 && (
-    <button
-      onClick={handleBulkDeleteDetails}
-      className="shrink-0 px-2 py-1
+                  {/* Delete (ALWAYS VISIBLE) */}
+                  {selectedDetailItems.size > 0 && (
+                    <button
+                      onClick={handleBulkDeleteDetails}
+                      className="shrink-0 px-2 py-1
         bg-red-600 text-white rounded-md
         text-[10px] whitespace-nowrap"
-    >
-      Del {selectedDetailItems.size}
-    </button>
-  )}
-</div>
+                    >
+                      Del {selectedDetailItems.size}
+                    </button>
+                  )}
+                </div>
 
-
-      {/* DESKTOP / TABLET: GRID */}
-      <div
-        className={`hidden md:grid gap-4
-        ${
-          selectedDetailItems.size > 0
-            ? "md:grid-cols-4"
-            : "md:grid-cols-3"
-        }`}
-      >
-
-        {/* Name */}
-        <div>
-          <div className="text-xs font-semibold text-gray-700 uppercase mb-1">
-            Name
-          </div>
-          <input
-            type="text"
-            placeholder="Search name..."
-            value={searchDetailFilters.name}
-            onChange={(e) =>
-              handleDetailSearchFilterChange("name", e.target.value)
-            }
-            className="w-full px-3 py-2 text-xs border border-gray-300 rounded-md focus:ring-1 focus:ring-blue-500"
-          />
-        </div>
-
-        {/* Category */}
-        <div>
-          <div className="text-xs font-semibold text-gray-700 uppercase mb-1">
-            Category
-          </div>
-          <input
-            type="text"
-            placeholder="Search category..."
-            value={searchDetailFilters.category}
-            onChange={(e) =>
-              handleDetailSearchFilterChange("category", e.target.value)
-            }
-            className="w-full px-3 py-2 text-xs border border-gray-300 rounded-md focus:ring-1 focus:ring-blue-500"
-          />
-        </div>
-
-        {/* Clear */}
-        <div className="flex items-end">
-          <button
-            onClick={clearAllDetailFilters}
-            className="w-full px-3 py-2 border border-gray-300 rounded-md text-xs hover:bg-gray-50"
-          >
-            Clear Filters
-          </button>
-        </div>
-
-        {/* Bulk Delete */}
-        {selectedDetailItems.size > 0 && (
-          <div className="flex items-end">
-            <button
-              onClick={handleBulkDeleteDetails}
-              className="w-full px-3 py-2 bg-red-600 text-white rounded-md text-xs hover:bg-red-700"
-            >
-              Delete ({selectedDetailItems.size})
-            </button>
-          </div>
-        )}
-
-      </div>
-    </div>
-  </div>
-</div>
-
-
-    {/* Project Details Grid */}
-    <div className="grid grid-cols-1 xs:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
-      {filteredProjectsDetails.map((project) => {
-        const isSelected = selectedDetailItems.has(project.id);
-        return (
-          <div
-            key={project.id}
-            className={`border rounded-xl shadow-sm hover:shadow-md transition ${
-              isSelected ? "border-blue-500 bg-blue-50" : "border-slate-300 hover:border-gray-400"
-            }`}
-          >
-            {/* Card Header */}
-            <div className="flex justify-between items-center p-3 md:p-4 border-b bg-gradient-to-r from-gray-50 to-white">
-              <div className="flex items-center gap-2 flex-1 min-w-0">
-                <input
-                  type="checkbox"
-                  checked={isSelected}
-                  onChange={() => handleSelectDetailItem(project.id)}
-                  className="w-3.5 h-3.5 md:w-4 md:h-4 text-[#C62828] border-gray-300 rounded focus:ring-[#C62828] flex-shrink-0"
-                />
-                <h1 
-                  className="text-xs md:text-sm font-semibold truncate" 
-                  title={project.name}
+                {/* DESKTOP / TABLET: GRID */}
+                <div
+                  className={`hidden md:grid gap-4
+        ${selectedDetailItems.size > 0 ? "md:grid-cols-4" : "md:grid-cols-3"}`}
                 >
-                  {project.name}
-                </h1>
+                  {/* Name */}
+                  <div>
+                    <div className="text-xs font-semibold text-gray-700 uppercase mb-1">
+                      Name
+                    </div>
+                    <input
+                      type="text"
+                      placeholder="Search name..."
+                      value={searchDetailFilters.name}
+                      onChange={(e) =>
+                        handleDetailSearchFilterChange("name", e.target.value)
+                      }
+                      className="w-full px-3 py-2 text-xs border border-gray-300 rounded-md focus:ring-1 focus:ring-blue-500"
+                    />
+                  </div>
+
+                  {/* Category */}
+                  <div>
+                    <div className="text-xs font-semibold text-gray-700 uppercase mb-1">
+                      Category
+                    </div>
+                    <input
+                      type="text"
+                      placeholder="Search category..."
+                      value={searchDetailFilters.category}
+                      onChange={(e) =>
+                        handleDetailSearchFilterChange(
+                          "category",
+                          e.target.value,
+                        )
+                      }
+                      className="w-full px-3 py-2 text-xs border border-gray-300 rounded-md focus:ring-1 focus:ring-blue-500"
+                    />
+                  </div>
+
+                  {/* Clear */}
+                  <div className="flex items-end">
+                    <button
+                      onClick={clearAllDetailFilters}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md text-xs hover:bg-gray-50"
+                    >
+                      Clear Filters
+                    </button>
+                  </div>
+
+                  {/* Bulk Delete */}
+                  {selectedDetailItems.size > 0 && (
+                    <div className="flex items-end">
+                      <button
+                        onClick={handleBulkDeleteDetails}
+                        className="w-full px-3 py-2 bg-red-600 text-white rounded-md text-xs hover:bg-red-700"
+                      >
+                        Delete ({selectedDetailItems.size})
+                      </button>
+                    </div>
+                  )}
+                </div>
               </div>
-              <div className="flex gap-1 flex-shrink-0">
+            </div>
+          </div>
+
+          {/* Project Details Grid */}
+          <div className="grid grid-cols-1 xs:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
+            {filteredProjectsDetails.map((project) => {
+              const isSelected = selectedDetailItems.has(project.id);
+              return (
+                <div
+                  key={project.id}
+                  className={`border rounded-xl shadow-sm hover:shadow-md transition ${
+                    isSelected
+                      ? "border-blue-500 bg-blue-50"
+                      : "border-slate-300 hover:border-gray-400"
+                  }`}
+                >
+                  {/* Card Header */}
+                  <div className="rounded-xl flex justify-between items-center p-3 md:p-4 border-b bg-gradient-to-r from-gray-50 to-white">
+                    <div className="flex items-center gap-2 flex-1 min-w-0">
+                      <input
+                        type="checkbox"
+                        checked={isSelected}
+                        onChange={() => handleSelectDetailItem(project.id)}
+                        className="w-3.5 h-3.5 md:w-4 md:h-4 text-[#C62828] border-gray-300 rounded focus:ring-[#C62828] flex-shrink-0"
+                      />
+                      <h1
+                        className="text-xs md:text-sm font-semibold truncate"
+                        title={project.name}
+                      >
+                        {project.name}
+                      </h1>
+                    </div>
+                    <div className="flex gap-1 flex-shrink-0">
+                      <button
+                        onClick={() => {
+                          setSelectedProjectDetails(project);
+                          setUpdateProjectDetails(true);
+                          setShowProjectDetailsForm(true);
+                        }}
+                        className="p-1 md:p-1.5 text-green-600 hover:bg-green-50 rounded-lg transition hover:scale-105 active:scale-95"
+                        title="Edit"
+                      >
+                        <Edit2 className="w-3.5 h-3.5 md:w-4 md:h-4" />
+                      </button>
+                      <button
+                        onClick={() => deleteProjectDetails(project.id)}
+                        className="p-1 md:p-1.5 text-red-600 hover:bg-red-50 rounded-lg transition hover:scale-105 active:scale-95"
+                        title="Delete"
+                      >
+                        <Trash2 className="w-3.5 h-3.5 md:w-4 md:h-4" />
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* Card Content */}
+                  <div className="p-3 md:p-4">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <div
+                          className={`p-1.5 md:p-2 rounded-lg ${
+                            project.category === "floor"
+                              ? "bg-green-100"
+                              : "bg-blue-100"
+                          }`}
+                        >
+                          {project.category === "floor" ? (
+                            <Layers className="w-3.5 h-3.5 md:w-4 md:h-4 text-green-700" />
+                          ) : project.category === "flat" ? (
+                            <Home className="w-3.5 h-3.5 md:w-4 md:h-4 text-blue-700" />
+                          ) : (
+                            <DoorOpen className="w-3.5 h-3.5 md:w-4 md:h-4 text-blue-700" />
+                          )}
+                        </div>
+                        <div>
+                          <span className="text-xs md:text-sm font-medium text-gray-800">
+                            {project.category === "floor"
+                              ? "Floor"
+                              : project.category === "flat"
+                                ? "Flat"
+                                : "Common Area"}
+                          </span>
+                          {/* Safe ID display */}
+                          {project.id && (
+                            <div className="text-[9px] md:text-xs text-gray-500 mt-0.5">
+                              ID: {String(project.id).slice(0, 8)}
+                              {String(project.id).length > 8 ? "..." : ""}
+                            </div>
+                          )}
+                        </div>
+                      </div>
+
+                      {/* Status Indicator */}
+                      <div
+                        className={`px-2 py-1 rounded-full text-[9px] md:text-xs font-medium ${
+                          project.is_active !== false
+                            ? "bg-green-100 text-green-700"
+                            : "bg-gray-100 text-gray-700"
+                        }`}
+                      >
+                        {project.is_active !== false ? "Active" : "Inactive"}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+
+          {/* Empty State */}
+          {filteredProjectsDetails.length === 0 && (
+            <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 md:p-8 text-center mt-6">
+              <Package className="w-12 h-12 md:w-16 md:h-16 text-gray-300 mx-auto mb-4" />
+              <p className="text-gray-600 text-sm md:text-base font-medium">
+                No project details found
+              </p>
+              <p className="text-gray-500 text-xs md:text-sm mt-2 mb-4">
+                {searchDetailFilters.name || searchDetailFilters.category
+                  ? "Try a different search term or clear filters"
+                  : "Click 'Add Project Details' to get started"}
+              </p>
+              {!searchDetailFilters.name && !searchDetailFilters.category && (
                 <button
                   onClick={() => {
-                    setSelectedProjectDetails(project);
-                    setUpdateProjectDetails(true);
                     setShowProjectDetailsForm(true);
+                    setUpdateProjectDetails(false);
+                    setSelectedProjectDetails({
+                      id: "",
+                      name: "",
+                      category: "floor",
+                    });
                   }}
-                  className="p-1 md:p-1.5 text-green-600 hover:bg-green-50 rounded-lg transition hover:scale-105 active:scale-95"
-                  title="Edit"
+                  className="inline-flex items-center gap-2 bg-[#C62828] text-white px-4 py-2 rounded-lg hover:bg-red-500 transition text-sm font-medium shadow-sm"
                 >
-                  <Edit2 className="w-3.5 h-3.5 md:w-4 md:h-4" />
+                  <Plus className="w-4 h-4" />
+                  Add Project Details
                 </button>
-                <button
-                  onClick={() => deleteProjectDetails(project.id)}
-                  className="p-1 md:p-1.5 text-red-600 hover:bg-red-50 rounded-lg transition hover:scale-105 active:scale-95"
-                  title="Delete"
-                >
-                  <Trash2 className="w-3.5 h-3.5 md:w-4 md:h-4" />
-                </button>
-              </div>
+              )}
             </div>
-
-            {/* Card Content */}
-            <div className="p-3 md:p-4">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <div
-                    className={`p-1.5 md:p-2 rounded-lg ${
-                      project.category === "floor"
-                        ? "bg-green-100"
-                        : "bg-blue-100"
-                    }`}
-                  >
-                    {project.category === "floor" ? (
-                      <Layers className="w-3.5 h-3.5 md:w-4 md:h-4 text-green-700" />
-                    ) : (
-                      <DoorOpen className="w-3.5 h-3.5 md:w-4 md:h-4 text-blue-700" />
-                    )}
-                  </div>
-                  <div>
-                    <span className="text-xs md:text-sm font-medium text-gray-800">
-                      {project.category === "floor" ? "Floor" : "Common Area"}
-                    </span>
-                    {/* Safe ID display */}
-                    {project.id && (
-                      <div className="text-[9px] md:text-xs text-gray-500 mt-0.5">
-                        ID: {String(project.id).slice(0, 8)}
-                        {String(project.id).length > 8 ? "..." : ""}
-                      </div>
-                    )}
-                  </div>
-                </div>
-                
-                {/* Status Indicator */}
-                <div className={`px-2 py-1 rounded-full text-[9px] md:text-xs font-medium ${
-                  project.is_active !== false 
-                    ? "bg-green-100 text-green-700" 
-                    : "bg-gray-100 text-gray-700"
-                }`}>
-                  {project.is_active !== false ? "Active" : "Inactive"}
-                </div>
-              </div>
-            </div>
-          </div>
-        );
-      })}
-    </div>
-
-    {/* Empty State */}
-    {filteredProjectsDetails.length === 0 && (
-      <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 md:p-8 text-center mt-6">
-        <Package className="w-12 h-12 md:w-16 md:h-16 text-gray-300 mx-auto mb-4" />
-        <p className="text-gray-600 text-sm md:text-base font-medium">
-          No project details found
-        </p>
-        <p className="text-gray-500 text-xs md:text-sm mt-2 mb-4">
-          {searchDetailFilters.name || searchDetailFilters.category 
-            ? "Try a different search term or clear filters"
-            : "Click 'Add Project Details' to get started"}
-        </p>
-        {(!searchDetailFilters.name && !searchDetailFilters.category) && (
-          <button
-            onClick={() => {
-              setShowProjectDetailsForm(true);
-              setUpdateProjectDetails(false);
-              setSelectedProjectDetails({
-                id: "",
-                name: "",
-                category: "floor",
-              });
-            }}
-            className="inline-flex items-center gap-2 bg-[#C62828] text-white px-4 py-2 rounded-lg hover:bg-red-500 transition text-sm font-medium shadow-sm"
-          >
-            <Plus className="w-4 h-4" />
-            Add Project Details
-          </button>
-        )}
-      </div>
-    )}
-  </div>
-)}
+          )}
+        </div>
+      )}
       {/* Filter Sidebar */}
-     {showFilterSidebar && activeTab === "project" && (
-  <div className="fixed inset-0 z-50 overflow-hidden">
-    
-    {/* Overlay */}
-    <div
-      className="absolute inset-0 bg-black bg-opacity-50 transition-opacity duration-300"
-      onClick={() => setShowFilterSidebar(false)}
-    />
+      {showFilterSidebar && activeTab === "project" && (
+        <div className="fixed inset-0 z-50 overflow-hidden">
+          {/* Overlay */}
+          <div
+            className="absolute inset-0 bg-black bg-opacity-50 transition-opacity duration-300"
+            onClick={() => setShowFilterSidebar(false)}
+          />
 
-    {/* Sidebar */}
-    <div
-      className={`
+          {/* Sidebar */}
+          <div
+            className={`
         absolute inset-y-0 right-0
         bg-white shadow-2xl flex flex-col
         transition-transform duration-300 ease-out
@@ -2715,168 +2775,191 @@ export default function ProjectsMaster() {
         /* DESKTOP */
         md:max-w-md md:w-full
       `}
-    >
-      {/* Header */}
-      <div className="bg-gradient-to-r from-[#C62828] to-[#D32F2F] px-4 md:px-6 py-3 md:py-4 flex justify-between items-center">
-        <div className="flex items-center gap-3">
-          <div className="p-2 bg-white/20 rounded-lg">
-            <Calendar className="w-4 h-4 md:w-5 md:h-5 text-white" />
-          </div>
-          <div>
-            <h2 className="text-sm md:text-xl font-bold text-white">
-              Date Filters
-            </h2>
-            <p className="text-xs md:text-sm text-white/80">
-              Select a date range to filter projects
-            </p>
-          </div>
-        </div>
-
-        <div className="flex items-center gap-2 md:gap-3">
-          <button
-            onClick={resetFilters}
-            className="text-white text-xs md:text-sm hover:bg-white hover:bg-opacity-20 px-2 md:px-3 py-1 md:py-1.5 rounded transition font-medium"
           >
-            Reset
-          </button>
-          <button
-            onClick={() => setShowFilterSidebar(false)}
-            className="text-white hover:bg-white hover:bg-opacity-20 rounded-lg p-1 md:p-1.5 transition"
-          >
-            <X className="w-4 h-4 md:w-5 md:h-5" />
-          </button>
-        </div>
-      </div>
+            {/* Header */}
+            <div className="bg-gradient-to-r from-[#C62828] to-[#D32F2F] px-4 md:px-6 py-3 md:py-4 flex justify-between items-center">
+              <div className="flex items-center gap-3">
+                <div className="p-2 bg-white/20 rounded-lg">
+                  <Calendar className="w-4 h-4 md:w-5 md:h-5 text-white" />
+                </div>
+                <div>
+                  <h2 className="text-sm md:text-xl font-bold text-white">
+                    Date Filters
+                  </h2>
+                  <p className="text-xs md:text-sm text-white/80">
+                    Select a date range to filter projects
+                  </p>
+                </div>
+              </div>
 
-      {/* Content */}
-      <div className="flex-1 overflow-y-auto p-4 md:p-6 space-y-4 md:space-y-6">
-        <div className="space-y-4">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            
-            {/* From Date */}
-            <div className="space-y-2">
-              <label className="block text-xs md:text-sm font-semibold text-gray-700 flex items-center gap-2">
-                <Calendar className="w-4 h-4 text-[#C62828]" />
-                From Date
-              </label>
-              <div className="relative">
-                <DatePicker
-                  selected={filterFromDate ? new Date(filterFromDate) : null}
-                  onChange={(date: { toISOString: () => string; }) => setFilterFromDate(date ? date.toISOString().split('T')[0] : "")}
-                  selectsStart
-                  startDate={filterFromDate ? new Date(filterFromDate) : null}
-                  endDate={filterToDate ? new Date(filterToDate) : null}
-                  maxDate={filterToDate ? new Date(filterToDate) : new Date()}
-                  placeholderText="Select start date"
-                  className="w-full pl-9 md:pl-10 pr-3 md:pr-4 py-2 text-xs md:text-sm border border-gray-300 rounded-lg focus:border-[#C62828] focus:ring-2 focus:ring-[#C62828]/20 outline-none transition-all"
-                  dateFormat="dd/MM/yyyy"
-                  locale="en-GB"
-                  isClearable
-                  showMonthDropdown
-                  showYearDropdown
-                  dropdownMode="select"
-                />
-                <div className="absolute left-3 top-1/2 -translate-y-1/2">
-                  <Calendar className="w-4 h-4 text-gray-500" />
+              <div className="flex items-center gap-2 md:gap-3">
+                <button
+                  onClick={resetFilters}
+                  className="text-white text-xs md:text-sm hover:bg-white hover:bg-opacity-20 px-2 md:px-3 py-1 md:py-1.5 rounded transition font-medium"
+                >
+                  Reset
+                </button>
+                <button
+                  onClick={() => setShowFilterSidebar(false)}
+                  className="text-white hover:bg-white hover:bg-opacity-20 rounded-lg p-1 md:p-1.5 transition"
+                >
+                  <X className="w-4 h-4 md:w-5 md:h-5" />
+                </button>
+              </div>
+            </div>
+
+            {/* Content */}
+            <div className="flex-1 overflow-y-auto p-4 md:p-6 space-y-4 md:space-y-6">
+              <div className="space-y-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {/* From Date */}
+                  <div className="space-y-2">
+                    <label className="block text-xs md:text-sm font-semibold text-gray-700 flex items-center gap-2">
+                      <Calendar className="w-4 h-4 text-[#C62828]" />
+                      From Date
+                    </label>
+                    <div className="relative">
+                      <DatePicker
+                        selected={
+                          filterFromDate ? new Date(filterFromDate) : null
+                        }
+                        onChange={(date: Date | null) =>
+                          setFilterFromDate(
+                            date ? date.toISOString().split("T")[0] : "",
+                          )
+                        }
+                        selectsStart
+                        startDate={
+                          filterFromDate ? new Date(filterFromDate) : null
+                        }
+                        endDate={filterToDate ? new Date(filterToDate) : null}
+                        maxDate={
+                          filterToDate ? new Date(filterToDate) : new Date()
+                        }
+                        placeholderText="Select start date"
+                        className="w-full pl-9 md:pl-10 pr-3 md:pr-4 py-2 text-xs md:text-sm border border-gray-300 rounded-lg focus:border-[#C62828] focus:ring-2 focus:ring-[#C62828]/20 outline-none transition-all"
+                        dateFormat="dd/MM/yyyy"
+                        locale="en-GB"
+                        isClearable
+                        showMonthDropdown
+                        showYearDropdown
+                        dropdownMode="select"
+                      />
+                      <div className="absolute left-3 top-1/2 -translate-y-1/2">
+                        <Calendar className="w-4 h-4 text-gray-500" />
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* To Date */}
+                  <div className="space-y-2">
+                    <label className="block text-xs md:text-sm font-semibold text-gray-700 flex items-center gap-2">
+                      <Calendar className="w-4 h-4 text-[#C62828]" />
+                      To Date
+                    </label>
+                    <div className="relative">
+                      <DatePicker
+                        selected={filterToDate ? new Date(filterToDate) : null}
+                        onChange={(date: Date | null) =>
+                          setFilterToDate(
+                            date ? date.toISOString().split("T")[0] : "",
+                          )
+                        }
+                        selectsEnd
+                        startDate={
+                          filterFromDate ? new Date(filterFromDate) : null
+                        }
+                        endDate={filterToDate ? new Date(filterToDate) : null}
+                        minDate={
+                          filterFromDate ? new Date(filterFromDate) : undefined
+                        }
+                        maxDate={new Date()}
+                        placeholderText="Select end date"
+                        className="w-full pl-9 md:pl-10 pr-3 md:pr-4 py-2 text-xs md:text-sm border border-gray-300 rounded-lg focus:border-[#C62828] focus:ring-2 focus:ring-[#C62828]/20 outline-none transition-all"
+                        dateFormat="dd/MM/yyyy"
+                        locale="en-GB"
+                        isClearable
+                        showMonthDropdown
+                        showYearDropdown
+                        dropdownMode="select"
+                      />
+                      <div className="absolute left-3 top-1/2 -translate-y-1/2">
+                        <Calendar className="w-4 h-4 text-gray-500" />
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Date Summary */}
+                {(filterFromDate || filterToDate) && (
+                  <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
+                    <p className="text-xs md:text-sm font-medium text-gray-800">
+                      Selected Range
+                    </p>
+                    <p className="text-[11px] md:text-xs text-gray-600">
+                      {filterFromDate
+                        ? new Date(filterFromDate).toLocaleDateString("en-GB")
+                        : "Any"}{" "}
+                      →{" "}
+                      {filterToDate
+                        ? new Date(filterToDate).toLocaleDateString("en-GB")
+                        : "Any"}
+                    </p>
+                  </div>
+                )}
+              </div>
+
+              {/* Ignore Date */}
+              <div className="border-t pt-4">
+                <div className="flex items-start gap-3 p-3 bg-gray-50 rounded-lg">
+                  <input
+                    type="checkbox"
+                    checked={ignoreDate}
+                    onChange={(e) => {
+                      setIgnoreDate(e.target.checked);
+                      if (e.target.checked) {
+                        setFilterFromDate("");
+                        setFilterToDate("");
+                      }
+                    }}
+                    className="w-4 h-4 md:w-5 md:h-5 text-[#C62828]"
+                  />
+                  <div>
+                    <p className="text-xs md:text-sm font-medium text-gray-700">
+                      Ignore Date Filters
+                    </p>
+                    <p className="text-[11px] md:text-xs text-gray-500">
+                      Show all data regardless of date
+                    </p>
+                  </div>
                 </div>
               </div>
             </div>
 
-            {/* To Date */}
-            <div className="space-y-2">
-              <label className="block text-xs md:text-sm font-semibold text-gray-700 flex items-center gap-2">
-                <Calendar className="w-4 h-4 text-[#C62828]" />
-                To Date
-              </label>
-              <div className="relative">
-                <DatePicker
-                  selected={filterToDate ? new Date(filterToDate) : null}
-                  onChange={(date: { toISOString: () => string; }) => setFilterToDate(date ? date.toISOString().split('T')[0] : "")}
-                  selectsEnd
-                  startDate={filterFromDate ? new Date(filterFromDate) : null}
-                  endDate={filterToDate ? new Date(filterToDate) : null}
-                  minDate={filterFromDate ? new Date(filterFromDate) : undefined}
-                  maxDate={new Date()}
-                  placeholderText="Select end date"
-                  className="w-full pl-9 md:pl-10 pr-3 md:pr-4 py-2 text-xs md:text-sm border border-gray-300 rounded-lg focus:border-[#C62828] focus:ring-2 focus:ring-[#C62828]/20 outline-none transition-all"
-                  dateFormat="dd/MM/yyyy"
-                  locale="en-GB"
-                  isClearable
-                  showMonthDropdown
-                  showYearDropdown
-                  dropdownMode="select"
-                />
-                <div className="absolute left-3 top-1/2 -translate-y-1/2">
-                  <Calendar className="w-4 h-4 text-gray-500" />
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* Date Summary */}
-          {(filterFromDate || filterToDate) && (
-            <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
-              <p className="text-xs md:text-sm font-medium text-gray-800">
-                Selected Range
-              </p>
-              <p className="text-[11px] md:text-xs text-gray-600">
-                {filterFromDate ? new Date(filterFromDate).toLocaleDateString("en-GB") : "Any"} →{" "}
-                {filterToDate ? new Date(filterToDate).toLocaleDateString("en-GB") : "Any"}
-              </p>
-            </div>
-          )}
-        </div>
-
-        {/* Ignore Date */}
-        <div className="border-t pt-4">
-          <div className="flex items-start gap-3 p-3 bg-gray-50 rounded-lg">
-            <input
-              type="checkbox"
-              checked={ignoreDate}
-              onChange={(e) => {
-                setIgnoreDate(e.target.checked);
-                if (e.target.checked) {
-                  setFilterFromDate("");
-                  setFilterToDate("");
-                }
-              }}
-              className="w-4 h-4 md:w-5 md:h-5 text-[#C62828]"
-            />
-            <div>
-              <p className="text-xs md:text-sm font-medium text-gray-700">
-                Ignore Date Filters
-              </p>
-              <p className="text-[11px] md:text-xs text-gray-500">
-                Show all data regardless of date
-              </p>
+            {/* Footer */}
+            <div className="border-t p-3 md:p-4 flex gap-2 md:gap-3">
+              <button
+                onClick={resetFilters}
+                className="flex-1 px-3 md:px-4 py-2 text-xs md:text-sm border border-gray-300 rounded-lg hover:bg-gray-50 font-medium"
+              >
+                Reset All
+              </button>
+              <button
+                onClick={applyFilters}
+                className="flex-1 bg-gradient-to-r from-[#C62828] to-[#D32F2F] text-white px-3 md:px-4 py-2 text-xs md:text-sm rounded-lg hover:shadow-lg font-medium"
+              >
+                Apply Filters
+              </button>
             </div>
           </div>
         </div>
-      </div>
-
-      {/* Footer */}
-      <div className="border-t p-3 md:p-4 flex gap-2 md:gap-3">
-        <button
-          onClick={resetFilters}
-          className="flex-1 px-3 md:px-4 py-2 text-xs md:text-sm border border-gray-300 rounded-lg hover:bg-gray-50 font-medium"
-        >
-          Reset All
-        </button>
-        <button
-          onClick={applyFilters}
-          className="flex-1 bg-gradient-to-r from-[#C62828] to-[#D32F2F] text-white px-3 md:px-4 py-2 text-xs md:text-sm rounded-lg hover:shadow-lg font-medium"
-        >
-          Apply Filters
-        </button>
-      </div>
-    </div>
-  </div>
-)}
+      )}
 
       {/* Modals */}
       {showModal && (
         <CreateProjects
           setShowModel={setShowModal}
+          allFlats={allFlats}
           allFloors={allFloors}
           allCommonArea={allCommonArea}
           loadAllData={loadProjects}
