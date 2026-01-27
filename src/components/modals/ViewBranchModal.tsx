@@ -1,7 +1,6 @@
-import { X, Mail, Phone, MapPin, RefreshCw, Trash2, CheckCircle, Edit, XCircle } from 'lucide-react';
+import { X, Mail, Phone, MapPin, RefreshCw, Trash2, CheckCircle, Edit, XCircle, ToggleLeft, ToggleRight } from 'lucide-react';
 import Button from '../ui/Button';
 import { OfficeLocation } from '../../lib/companyApi';
-import { toast } from 'sonner';
 import MySwal from "../../utils/swal";
 import { useState } from 'react';
 
@@ -15,7 +14,7 @@ interface ViewBranchModalProps {
   onDeleteLocation: (locationId: string) => Promise<void> | void;
   onAddBranch: () => void;
   onEditBranch: (location: OfficeLocation) => void;
-  onToggleStatus: (locationId: string, currentStatus: boolean) => Promise<void> | void;
+  onToggleStatus: (locationId: string, currentStatus: boolean) => void; // ✅ यह important है
 }
 
 export default function ViewBranchModal({
@@ -28,7 +27,7 @@ export default function ViewBranchModal({
   onDeleteLocation,
   onAddBranch,
   onEditBranch,
-  onToggleStatus,
+  onToggleStatus, // ✅ यह prop receive करें
 }: ViewBranchModalProps) {
   const [updatingStatus, setUpdatingStatus] = useState<string | null>(null);
 
@@ -75,16 +74,8 @@ const handleDelete = async (locationId: string, locationName: string) => {
       return;
     }
     
-    try {
-      // Call the parent component's toggle function
-      await onToggleStatus(locationId, currentStatus);
-      toast.success(`Branch ${currentStatus ? 'deactivated' : 'activated'} successfully`);
-    } catch (error: any) {
-      console.error("Error toggling branch status:", error);
-      toast.error(error.response?.data?.message || `Failed to ${currentStatus ? 'deactivate' : 'activate'} branch`);
-    } finally {
-      setUpdatingStatus(null);
-    }
+    // ✅ यहाँ onToggleStatus function call करें
+    onToggleStatus(locationId, currentStatus);
   };
 
   return (
@@ -218,30 +209,63 @@ const handleDelete = async (locationId: string, locationName: string) => {
 </button>
                           </div>
                         </div>
-                        
-                        <div className="space-y-2 text-sm">
-                          <p className="text-gray-700">{location.address}</p>
-                          {(location.city || location.state || location.country) && (
-                            <p className="text-gray-600">
-                              {[location.city, location.state, location.country].filter(Boolean).join(', ')}
-                            </p>
-                          )}
-                          {location.contact_email && (
-                            <p className="text-gray-600 flex items-center gap-2">
-                              <Mail className="w-3 h-3" />
-                              {location.contact_email}
-                            </p>
-                          )}
-                          {location.contact_phone && (
-                            <p className="text-gray-600 flex items-center gap-2">
-                              <Phone className="w-3 h-3" />
-                              {location.contact_phone}
-                            </p>
-                          )}
-                          <div className="pt-2 border-t border-gray-100 text-xs text-gray-500">
-                            <p>Geofence: {location.geofence_radius_meters}m radius</p>
-                            <p>Coordinates: {Number(location.latitude)?.toFixed(6)}, {Number(location.longitude)?.toFixed(6)}</p>
-                          </div>
+                        <div className="flex items-center gap-1">
+                          {/* Status Toggle Button */}
+                          <button
+                            onClick={() => handleToggleStatus(String(location.id), location.is_active, location.name)}
+                            className={`p-1.5 rounded-full transition-colors ${
+                              location.is_active 
+                                ? 'bg-green-100 hover:bg-green-200 text-green-700 hover:text-green-800' 
+                                : 'bg-gray-100 hover:bg-gray-200 text-gray-500 hover:text-gray-700'
+                            }`}
+                            title={location.is_active ? "Active - Click to deactivate" : "Inactive - Click to activate"}
+                          >
+                            {location.is_active ? (
+                              <ToggleRight className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+                            ) : (
+                              <ToggleLeft className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+                            )}
+                          </button>
+                          
+                          <button
+                            onClick={() => onEditBranch(location)}
+                            className="p-1.5 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+                            title="Edit Branch"
+                          >
+                            <Edit className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+                          </button>
+                          <button
+                            onClick={() => handleDelete(String(location.id), location.name)}
+                            className="p-1.5 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                            title="Delete Branch"
+                          >
+                            <Trash2 className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+                          </button>
+                        </div>
+                      </div>
+                      
+                      <div className="space-y-1.5 sm:space-y-2 text-sm">
+                        <p className="text-gray-700">{location.address}</p>
+                        {location.city || location.state || location.country ? (
+                          <p className="text-gray-600">
+                            {[location.city, location.state, location.country].filter(Boolean).join(', ')}
+                          </p>
+                        ) : null}
+                        {location.contact_email && (
+                          <p className="text-gray-600 flex items-center gap-2">
+                            <Mail className="w-3 h-3" />
+                            {location.contact_email}
+                          </p>
+                        )}
+                        {location.contact_phone && (
+                          <p className="text-gray-600 flex items-center gap-2">
+                            <Phone className="w-3 h-3" />
+                            {location.contact_phone}
+                          </p>
+                        )}
+                        <div className="pt-1.5 sm:pt-2 border-t border-gray-100 text-xs text-gray-500">
+                          <p>Geofence: {location.geofence_radius_meters}m radius</p>
+                          <p>Coordinates: {Number(location.latitude)?.toFixed(6)}, {Number(location.longitude)?.toFixed(6)}</p>
                         </div>
                       </div>
                     );
