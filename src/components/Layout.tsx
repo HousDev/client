@@ -264,7 +264,7 @@ export default function Layout({
       label: "Settings",
       icon: FaCog,
       headerIcon: FaCog,
-      value: ["view_settings", "edit_settings"],
+      value: ["view_settings", "edit_settings", "full_access"],
       submenu: settingsSubmenuItems,
     },
     {
