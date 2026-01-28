@@ -147,7 +147,7 @@ const attendanceApi = {
         statistics: response.data
       };
     } catch (error: any) {
-      console.error('Get All Today API error:', error);
+      console.error('Get All Today API error:', error);a
       // Return mock data for testing
       return {
         success: true,
