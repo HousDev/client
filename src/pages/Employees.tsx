@@ -1,6 +1,4 @@
-
-
-// components/Employees.tsx
+// pages/Employees.tsx - FIXED VERSION
 import { useState, useEffect } from "react";
 import {
   Users,
@@ -748,61 +746,69 @@ export default function Employees({ onViewProfile }: EmployeesProps) {
                     <td className="px-4 py-3">
                       {getStatusBadge(employee.employee_status)}
                     </td>
-                  <td className="px-4 py-3">
-  <div className="flex items-center justify-end gap-1">
-    <button
-      onClick={() => navigate(`/employee/${employee.id}`)}
-      className="p-1.5 hover:bg-slate-100 rounded transition-colors"
-      title="View Profile"
-    >
-      <Eye className="h-4 w-4 text-slate-600" />
-    </button>
-    <button
-      onClick={() => {
-        setSelectedEmployee(employee);
-        setShowEditModal(true);
-      }}
-      className="p-1.5 hover:bg-slate-100 rounded transition-colors"
-      title="Edit Basic Info"
-    >
-      <Edit className="h-4 w-4 text-slate-600" />
-    </button>
-    <button
-      onClick={() => {
-        setSelectedEmployee(employee);
-        setShowAddMoreDetailsModal(true);
-      }}
-      className="p-1.5 hover:bg-slate-100 rounded transition-colors group relative"
-      title={hasDetails ? "Edit Additional Details" : "Add More Details"}
-    >
-      {/* Show different icons based on whether details exist */}
-      {hasDetails ? (
-        <>
-          <FileEdit className="h-4 w-4 text-green-600" />
-          {/* Tooltip for editing */}
-          <div className="absolute bottom-full right-0 mb-2 hidden group-hover:block bg-gray-800 text-white text-xs rounded py-1 px-2 whitespace-nowrap z-10">
-            Edit Additional Details
-          </div>
-        </>
-      ) : (
-        <>
-          <FilePlus className="h-4 w-4 text-blue-600" />
-          {/* Tooltip for adding */}
-          <div className="absolute bottom-full right-0 mb-2 hidden group-hover:block bg-gray-800 text-white text-xs rounded py-1 px-2 whitespace-nowrap z-10">
-            Add More Details
-          </div>
-        </>
-      )}
-    </button>
-    <button
-      onClick={() => deleteEmployee(Number(employee.id))}
-      className="p-1.5 hover:bg-slate-100 rounded transition-colors"
-      title="Delete"
-    >
-      <Trash2 className="h-4 w-4 text-red-600" />
-    </button>
-  </div>
-</td>
+                    <td className="px-4 py-3">
+                      <div className="flex items-center justify-end gap-1">
+                        {/* View Profile Button */}
+                        <button
+                          onClick={() => {
+                            if (onViewProfile) {
+                              onViewProfile(employee.id);
+                            }
+                          }}
+                          className="p-1.5 hover:bg-slate-100 rounded transition-colors"
+                          title="View Profile"
+                        >
+                          <Eye className="h-4 w-4 text-slate-600" />
+                        </button>
+
+                        {/* Edit Basic Info Button */}
+                        <button
+                          onClick={() => {
+                            setSelectedEmployee(employee);
+                            setShowEditModal(true);
+                          }}
+                          className="p-1.5 hover:bg-slate-100 rounded transition-colors"
+                          title="Edit Basic Info"
+                        >
+                          <Edit className="h-4 w-4 text-slate-600" />
+                        </button>
+
+                        {/* Add/Edit Details Button */}
+                        <button
+                          onClick={() => {
+                            setSelectedEmployee(employee);
+                            setShowAddMoreDetailsModal(true);
+                          }}
+                          className="p-1.5 hover:bg-slate-100 rounded transition-colors group relative"
+                          title={hasDetails ? "Edit Additional Details" : "Add More Details"}
+                        >
+                          {hasDetails ? (
+                            <>
+                              <FileEdit className="h-4 w-4 text-green-600" />
+                              <div className="absolute bottom-full right-0 mb-2 hidden group-hover:block bg-gray-800 text-white text-xs rounded py-1 px-2 whitespace-nowrap z-10">
+                                Edit Additional Details
+                              </div>
+                            </>
+                          ) : (
+                            <>
+                              <FilePlus className="h-4 w-4 text-blue-600" />
+                              <div className="absolute bottom-full right-0 mb-2 hidden group-hover:block bg-gray-800 text-white text-xs rounded py-1 px-2 whitespace-nowrap z-10">
+                                Add More Details
+                              </div>
+                            </>
+                          )}
+                        </button>
+
+                        {/* Delete Button */}
+                        <button
+                          onClick={() => deleteEmployee(Number(employee.id))}
+                          className="p-1.5 hover:bg-slate-100 rounded transition-colors"
+                          title="Delete"
+                        >
+                          <Trash2 className="h-4 w-4 text-red-600" />
+                        </button>
+                      </div>
+                    </td>
                   </tr>
                 );
               })}

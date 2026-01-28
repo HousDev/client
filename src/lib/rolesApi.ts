@@ -252,3 +252,7 @@ export default {
   searchRoles,
   getRoleStats,
 };
+
+export function checkRoleUsage(id: string) {
+    throw new Error("Function not implemented.");
+}
