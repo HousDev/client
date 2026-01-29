@@ -33,7 +33,7 @@ export default function ViewPOTransaction({
   setActiveFormTab,
 }: {
   viewPOTransaction: any;
-  setActiveFormTab: React.Dispatch<SetStateAction<string>>;
+  setActiveFormTab: React.Dispatch<SetStateAction<String>>;
 }) {
   console.log(viewPOTransaction);
   const [vendors, setVendors] = useState<any>([]);
@@ -77,7 +77,7 @@ export default function ViewPOTransaction({
     const poMaterialTracking: any = await po_trackingApi.getTrackings();
 
     setPoMaterialTracking(
-      Array.isArray(poMaterialTracking) ? poMaterialTracking : []
+      Array.isArray(poMaterialTracking) ? poMaterialTracking : [],
     );
   };
 
@@ -90,7 +90,7 @@ export default function ViewPOTransaction({
 
   const handleInputChange = (
     field: keyof MaterialInpoTransaction,
-    value: string
+    value: string,
   ) => {
     setPoTransaction((prev) => ({ ...prev, [field]: value }));
   };
@@ -99,7 +99,7 @@ export default function ViewPOTransaction({
     setPoTransaction((prev) => ({
       ...prev,
       items: prev.items.map((item: any) =>
-        item.id === id ? { ...item, quantity_received: value } : item
+        item.id === id ? { ...item, quantity_received: value } : item,
       ),
     }));
   };
@@ -351,13 +351,13 @@ export default function ViewPOTransaction({
 
                                   if (t < Number(e.target.value)) {
                                     alert(
-                                      "Received Qty. is greater than pending Qty."
+                                      "Received Qty. is greater than pending Qty.",
                                     );
                                     return;
                                   }
                                   handleItemQuantityChange(
                                     item.id,
-                                    e.target.value
+                                    e.target.value,
                                   );
                                 }}
                                 className="w-32 outline-none px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"

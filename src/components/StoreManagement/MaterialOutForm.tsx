@@ -736,7 +736,6 @@
 //   );
 // }
 
-
 // src/components/MaterialOutForm.tsx
 import React, { useState, useEffect, useRef } from "react";
 import {
@@ -830,7 +829,9 @@ export default function MaterialOutForm({
         showMaterialSelector &&
         selectorRef.current &&
         !selectorRef.current.contains(event.target as Node) &&
-        !(event.target as HTMLElement).closest('[data-material-selector="true"]')
+        !(event.target as HTMLElement).closest(
+          '[data-material-selector="true"]',
+        )
       ) {
         setShowMaterialSelector(false);
         setMaterialSearch("");
@@ -874,7 +875,7 @@ export default function MaterialOutForm({
 
   const handleInputChange = (
     field: keyof MaterialOutFormData,
-    value: string | number
+    value: string | number,
   ) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
   };
@@ -882,11 +883,11 @@ export default function MaterialOutForm({
   // Add material to the list
   const addMaterial = (inventoryItem: any) => {
     // Use the correct ID property
-    const materialId = inventoryItem.id || inventoryItem.item_id;
-    
+    const materialId = inventoryItem.item_id;
+
     // Check if material already exists in the list
     const existingIndex = formData.materials.findIndex(
-      (item) => item.materialId === materialId
+      (item) => item.materialId === materialId,
     );
 
     if (existingIndex !== -1) {
@@ -896,7 +897,9 @@ export default function MaterialOutForm({
         parseFloat(updatedMaterials[existingIndex].quantity) || 0;
       updatedMaterials[existingIndex].quantity = (currentQty + 1).toString();
       setFormData((prev) => ({ ...prev, materials: updatedMaterials }));
-      toast.success(`Increased quantity for ${inventoryItem.item_name || inventoryItem.name}`);
+      toast.success(
+        `Increased quantity for ${inventoryItem.item_name || inventoryItem.name}`,
+      );
     } else {
       // Add new material
       const newMaterial: MaterialItem = {
@@ -913,7 +916,9 @@ export default function MaterialOutForm({
         ...prev,
         materials: [...prev.materials, newMaterial],
       }));
-      toast.success(`Added ${inventoryItem.item_name || inventoryItem.name} to list`);
+      toast.success(
+        `Added ${inventoryItem.item_name || inventoryItem.name} to list`,
+      );
     }
 
     setShowMaterialSelector(false);
@@ -923,16 +928,16 @@ export default function MaterialOutForm({
   // Update material quantity
   const updateMaterialQuantity = (id: number, quantity: string) => {
     const updatedMaterials = formData.materials.map((item) =>
-      item.id === id ? { ...item, quantity } : item
+      item.id === id ? { ...item, quantity } : item,
     );
     setFormData((prev) => ({ ...prev, materials: updatedMaterials }));
   };
 
   // Remove material from list
   const removeMaterial = (id: number) => {
-    const material = formData.materials.find(item => item.id === id);
+    const material = formData.materials.find((item) => item.id === id);
     const updatedMaterials = formData.materials.filter(
-      (item) => item.id !== id
+      (item) => item.id !== id,
     );
     setFormData((prev) => ({ ...prev, materials: updatedMaterials }));
     if (material) {
@@ -951,39 +956,39 @@ export default function MaterialOutForm({
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     // Validation
     if (!formData.receiver_name || formData.receiver_name.length < 3) {
       toast.error("Please enter valid receiver name", {
-        description: "Receiver name must be at least 3 characters long"
+        description: "Receiver name must be at least 3 characters long",
       });
       return;
     }
 
     if (formData.receiver_phone.length !== 10) {
       toast.error("Please enter valid mobile number", {
-        description: "Mobile number must be exactly 10 digits"
+        description: "Mobile number must be exactly 10 digits",
       });
       return;
     }
 
     if (!formData.delivery_location || formData.delivery_location.length < 3) {
       toast.error("Please enter valid delivery location", {
-        description: "Select a valid delivery location from the list"
+        description: "Select a valid delivery location from the list",
       });
       return;
     }
-    
+
     if (!formData.receiving_date || formData.receiving_date.length === 0) {
       toast.error("Please select valid receiving date", {
-        description: "Select a valid date"
+        description: "Select a valid date",
       });
       return;
     }
-    
+
     if (formData.materials.length === 0) {
       toast.error("Add at least one material", {
-        description: "Please add materials to issue"
+        description: "Please add materials to issue",
       });
       return;
     }
@@ -994,30 +999,25 @@ export default function MaterialOutForm({
         toast.error(
           `Please enter a valid quantity for ${material.materialName}`,
           {
-            description: "Quantity must be greater than 0"
-          }
+            description: "Quantity must be greater than 0",
+          },
         );
         return;
       }
 
       const stockItem = allInventory.find(
-        (item) => (item.id || item.item_id) === material.materialId
+        (item) => (item.id || item.item_id) === material.materialId,
       );
       if (stockItem && parseFloat(material.quantity) > stockItem.quantity) {
-        toast.error(
-          `Insufficient stock for ${material.materialName}!`,
-          {
-            description: `Available: ${stockItem.quantity} ${stockItem.unit}`
-          }
-        );
+        toast.error(`Insufficient stock for ${material.materialName}!`, {
+          description: `Available: ${stockItem.quantity} ${stockItem.unit}`,
+        });
         return;
       }
     }
 
     try {
       setLoading(true);
-      
-      const loadingToast = toast.loading("Processing material issue...");
 
       // Prepare data for API call
       const submissionData = {
@@ -1034,12 +1034,13 @@ export default function MaterialOutForm({
         })),
       };
 
-      const result = await inventoryTransactionApi.createTransactionOut(submissionData);
-      
+      const result =
+        await inventoryTransactionApi.createTransactionOut(submissionData);
+
       toast.success("Materials issued successfully!", {
-        description: `${formData.materials.length} materials issued to ${formData.receiver_name}`
+        description: `${formData.materials.length} materials issued to ${formData.receiver_name}`,
       });
-      
+
       setLoadTableData(result);
       loadAllData();
       resetForm();
@@ -1047,7 +1048,7 @@ export default function MaterialOutForm({
     } catch (error: any) {
       console.error("Error issuing materials:", error);
       toast.error("Failed to issue materials", {
-        description: error?.message || "Please try again later"
+        description: error?.message || "Please try again later",
       });
     } finally {
       setLoading(false);
@@ -1076,12 +1077,12 @@ export default function MaterialOutForm({
   // Calculate total materials count
   const totalQuantity = formData.materials.reduce(
     (sum, item) => sum + (parseFloat(item.quantity) || 0),
-    0
+    0,
   );
 
   return (
     <div className="fixed inset-0 bg-gray-900/70 backdrop-blur-md flex items-center justify-center z-50 p-2 md:p-4">
-      <div 
+      <div
         ref={formRef}
         className="bg-gradient-to-br from-gray-50 to-white rounded-2xl shadow-2xl shadow-gray-900/30 w-full max-w-2xl my-4 border border-gray-300/50 overflow-hidden max-h-[95vh] flex flex-col"
       >
@@ -1089,7 +1090,7 @@ export default function MaterialOutForm({
         <div className="bg-gradient-to-r from-[#40423f] via-[#4a4c49] to-[#5a5d5a] px-4 md:px-6 py-4 flex justify-between items-center border-b border-gray-700/30 relative overflow-hidden flex-shrink-0">
           <div className="absolute inset-0 bg-gradient-to-r from-gray-900/10 via-transparent to-gray-900/10"></div>
           <div className="absolute -right-10 top-0 bottom-0 w-40 bg-gradient-to-l from-[#b52124]/20 to-transparent -skew-x-12"></div>
-          
+
           <div className="flex items-center gap-3 relative z-10">
             <div className="p-2.5 bg-white/10 backdrop-blur-sm rounded-2xl border border-gray-400/30">
               <Truck className="w-4 h-4 md:w-5 md:h-5 text-gray-100" />
@@ -1137,7 +1138,7 @@ export default function MaterialOutForm({
                     onChange={(e) => {
                       if (!/^[A-Za-z\s]*$/.test(e.target.value)) {
                         toast.warning("Only alphabet allowed.", {
-                          description: "Please use letters only"
+                          description: "Please use letters only",
                         });
                         return;
                       }
@@ -1149,7 +1150,7 @@ export default function MaterialOutForm({
                   />
                 </div>
               </div>
-              
+
               <div className="space-y-1.5">
                 <label className="block text-sm font-semibold text-[#40423f] mb-1 flex items-center gap-2">
                   <Phone className="w-4 h-4 text-[#b52124]" />
@@ -1166,7 +1167,7 @@ export default function MaterialOutForm({
                     onChange={(e) => {
                       if (!/^\d*$/.test(e.target.value)) {
                         toast.warning("Enter Valid Phone Number.", {
-                          description: "Please use numbers only"
+                          description: "Please use numbers only",
                         });
                         return;
                       }
@@ -1174,7 +1175,7 @@ export default function MaterialOutForm({
                         handleInputChange("receiver_phone", e.target.value);
                       } else {
                         toast.warning("Only 10 digit mobile number allowed.", {
-                          description: "Please enter exactly 10 digits"
+                          description: "Please enter exactly 10 digits",
                         });
                       }
                     }}
@@ -1184,7 +1185,7 @@ export default function MaterialOutForm({
                   />
                 </div>
               </div>
-              
+
               <div className="space-y-1.5">
                 <label className="block text-sm font-semibold text-[#40423f] mb-1 flex items-center gap-2">
                   <MapPin className="w-4 h-4 text-[#b52124]" />
@@ -1203,9 +1204,15 @@ export default function MaterialOutForm({
                     className="w-full pl-10 pr-10 py-2.5 text-sm border border-gray-300 rounded-xl focus:border-[#b52124] focus:ring-2 focus:ring-[#b52124]/20 bg-white/50 outline-none transition-all duration-200 appearance-none hover:border-gray-400 text-[#40423f]"
                     required
                   >
-                    <option value="" className="text-gray-500">Select delivery location</option>
+                    <option value="" className="text-gray-500">
+                      Select delivery location
+                    </option>
                     {allProjects.map((project: any) => (
-                      <option key={project.id} value={project.location || project.loaction} className="py-2 text-[#40423f]">
+                      <option
+                        key={project.id}
+                        value={project.location || project.loaction}
+                        className="py-2 text-[#40423f]"
+                      >
                         {project.name} - ({project.location})
                       </option>
                     ))}
@@ -1240,7 +1247,7 @@ export default function MaterialOutForm({
                   />
                 </div>
               </div>
-              
+
               <div className="space-y-1.5">
                 <label className="block text-sm font-semibold text-[#40423f] mb-1 flex items-center gap-2">
                   <ClipboardCheck className="w-4 h-4 text-[#b52124]" />
@@ -1253,7 +1260,9 @@ export default function MaterialOutForm({
                   <input
                     type="text"
                     value={formData.remark}
-                    onChange={(e) => handleInputChange("remark", e.target.value)}
+                    onChange={(e) =>
+                      handleInputChange("remark", e.target.value)
+                    }
                     className="w-full pl-10 pr-4 py-2.5 text-sm border border-gray-300 rounded-xl focus:border-[#b52124] focus:ring-2 focus:ring-[#b52124]/20 outline-none transition-all duration-200 hover:border-gray-400 bg-white/50 text-[#40423f] placeholder-gray-500"
                     placeholder="Purpose of issue"
                   />
@@ -1273,7 +1282,8 @@ export default function MaterialOutForm({
                   </h3>
                   {formData.materials.length > 0 && (
                     <span className="ml-2 text-xs font-medium text-[#40423f] bg-gray-100 px-2 py-1 rounded-full">
-                      {formData.materials.length} items • {totalQuantity} total qty
+                      {formData.materials.length} items • {totalQuantity} total
+                      qty
                     </span>
                   )}
                 </div>
@@ -1283,7 +1293,7 @@ export default function MaterialOutForm({
                   data-material-selector="true"
                   className="bg-gradient-to-r from-[#b52124] to-[#d43538] text-white px-4 py-2.5 rounded-xl hover:from-[#d43538] hover:to-[#b52124] transition-all duration-200 text-sm font-medium flex items-center gap-2 group w-full sm:w-auto justify-center"
                 >
-                  <Plus className="w-4 h-4 group-hover:scale-110 transition-transform" /> 
+                  <Plus className="w-4 h-4 group-hover:scale-110 transition-transform" />
                   Add Material
                 </button>
               </div>
@@ -1303,7 +1313,8 @@ export default function MaterialOutForm({
               ) : (
                 <div className="space-y-3">
                   {formData.materials.map((material) => {
-                    const isLowStock = material.currentStock <= material.reorder_qty;
+                    const isLowStock =
+                      material.currentStock <= material.reorder_qty;
                     return (
                       <div
                         key={material.id}
@@ -1312,8 +1323,12 @@ export default function MaterialOutForm({
                         <div className="flex flex-col gap-3">
                           <div className="flex justify-between items-start">
                             <div className="flex items-start gap-3">
-                              <div className={`p-2 rounded-lg ${isLowStock ? 'bg-amber-100' : 'bg-[#b52124]/10'}`}>
-                                <Box className={`w-4 h-4 ${isLowStock ? 'text-amber-600' : 'text-[#b52124]'}`} />
+                              <div
+                                className={`p-2 rounded-lg ${isLowStock ? "bg-amber-100" : "bg-[#b52124]/10"}`}
+                              >
+                                <Box
+                                  className={`w-4 h-4 ${isLowStock ? "text-amber-600" : "text-[#b52124]"}`}
+                                />
                               </div>
                               <div className="flex-1">
                                 <p className="font-semibold text-sm text-[#40423f] break-words">
@@ -1321,7 +1336,8 @@ export default function MaterialOutForm({
                                 </p>
                                 <div className="flex flex-wrap items-center gap-2 mt-1">
                                   <span className="text-xs px-2 py-0.5 bg-gray-100 text-[#5a5d5a] rounded-full font-medium">
-                                    Stock: {material.currentStock} {material.unit}
+                                    Stock: {material.currentStock}{" "}
+                                    {material.unit}
                                   </span>
                                   {isLowStock && (
                                     <span className="text-xs px-2 py-0.5 bg-amber-100 text-amber-700 rounded-full font-medium flex items-center gap-1">
@@ -1341,7 +1357,7 @@ export default function MaterialOutForm({
                               <Trash2 className="w-4 h-4" />
                             </button>
                           </div>
-                          
+
                           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                             <div className="space-y-1.5">
                               <label className="text-xs text-[#5a5d5a] font-medium flex items-center gap-1">
@@ -1380,14 +1396,14 @@ export default function MaterialOutForm({
                                       toast.warning(
                                         "Entered quantity exceeds available stock",
                                         {
-                                          description: `Available: ${material.currentStock} ${material.unit}`
-                                        }
+                                          description: `Available: ${material.currentStock} ${material.unit}`,
+                                        },
                                       );
                                       return;
                                     }
                                     updateMaterialQuantity(
                                       material.id,
-                                      e.target.value
+                                      e.target.value,
                                     );
                                   }}
                                   className="flex-1 px-3 py-2 text-sm border border-gray-300 rounded-xl focus:border-[#b52124] focus:ring-2 focus:ring-[#b52124]/20 outline-none transition-all duration-200 hover:border-gray-400 text-[#40423f]"
@@ -1445,7 +1461,7 @@ export default function MaterialOutForm({
       {/* Material Selector Modal */}
       {showMaterialSelector && (
         <div className="fixed inset-0 bg-gray-900/70 backdrop-blur-md flex items-center justify-center z-[60] p-2 md:p-4">
-          <div 
+          <div
             ref={selectorRef}
             className="bg-gradient-to-br from-gray-50 to-white rounded-2xl shadow-2xl shadow-gray-900/30 w-full max-w-md border border-gray-300/50 overflow-hidden max-h-[90vh] flex flex-col"
           >
@@ -1456,8 +1472,12 @@ export default function MaterialOutForm({
                   <Package className="w-4 h-4 md:w-5 md:h-5 text-gray-100" />
                 </div>
                 <div>
-                  <h3 className="font-bold text-white text-sm md:text-base">Select Material</h3>
-                  <p className="text-xs text-gray-300/80 hidden md:block">Choose from available inventory</p>
+                  <h3 className="font-bold text-white text-sm md:text-base">
+                    Select Material
+                  </h3>
+                  <p className="text-xs text-gray-300/80 hidden md:block">
+                    Choose from available inventory
+                  </p>
                 </div>
               </div>
               <button
@@ -1506,11 +1526,12 @@ export default function MaterialOutForm({
                   filteredInventory.map((item) => {
                     if (!item) return null;
                     const existingMaterial = formData.materials.find(
-                      (m) => m.materialId === (item.id || item.item_id)
+                      (m) => m.materialId === (item.id || item.item_id),
                     );
-                    const isLowStock = item.quantity <= item.reorder_qty && item.quantity > 0;
+                    const isLowStock =
+                      item.quantity <= item.reorder_qty && item.quantity > 0;
                     const outOfStock = item.quantity === 0;
-                    
+
                     return (
                       <button
                         type="button"
@@ -1527,8 +1548,12 @@ export default function MaterialOutForm({
                         <div className="flex justify-between items-start gap-2">
                           <div className="text-left flex-1">
                             <div className="flex items-center gap-2 mb-1">
-                              <div className={`p-1.5 rounded-lg ${isLowStock ? 'bg-amber-100' : 'bg-[#b52124]/10'} flex-shrink-0`}>
-                                <Box className={`w-3 h-3 ${isLowStock ? 'text-amber-600' : 'text-[#b52124]'}`} />
+                              <div
+                                className={`p-1.5 rounded-lg ${isLowStock ? "bg-amber-100" : "bg-[#b52124]/10"} flex-shrink-0`}
+                              >
+                                <Box
+                                  className={`w-3 h-3 ${isLowStock ? "text-amber-600" : "text-[#b52124]"}`}
+                                />
                               </div>
                               <div className="font-medium text-sm text-[#40423f] truncate">
                                 {item.item_name || item.name}
@@ -1551,11 +1576,13 @@ export default function MaterialOutForm({
                             </div>
                           </div>
                           <div className="flex-shrink-0">
-                            <span className={`px-2 md:px-3 py-1.5 rounded-lg text-xs font-medium ${
-                              existingMaterial
-                                ? "bg-[#b52124] text-white"
-                                : "bg-[#b52124]/10 text-[#b52124]"
-                            }`}>
+                            <span
+                              className={`px-2 md:px-3 py-1.5 rounded-lg text-xs font-medium ${
+                                existingMaterial
+                                  ? "bg-[#b52124] text-white"
+                                  : "bg-[#b52124]/10 text-[#b52124]"
+                              }`}
+                            >
                               {existingMaterial ? "Add More" : "Add"}
                             </span>
                           </div>
@@ -1572,7 +1599,9 @@ export default function MaterialOutForm({
               <div className="flex justify-between items-center">
                 <div className="text-xs text-[#5a5d5a]">
                   {formData.materials.length > 0 && (
-                    <span className="font-medium">{formData.materials.length} material(s) selected</span>
+                    <span className="font-medium">
+                      {formData.materials.length} material(s) selected
+                    </span>
                   )}
                 </div>
                 <button
@@ -1592,7 +1621,7 @@ export default function MaterialOutForm({
       )}
 
       {/* Custom scrollbar styles */}
-      <style jsx>{`
+      <style>{`
         .custom-scrollbar::-webkit-scrollbar {
           width: 6px;
         }

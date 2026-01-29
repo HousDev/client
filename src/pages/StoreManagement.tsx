@@ -464,7 +464,7 @@
 //                   }`}
 //                 >
 //                   <PackagePlus className="w-5 h-5" />
-//                   
+//
 //                 </button>
 //                 <button
 //                   onClick={() => setActiveFormTab("out")}
@@ -795,7 +795,7 @@
 // }
 /* eslint-disable @typescript-eslint/no-explicit-any */
 // src/components/StoreManagement.tsx
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, SetStateAction } from "react";
 import {
   Plus,
   Eye,
@@ -905,27 +905,36 @@ interface MaterialInpoTransaction {
 // ADD THIS INTERFACE
 interface StoreManagementProps {
   activeFormTab?: string;
-  setActiveFormTab?: (tab: string) => void;
+  setActiveFormTab?: React.Dispatch<SetStateAction<String>>;
 }
 
-export default function StoreManagement({ 
-  activeFormTab = "", 
-  setActiveFormTab = () => {} 
-}: StoreManagementProps): JSX.Element { // ADD RETURN TYPE JSX.Element
+export default function StoreManagement({
+  activeFormTab = "",
+  setActiveFormTab = () => {},
+}: StoreManagementProps): JSX.Element {
+  // ADD RETURN TYPE JSX.Element
   const { user, profile } = useAuth();
   const [inventory, setInventory] = useState<InventoryItem[]>([]);
   const [transactions, setTransactions] = useState<InventoryTransaction[]>([]);
   const [loadTableData, setLoadTableData] = useState<any>();
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
-  
+
   // REMOVE THIS LINE - it's now coming from props
   // const [activeFormTab, setActiveFormTab] = useState<string>("");
-  
-  const [filteredInventory, setFilteredInventory] = useState<InventoryItem[]>([]);
-  const [selectedPOTransaction, setSelectedPOTransaction] = useState<any | null>(null);
-  const [filteredTransactions, setFilteredTransactions] = useState<InventoryTransaction[]>([]);
-  const [activeTab, setActiveTab] = useState<"tracking" | "management">("management");
+
+  const [filteredInventory, setFilteredInventory] = useState<InventoryItem[]>(
+    [],
+  );
+  const [selectedPOTransaction, setSelectedPOTransaction] = useState<
+    any | null
+  >(null);
+  const [filteredTransactions, setFilteredTransactions] = useState<
+    InventoryTransaction[]
+  >([]);
+  const [activeTab, setActiveTab] = useState<"tracking" | "management">(
+    "management",
+  );
   const [showEditModal, setShowEditModal] = useState(false);
   const [selectedItem, setSelectedItem] = useState<InventoryItem | null>(null);
   const [refreshing, setRefreshing] = useState(false);
@@ -980,7 +989,7 @@ export default function StoreManagement({
 
   // --- Helper to find inventory item by ID ---
   const findInventoryItemById = (
-    inventoryItemId: number
+    inventoryItemId: number,
   ): InventoryItem | undefined => {
     return inventory.find((item) => item.id === inventoryItemId);
   };
@@ -989,7 +998,7 @@ export default function StoreManagement({
   const loadAllItems = async () => {
     try {
       setItemsLoading(true);
-      const data: Item[] = await ItemsApi.getItems();
+      const data: any = await ItemsApi.getItems();
       setAllItems(data);
       return data;
     } catch (error) {
@@ -1062,7 +1071,7 @@ export default function StoreManagement({
       const enhancedTransactions = transactions.map((transaction: any) => {
         const poData = allPOsData.find((i: any) => i.id === transaction.po_id);
         const vendorData = allVendorsData.find(
-          (i: any) => i.id === transaction.vendor_id
+          (i: any) => i.id === transaction.vendor_id,
         );
 
         return {
@@ -1117,49 +1126,57 @@ export default function StoreManagement({
       // Column searches
       if (searchName) {
         filtered = filtered.filter((item) =>
-          (item.item_name?.toLowerCase() || "").includes(searchName.toLowerCase())
+          (item.item_name?.toLowerCase() || "").includes(
+            searchName.toLowerCase(),
+          ),
         );
       }
 
       if (searchItemCode) {
         filtered = filtered.filter((item) =>
-          (item.item_code?.toLowerCase() || "").includes(searchItemCode.toLowerCase())
+          (item.item_code?.toLowerCase() || "").includes(
+            searchItemCode.toLowerCase(),
+          ),
         );
       }
 
       if (searchStock) {
         filtered = filtered.filter((item) =>
-          item.quantity.toString().includes(searchStock)
+          item.quantity.toString().includes(searchStock),
         );
       }
 
       if (searchCategory) {
         filtered = filtered.filter((item) =>
-          (item.category?.toLowerCase() || "").includes(searchCategory.toLowerCase())
+          (item.category?.toLowerCase() || "").includes(
+            searchCategory.toLowerCase(),
+          ),
         );
       }
 
       if (searchLocation) {
         filtered = filtered.filter((item) =>
-          (item.location?.toLowerCase() || "").includes(searchLocation.toLowerCase())
+          (item.location?.toLowerCase() || "").includes(
+            searchLocation.toLowerCase(),
+          ),
         );
       }
 
       if (searchStatus) {
         filtered = filtered.filter((item) =>
-          item.status.toLowerCase().includes(searchStatus.toLowerCase())
+          item.status.toLowerCase().includes(searchStatus.toLowerCase()),
         );
       }
 
       if (searchUnit) {
         filtered = filtered.filter((item) =>
-          (item.unit?.toLowerCase() || "").includes(searchUnit.toLowerCase())
+          (item.unit?.toLowerCase() || "").includes(searchUnit.toLowerCase()),
         );
       }
 
       if (searchRate) {
         filtered = filtered.filter((item) =>
-          (item.rate?.toString() || "").includes(searchRate)
+          (item.rate?.toString() || "").includes(searchRate),
         );
       }
 
@@ -1181,7 +1198,9 @@ export default function StoreManagement({
 
       if (filterLocation) {
         filtered = filtered.filter((item) =>
-          (item.location?.toLowerCase() || "").includes(filterLocation.toLowerCase())
+          (item.location?.toLowerCase() || "").includes(
+            filterLocation.toLowerCase(),
+          ),
         );
       }
 
@@ -1263,7 +1282,7 @@ export default function StoreManagement({
   const handleDelete = async (id: number) => {
     if (
       !confirm(
-        "Are you sure you want to delete this inventory item? This action cannot be undone."
+        "Are you sure you want to delete this inventory item? This action cannot be undone.",
       )
     ) {
       return;
@@ -1280,35 +1299,6 @@ export default function StoreManagement({
     }
   };
 
-  const handleBulkDelete = async () => {
-    if (selectedItems.size === 0) {
-      alert("Please select items to delete");
-      return;
-    }
-
-    if (
-      !confirm(
-        `Are you sure you want to delete ${selectedItems.size} item(s)? This action cannot be undone.`
-      )
-    ) {
-      return;
-    }
-
-    try {
-      await Promise.all(
-        Array.from(selectedItems).map((id) => inventoryApi.deleteInventory(id))
-      );
-      alert(`${selectedItems.size} item(s) deleted successfully!`);
-      setSelectedItems(new Set());
-      setSelectAll(false);
-      const items: any = allItems.length ? allItems : await ItemsApi.getItems();
-      await loadInventory(items);
-    } catch (error) {
-      console.error("Error deleting items:", error);
-      alert("Failed to delete items");
-    }
-  };
-
   // --- Helper Functions ---
   const getStatusColor = (status: string) => {
     const colors: Record<string, string> = {
@@ -1317,18 +1307,6 @@ export default function StoreManagement({
       "OUT OF STOCK": "bg-red-100 text-red-700",
     };
     return colors[status] || "bg-gray-100 text-gray-700";
-  };
-
-  const formatDate = (dateString: string) => {
-    try {
-      return new Date(dateString).toLocaleDateString("en-IN", {
-        day: "2-digit",
-        month: "short",
-        year: "numeric",
-      });
-    } catch (error) {
-      return "Invalid Date";
-    }
   };
 
   const calculateTotalValue = (item: InventoryItem): number => {
@@ -1378,10 +1356,10 @@ export default function StoreManagement({
 
   // Get unique categories and locations for filters
   const uniqueCategories = Array.from(
-    new Set(inventory.map((item) => item.category).filter(Boolean))
+    new Set(inventory.map((item) => item.category).filter(Boolean)),
   );
   const uniqueLocations = Array.from(
-    new Set(inventory.map((item) => item.location).filter(Boolean))
+    new Set(inventory.map((item) => item.location).filter(Boolean)),
   );
 
   // --- Loading State ---
@@ -1398,7 +1376,9 @@ export default function StoreManagement({
 
   // --- Render Main UI ---
   return (
-<div className="p-0 px-0 sm:px-0 -mt-4 bg-gray-50 min-h-screen">      {/* Material Forms */}
+    <div className="p-0 px-0 sm:px-0 -mt-4 bg-gray-50 min-h-screen">
+      {" "}
+      {/* Material Forms */}
       {activeFormTab === "in" && (
         <MaterialInForm
           setLoadTableData={setLoadTableData}
@@ -1422,9 +1402,10 @@ export default function StoreManagement({
           loadAllData={loadAllData}
         />
       )}
-
       {/* Main Tabs */}
-<div className="mt-12 md:mt-2 flex bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden mb-4 md:mb-6 mx-0 md:mx-0">        <button
+      <div className="mt-12 md:mt-2 flex bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden mb-4 md:mb-6 mx-0 md:mx-0">
+        {" "}
+        <button
           onClick={() => setActiveTab("tracking")}
           className={`flex-1 px-3 md:px-6 py-2 md:py-4 font-medium transition-all duration-200 flex items-center justify-center gap-1.5 md:gap-3 ${
             activeTab === "tracking"
@@ -1432,10 +1413,11 @@ export default function StoreManagement({
               : "text-gray-700 hover:bg-gray-50"
           }`}
         >
-          <FileText className={`w-3 h-3 md:w-5 md:h-5 ${activeTab === "tracking" ? "text-white" : "text-gray-500"}`} />
+          <FileText
+            className={`w-3 h-3 md:w-5 md:h-5 ${activeTab === "tracking" ? "text-white" : "text-gray-500"}`}
+          />
           <span className="text-xs md:text-base">Inventory Tracking</span>
         </button>
-        
         <button
           onClick={() => setActiveTab("management")}
           className={`flex-1 px-3 md:px-6 py-2 md:py-4 font-medium transition-all duration-200 flex items-center justify-center gap-1.5 md:gap-3 ${
@@ -1444,75 +1426,78 @@ export default function StoreManagement({
               : "text-gray-700 hover:bg-gray-50"
           }`}
         >
-          <Package className={`w-3 h-3 md:w-5 md:h-5 ${activeTab === "management" ? "text-white" : "text-gray-500"}`} />
-          <span className="text-xs sm:text-xs md:text-base">Inventory Management</span>
+          <Package
+            className={`w-3 h-3 md:w-5 md:h-5 ${activeTab === "management" ? "text-white" : "text-gray-500"}`}
+          />
+          <span className="text-xs sm:text-xs md:text-base">
+            Inventory Management
+          </span>
         </button>
       </div>
-
       {/* Sub Tabs for Tracking */}
       {activeTab === "tracking" && (
-<div className="flex bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden mb-4 md:mb-6 mx-4 md:mx-0">    
-    <button
-      onClick={() => setSubTabs("MaterialIn")}
-      className={`flex-1 px-2 md:px-4 py-2 font-medium transition-all duration-200
+        <div className="flex bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden mb-4 md:mb-6 mx-4 md:mx-0">
+          <button
+            onClick={() => setSubTabs("MaterialIn")}
+            className={`flex-1 px-2 md:px-4 py-2 font-medium transition-all duration-200
         flex items-center justify-center gap-1.5
-        ${subTabs === "MaterialIn"
-          ? "bg-emerald-50 text-emerald-700 border-b-2 border-emerald-500"
-          : "text-gray-600 hover:bg-gray-50"
+        ${
+          subTabs === "MaterialIn"
+            ? "bg-emerald-50 text-emerald-700 border-b-2 border-emerald-500"
+            : "text-gray-600 hover:bg-gray-50"
         }`}
-    >
-      <Download
-        className={`w-3.5 h-3.5 md:w-4 md:h-4 ${
-          subTabs === "MaterialIn" ? "text-emerald-600" : "text-gray-500"
-        }`}
-      />
-      <span className="text-[11px] md:text-sm whitespace-nowrap">
-        Material In
-      </span>
-    </button>
+          >
+            <Download
+              className={`w-3.5 h-3.5 md:w-4 md:h-4 ${
+                subTabs === "MaterialIn" ? "text-emerald-600" : "text-gray-500"
+              }`}
+            />
+            <span className="text-[11px] md:text-sm whitespace-nowrap">
+              Material In
+            </span>
+          </button>
 
-    <button
-      onClick={() => setSubTabs("MaterialOut")}
-      className={`flex-1 px-2 md:px-4 py-2 font-medium transition-all duration-200
+          <button
+            onClick={() => setSubTabs("MaterialOut")}
+            className={`flex-1 px-2 md:px-4 py-2 font-medium transition-all duration-200
         flex items-center justify-center gap-1.5
-        ${subTabs === "MaterialOut"
-          ? "bg-blue-50 text-blue-700 border-b-2 border-blue-500"
-          : "text-gray-600 hover:bg-gray-50"
+        ${
+          subTabs === "MaterialOut"
+            ? "bg-blue-50 text-blue-700 border-b-2 border-blue-500"
+            : "text-gray-600 hover:bg-gray-50"
         }`}
-    >
-      <Truck
-        className={`w-3.5 h-3.5 md:w-4 md:h-4 ${
-          subTabs === "MaterialOut" ? "text-blue-600" : "text-gray-500"
-        }`}
-      />
-      <span className="text-[11px] md:text-sm whitespace-nowrap">
-        Material Out
-      </span>
-    </button>
+          >
+            <Truck
+              className={`w-3.5 h-3.5 md:w-4 md:h-4 ${
+                subTabs === "MaterialOut" ? "text-blue-600" : "text-gray-500"
+              }`}
+            />
+            <span className="text-[11px] md:text-sm whitespace-nowrap">
+              Material Out
+            </span>
+          </button>
 
-    <button
-      onClick={() => setSubTabs("MaterialIssue")}
-      className={`flex-1 px-2 md:px-4 py-2 font-medium transition-all duration-200
+          <button
+            onClick={() => setSubTabs("MaterialIssue")}
+            className={`flex-1 px-2 md:px-4 py-2 font-medium transition-all duration-200
         flex items-center justify-center gap-1.5
-        ${subTabs === "MaterialIssue"
-          ? "bg-amber-50 text-amber-700 border-b-2 border-amber-500"
-          : "text-gray-600 hover:bg-gray-50"
+        ${
+          subTabs === "MaterialIssue"
+            ? "bg-amber-50 text-amber-700 border-b-2 border-amber-500"
+            : "text-gray-600 hover:bg-gray-50"
         }`}
-    >
-      <HandCoins
-        className={`w-3.5 h-3.5 md:w-4 md:h-4 ${
-          subTabs === "MaterialIssue" ? "text-amber-600" : "text-gray-500"
-        }`}
-      />
-      <span className="text-[11px] md:text-sm whitespace-nowrap">
-        Material Issue
-      </span>
-    </button>
-
-  </div>
-)}
-
-
+          >
+            <HandCoins
+              className={`w-3.5 h-3.5 md:w-4 md:h-4 ${
+                subTabs === "MaterialIssue" ? "text-amber-600" : "text-gray-500"
+              }`}
+            />
+            <span className="text-[11px] md:text-sm whitespace-nowrap">
+              Material Issue
+            </span>
+          </button>
+        </div>
+      )}
       {/* Transaction Views */}
       {activeTab === "tracking" && subTabs === "MaterialIn" && (
         <MaterialInTransactions loadTableData={loadTableData} />
@@ -1523,318 +1508,321 @@ export default function StoreManagement({
       {activeTab === "tracking" && subTabs === "MaterialIssue" && (
         <MaterialIssueTransactions loadTableData={loadTableData} />
       )}
-
       {/* Management Table */}
-    {activeTab === "management" && (
-<div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden mx-0 md:mx-0">    <div className="overflow-x-auto">
-      <table className="w-full min-w-[1000px]">
-        <thead className="bg-gray-200 border-b border-gray-200">
-          {/* Column Headers */}
-          <tr>
-            <th className="px-2 md:px-4 py-2 text-center w-10">
-              <input
-                type="checkbox"
-                checked={selectAll}
-                onChange={handleSelectAll}
-                className="w-3 h-3 md:w-4 md:h-4 text-[#C62828] border-gray-300 rounded focus:ring-[#C62828]"
-              />
-            </th>
-            <th className="px-2 md:px-4 py-2 text-left">
-              <div className="text-[10px] md:text-xs font-semibold text-gray-700 uppercase tracking-wider">
-                Material Details
-              </div>
-            </th>
-            <th className="px-2 md:px-4 py-2 text-left">
-              <div className="text-[10px] md:text-xs font-semibold text-gray-700 uppercase tracking-wider">
-                Current Stock
-              </div>
-            </th>
-            <th className="px-2 md:px-4 py-2 text-left">
-              <div className="text-[10px] md:text-xs font-semibold text-gray-700 uppercase tracking-wider">
-                Unit Rate
-              </div>
-            </th>
-            <th className="px-2 md:px-4 py-2 text-left">
-              <div className="text-[10px] md:text-xs font-semibold text-gray-700 uppercase tracking-wider">
-                Stock Value
-              </div>
-            </th>
-            <th className="px-2 md:px-4 py-2 text-left">
-              <div className="text-[10px] md:text-xs font-semibold text-gray-700 uppercase tracking-wider">
-                Location
-              </div>
-            </th>
-            <th className="px-2 md:px-4 py-2 text-left">
-              <div className="text-[10px] md:text-xs font-semibold text-gray-700 uppercase tracking-wider">
-                Status
-              </div>
-            </th>
-            <th className="px-2 md:px-4 py-2 text-center">
-              <div className="text-[10px] md:text-xs font-semibold text-gray-700 uppercase tracking-wider">
-                Actions
-              </div>
-            </th>
-          </tr>
-          
-          {/* Search Row - REDUCED HEIGHT (py-0.5 instead of py-1) */}
-          <tr className="bg-gray-50 border-b border-gray-200">
-            <td className="px-2 md:px-4 py-0.5"></td>
-            
-            {/* Material Details Column - ONLY ONE search input (removed item_code search) */}
-            <td className="px-2 md:px-4 py-0.5">
-              <input
-                type="text"
-                placeholder="Search material name..."
-                value={searchName}
-                onChange={(e) => setSearchName(e.target.value)}
-                className="w-full px-2 py-1 text-[10px] md:text-xs border border-gray-300 rounded focus:ring-1 focus:ring-[#C62828] focus:border-transparent"
-              />
-            </td>
-            
-            {/* Current Stock Column - ONLY ONE search input (removed unit search) */}
-            <td className="px-2 md:px-4 py-0.5">
-              <input
-                type="text"
-                placeholder="Search stock quantity..."
-                value={searchStock}
-                onChange={(e) => setSearchStock(e.target.value)}
-                className="w-full px-2 py-1 text-[10px] md:text-xs border border-gray-300 rounded focus:ring-1 focus:ring-[#C62828] focus:border-transparent"
-              />
-            </td>
-            
-            {/* Unit Rate Column - Search input */}
-            <td className="px-2 md:px-4 py-0.5">
-              <input
-                type="text"
-                placeholder="Search rate..."
-                value={searchRate}
-                onChange={(e) => setSearchRate(e.target.value)}
-                className="w-full px-2 py-1 text-[10px] md:text-xs border border-gray-300 rounded focus:ring-1 focus:ring-[#C62828] focus:border-transparent"
-              />
-            </td>
-            
-            {/* Stock Value Column - Search input */}
-            <td className="px-2 md:px-4 py-0.5">
-              <input
-                type="text"
-                placeholder="Search value..."
-                value={searchStockValue}
-                onChange={(e) => setSearchStockValue(e.target.value)}
-                className="w-full px-2 py-1 text-[10px] md:text-xs border border-gray-300 rounded focus:ring-1 focus:ring-[#C62828] focus:border-transparent"
-              />
-            </td>
-            
-            {/* Location Column - Search input */}
-            <td className="px-2 md:px-4 py-0.5">
-              <input
-                type="text"
-                placeholder="Location..."
-                value={searchLocation}
-                onChange={(e) => setSearchLocation(e.target.value)}
-                className="w-full px-2 py-1 text-[10px] md:text-xs border border-gray-300 rounded focus:ring-1 focus:ring-[#C62828] focus:border-transparent"
-              />
-            </td>
-            
-            {/* Status Column - Search input */}
-            <td className="px-2 md:px-4 py-0.5">
-              <input
-                type="text"
-                placeholder="Status..."
-                value={searchStatus}
-                onChange={(e) => setSearchStatus(e.target.value)}
-                className="w-full px-2 py-1 text-[10px] md:text-xs border border-gray-300 rounded focus:ring-1 focus:ring-[#C62828] focus:border-transparent"
-              />
-            </td>
-            
-            {/* Actions Column - Filter button */}
-            <td className="px-2 md:px-4 py-0.5 text-center">
-              <button
-                onClick={() => setShowFilterSidebar(true)}
-                className="inline-flex items-center px-2 py-1 border border-gray-300 rounded hover:bg-gray-50 transition text-[10px] md:text-xs font-medium text-gray-700"
-                title="Advanced Filters"
-              >
-                <Filter className="w-2.5 h-2.5 md:w-3 md:h-3 mr-0.5" />
-                Filters
-              </button>
-            </td>
-          </tr>
-        </thead>
-        
-        {/* Rest of your table body remains the same */}
-        <tbody className="divide-y divide-gray-200">
-          {filteredInventory.length === 0 ? (
-            <tr>
-              <td colSpan={8} className="px-4 py-8 text-center">
-                <Package className="w-12 h-12 md:w-16 md:h-16 text-gray-300 mx-auto mb-3" />
-                <p className="text-gray-600 text-sm md:text-lg font-medium">No inventory items found</p>
-                <p className="text-gray-500 text-xs md:text-sm mt-1">
-                  Try adjusting your search or filters
-                </p>
-              </td>
-            </tr>
-          ) : (
-            filteredInventory.map((item, index) => {
-              const totalValue = calculateTotalValue(item);
-              const isSelected = selectedItems.has(item.id);
-
-              return (
-                <tr
-                  key={item.id}
-                  className={`hover:bg-gray-50 transition ${
-                    index % 2 === 0 ? "bg-white" : "bg-gray-50/50"
-                  } ${isSelected ? "bg-blue-50" : ""}`}
-                >
-                  <td className="px-2 md:px-4 py-2 text-center">
+      {activeTab === "management" && (
+        <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden mx-0 md:mx-0">
+          {" "}
+          <div className="overflow-x-auto">
+            <table className="w-full min-w-[1000px]">
+              <thead className="bg-gray-200 border-b border-gray-200">
+                {/* Column Headers */}
+                <tr>
+                  <th className="px-2 md:px-4 py-2 text-center w-10">
                     <input
                       type="checkbox"
-                      checked={isSelected}
-                      onChange={() => handleSelectItem(item.id)}
+                      checked={selectAll}
+                      onChange={handleSelectAll}
                       className="w-3 h-3 md:w-4 md:h-4 text-[#C62828] border-gray-300 rounded focus:ring-[#C62828]"
                     />
-                  </td>
-                  <td className="px-2 md:px-4 py-2">
-                    <div className="flex items-center gap-1.5 md:gap-3">
-                      <div className="bg-[#C62828] w-6 h-6 md:w-8 md:h-8 rounded-full flex items-center justify-center text-white font-semibold text-[10px] md:text-xs flex-shrink-0">
-                        {(item.item_name || "U").charAt(0).toUpperCase()}
-                      </div>
-                      <div className="min-w-0">
-                        <p className="font-semibold text-gray-900 text-xs md:text-sm truncate" title={item.item_name || "Unknown"}>
-                          {item.item_name || "Unknown"}
-                        </p>
-                        <p className="text-[10px] md:text-xs text-gray-500 truncate">{item.item_code}</p>
-                        {item.category && (
-                          <p className="text-[10px] md:text-xs text-gray-400 truncate">{item.category}</p>
-                        )}
-                      </div>
+                  </th>
+                  <th className="px-2 md:px-4 py-2 text-left">
+                    <div className="text-[10px] md:text-xs font-semibold text-gray-700 uppercase tracking-wider">
+                      Material Details
                     </div>
-                  </td>
-                  <td className="px-2 md:px-4 py-2">
-                    <div className="font-semibold text-gray-800 text-xs md:text-sm">
-                      {item.quantity} {item.unit}
+                  </th>
+                  <th className="px-2 md:px-4 py-2 text-left">
+                    <div className="text-[10px] md:text-xs font-semibold text-gray-700 uppercase tracking-wider">
+                      Current Stock
                     </div>
-                    <div className="text-[10px] md:text-xs text-gray-500">
-                      Reorder: {item.reorder_qty}
+                  </th>
+                  <th className="px-2 md:px-4 py-2 text-left">
+                    <div className="text-[10px] md:text-xs font-semibold text-gray-700 uppercase tracking-wider">
+                      Unit Rate
                     </div>
-                  </td>
-                  <td className="px-2 md:px-4 py-2">
-                    <div className="text-xs text-gray-700 flex items-center">
-                      <IndianRupee size={10} className="text-green-600 mr-0.5 flex-shrink-0" />
-                      <span className="truncate">{item.rate?.toLocaleString("en-IN") || "0"}</span>
+                  </th>
+                  <th className="px-2 md:px-4 py-2 text-left">
+                    <div className="text-[10px] md:text-xs font-semibold text-gray-700 uppercase tracking-wider">
+                      Stock Value
                     </div>
+                  </th>
+                  <th className="px-2 md:px-4 py-2 text-left">
+                    <div className="text-[10px] md:text-xs font-semibold text-gray-700 uppercase tracking-wider">
+                      Location
+                    </div>
+                  </th>
+                  <th className="px-2 md:px-4 py-2 text-left">
+                    <div className="text-[10px] md:text-xs font-semibold text-gray-700 uppercase tracking-wider">
+                      Status
+                    </div>
+                  </th>
+                  <th className="px-2 md:px-4 py-2 text-center">
+                    <div className="text-[10px] md:text-xs font-semibold text-gray-700 uppercase tracking-wider">
+                      Actions
+                    </div>
+                  </th>
+                </tr>
+
+                {/* Search Row - REDUCED HEIGHT (py-0.5 instead of py-1) */}
+                <tr className="bg-gray-50 border-b border-gray-200">
+                  <td className="px-2 md:px-4 py-0.5"></td>
+
+                  {/* Material Details Column - ONLY ONE search input (removed item_code search) */}
+                  <td className="px-2 md:px-4 py-0.5">
+                    <input
+                      type="text"
+                      placeholder="Search material name..."
+                      value={searchName}
+                      onChange={(e) => setSearchName(e.target.value)}
+                      className="w-full px-2 py-1 text-[10px] md:text-xs border border-gray-300 rounded focus:ring-1 focus:ring-[#C62828] focus:border-transparent"
+                    />
                   </td>
-                  <td className="px-2 md:px-4 py-2">
-                    <span className="font-medium text-gray-700 text-xs md:text-sm flex items-center">
-                      <IndianRupee size={10} className="text-green-600 mr-0.5 flex-shrink-0" />
-                      <span className="truncate">{totalValue.toLocaleString("en-IN")}</span>
-                    </span>
+
+                  {/* Current Stock Column - ONLY ONE search input (removed unit search) */}
+                  <td className="px-2 md:px-4 py-0.5">
+                    <input
+                      type="text"
+                      placeholder="Search stock quantity..."
+                      value={searchStock}
+                      onChange={(e) => setSearchStock(e.target.value)}
+                      className="w-full px-2 py-1 text-[10px] md:text-xs border border-gray-300 rounded focus:ring-1 focus:ring-[#C62828] focus:border-transparent"
+                    />
                   </td>
-                  <td className="px-2 md:px-4 py-2 text-gray-700 text-xs md:text-sm">
-                    <span className="truncate block" title={item.location || "N/A"}>
-                      {item.location || "N/A"}
-                    </span>
+
+                  {/* Unit Rate Column - Search input */}
+                  <td className="px-2 md:px-4 py-0.5">
+                    <input
+                      type="text"
+                      placeholder="Search rate..."
+                      value={searchRate}
+                      onChange={(e) => setSearchRate(e.target.value)}
+                      className="w-full px-2 py-1 text-[10px] md:text-xs border border-gray-300 rounded focus:ring-1 focus:ring-[#C62828] focus:border-transparent"
+                    />
                   </td>
-                  <td className="px-2 md:px-4 py-2">
-                    <span
-                      className={`px-1.5 py-0.5 rounded-full text-[10px] font-medium ${getStatusColor(
-                        item.status
-                      )} truncate`}
+
+                  {/* Stock Value Column - Search input */}
+                  <td className="px-2 md:px-4 py-0.5">
+                    <input
+                      type="text"
+                      placeholder="Search value..."
+                      value={searchStockValue}
+                      onChange={(e) => setSearchStockValue(e.target.value)}
+                      className="w-full px-2 py-1 text-[10px] md:text-xs border border-gray-300 rounded focus:ring-1 focus:ring-[#C62828] focus:border-transparent"
+                    />
+                  </td>
+
+                  {/* Location Column - Search input */}
+                  <td className="px-2 md:px-4 py-0.5">
+                    <input
+                      type="text"
+                      placeholder="Location..."
+                      value={searchLocation}
+                      onChange={(e) => setSearchLocation(e.target.value)}
+                      className="w-full px-2 py-1 text-[10px] md:text-xs border border-gray-300 rounded focus:ring-1 focus:ring-[#C62828] focus:border-transparent"
+                    />
+                  </td>
+
+                  {/* Status Column - Search input */}
+                  <td className="px-2 md:px-4 py-0.5">
+                    <input
+                      type="text"
+                      placeholder="Status..."
+                      value={searchStatus}
+                      onChange={(e) => setSearchStatus(e.target.value)}
+                      className="w-full px-2 py-1 text-[10px] md:text-xs border border-gray-300 rounded focus:ring-1 focus:ring-[#C62828] focus:border-transparent"
+                    />
+                  </td>
+
+                  {/* Actions Column - Filter button */}
+                  <td className="px-2 md:px-4 py-0.5 text-center">
+                    <button
+                      onClick={() => setShowFilterSidebar(true)}
+                      className="inline-flex items-center px-2 py-1 border border-gray-300 rounded hover:bg-gray-50 transition text-[10px] md:text-xs font-medium text-gray-700"
+                      title="Advanced Filters"
                     >
-                      {item.status}
-                    </span>
-                    {item.status === "LOW STOCK" && (
-                      <div className="mt-0.5 flex items-center gap-0.5 text-[10px] text-yellow-600">
-                        <AlertTriangle className="w-2.5 h-2.5 flex-shrink-0" />
-                        <span className="truncate">Reorder needed</span>
-                      </div>
-                    )}
-                    {item.status === "OUT OF STOCK" && (
-                      <div className="mt-0.5 flex items-center gap-0.5 text-[10px] text-red-600">
-                        <AlertTriangle className="w-2.5 h-2.5 flex-shrink-0" />
-                        <span className="truncate">Out of stock</span>
-                      </div>
-                    )}
-                  </td>
-                  <td className="px-2 md:px-4 py-2">
-                    <div className="flex items-center justify-center gap-1 md:gap-2">
-                      <button
-                        onClick={() => reminder(item)}
-                        className="p-1 text-blue-600 hover:bg-blue-50 rounded-lg transition"
-                        title="Send Reminder"
-                      >
-                        <Bell className="w-2.5 h-2.5 md:w-3 md:h-3" />
-                      </button>
-                      {can("update_inventory") && (
-                        <button
-                          onClick={() => handleEdit(item)}
-                          className="p-1 text-yellow-600 hover:bg-yellow-50 rounded-lg transition"
-                          title="Edit"
-                        >
-                          <Edit2 className="w-2.5 h-2.5 md:w-3 md:h-3" />
-                        </button>
-                      )}
-                      {can("delete_inventory") && (
-                        <button
-                          onClick={() => handleDelete(item.id)}
-                          className="p-1 text-red-600 hover:bg-red-50 rounded-lg transition"
-                          title="Delete"
-                        >
-                          <Trash2 className="w-2.5 h-2.5 md:w-3 md:h-3" />
-                        </button>
-                      )}
-                    </div>
+                      <Filter className="w-2.5 h-2.5 md:w-3 md:h-3 mr-0.5" />
+                      Filters
+                    </button>
                   </td>
                 </tr>
-              );
-            })
+              </thead>
+
+              {/* Rest of your table body remains the same */}
+              <tbody className="divide-y divide-gray-200">
+                {filteredInventory.length === 0 ? (
+                  <tr>
+                    <td colSpan={8} className="px-4 py-8 text-center">
+                      <Package className="w-12 h-12 md:w-16 md:h-16 text-gray-300 mx-auto mb-3" />
+                      <p className="text-gray-600 text-sm md:text-lg font-medium">
+                        No inventory items found
+                      </p>
+                      <p className="text-gray-500 text-xs md:text-sm mt-1">
+                        Try adjusting your search or filters
+                      </p>
+                    </td>
+                  </tr>
+                ) : (
+                  filteredInventory.map((item, index) => {
+                    const totalValue = calculateTotalValue(item);
+                    const isSelected = selectedItems.has(item.id);
+
+                    return (
+                      <tr
+                        key={item.id}
+                        className={`hover:bg-gray-50 transition ${
+                          index % 2 === 0 ? "bg-white" : "bg-gray-50/50"
+                        } ${isSelected ? "bg-blue-50" : ""}`}
+                      >
+                        <td className="px-2 md:px-4 py-2 text-center">
+                          <input
+                            type="checkbox"
+                            checked={isSelected}
+                            onChange={() => handleSelectItem(item.id)}
+                            className="w-3 h-3 md:w-4 md:h-4 text-[#C62828] border-gray-300 rounded focus:ring-[#C62828]"
+                          />
+                        </td>
+                        <td className="px-2 md:px-4 py-2">
+                          <div className="flex items-center gap-1.5 md:gap-3">
+                            <div className="bg-[#C62828] w-6 h-6 md:w-8 md:h-8 rounded-full flex items-center justify-center text-white font-semibold text-[10px] md:text-xs flex-shrink-0">
+                              {(item.item_name || "U").charAt(0).toUpperCase()}
+                            </div>
+                            <div className="min-w-0">
+                              <p
+                                className="font-semibold text-gray-900 text-xs md:text-sm truncate"
+                                title={item.item_name || "Unknown"}
+                              >
+                                {item.item_name || "Unknown"}
+                              </p>
+                              <p className="text-[10px] md:text-xs text-gray-500 truncate">
+                                {item.item_code}
+                              </p>
+                              {item.category && (
+                                <p className="text-[10px] md:text-xs text-gray-400 truncate">
+                                  {item.category}
+                                </p>
+                              )}
+                            </div>
+                          </div>
+                        </td>
+                        <td className="px-2 md:px-4 py-2">
+                          <div className="font-semibold text-gray-800 text-xs md:text-sm">
+                            {item.quantity} {item.unit}
+                          </div>
+                          <div className="text-[10px] md:text-xs text-gray-500">
+                            Reorder: {item.reorder_qty}
+                          </div>
+                        </td>
+                        <td className="px-2 md:px-4 py-2">
+                          <div className="text-xs text-gray-700 flex items-center">
+                            <IndianRupee
+                              size={10}
+                              className="text-green-600 mr-0.5 flex-shrink-0"
+                            />
+                            <span className="truncate">
+                              {item.rate?.toLocaleString("en-IN") || "0"}
+                            </span>
+                          </div>
+                        </td>
+                        <td className="px-2 md:px-4 py-2">
+                          <span className="font-medium text-gray-700 text-xs md:text-sm flex items-center">
+                            <IndianRupee
+                              size={10}
+                              className="text-green-600 mr-0.5 flex-shrink-0"
+                            />
+                            <span className="truncate">
+                              {totalValue.toLocaleString("en-IN")}
+                            </span>
+                          </span>
+                        </td>
+                        <td className="px-2 md:px-4 py-2 text-gray-700 text-xs md:text-sm">
+                          <span
+                            className="truncate block"
+                            title={item.location || "N/A"}
+                          >
+                            {item.location || "N/A"}
+                          </span>
+                        </td>
+                        <td className="px-2 md:px-4 py-2">
+                          <span
+                            className={`px-1.5 py-0.5 rounded-full text-[10px] font-medium ${getStatusColor(
+                              item.status,
+                            )} truncate`}
+                          >
+                            {item.status}
+                          </span>
+                          {item.status === "LOW STOCK" && (
+                            <div className="mt-0.5 flex items-center gap-0.5 text-[10px] text-yellow-600">
+                              <AlertTriangle className="w-2.5 h-2.5 flex-shrink-0" />
+                              <span className="truncate">Reorder needed</span>
+                            </div>
+                          )}
+                          {item.status === "OUT OF STOCK" && (
+                            <div className="mt-0.5 flex items-center gap-0.5 text-[10px] text-red-600">
+                              <AlertTriangle className="w-2.5 h-2.5 flex-shrink-0" />
+                              <span className="truncate">Out of stock</span>
+                            </div>
+                          )}
+                        </td>
+                        <td className="px-2 md:px-4 py-2">
+                          <div className="flex items-center justify-center gap-1 md:gap-2">
+                            <button
+                              onClick={() => reminder(item)}
+                              className="p-1 text-blue-600 hover:bg-blue-50 rounded-lg transition"
+                              title="Send Reminder"
+                            >
+                              <Bell className="w-2.5 h-2.5 md:w-3 md:h-3" />
+                            </button>
+                            {can("update_inventory") && (
+                              <button
+                                onClick={() => handleEdit(item)}
+                                className="p-1 text-yellow-600 hover:bg-yellow-50 rounded-lg transition"
+                                title="Edit"
+                              >
+                                <Edit2 className="w-2.5 h-2.5 md:w-3 md:h-3" />
+                              </button>
+                            )}
+                          </div>
+                        </td>
+                      </tr>
+                    );
+                  })
+                )}
+              </tbody>
+            </table>
+          </div>
+          {/* Bulk Actions Bar (unchanged) */}
+          {selectedItems.size > 0 && (
+            <div className="border-t border-gray-200 bg-blue-50 p-2 md:p-3">
+              <div className="flex flex-col md:flex-row md:items-center justify-between gap-2">
+                <div className="text-xs md:text-sm text-gray-700 font-medium">
+                  <span className="text-blue-700">{selectedItems.size}</span>{" "}
+                  item(s) selected
+                </div>
+                <div className="flex flex-wrap gap-1 md:gap-2">
+                  <button
+                    onClick={() => setSelectedItems(new Set())}
+                    className="px-2 md:px-3 py-1 md:py-1.5 border border-gray-300 rounded hover:bg-gray-100 transition text-xs md:text-sm font-medium text-gray-700"
+                  >
+                    Clear
+                  </button>
+                </div>
+              </div>
+            </div>
           )}
-        </tbody>
-      </table>
-    </div>
-    
-    {/* Bulk Actions Bar (unchanged) */}
-    {selectedItems.size > 0 && (
-      <div className="border-t border-gray-200 bg-blue-50 p-2 md:p-3">
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-2">
-          <div className="text-xs md:text-sm text-gray-700 font-medium">
-            <span className="text-blue-700">{selectedItems.size}</span> item(s) selected
-          </div>
-          <div className="flex flex-wrap gap-1 md:gap-2">
-            {selectedItems.size > 0 && can("delete_inventory") && (
-              <button
-                onClick={handleBulkDelete}
-                className="bg-red-600 text-white px-2 md:px-3 py-1 md:py-1.5 rounded hover:bg-red-700 transition-all flex items-center gap-0.5 md:gap-1 text-xs md:text-sm font-medium shadow-sm"
-              >
-                <Trash2 className="w-2.5 h-2.5 md:w-3 md:h-3" />
-                Delete ({selectedItems.size})
-              </button>
-            )}
-            <button
-              onClick={() => setSelectedItems(new Set())}
-              className="px-2 md:px-3 py-1 md:py-1.5 border border-gray-300 rounded hover:bg-gray-100 transition text-xs md:text-sm font-medium text-gray-700"
-            >
-              Clear
-            </button>
-          </div>
         </div>
-      </div>
-    )}
-  </div>
-)}
+      )}
+      {showFilterSidebar && (
+        <div className="fixed inset-0 z-50 overflow-hidden">
+          {/* Overlay */}
+          <div
+            className={`absolute inset-0 bg-black bg-opacity-50 transition-opacity duration-300 ${
+              showFilterSidebar ? "opacity-100" : "opacity-0"
+            }`}
+            onClick={() => setShowFilterSidebar(false)}
+          />
 
-     {showFilterSidebar && (
-  <div className="fixed inset-0 z-50 overflow-hidden">
-    
-    {/* Overlay */}
-    <div
-      className={`absolute inset-0 bg-black bg-opacity-50 transition-opacity duration-300 ${
-        showFilterSidebar ? "opacity-100" : "opacity-0"
-      }`}
-      onClick={() => setShowFilterSidebar(false)}
-    />
-
-    {/* Sidebar */}
-    <div
-      className={`
+          {/* Sidebar */}
+          <div
+            className={`
         absolute inset-y-0 right-0
         bg-white shadow-2xl flex flex-col
         transition-transform duration-300 ease-out
@@ -1846,104 +1834,102 @@ export default function StoreManagement({
         /* DESKTOP (unchanged) */
         md:max-w-md md:w-96
       `}
-    >
-      {/* Header */}
-      <div className="bg-[#C62828] px-4 py-3 flex justify-between items-center">
-        <h2 className="text-sm md:text-lg font-bold text-white">
-          Filters
-        </h2>
+          >
+            {/* Header */}
+            <div className="bg-[#C62828] px-4 py-3 flex justify-between items-center">
+              <h2 className="text-sm md:text-lg font-bold text-white">
+                Filters
+              </h2>
 
-        <div className="flex items-center gap-2 md:gap-3">
-          <button
-            onClick={resetFilters}
-            className="text-white text-xs md:text-sm hover:bg-white hover:bg-opacity-20 px-2 md:px-3 py-1 md:py-1.5 rounded transition"
-          >
-            Reset
-          </button>
-          <button
-            onClick={() => setShowFilterSidebar(false)}
-            className="text-white hover:bg-white hover:bg-opacity-20 rounded-lg p-1 transition"
-          >
-            <X className="w-4 h-4 md:w-5 md:h-5" />
-          </button>
+              <div className="flex items-center gap-2 md:gap-3">
+                <button
+                  onClick={resetFilters}
+                  className="text-white text-xs md:text-sm hover:bg-white hover:bg-opacity-20 px-2 md:px-3 py-1 md:py-1.5 rounded transition"
+                >
+                  Reset
+                </button>
+                <button
+                  onClick={() => setShowFilterSidebar(false)}
+                  className="text-white hover:bg-white hover:bg-opacity-20 rounded-lg p-1 transition"
+                >
+                  <X className="w-4 h-4 md:w-5 md:h-5" />
+                </button>
+              </div>
+            </div>
+
+            {/* Content */}
+            <div className="flex-1 overflow-y-auto p-4 md:p-6 space-y-4 md:space-y-6">
+              <div>
+                <label className="block text-xs md:text-sm font-medium text-gray-700 mb-2">
+                  Status
+                </label>
+                <select
+                  value={filterStatus}
+                  onChange={(e) => setFilterStatus(e.target.value)}
+                  className="w-full px-3 py-2 text-xs md:text-sm border border-gray-300 rounded focus:ring-1 md:focus:ring-2 focus:ring-[#C62828]"
+                >
+                  <option value="">All Statuses</option>
+                  <option value="IN STOCK">In Stock</option>
+                  <option value="LOW STOCK">Low Stock</option>
+                  <option value="OUT OF STOCK">Out of Stock</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-xs md:text-sm font-medium text-gray-700 mb-2">
+                  Category
+                </label>
+                <select
+                  value={filterCategory}
+                  onChange={(e) => setFilterCategory(e.target.value)}
+                  className="w-full px-3 py-2 text-xs md:text-sm border border-gray-300 rounded focus:ring-1 md:focus:ring-2 focus:ring-[#C62828]"
+                >
+                  <option value="">All Categories</option>
+                  {uniqueCategories.map((category) => (
+                    <option key={category} value={category}>
+                      {category}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-xs md:text-sm font-medium text-gray-700 mb-2">
+                  Location
+                </label>
+                <select
+                  value={filterLocation}
+                  onChange={(e) => setFilterLocation(e.target.value)}
+                  className="w-full px-3 py-2 text-xs md:text-sm border border-gray-300 rounded focus:ring-1 md:focus:ring-2 focus:ring-[#C62828]"
+                >
+                  <option value="">All Locations</option>
+                  {uniqueLocations.map((location) => (
+                    <option key={location} value={location}>
+                      {location}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            </div>
+
+            {/* Footer */}
+            <div className="border-t p-3 md:p-4 flex gap-2 md:gap-3">
+              <button
+                onClick={resetFilters}
+                className="flex-1 px-3 md:px-4 py-2 text-xs md:text-sm border border-gray-300 rounded hover:bg-gray-50 transition font-medium text-gray-700"
+              >
+                Reset
+              </button>
+              <button
+                onClick={applyFilters}
+                className="flex-1 bg-gradient-to-r from-[#C62828] to-[#B71C1C] text-white px-3 md:px-4 py-2 text-xs md:text-sm rounded hover:shadow-lg transition font-medium"
+              >
+                Apply
+              </button>
+            </div>
+          </div>
         </div>
-      </div>
-
-      {/* Content */}
-      <div className="flex-1 overflow-y-auto p-4 md:p-6 space-y-4 md:space-y-6">
-        <div>
-          <label className="block text-xs md:text-sm font-medium text-gray-700 mb-2">
-            Status
-          </label>
-          <select
-            value={filterStatus}
-            onChange={(e) => setFilterStatus(e.target.value)}
-            className="w-full px-3 py-2 text-xs md:text-sm border border-gray-300 rounded focus:ring-1 md:focus:ring-2 focus:ring-[#C62828]"
-          >
-            <option value="">All Statuses</option>
-            <option value="IN STOCK">In Stock</option>
-            <option value="LOW STOCK">Low Stock</option>
-            <option value="OUT OF STOCK">Out of Stock</option>
-          </select>
-        </div>
-
-        <div>
-          <label className="block text-xs md:text-sm font-medium text-gray-700 mb-2">
-            Category
-          </label>
-          <select
-            value={filterCategory}
-            onChange={(e) => setFilterCategory(e.target.value)}
-            className="w-full px-3 py-2 text-xs md:text-sm border border-gray-300 rounded focus:ring-1 md:focus:ring-2 focus:ring-[#C62828]"
-          >
-            <option value="">All Categories</option>
-            {uniqueCategories.map((category) => (
-              <option key={category} value={category}>
-                {category}
-              </option>
-            ))}
-          </select>
-        </div>
-
-        <div>
-          <label className="block text-xs md:text-sm font-medium text-gray-700 mb-2">
-            Location
-          </label>
-          <select
-            value={filterLocation}
-            onChange={(e) => setFilterLocation(e.target.value)}
-            className="w-full px-3 py-2 text-xs md:text-sm border border-gray-300 rounded focus:ring-1 md:focus:ring-2 focus:ring-[#C62828]"
-          >
-            <option value="">All Locations</option>
-            {uniqueLocations.map((location) => (
-              <option key={location} value={location}>
-                {location}
-              </option>
-            ))}
-          </select>
-        </div>
-      </div>
-
-      {/* Footer */}
-      <div className="border-t p-3 md:p-4 flex gap-2 md:gap-3">
-        <button
-          onClick={resetFilters}
-          className="flex-1 px-3 md:px-4 py-2 text-xs md:text-sm border border-gray-300 rounded hover:bg-gray-50 transition font-medium text-gray-700"
-        >
-          Reset
-        </button>
-        <button
-          onClick={applyFilters}
-          className="flex-1 bg-gradient-to-r from-[#C62828] to-[#B71C1C] text-white px-3 md:px-4 py-2 text-xs md:text-sm rounded hover:shadow-lg transition font-medium"
-        >
-          Apply
-        </button>
-      </div>
-    </div>
-  </div>
-)}
-
-
+      )}
       {/* Edit Modal */}
       {showEditModal && selectedItem && (
         <UpdateInventoryForm
@@ -1952,7 +1938,6 @@ export default function StoreManagement({
           loadAllData={loadAllData}
         />
       )}
-
       {/* View PO Transaction Modal */}
       {activeFormTab === "view" && (
         <ViewPOTransaction
