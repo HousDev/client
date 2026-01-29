@@ -36,30 +36,23 @@ export default function ViewLeaveDetails({ leave, onClose, employees }: ViewLeav
   };
 
   // Build full URL for attachments
-  const buildAttachmentUrl = (path: string) => {
-    if (!path) return '';
-    
-    // If already a full URL, return as-is
-    if (path.startsWith('http://') || path.startsWith('https://')) {
-      return path;
-    }
-    
-    // If starts with /api, append to base URL
-    if (path.startsWith('/api/')) {
-      const baseUrl = getBaseUrl();
-      return `${baseUrl}${path}`;
-    }
-    
-    // If starts with api/ (without leading slash), handle it
-    if (path.startsWith('api/')) {
-      const baseUrl = getBaseUrl();
-      return `${baseUrl}/${path}`;
-    }
-    
-    // Default: assume it's relative to /api
-    const baseUrl = getBaseUrl();
-    return `${baseUrl}/api/${path.replace(/^\/+/, '')}`;
-  };
+ // Build full URL for attachments - FIXED
+const buildAttachmentUrl = (path: string) => {
+  if (!path) return '';
+  
+  // If already a full URL, return as-is
+  if (path.startsWith('http://') || path.startsWith('https://')) {
+    return path;
+  }
+  
+  const baseUrl = getBaseUrl();
+  
+  // Remove any leading slashes
+  const cleanPath = path.replace(/^\/+/, '');
+  
+  // ⭐ FIXED: Don't add /api, images are served from /uploads directly
+  return `${baseUrl}/${cleanPath}`;
+};
 
   // Load employee details
   useEffect(() => {
@@ -345,8 +338,14 @@ export default function ViewLeaveDetails({ leave, onClose, employees }: ViewLeav
   return (
     <>
       {/* Main Modal with backdrop blur */}
-      <div className="fixed inset-0 bg-black/30 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-        <div className="bg-white rounded-2xl shadow-2xl w-full max-w-3xl max-h-[90vh] overflow-hidden animate-fadeIn">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 animate-fadeIn">
+  {/* Backdrop - only opacity, no blur */}
+  <div 
+    className="fixed inset-0 bg-black/30 backdrop-blur-sm"
+    onClick={onClose}
+  />
+  
+  <div className="bg-white rounded-2xl shadow-2xl w-full max-w-3xl max-h-[90vh] overflow-hidden relative z-10">
           {/* Header - MaterialInForm Style */}
           <div className="bg-gradient-to-r from-[#40423f] via-[#4a4c49] to-[#5a5d5a] px-6 py-4 flex justify-between items-center">
             <div className="flex items-center gap-3">
@@ -740,9 +739,15 @@ export default function ViewLeaveDetails({ leave, onClose, employees }: ViewLeav
       </div>
 
       {/* File Preview Modal */}
-      {isPreviewOpen && previewFile && (
-        <div className="fixed inset-0 bg-black/70 backdrop-blur-sm z-[60] flex items-center justify-center p-4">
-          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-4xl max-h-[90vh] overflow-hidden">
+     {isPreviewOpen && previewFile && (
+  <div className="fixed inset-0 z-[60] flex items-center justify-center p-4">
+    {/* Backdrop for preview */}
+    <div 
+      className="fixed inset-0 bg-black/70 backdrop-blur-sm"
+      onClick={closePreview}
+    />
+    
+    <div className="bg-white rounded-2xl shadow-2xl w-full max-w-4xl max-h-[90vh] overflow-hidden relative z-10">
             {/* Preview Header */}
             <div className="bg-gradient-to-r from-gray-800 to-gray-900 px-6 py-4 flex justify-between items-center">
               <div className="flex items-center gap-3">

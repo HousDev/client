@@ -376,7 +376,8 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { 
   Calendar, Plus, Search, Filter, CheckCircle, XCircle, Clock, 
-  User, ChevronDown, FileText, Download, Eye, Trash2, Mail, Phone, Building 
+  User, ChevronDown, FileText, Download, Eye, Trash2, Mail, Phone, Building, 
+  MoreVertical
 } from 'lucide-react';
 import Card from '../components/ui/Card';
 import Button from '../components/ui/Button';
@@ -455,6 +456,8 @@ export default function Leaves() {
   const [showFilterSidebar, setShowFilterSidebar] = useState(false);
   const [selectedLeave, setSelectedLeave] = useState<EnhancedLeaveRequest | null>(null);
   const [isViewOpen, setIsViewOpen] = useState(false);
+  const [openMenuId, setOpenMenuId] = useState<string | null>(null);
+
   const [stats, setStats] = useState<LeaveStats>({
     pending: 0,
     approved: 0,
@@ -610,23 +613,24 @@ const handleReject = async (id: number) => {
   }
 };
   // Handle delete leave
-  const handleDelete = async (id: number) => {
-    if (!confirm('Are you sure you want to delete this leave? This action cannot be undone.')) return;
+// Handle delete leave
+const handleDelete = async (id: number) => {
+  if (!confirm('Are you sure you want to delete this leave? This action cannot be undone.')) return;
 
-    try {
-      const response = await api.delete(`/api/leaves/${id}`);
-      
-      if (response.data.success) {
-        toast.success('Leave deleted successfully');
-        loadLeaves();
-        loadStats();
-      }
-    } catch (error: any) {
-      console.error('Error deleting leave:', error);
-      toast.error(error.response?.data?.message || 'Failed to delete leave');
+  try {
+    const response = await api.delete(`/leaves/${id}`);
+    
+    if (response.data.success) {
+      toast.success('Leave deleted successfully');
+      loadLeaves();
+      loadStats();
     }
-  };
-
+  } catch (error: any) {
+    console.error('Error deleting leave:', error);
+    console.error('Server response data:', error.response?.data);
+    toast.error(error.response?.data?.message || 'Failed to delete leave');
+  }
+};
   // Handle download attachment
   const handleDownload = async (id: number, fileName?: string) => {
     try {
@@ -847,7 +851,7 @@ const handleReject = async (id: number) => {
               </tr>
 
               {/* Search Row */}
-              <tr className="bg-gray-100 border-b border-gray-200">
+              <tr className="bg-gray-100 border-b border-gray-200 ">
                 {/* Application # Search */}
                 <td className="px-4 py-2">
                   <div className="relative">
@@ -933,14 +937,14 @@ const handleReject = async (id: number) => {
                 {/* Actions with Filter Button */}
                 <td className="px-4 py-2">
                   <div className="flex gap-1">
-                    <button
+                    {/* <button
                       onClick={() => setShowFilterSidebar(true)}
                       className="flex items-center gap-1 px-2 py-1 text-xs border border-gray-300 rounded hover:bg-gray-50 transition font-medium"
                       title="Advanced Filters"
                     >
                       <Filter className="w-3 h-3" />
                       Filters
-                    </button>
+                    </button> */}
                   </div>
                 </td>
               </tr>
@@ -1018,64 +1022,105 @@ const handleReject = async (id: number) => {
                       </Badge>
                     </td>
                     
-                    <td className="px-4 py-3">
-                      <div className="flex items-center gap-2">
-                        {/* View Button */}
-                        <button
-                          onClick={() => {
-                            setSelectedLeave(leave);
-                            setIsViewOpen(true);
-                          }}
-                          className="px-2 py-1 text-xs bg-gray-100 text-gray-700 rounded hover:bg-gray-200 transition flex items-center gap-1"
-                          title="View Details"
-                        >
-                          <Eye className="w-3 h-3" />
-                          View
-                        </button>
-                        
-                        {/* Attachment Download */}
-                        {leave.attachment_path && (
-                          <button
-                            onClick={() => handleDownload(leave.id, leave.attachment_name || undefined)}
-                            className="px-2 py-1 text-xs bg-blue-100 text-blue-700 rounded hover:bg-blue-200 transition flex items-center gap-1"
-                            title="Download Attachment"
-                          >
-                            <Download className="w-3 h-3" />
-                          </button>
-                        )}
-                        
-                        {/* Approve/Reject */}
-                        {leave.status === 'pending' && (
-                          <>
-                            <button
-                              onClick={() => handleApprove(leave.id)}
-                              className="px-2 py-1 text-xs bg-green-100 text-green-700 rounded hover:bg-green-200 transition flex items-center gap-1"
-                              title="Approve Leave"
-                            >
-                              <CheckCircle className="w-3 h-3" />
-                              Approve
-                            </button>
-                            <button
-                              onClick={() => handleReject(leave.id)}
-                              className="px-2 py-1 text-xs bg-red-100 text-red-700 rounded hover:bg-red-200 transition flex items-center gap-1"
-                              title="Reject Leave"
-                            >
-                              <XCircle className="w-3 h-3" />
-                              Reject
-                            </button>
-                          </>
-                        )}
-                        
-                        {/* Delete */}
-                        <button
-                          onClick={() => handleDelete(leave.id)}
-                          className="px-2 py-1 text-xs bg-gray-100 text-gray-700 rounded hover:bg-gray-200 transition flex items-center gap-1"
-                          title="Delete Leave"
-                        >
-                          <Trash2 className="w-3 h-3" />
-                        </button>
-                      </div>
-                    </td>
+                   <td className="px-4 py-3 relative">
+  {/* Three Dot Button */}
+  <button
+    onClick={() =>
+      setOpenMenuId(openMenuId === leave.id ? null : leave.id)
+    }
+    className="p-2 rounded hover:bg-gray-100 transition"
+  >
+    <MoreVertical className="w-4 h-4 text-gray-600" />
+  </button>
+
+  {/* Dropdown */}
+  {openMenuId === leave.id && (
+    <div className="absolute right-4 top-10 z-50 w-44 bg-white border border-gray-200 rounded-lg shadow-lg">
+      <ul className="py-1 text-sm text-gray-700">
+
+        {/* View */}
+        <li>
+          <button
+            onClick={() => {
+              setSelectedLeave(leave);
+              setIsViewOpen(true);
+              setOpenMenuId(null);
+            }}
+            className="w-full flex items-center gap-2 px-4 py-2 hover:bg-gray-100"
+          >
+            <Eye className="w-4 h-4" />
+            View
+          </button>
+        </li>
+
+        {/* Download */}
+        {leave.attachment_path && (
+          <li>
+            <button
+              onClick={() => {
+                handleDownload(leave.id, leave.attachment_name || undefined);
+                setOpenMenuId(null);
+              }}
+              className="w-full flex items-center gap-2 px-4 py-2 hover:bg-gray-100 text-blue-600"
+            >
+              <Download className="w-4 h-4" />
+              Download
+            </button>
+          </li>
+        )}
+
+        {/* Approve / Reject */}
+        {leave.status === "pending" && (
+          <>
+            <li>
+              <button
+                onClick={() => {
+                  handleApprove(leave.id);
+                  setOpenMenuId(null);
+                }}
+                className="w-full flex items-center gap-2 px-4 py-2 hover:bg-gray-100 text-green-600"
+              >
+                <CheckCircle className="w-4 h-4" />
+                Approve
+              </button>
+            </li>
+
+            <li>
+              <button
+                onClick={() => {
+                  handleReject(leave.id);
+                  setOpenMenuId(null);
+                }}
+                className="w-full flex items-center gap-2 px-4 py-2 hover:bg-gray-100 text-red-600"
+              >
+                <XCircle className="w-4 h-4" />
+                Reject
+              </button>
+            </li>
+          </>
+        )}
+
+        <hr className="my-1" />
+
+        {/* Delete */}
+        <li>
+          <button
+            onClick={() => {
+              handleDelete(leave.id);
+              setOpenMenuId(null);
+            }}
+            className="w-full flex items-center gap-2 px-4 py-2 hover:bg-red-50 text-red-600"
+          >
+            <Trash2 className="w-4 h-4" />
+            Delete
+          </button>
+        </li>
+
+      </ul>
+    </div>
+  )}
+</td>
+
                   </tr>
                 ))
               )}
@@ -1084,155 +1129,8 @@ const handleReject = async (id: number) => {
         </div>
       </Card>
 
-      {/* Filter Sidebar - Remaining same */}
-      {showFilterSidebar && (
-        <div className="fixed inset-0 z-50 overflow-hidden">
-          <div
-            className="absolute inset-0 bg-black bg-opacity-50 transition-opacity duration-300"
-            onClick={() => setShowFilterSidebar(false)}
-          />
-          
-          <div
-            className={`
-              absolute inset-y-0 right-0
-              bg-white shadow-2xl flex flex-col
-              transition-transform duration-300 ease-out
-              ${showFilterSidebar ? "translate-x-0" : "translate-x-full"}
-              w-[90vw] max-w-none md:max-w-md md:w-full
-            `}
-          >
-            <div className="bg-gradient-to-r from-blue-600 to-blue-700 px-6 py-4 flex justify-between items-center">
-              <div className="flex items-center gap-3">
-                <div className="p-2 bg-white/20 rounded-lg">
-                  <Filter className="w-5 h-5 text-white" />
-                </div>
-                <div>
-                  <h2 className="text-xl font-bold text-white">Advanced Filters</h2>
-                  <p className="text-sm text-white/80">Filter leave applications</p>
-                </div>
-              </div>
+    
 
-              <div className="flex items-center gap-3">
-                <button
-                  onClick={resetFilters}
-                  className="text-white text-sm hover:bg-white hover:bg-opacity-20 px-3 py-1.5 rounded transition font-medium"
-                >
-                  Reset
-                </button>
-                <button
-                  onClick={() => setShowFilterSidebar(false)}
-                  className="text-white hover:bg-white hover:bg-opacity-20 rounded-lg p-1.5 transition"
-                >
-                  <ChevronDown className="w-5 h-5" />
-                </button>
-              </div>
-            </div>
-
-            <div className="flex-1 overflow-y-auto p-6 space-y-6">
-              {/* Date Range */}
-              <div className="space-y-4">
-                <h3 className="font-semibold text-gray-700">Date Range</h3>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <label className="block text-sm font-semibold text-gray-700">
-                      From Date
-                    </label>
-                    <div className="relative">
-                      <DatePicker
-                        selected={startDate}
-                        onChange={(date) => setStartDate(date)}
-                        selectsStart
-                        startDate={startDate}
-                        endDate={endDate}
-                        maxDate={endDate || new Date()}
-                        placeholderText="Select start date"
-                        className="w-full pl-10 pr-4 py-2 text-sm border border-gray-300 rounded-lg focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 outline-none transition-all"
-                        dateFormat="dd/MM/yyyy"
-                        locale="en-GB"
-                        isClearable
-                      />
-                      <div className="absolute left-3 top-1/2 -translate-y-1/2">
-                        <Calendar className="w-4 h-4 text-gray-500" />
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="space-y-2">
-                    <label className="block text-sm font-semibold text-gray-700">
-                      To Date
-                    </label>
-                    <div className="relative">
-                      <DatePicker
-                        selected={endDate}
-                        onChange={(date) => setEndDate(date)}
-                        selectsEnd
-                        startDate={startDate}
-                        endDate={endDate}
-                        minDate={startDate || undefined}
-                        maxDate={new Date()}
-                        placeholderText="Select end date"
-                        className="w-full pl-10 pr-4 py-2 text-sm border border-gray-300 rounded-lg focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 outline-none transition-all"
-                        dateFormat="dd/MM/yyyy"
-                        locale="en-GB"
-                        isClearable
-                      />
-                      <div className="absolute left-3 top-1/2 -translate-y-1/2">
-                        <Calendar className="w-4 h-4 text-gray-500" />
-                      </div>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Date Summary */}
-                {(startDate || endDate) && (
-                  <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
-                    <p className="text-sm font-medium text-gray-800">Selected Range</p>
-                    <p className="text-xs text-gray-600">
-                      {startDate ? startDate.toLocaleDateString("en-GB") : "Any"} →{" "}
-                      {endDate ? endDate.toLocaleDateString("en-GB") : "Any"}
-                    </p>
-                  </div>
-                )}
-
-                {/* Ignore Date */}
-                <div className="flex items-start gap-3 p-3 bg-gray-50 rounded-lg">
-                  <input
-                    type="checkbox"
-                    checked={ignoreDate}
-                    onChange={(e) => {
-                      setIgnoreDate(e.target.checked);
-                      if (e.target.checked) {
-                        setStartDate(null);
-                        setEndDate(null);
-                      }
-                    }}
-                    className="w-4 h-4 text-blue-600"
-                  />
-                  <div>
-                    <p className="text-sm font-medium text-gray-700">Ignore Date Filters</p>
-                    <p className="text-xs text-gray-500">Show all data regardless of date</p>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <div className="border-t p-4 flex gap-3">
-              <button
-                onClick={resetFilters}
-                className="flex-1 px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 font-medium"
-              >
-                Reset All
-              </button>
-              <button
-                onClick={applyFilters}
-                className="flex-1 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 font-medium"
-              >
-                Apply Filters
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
 
       {/* Apply Leave Form Modal */}
       {showApplyForm && (

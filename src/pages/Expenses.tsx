@@ -400,7 +400,7 @@ export default function Expenses() {
                     <div className="flex items-center justify-between">
                         <div>
                             <p className="text-xs md:text-sm text-gray-600">Total Amount</p>
-                            <p className="text-xl md:text-3xl font-bold text-blue-600 mt-1 md:mt-2">₹{formatters.currency(stats.total_amount)}</p>
+                            <p className="text-xl md:text-3xl font-bold text-blue-600 mt-1 md:mt-2">{formatters.currency(stats.total_amount)}</p>
                             <p className="text-xs text-gray-500">This month</p>
                         </div>
                         <div className="w-10 h-10 md:w-12 md:h-12 bg-blue-100 rounded-lg flex items-center justify-center">
