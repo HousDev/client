@@ -23,14 +23,19 @@ export const ItemsApi = {
   createItem: async (payload: Partial<Item>): Promise<Item> =>
     unwrap(api.post("/items", payload)),
 
-  updateItem: async (id: string | number, payload: Partial<Item>): Promise<Item> =>
-    unwrap(api.put(`/items/${id}`, payload)),
+  updateItem: async (
+    id: string | number,
+    payload: Partial<Item>,
+  ): Promise<Item> => unwrap(api.put(`/items/${id}`, payload)),
 
   deleteItem: async (id: string | number): Promise<any> =>
     unwrap(api.delete(`/items/${id}`)),
 
   toggleItem: async (id: string | number): Promise<Item> =>
     unwrap(api.patch(`/items/${id}/toggle-active`)),
+
+  addDataByImport: async (payload: Partial<Item>): Promise<Item> =>
+    unwrap(api.post("/items/bulk-import-items", payload)),
 };
 
 export default ItemsApi;

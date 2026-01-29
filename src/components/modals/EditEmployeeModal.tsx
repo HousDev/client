@@ -2420,8 +2420,7 @@ export default function EditEmployeeModal({
 
  if (!isOpen) return null;
 
-const displayImage = previewUrl || (existingImage ? `http://localhost:4000${existingImage}` : null);
-  
+  const displayImage = previewUrl || (existingImage ? `${import.meta.env.VITE_API_URL}${existingImage}` : null);
   return (
 <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
   {/* Backdrop with blur */}

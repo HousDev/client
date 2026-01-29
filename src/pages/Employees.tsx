@@ -695,7 +695,7 @@ export default function Employees({ onViewProfile }: EmployeesProps) {
                         <div className="w-8 h-8 rounded-full overflow-hidden bg-slate-100 flex-shrink-0 border border-gray-200">
                           {employee.profile_picture ? (
                             <img
-                              src={`http://localhost:4000${employee.profile_picture}`}
+                              src={`${import.meta.env.VITE_API_URL}${employee.profile_picture}`}
                               alt={`${employee.first_name} ${employee.last_name}`}
                               className="w-full h-full object-cover"
                               onError={(e) => {

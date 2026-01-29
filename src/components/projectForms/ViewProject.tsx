@@ -41,7 +41,6 @@ export default function ViewProject({
   projectDetails,
   setSelectedProject,
 }: any) {
-  console.log("this is project details", projectDetails);
   const [formData, setFormData] = useState({
     name: projectDetails.name || "",
     location: projectDetails.location || "",
@@ -300,11 +299,28 @@ export default function ViewProject({
                                   <div className="flex flex-wrap gap-1">
                                     {floor.flats.map(
                                       (flat: any, flatIndex: any) => (
-                                        <div
-                                          key={flatIndex}
-                                          className="px-2 py-1 bg-blue-50 border border-blue-100 rounded text-xs font-medium text-blue-700"
-                                        >
-                                          <p>{flat.flat_name}</p>
+                                        <div key={flatIndex}>
+                                          <div className="px-2 py-1 bg-blue-50 border border-blue-100 rounded text-xs font-medium text-blue-700">
+                                            <p>{flat.flat_name}</p>
+                                          </div>
+                                          {flat.areas && (
+                                            <div>
+                                              {flat.areas.map(
+                                                (flatArea: any) => (
+                                                  <div
+                                                    key={flatArea.id}
+                                                    className="px-2 py-1 bg-green-50 border border-blue-100 rounded text-xs font-medium text-blue-700"
+                                                  >
+                                                    <p>{flatArea.name}</p>
+                                                    <p>
+                                                      {flatArea.area_size}{" "}
+                                                      {flatArea.unit}
+                                                    </p>
+                                                  </div>
+                                                ),
+                                              )}
+                                            </div>
+                                          )}
                                         </div>
                                       ),
                                     )}
@@ -329,7 +345,11 @@ export default function ViewProject({
                                           key={caIndex}
                                           className="px-2 py-1 bg-green-50 border border-green-100 rounded text-xs font-medium text-green-700"
                                         >
-                                          {commonArea.common_area_name}
+                                          <p> {commonArea.common_area_name}</p>
+                                          <p>
+                                            {commonArea.common_area_size}{" "}
+                                            {commonArea.common_area_size_unit}
+                                          </p>
                                         </div>
                                       ))}
                                     {floor.common_areas.length > 3 && (

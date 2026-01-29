@@ -264,7 +264,7 @@ export default function Layout({
       label: "Settings",
       icon: FaCog,
       headerIcon: FaCog,
-      value: ["view_settings", "edit_settings"],
+      value: ["view_settings", "edit_settings", "full_access"],
       submenu: settingsSubmenuItems,
     },
     {
@@ -818,7 +818,7 @@ export default function Layout({
 
                 {/* Store Management Actions Menu - Desktop (3 buttons on left side) */}
                 {activeTab === "store-management" &&
-                  can("create_inventory") && (
+                  (can("create_inventory") || can("full_access")) && (
                     <div className="hidden lg:flex items-center gap-2 ml-4 border-l border-gray-300 pl-4">
                       <button
                         onClick={() => handleMaterialButtonClick("in")}
@@ -867,7 +867,7 @@ export default function Layout({
                   </button>
                 )}
 
-                {/* Request Material Button - Mobile on Store Management */}
+                {/* Request Material Button - Mobile o  n Store Management */}
                 {activeTab === "store-management" && (
                   <button
                     onClick={() => setShowRequestMaterial(true)}
@@ -1193,7 +1193,7 @@ export default function Layout({
           </div>
 
           {/* Quick Actions Bar (Mobile) - Only shown for store-management */}
-          {activeTab === "store-management" && can("create_inventory") && (
+          {activeTab === "store-management" && (can("create_inventory") || can("full_access")) && (
             <div className="lg:hidden bg-gray-50 border-t border-gray-200 px-4 py-2">
               <div className="flex items-center justify-between gap-2">
                 <span className="text-sm font-medium text-gray-700">

@@ -679,14 +679,26 @@
 //     </div>
 //   );
 // }//
-// 
+//
 
 //src/pages/ItemsMaster.tsx
-import React, { useState, useEffect } from "react";
-import { Plus, Edit2, Trash2, Package, X, CheckSquare, Square, Loader2, XCircle } from "lucide-react";
+import React, { useState, useEffect, useRef } from "react";
+import {
+  Plus,
+  Edit2,
+  Trash2,
+  Package,
+  X,
+  CheckSquare,
+  Square,
+  Loader2,
+  XCircle,
+  Download,
+} from "lucide-react";
 import ItemsApi from "../lib/itemsApi";
 import { toast } from "sonner";
 import MySwal from "../utils/swal";
+import { excelToItemsData } from "../utils/excelToItemsData";
 
 interface ItemFormData {
   item_code: string;
@@ -711,6 +723,7 @@ export default function ItemsMaster(): JSX.Element {
   const [submitting, setSubmitting] = useState(false);
   const [showModal, setShowModal] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
 
   // Search states for each column
   const [searchItemCode, setSearchItemCode] = useState("");
@@ -767,7 +780,7 @@ export default function ItemsMaster(): JSX.Element {
           standard_rate: Number(it.standard_rate) || 0,
           is_active: it.is_active === undefined ? true : Boolean(it.is_active),
           location: it.location || "",
-        })
+        }),
       );
       setItems(normalized);
     } catch (err) {
@@ -843,7 +856,7 @@ export default function ItemsMaster(): JSX.Element {
           location: updated?.location || "",
         };
         setItems((prev) =>
-          prev.map((it) => (it.id === editingId ? normalized : it))
+          prev.map((it) => (it.id === editingId ? normalized : it)),
         );
         toast.success("Item updated successfully!");
       } else {
@@ -907,13 +920,13 @@ export default function ItemsMaster(): JSX.Element {
       cancelButtonColor: "#6b7280",
       confirmButtonText: "Delete",
     });
-    
+
     if (!result.isConfirmed) return;
-    
+
     try {
       await ItemsApi.deleteItem(Number(id));
       setItems((prev) => prev.filter((it) => it.id !== id));
-      setSelectedItems(prev => {
+      setSelectedItems((prev) => {
         const newSet = new Set(prev);
         newSet.delete(id);
         return newSet;
@@ -933,15 +946,15 @@ export default function ItemsMaster(): JSX.Element {
     }
 
     const result: any = await MySwal.fire({
-      title: `Delete ${selectedItems.size} Item${selectedItems.size > 1 ? 's' : ''}?`,
+      title: `Delete ${selectedItems.size} Item${selectedItems.size > 1 ? "s" : ""}?`,
       text: "This action cannot be undone",
       icon: "warning",
       showCancelButton: true,
       confirmButtonColor: "#C62828",
       cancelButtonColor: "#6b7280",
-      confirmButtonText: `Delete ${selectedItems.size} Item${selectedItems.size > 1 ? 's' : ''}`,
+      confirmButtonText: `Delete ${selectedItems.size} Item${selectedItems.size > 1 ? "s" : ""}`,
     });
-    
+
     if (!result.isConfirmed) return;
 
     setSubmitting(true);
@@ -960,15 +973,19 @@ export default function ItemsMaster(): JSX.Element {
       }
 
       // Update items list
-      setItems(prev => prev.filter(item => !selectedItems.has(item.id)));
+      setItems((prev) => prev.filter((item) => !selectedItems.has(item.id)));
       setSelectedItems(new Set());
       setSelectAll(false);
 
       if (successCount > 0) {
-        toast.success(`Successfully deleted ${successCount} item${successCount > 1 ? 's' : ''}.`);
+        toast.success(
+          `Successfully deleted ${successCount} item${successCount > 1 ? "s" : ""}.`,
+        );
       }
       if (errorCount > 0) {
-        toast.error(`Failed to delete ${errorCount} item${errorCount > 1 ? 's' : ''}.`);
+        toast.error(
+          `Failed to delete ${errorCount} item${errorCount > 1 ? "s" : ""}.`,
+        );
       }
     } catch (err) {
       console.error("Error in bulk delete:", err);
@@ -983,8 +1000,8 @@ export default function ItemsMaster(): JSX.Element {
       await ItemsApi.toggleItem(Number(id));
       setItems((prev) =>
         prev.map((it) =>
-          it.id === id ? { ...it, is_active: !currentStatus } : it
-        )
+          it.id === id ? { ...it, is_active: !currentStatus } : it,
+        ),
       );
       toast.success(`Item ${!currentStatus ? "activated" : "deactivated"}!`);
     } catch (err) {
@@ -1010,7 +1027,7 @@ export default function ItemsMaster(): JSX.Element {
     if (selectAll) {
       setSelectedItems(new Set());
     } else {
-      const allIds = new Set(filteredItems.map(item => item.id));
+      const allIds = new Set(filteredItems.map((item) => item.id));
       setSelectedItems(allIds);
     }
     setSelectAll(!selectAll);
@@ -1031,39 +1048,65 @@ export default function ItemsMaster(): JSX.Element {
   };
 
   const filteredItems = items.filter((item) => {
-    const matchesItemCode = !searchItemCode || 
-      (item.item_code || "").toLowerCase().includes(searchItemCode.toLowerCase());
-    
-    const matchesItemName = !searchItemName || 
-      (item.item_name || "").toLowerCase().includes(searchItemName.toLowerCase());
-    
-    const matchesCategory = !searchCategory || 
-      (item.category || "").toLowerCase().includes(searchCategory.toLowerCase());
-    
-    const matchesHSN = !searchHSN || 
+    const matchesItemCode =
+      !searchItemCode ||
+      (item.item_code || "")
+        .toLowerCase()
+        .includes(searchItemCode.toLowerCase());
+
+    const matchesItemName =
+      !searchItemName ||
+      (item.item_name || "")
+        .toLowerCase()
+        .includes(searchItemName.toLowerCase());
+
+    const matchesCategory =
+      !searchCategory ||
+      (item.category || "")
+        .toLowerCase()
+        .includes(searchCategory.toLowerCase());
+
+    const matchesHSN =
+      !searchHSN ||
       (item.hsn_code || "").toLowerCase().includes(searchHSN.toLowerCase());
-    
-    const matchesUnit = !searchUnit || 
+
+    const matchesUnit =
+      !searchUnit ||
       (item.unit || "").toLowerCase().includes(searchUnit.toLowerCase());
-    
-    const matchesIGST = !searchIGST || 
+
+    const matchesIGST =
+      !searchIGST ||
       (item.igst_rate || "").toLowerCase().includes(searchIGST.toLowerCase());
-    
-    const matchesCGST = !searchCGST || 
+
+    const matchesCGST =
+      !searchCGST ||
       (item.cgst_rate || "").toLowerCase().includes(searchCGST.toLowerCase());
-    
-    const matchesSGST = !searchSGST || 
+
+    const matchesSGST =
+      !searchSGST ||
       (item.sgst_rate || "").toLowerCase().includes(searchSGST.toLowerCase());
-    
-    const matchesRate = !searchRate || 
-      String(item.standard_rate || "").includes(searchRate);
-    
-    const matchesStatus = !searchStatus || 
-      (item.is_active ? "active" : "inactive").includes(searchStatus.toLowerCase());
-    
-    return matchesItemCode && matchesItemName && matchesCategory && 
-           matchesHSN && matchesUnit && matchesIGST && matchesCGST && 
-           matchesSGST && matchesRate && matchesStatus;
+
+    const matchesRate =
+      !searchRate || String(item.standard_rate || "").includes(searchRate);
+
+    const matchesStatus =
+      !searchStatus ||
+      (item.is_active ? "active" : "inactive").includes(
+        searchStatus.toLowerCase(),
+      );
+
+    return (
+      matchesItemCode &&
+      matchesItemName &&
+      matchesCategory &&
+      matchesHSN &&
+      matchesUnit &&
+      matchesIGST &&
+      matchesCGST &&
+      matchesSGST &&
+      matchesRate &&
+      matchesStatus
+    );
   });
 
   const formatCurrency = (amount: number) =>
@@ -1072,6 +1115,27 @@ export default function ItemsMaster(): JSX.Element {
       currency: "INR",
       maximumFractionDigits: 2,
     }).format(amount || 0);
+
+  const handleImportClick = () => {
+    fileInputRef.current?.click();
+  };
+
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    try {
+      const excelData: any = await excelToItemsData(file);
+      console.log("data", excelData);
+
+      const res: any = await ItemsApi.addDataByImport(excelData);
+      console.log(res);
+    } catch (err: any) {
+      toast.error(err);
+    }
+
+    e.target.value = "";
+  };
 
   if (loading) {
     return (
@@ -1087,16 +1151,14 @@ export default function ItemsMaster(): JSX.Element {
   return (
     <div className="px-0 bg-gray-50 min-h-screen">
       {/* Header with Actions and Bulk Actions - Side by Side */}
-    <div className="mt-0 mb-0 px-2 py-1 md:p-4 flex flex-col md:flex-row md:items-center justify-between gap-1 md:gap-3">
+      <div className="mt-0 mb-0 px-2 py-1 md:p-4 flex flex-col md:flex-row md:items-center justify-between gap-1 md:gap-3">
+        <div></div>
 
-  <div></div>
-
-<div className="flex items-center gap-1 md:gap-2 flex-nowrap md:flex-wrap w-full md:w-auto">
-
-    {/* Bulk Actions */}
-    {selectedItems.size > 0 && (
-      <div
-        className="
+        <div className="flex items-center gap-1 md:gap-2 flex-nowrap md:flex-wrap w-full md:w-auto">
+          {/* Bulk Actions */}
+          {selectedItems.size > 0 && (
+            <div
+              className="
           flex items-center gap-0.5
           bg-gradient-to-r from-red-50 to-rose-50
           border border-red-200
@@ -1106,78 +1168,76 @@ export default function ItemsMaster(): JSX.Element {
           md:px-2 md:py-2
           whitespace-nowrap px-0
         "
-      >
-        {/* Selected Count */}
-        <div className="flex items-center gap-0.5">
-          <div className="bg-red-100 p-0.5 rounded">
-            <Trash2 className="w-2.5 h-2.5 md:w-3.5 md:h-3.5 text-red-600" />
-          </div>
-          <p className="font-medium text-[9px] md:text-xs text-gray-800">
-            {selectedItems.size} selected
-          </p>
-        </div>
+            >
+              {/* Selected Count */}
+              <div className="flex items-center gap-0.5">
+                <div className="bg-red-100 p-0.5 rounded">
+                  <Trash2 className="w-2.5 h-2.5 md:w-3.5 md:h-3.5 text-red-600" />
+                </div>
+                <p className="font-medium text-[9px] md:text-xs text-gray-800">
+                  {selectedItems.size} selected
+                </p>
+              </div>
 
-        {/* Actions */}
-        <div className="flex items-center gap-0.5">
+              {/* Actions */}
+              <div className="flex items-center gap-0.5">
+                <button
+                  onClick={() => {
+                    setItems((prev) =>
+                      prev.map((item) =>
+                        selectedItems.has(item.id)
+                          ? { ...item, is_active: true }
+                          : item,
+                      ),
+                    );
+                    setSelectedItems(new Set());
+                  }}
+                  className="bg-green-600 text-white px-1.5 py-0.5 rounded text-[9px] md:text-xs"
+                >
+                  Activate
+                </button>
 
+                <button
+                  onClick={() => {
+                    setItems((prev) =>
+                      prev.map((item) =>
+                        selectedItems.has(item.id)
+                          ? { ...item, is_active: false }
+                          : item,
+                      ),
+                    );
+                    setSelectedItems(new Set());
+                  }}
+                  className="bg-yellow-600 text-white px-1.5 py-0.5 rounded text-[9px] md:text-xs"
+                >
+                  Deactivate
+                </button>
+
+                <button
+                  onClick={handleBulkDelete}
+                  disabled={submitting}
+                  className="bg-red-600 text-white px-1.5 py-0.5 rounded text-[9px] md:text-xs disabled:opacity-50"
+                >
+                  {submitting ? (
+                    <Loader2 className="w-2.5 h-2.5 animate-spin" />
+                  ) : (
+                    "Delete"
+                  )}
+                </button>
+              </div>
+            </div>
+          )}
+
+          {/* Divider (desktop only) */}
+          <div className="hidden md:block h-6 border-l border-gray-300 mx-1"></div>
+
+          {/* Add Item */}
           <button
             onClick={() => {
-              setItems(prev =>
-                prev.map(item =>
-                  selectedItems.has(item.id)
-                    ? { ...item, is_active: true }
-                    : item
-                )
-              );
-              setSelectedItems(new Set());
+              resetForm();
+              setShowModal(true);
             }}
-            className="bg-green-600 text-white px-1.5 py-0.5 rounded text-[9px] md:text-xs"
-          >
-            Activate
-          </button>
-
-          <button
-            onClick={() => {
-              setItems(prev =>
-                prev.map(item =>
-                  selectedItems.has(item.id)
-                    ? { ...item, is_active: false }
-                    : item
-                )
-              );
-              setSelectedItems(new Set());
-            }}
-            className="bg-yellow-600 text-white px-1.5 py-0.5 rounded text-[9px] md:text-xs"
-          >
-            Deactivate
-          </button>
-
-          <button
-            onClick={handleBulkDelete}
-            disabled={submitting}
-            className="bg-red-600 text-white px-1.5 py-0.5 rounded text-[9px] md:text-xs disabled:opacity-50"
-          >
-            {submitting ? (
-              <Loader2 className="w-2.5 h-2.5 animate-spin" />
-            ) : (
-              "Delete"
-            )}
-          </button>
-
-        </div>
-      </div>
-    )}
-
-    {/* Divider (desktop only) */}
-    <div className="hidden md:block h-6 border-l border-gray-300 mx-1"></div>
-
-    {/* Add Item */}
-   <button
-  onClick={() => {
-    resetForm();
-    setShowModal(true);
-  }}
-  className="
+            className="
     flex items-center gap-1
     bg-gradient-to-r from-[#C62828] to-red-600
     text-white
@@ -1190,15 +1250,35 @@ export default function ItemsMaster(): JSX.Element {
     whitespace-nowrap
     ml-auto md:ml-0
   "
->
+          >
+            <Plus className="w-3 h-3 md:w-4 md:h-4" />
+            Add Item
+          </button>
 
-      <Plus className="w-3 h-3 md:w-4 md:h-4" />
-      Add Item
-    </button>
-
-  </div>
-</div>
-
+          <div className="flex items-center gap-2">
+            <button
+              onClick={handleImportClick}
+              className="bg-gradient-to-r from-[#C62828] to-red-600 hover:from-red-600 hover:to-red-700 px-3 py-1.5 text-white font-semibold rounded-lg text-xs flex items-center gap-2 transition-all duration-200"
+            >
+              Import Excel
+            </button>
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept=".xlsx,.xls"
+              onChange={handleFileChange}
+              style={{ display: "none" }}
+            />
+            <a
+              href={`${import.meta.env.VITE_API_URL}/templates/project-import`}
+              title="Download Template Data"
+              className="p-2 rounded-lg bg-gray-100 hover:bg-gray-200 transition-all duration-200"
+            >
+              <Download className="w-4 h-4 text-gray-600" />
+            </a>
+          </div>
+        </div>
+      </div>
 
       {/* Main Table - Responsive with Search Bars */}
       <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden mx-0 md:mx-0">
@@ -1268,7 +1348,7 @@ export default function ItemsMaster(): JSX.Element {
                   </div>
                 </th>
               </tr>
-              
+
               {/* Search Row - Like MaterialInTransactions */}
               <tr className="bg-gray-50 border-b border-gray-200">
                 <td className="px-3 md:px-4 py-1 text-center">
@@ -1279,7 +1359,7 @@ export default function ItemsMaster(): JSX.Element {
                     className="w-3.5 h-3.5 md:w-4 md:h-4 text-[#C62828] border-gray-300 rounded focus:ring-[#C62828]"
                   />
                 </td>
-                
+
                 {/* Item Code Search */}
                 <td className="px-3 md:px-4 py-1">
                   <input
@@ -1290,7 +1370,7 @@ export default function ItemsMaster(): JSX.Element {
                     className="w-full px-2 py-1 text-[9px] md:text-xs border border-gray-300 rounded focus:ring-1 focus:ring-blue-500 focus:border-transparent"
                   />
                 </td>
-                
+
                 {/* Item Name Search */}
                 <td className="px-3 md:px-4 py-1">
                   <input
@@ -1301,7 +1381,7 @@ export default function ItemsMaster(): JSX.Element {
                     className="w-full px-2 py-1 text-[9px] md:text-xs border border-gray-300 rounded focus:ring-1 focus:ring-blue-500 focus:border-transparent"
                   />
                 </td>
-                
+
                 {/* Category Search */}
                 <td className="px-3 md:px-4 py-1">
                   <input
@@ -1312,7 +1392,7 @@ export default function ItemsMaster(): JSX.Element {
                     className="w-full px-2 py-1 text-[9px] md:text-xs border border-gray-300 rounded focus:ring-1 focus:ring-blue-500 focus:border-transparent"
                   />
                 </td>
-                
+
                 {/* HSN Search */}
                 <td className="px-3 md:px-4 py-1">
                   <input
@@ -1323,7 +1403,7 @@ export default function ItemsMaster(): JSX.Element {
                     className="w-full px-2 py-1 text-[9px] md:text-xs border border-gray-300 rounded focus:ring-1 focus:ring-blue-500 focus:border-transparent"
                   />
                 </td>
-                
+
                 {/* Unit Search */}
                 <td className="px-3 md:px-4 py-1">
                   <input
@@ -1334,7 +1414,7 @@ export default function ItemsMaster(): JSX.Element {
                     className="w-full px-2 py-1 text-[9px] md:text-xs border border-gray-300 rounded focus:ring-1 focus:ring-blue-500 focus:border-transparent"
                   />
                 </td>
-                
+
                 {/* IGST Rate Search */}
                 <td className="px-3 md:px-4 py-1">
                   <input
@@ -1345,7 +1425,7 @@ export default function ItemsMaster(): JSX.Element {
                     className="w-full px-2 py-1 text-[9px] md:text-xs border border-gray-300 rounded focus:ring-1 focus:ring-blue-500 focus:border-transparent"
                   />
                 </td>
-                
+
                 {/* CGST Rate Search */}
                 <td className="px-3 md:px-4 py-1">
                   <input
@@ -1356,7 +1436,7 @@ export default function ItemsMaster(): JSX.Element {
                     className="w-full px-2 py-1 text-[9px] md:text-xs border border-gray-300 rounded focus:ring-1 focus:ring-blue-500 focus:border-transparent"
                   />
                 </td>
-                
+
                 {/* SGST Rate Search */}
                 <td className="px-3 md:px-4 py-1">
                   <input
@@ -1367,7 +1447,7 @@ export default function ItemsMaster(): JSX.Element {
                     className="w-full px-2 py-1 text-[9px] md:text-xs border border-gray-300 rounded focus:ring-1 focus:ring-blue-500 focus:border-transparent"
                   />
                 </td>
-                
+
                 {/* Rate Search */}
                 <td className="px-3 md:px-4 py-1">
                   <input
@@ -1378,7 +1458,7 @@ export default function ItemsMaster(): JSX.Element {
                     className="w-full px-2 py-1 text-[9px] md:text-xs border border-gray-300 rounded focus:ring-1 focus:ring-blue-500 focus:border-transparent"
                   />
                 </td>
-                
+
                 {/* Status Search */}
                 <td className="px-3 md:px-4 py-1">
                   <input
@@ -1389,7 +1469,7 @@ export default function ItemsMaster(): JSX.Element {
                     className="w-full px-2 py-1 text-[9px] md:text-xs border border-gray-300 rounded focus:ring-1 focus:ring-blue-500 focus:border-transparent"
                   />
                 </td>
-                
+
                 {/* Actions - Clear Filter Button */}
                 <td className="px-3 md:px-4 py-1 text-center">
                   <button
@@ -1452,10 +1532,18 @@ export default function ItemsMaster(): JSX.Element {
                     <td className="px-3 md:px-4 py-3 text-gray-700 text-xs md:text-sm">
                       {item.hsn_code || "-"}
                     </td>
-                    <td className="px-3 md:px-4 py-3 text-gray-700 text-xs md:text-sm">{item.unit}</td>
-                    <td className="px-3 md:px-4 py-3 text-gray-700 text-xs md:text-sm">{item.igst_rate}%</td>
-                    <td className="px-3 md:px-4 py-3 text-gray-700 text-xs md:text-sm">{item.cgst_rate}%</td>
-                    <td className="px-3 md:px-4 py-3 text-gray-700 text-xs md:text-sm">{item.sgst_rate}%</td>
+                    <td className="px-3 md:px-4 py-3 text-gray-700 text-xs md:text-sm">
+                      {item.unit}
+                    </td>
+                    <td className="px-3 md:px-4 py-3 text-gray-700 text-xs md:text-sm">
+                      {item.igst_rate}%
+                    </td>
+                    <td className="px-3 md:px-4 py-3 text-gray-700 text-xs md:text-sm">
+                      {item.cgst_rate}%
+                    </td>
+                    <td className="px-3 md:px-4 py-3 text-gray-700 text-xs md:text-sm">
+                      {item.sgst_rate}%
+                    </td>
                     <td className="px-3 md:px-4 py-3 font-medium text-gray-800 text-xs md:text-sm">
                       {formatCurrency(item.standard_rate)}
                     </td>
@@ -1492,14 +1580,25 @@ export default function ItemsMaster(): JSX.Element {
                   </tr>
                 );
               })}
-              
+
               {filteredItems.length === 0 && (
                 <tr>
                   <td colSpan={12} className="px-4 py-8 text-center">
                     <Package className="w-12 h-12 md:w-16 md:h-16 text-gray-300 mx-auto mb-3" />
-                    <p className="text-gray-600 text-sm md:text-lg font-medium">No Items Found</p>
+                    <p className="text-gray-600 text-sm md:text-lg font-medium">
+                      No Items Found
+                    </p>
                     <p className="text-gray-500 text-xs md:text-sm mt-1">
-                      {searchItemCode || searchItemName || searchCategory || searchHSN || searchUnit || searchIGST || searchCGST || searchSGST || searchRate || searchStatus
+                      {searchItemCode ||
+                      searchItemName ||
+                      searchCategory ||
+                      searchHSN ||
+                      searchUnit ||
+                      searchIGST ||
+                      searchCGST ||
+                      searchSGST ||
+                      searchRate ||
+                      searchStatus
                         ? "Try a different search term"
                         : "No items available"}
                     </p>
@@ -1583,7 +1682,10 @@ export default function ItemsMaster(): JSX.Element {
                         type="text"
                         value={formData.item_name}
                         onChange={(e) =>
-                          setFormData({ ...formData, item_name: e.target.value })
+                          setFormData({
+                            ...formData,
+                            item_name: e.target.value,
+                          })
                         }
                         className="w-full pl-9 pr-3 py-2 text-sm border-2 border-gray-200 rounded-xl focus:border-[#C62828] focus:ring-2 focus:ring-[#C62828]/20 outline-none transition-all duration-200 hover:border-gray-300"
                         placeholder="Cement Grade 43"
@@ -1679,7 +1781,7 @@ export default function ItemsMaster(): JSX.Element {
                         onChange={(e) =>
                           setFormData({
                             ...formData,
-                            standard_rate: parseFloat(e.target.value) || 0,
+                            standard_rate: parseFloat(e.target.value),
                           })
                         }
                         className="w-full pl-9 pr-3 py-2 text-sm border-2 border-gray-200 rounded-xl focus:border-[#C62828] focus:ring-2 focus:ring-[#C62828]/20 outline-none transition-all duration-200 hover:border-gray-300"
@@ -1802,7 +1904,10 @@ export default function ItemsMaster(): JSX.Element {
                       <textarea
                         value={formData.description}
                         onChange={(e) =>
-                          setFormData({ ...formData, description: e.target.value })
+                          setFormData({
+                            ...formData,
+                            description: e.target.value,
+                          })
                         }
                         className="w-full pl-9 pr-3 py-2 text-sm border-2 border-gray-200 rounded-xl focus:border-[#C62828] focus:ring-2 focus:ring-[#C62828]/20 outline-none transition-all duration-200 hover:border-gray-300 min-h-[80px] resize-vertical"
                         placeholder="Enter description"

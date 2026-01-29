@@ -36,6 +36,7 @@ import { UsersApi } from "../lib/Api";
 import { toast } from "sonner";
 import MySwal from "../utils/swal";
 import TermsConditionsApi from "../lib/termsConditionsApi";
+import poPaymentApi from "../lib/poPaymentApi";
 
 type Vendor = {
   id: string;
@@ -92,6 +93,21 @@ type Tracking = {
   };
 };
 
+type PaymentDataType = {
+  id?: number | string | null;
+  po_id: number | string | null;
+  transaction_type: string | null;
+  amount_paid: string | number | null;
+  payment_method: string | null;
+  payment_reference_no: string | null;
+  payment_proof: File | null;
+  payment_date: string | null;
+  status: string | null;
+  remarks: string | null;
+  purchase_order?: any;
+  created_by: string | null;
+};
+
 export default function PurchaseOrders() {
   const { user, profile } = useAuth();
   const [pos, setPOs] = useState<PO[]>([]);
@@ -102,12 +118,13 @@ export default function PurchaseOrders() {
   const [pdfUrl, setPdfUrl] = useState<any>("");
   const [poTypes, setPOTypes] = useState<POType[]>([]);
   const [loading, setLoading] = useState(true);
+  const [submitting, setSubmitting] = useState(false);
   // const [searchTerm, setSearchTerm] = useState("");
   const [filteredPOs, setFilteredPOs] = useState<any>([]);
   const [filteredTracking, setFilteredTracking] = useState<any>([]);
   const [showViewModal, setShowViewModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
-  const [showPaymentModal, setShowPaymentModal] = useState(false);
+  const [showPaymentModal, setShowPaymentModal] = useState<boolean>(false);
   const [showCreatePro, setShowCreatePro] = useState(false);
   const [selectedPO, setSelectedPO] = useState<PO | null>(null);
   const [editingPO, setEditingPO] = useState<any>(null);
@@ -116,6 +133,18 @@ export default function PurchaseOrders() {
     useState<any>([]);
   const [from, setFrom] = useState("");
   const [to, setTo] = useState("");
+  const [paymentData, setPaymentData] = useState<PaymentDataType>({
+    po_id: null,
+    transaction_type: "payment",
+    amount_paid: "",
+    payment_method: "bank_transfer",
+    payment_reference_no: "",
+    payment_proof: null,
+    payment_date: new Date().toISOString().split("T")[0],
+    status: "pending",
+    remarks: "",
+    created_by: user?.id,
+  });
 
   const [challanNumber, setChallanNumber] = useState("");
   const [challanImage, setChallanImage] = useState<File | null>(null);
@@ -141,128 +170,169 @@ export default function PurchaseOrders() {
   const [items, setItems] = useState<any>([]);
   // Add these state variables near your other state declarations
 
-
-// Replace your useEffect that filters data with these new useEffect hooks
-// Add these state variables near your other state declarations
-const [searchFilters, setSearchFilters] = useState<{
-  poNumber: string;
-  vendor: string;
-  project: string;
-  amount: string;
-  poStatus: string;
-  material: string;
-  payment: string;
-  type: string;
-  date: string;
-}>({
-  poNumber: '',
-  vendor: '',
-  project: '',
-  amount: '',
-  poStatus: '',
-  material: '',
-  payment: '',
-  type: '',
-  date: ''
-});
-// Replace your useEffect that filters data with these new useEffect hooks
-// For tracking tab
-useEffect(() => {
-  const filtered = pos.filter((po) => {
-    const matchesPoNumber = searchFilters.poNumber 
-      ? po.po_number?.toLowerCase().includes(searchFilters.poNumber.toLowerCase())
-      : true;
-    
-    const matchesVendor = searchFilters.vendor
-      ? po.vendors?.name?.toLowerCase().includes(searchFilters.vendor.toLowerCase())
-      : true;
-    
-    const matchesProject = searchFilters.project
-      ? po.projects?.name?.toLowerCase().includes(searchFilters.project.toLowerCase())
-      : true;
-    
-    const matchesAmount = searchFilters.amount
-      ? String(po.grand_total).includes(searchFilters.amount)
-      : true;
-    
-    const matchesPoStatus = searchFilters.poStatus
-      ? po.status?.toLowerCase().includes(searchFilters.poStatus.toLowerCase())
-      : true;
-    
-    const matchesMaterial = searchFilters.material
-      ? po.material_status?.toLowerCase().includes(searchFilters.material.toLowerCase())
-      : true;
-    
-    const matchesPayment = searchFilters.payment
-      ? po.payment_status?.toLowerCase().includes(searchFilters.payment.toLowerCase())
-      : true;
-    
-    return matchesPoNumber && matchesVendor && matchesProject && 
-           matchesAmount && matchesPoStatus && matchesMaterial && matchesPayment;
+  // Replace your useEffect that filters data with these new useEffect hooks
+  // Add these state variables near your other state declarations
+  const [searchFilters, setSearchFilters] = useState<{
+    poNumber: string;
+    vendor: string;
+    project: string;
+    amount: string;
+    poStatus: string;
+    material: string;
+    payment: string;
+    type: string;
+    date: string;
+  }>({
+    poNumber: "",
+    vendor: "",
+    project: "",
+    amount: "",
+    poStatus: "",
+    material: "",
+    payment: "",
+    type: "",
+    date: "",
   });
-  
-  setFilteredPOs(filtered);
-}, [pos, searchFilters]);
+  // Replace your useEffect that filters data with these new useEffect hooks
+  // For tracking tab
+  useEffect(() => {
+    const filtered = pos.filter((po) => {
+      const matchesPoNumber = searchFilters.poNumber
+        ? po.po_number
+            ?.toLowerCase()
+            .includes(searchFilters.poNumber.toLowerCase())
+        : true;
 
-// For management tab
-useEffect(() => {
-  const filtered = pos.filter((po) => {
-    const matchesPoNumber = searchFilters.poNumber 
-      ? po.po_number?.toLowerCase().includes(searchFilters.poNumber.toLowerCase())
-      : true;
-    
-    const matchesVendor = searchFilters.vendor
-      ? po.vendors?.name?.toLowerCase().includes(searchFilters.vendor.toLowerCase())
-      : true;
-    
-    const matchesProject = searchFilters.project
-      ? po.projects?.name?.toLowerCase().includes(searchFilters.project.toLowerCase())
-      : true;
-    
-    const matchesType = searchFilters.type
-      ? po.po_types?.name?.toLowerCase().includes(searchFilters.type.toLowerCase())
-      : true;
-    
-    const matchesDate = searchFilters.date
-      ? (po.po_date ? new Date(po.po_date).toLocaleDateString() : '').includes(searchFilters.date)
-      : true;
-    
-    const matchesAmount = searchFilters.amount
-      ? String(po.grand_total).includes(searchFilters.amount)
-      : true;
-    
-    const matchesStatus = searchFilters.poStatus
-      ? po.status?.toLowerCase().includes(searchFilters.poStatus.toLowerCase())
-      : true;
-    
-    return matchesPoNumber && matchesVendor && matchesProject && 
-           matchesType && matchesDate && matchesAmount && matchesStatus;
-  });
-  
-  setFilteredPOs(filtered);
-}, [pos, searchFilters]);
-// Handler for search filter changes
-const handleSearchFilterChange = (column: keyof typeof searchFilters, value: string) => {
-  setSearchFilters(prev => ({
-    ...prev,
-    [column]: value
-  }));
-};
+      const matchesVendor = searchFilters.vendor
+        ? po.vendors?.name
+            ?.toLowerCase()
+            .includes(searchFilters.vendor.toLowerCase())
+        : true;
 
-// Clear all filters
-const clearAllFilters = () => {
-  setSearchFilters({
-    poNumber: '',
-    vendor: '',
-    project: '',
-    amount: '',
-    poStatus: '',
-    material: '',
-    payment: '',
-    type: '',
-    date: ''
-  });
-};
+      const matchesProject = searchFilters.project
+        ? po.projects?.name
+            ?.toLowerCase()
+            .includes(searchFilters.project.toLowerCase())
+        : true;
+
+      const matchesAmount = searchFilters.amount
+        ? String(po.grand_total).includes(searchFilters.amount)
+        : true;
+
+      const matchesPoStatus = searchFilters.poStatus
+        ? po.status
+            ?.toLowerCase()
+            .includes(searchFilters.poStatus.toLowerCase())
+        : true;
+
+      const matchesMaterial = searchFilters.material
+        ? po.material_status
+            ?.toLowerCase()
+            .includes(searchFilters.material.toLowerCase())
+        : true;
+
+      const matchesPayment = searchFilters.payment
+        ? po.payment_status
+            ?.toLowerCase()
+            .includes(searchFilters.payment.toLowerCase())
+        : true;
+
+      return (
+        matchesPoNumber &&
+        matchesVendor &&
+        matchesProject &&
+        matchesAmount &&
+        matchesPoStatus &&
+        matchesMaterial &&
+        matchesPayment
+      );
+    });
+
+    setFilteredPOs(filtered);
+  }, [pos, searchFilters]);
+
+  // For management tab
+  useEffect(() => {
+    const filtered = pos.filter((po) => {
+      const matchesPoNumber = searchFilters.poNumber
+        ? po.po_number
+            ?.toLowerCase()
+            .includes(searchFilters.poNumber.toLowerCase())
+        : true;
+
+      const matchesVendor = searchFilters.vendor
+        ? po.vendors?.name
+            ?.toLowerCase()
+            .includes(searchFilters.vendor.toLowerCase())
+        : true;
+
+      const matchesProject = searchFilters.project
+        ? po.projects?.name
+            ?.toLowerCase()
+            .includes(searchFilters.project.toLowerCase())
+        : true;
+
+      const matchesType = searchFilters.type
+        ? po.po_types?.name
+            ?.toLowerCase()
+            .includes(searchFilters.type.toLowerCase())
+        : true;
+
+      const matchesDate = searchFilters.date
+        ? (po.po_date
+            ? new Date(po.po_date).toLocaleDateString()
+            : ""
+          ).includes(searchFilters.date)
+        : true;
+
+      const matchesAmount = searchFilters.amount
+        ? String(po.grand_total).includes(searchFilters.amount)
+        : true;
+
+      const matchesStatus = searchFilters.poStatus
+        ? po.status
+            ?.toLowerCase()
+            .includes(searchFilters.poStatus.toLowerCase())
+        : true;
+
+      return (
+        matchesPoNumber &&
+        matchesVendor &&
+        matchesProject &&
+        matchesType &&
+        matchesDate &&
+        matchesAmount &&
+        matchesStatus
+      );
+    });
+
+    setFilteredPOs(filtered);
+  }, [pos, searchFilters]);
+  // Handler for search filter changes
+  const handleSearchFilterChange = (
+    column: keyof typeof searchFilters,
+    value: string,
+  ) => {
+    setSearchFilters((prev) => ({
+      ...prev,
+      [column]: value,
+    }));
+  };
+
+  // Clear all filters
+  const clearAllFilters = () => {
+    setSearchFilters({
+      poNumber: "",
+      vendor: "",
+      project: "",
+      amount: "",
+      poStatus: "",
+      material: "",
+      payment: "",
+      type: "",
+      date: "",
+    });
+  };
 
   // localStorage keys
   const KEY_VENDORS = "mock_vendors_v1";
@@ -932,6 +1002,96 @@ const clearAllFilters = () => {
     }
   };
 
+  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      setPaymentData((prev) => ({ ...prev, payment_proof: file }));
+    }
+  };
+
+  const handleMakePayment = async (e: React.FormEvent) => {
+    e.preventDefault();
+    try {
+      if (!selectedPO) {
+        toast.error("No PO selected");
+        return;
+      }
+
+      if (!can("make_payments")) {
+        toast.error("You don't have permission to make payments");
+        return;
+      }
+
+      if (Number(paymentData.amount_paid) <= 0) {
+        toast.error("Enter a valid amount");
+        return;
+      }
+
+      if ((paymentData.payment_reference_no || "")?.length <= 0) {
+        toast.error("Enter valid reference number");
+        return;
+      }
+
+      if (!paymentData.payment_proof) {
+        toast.error("Upload valid payment proof");
+        return;
+      }
+
+      const newPayment: PaymentDataType = {
+        po_id: paymentData.po_id,
+        transaction_type: paymentData.transaction_type?.toUpperCase() || "",
+        amount_paid: paymentData.amount_paid,
+        payment_method: paymentData.payment_method?.toUpperCase() || "",
+        payment_reference_no: paymentData.payment_reference_no,
+        payment_proof: paymentData.payment_proof,
+        payment_date: paymentData.payment_date,
+        status: paymentData.status?.toUpperCase() || "",
+        remarks: paymentData.remarks,
+        created_by: user?.id,
+      };
+
+      setSubmitting(true);
+      const res: any = await poPaymentApi.createPayment(newPayment);
+
+      if (res.success) {
+        loadAllData();
+        toast.success("Payment recorded successfully!");
+        setShowPaymentModal(false);
+        setSelectedPO(null);
+        setPaymentData({
+          po_id: null,
+          transaction_type: "payment",
+          amount_paid: "",
+          payment_method: "bank_transfer",
+          payment_reference_no: "",
+          payment_proof: null,
+          payment_date: new Date().toISOString().split("T")[0],
+          status: "pending",
+          remarks: "",
+          created_by: user?.id,
+        });
+      } else {
+        toast.error("Failed to create payment record");
+      }
+    } catch (error) {
+      console.log(error);
+      toast.error("Failed to process payment");
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  const openPaymentModal = (po: PO) => {
+    setSelectedPO(po);
+    setPaymentData({
+      ...paymentData,
+      amount_paid: String(po.balance_amount) || String(po.grand_total),
+      payment_date: new Date().toISOString().split("T")[0],
+      po_id: po.id,
+    });
+    setShowPaymentModal(true);
+  };
+
   // --- UI states while loading ---
   if (loading) {
     return (
@@ -947,15 +1107,13 @@ const clearAllFilters = () => {
   // --- Render main UI ---
   return (
     <div className="p-1 -mt-2">
-    <div className="flex flex-col gap-2 mb-3 sm:flex-row sm:items-center sm:gap-4">
-
-  {/* Tabs */}
-  <div className="w-full sm:flex-1">
-    <div className="flex bg-white border border-gray-200 rounded-lg overflow-hidden">
-      
-      <button
-        onClick={() => setActiveTab("tracking")}
-        className={`flex-1 flex items-center justify-center gap-1.5
+      <div className="flex flex-col gap-2 mb-3 sm:flex-row sm:items-center sm:gap-4">
+        {/* Tabs */}
+        <div className="w-full sm:flex-1">
+          <div className="flex bg-white border border-gray-200 rounded-lg overflow-hidden">
+            <button
+              onClick={() => setActiveTab("tracking")}
+              className={`flex-1 flex items-center justify-center gap-1.5
           px-2 py-2
           text-[11px] sm:text-sm
           font-medium transition
@@ -964,14 +1122,14 @@ const clearAllFilters = () => {
               ? "bg-blue-50 text-blue-600 border-b-2 border-blue-600"
               : "text-gray-600 hover:bg-gray-50"
           }`}
-      >
-        <Package className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
-        PO Tracking
-      </button>
+            >
+              <Package className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+              PO Tracking
+            </button>
 
-      <button
-        onClick={() => setActiveTab("management")}
-        className={`flex-1 flex items-center justify-center gap-1.5
+            <button
+              onClick={() => setActiveTab("management")}
+              className={`flex-1 flex items-center justify-center gap-1.5
           px-2 py-2
           text-[11px] sm:text-sm
           font-medium transition
@@ -980,19 +1138,18 @@ const clearAllFilters = () => {
               ? "bg-blue-50 text-blue-600 border-b-2 border-blue-600"
               : "text-gray-600 hover:bg-gray-50"
           }`}
-      >
-        <FileText className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
-        PO Management
-      </button>
+            >
+              <FileText className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+              PO Management
+            </button>
+          </div>
+        </div>
 
-    </div>
-  </div>
-
-  {/* Create PO Button */}
-  {can("create_pos") && (
-    <button
-      onClick={() => setShowCreatePro(true)}
-      className="
+        {/* Create PO Button */}
+        {can("create_pos") && (
+          <button
+            onClick={() => setShowCreatePro(true)}
+            className="
         w-full sm:w-auto
         bg-[#C62828] text-white
         px-3 py-2
@@ -1005,21 +1162,19 @@ const clearAllFilters = () => {
         transition
         whitespace-nowrap
       "
-    >
-      <Plus className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
-      Create PO
-    </button>
-  )}
-</div>
+          >
+            <Plus className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+            Create PO
+          </button>
+        )}
+      </div>
 
-
-{showCreatePro && (
-  <CreatePurchaseOrderForm
-    setShowCreatePro={setShowCreatePro}
-    loadAllData={loadAllData}
-  />
-)}
-
+      {showCreatePro && (
+        <CreatePurchaseOrderForm
+          setShowCreatePro={setShowCreatePro}
+          loadAllData={loadAllData}
+        />
+      )}
 
       {activeTab === "tracking" && (
         <div className="space-y-6">
@@ -1074,96 +1229,110 @@ const clearAllFilters = () => {
 
                   {/* Search Row - Separate Row Below Headers */}
                   {/* Tracking Tab - Search Row */}
-<tr className="bg-gray-50 border-b border-gray-200">
-  {/* PO Number Column Search */}
-  <td className="px-3 md:px-4 py-1">
-    <input
-      type="text"
-      placeholder="PO Number..."
-      value={searchFilters.poNumber}
-      onChange={(e) => handleSearchFilterChange('poNumber', e.target.value)}
-      className="w-full px-2 py-1 text-[9px] md:text-xs border border-gray-300 rounded focus:ring-1 focus:ring-blue-500 focus:border-transparent"
-    />
-  </td>
+                  <tr className="bg-gray-50 border-b border-gray-200">
+                    {/* PO Number Column Search */}
+                    <td className="px-3 md:px-4 py-1">
+                      <input
+                        type="text"
+                        placeholder="PO Number..."
+                        value={searchFilters.poNumber}
+                        onChange={(e) =>
+                          handleSearchFilterChange("poNumber", e.target.value)
+                        }
+                        className="w-full px-2 py-1 text-[9px] md:text-xs border border-gray-300 rounded focus:ring-1 focus:ring-blue-500 focus:border-transparent"
+                      />
+                    </td>
 
-  {/* Vendor Column Search */}
-  <td className="px-3 md:px-4 py-1">
-    <input
-      type="text"
-      placeholder="Vendor..."
-      value={searchFilters.vendor}
-      onChange={(e) => handleSearchFilterChange('vendor', e.target.value)}
-      className="w-full px-2 py-1 text-[9px] md:text-xs border border-gray-300 rounded focus:ring-1 focus:ring-blue-500 focus:border-transparent"
-    />
-  </td>
+                    {/* Vendor Column Search */}
+                    <td className="px-3 md:px-4 py-1">
+                      <input
+                        type="text"
+                        placeholder="Vendor..."
+                        value={searchFilters.vendor}
+                        onChange={(e) =>
+                          handleSearchFilterChange("vendor", e.target.value)
+                        }
+                        className="w-full px-2 py-1 text-[9px] md:text-xs border border-gray-300 rounded focus:ring-1 focus:ring-blue-500 focus:border-transparent"
+                      />
+                    </td>
 
-  {/* Project Column Search */}
-  <td className="px-3 md:px-4 py-1">
-    <input
-      type="text"
-      placeholder="Project..."
-      value={searchFilters.project}
-      onChange={(e) => handleSearchFilterChange('project', e.target.value)}
-      className="w-full px-2 py-1 text-[9px] md:text-xs border border-gray-300 rounded focus:ring-1 focus:ring-blue-500 focus:border-transparent"
-    />
-  </td>
+                    {/* Project Column Search */}
+                    <td className="px-3 md:px-4 py-1">
+                      <input
+                        type="text"
+                        placeholder="Project..."
+                        value={searchFilters.project}
+                        onChange={(e) =>
+                          handleSearchFilterChange("project", e.target.value)
+                        }
+                        className="w-full px-2 py-1 text-[9px] md:text-xs border border-gray-300 rounded focus:ring-1 focus:ring-blue-500 focus:border-transparent"
+                      />
+                    </td>
 
-  {/* Amount Column Search */}
-  <td className="px-3 md:px-4 py-1">
-    <input
-      type="text"
-      placeholder="Amount..."
-      value={searchFilters.amount}
-      onChange={(e) => handleSearchFilterChange('amount', e.target.value)}
-      className="w-full px-2 py-1 text-[9px] md:text-xs border border-gray-300 rounded focus:ring-1 focus:ring-blue-500 focus:border-transparent"
-    />
-  </td>
+                    {/* Amount Column Search */}
+                    <td className="px-3 md:px-4 py-1">
+                      <input
+                        type="text"
+                        placeholder="Amount..."
+                        value={searchFilters.amount}
+                        onChange={(e) =>
+                          handleSearchFilterChange("amount", e.target.value)
+                        }
+                        className="w-full px-2 py-1 text-[9px] md:text-xs border border-gray-300 rounded focus:ring-1 focus:ring-blue-500 focus:border-transparent"
+                      />
+                    </td>
 
-  {/* PO Status Column Search */}
-  <td className="px-3 md:px-4 py-1">
-    <input
-      type="text"
-      placeholder="Status..."
-      value={searchFilters.poStatus}
-      onChange={(e) => handleSearchFilterChange('poStatus', e.target.value)}
-      className="w-full px-2 py-1 text-[9px] md:text-xs border border-gray-300 rounded focus:ring-1 focus:ring-blue-500 focus:border-transparent"
-    />
-  </td>
+                    {/* PO Status Column Search */}
+                    <td className="px-3 md:px-4 py-1">
+                      <input
+                        type="text"
+                        placeholder="Status..."
+                        value={searchFilters.poStatus}
+                        onChange={(e) =>
+                          handleSearchFilterChange("poStatus", e.target.value)
+                        }
+                        className="w-full px-2 py-1 text-[9px] md:text-xs border border-gray-300 rounded focus:ring-1 focus:ring-blue-500 focus:border-transparent"
+                      />
+                    </td>
 
-  {/* Material Column Search */}
-  <td className="px-3 md:px-4 py-1">
-    <input
-      type="text"
-      placeholder="Material..."
-      value={searchFilters.material}
-      onChange={(e) => handleSearchFilterChange('material', e.target.value)}
-      className="w-full px-2 py-1 text-[9px] md:text-xs border border-gray-300 rounded focus:ring-1 focus:ring-blue-500 focus:border-transparent"
-    />
-  </td>
+                    {/* Material Column Search */}
+                    <td className="px-3 md:px-4 py-1">
+                      <input
+                        type="text"
+                        placeholder="Material..."
+                        value={searchFilters.material}
+                        onChange={(e) =>
+                          handleSearchFilterChange("material", e.target.value)
+                        }
+                        className="w-full px-2 py-1 text-[9px] md:text-xs border border-gray-300 rounded focus:ring-1 focus:ring-blue-500 focus:border-transparent"
+                      />
+                    </td>
 
-  {/* Payment Column Search */}
-  <td className="px-3 md:px-4 py-1">
-    <input
-      type="text"
-      placeholder="Payment..."
-      value={searchFilters.payment}
-      onChange={(e) => handleSearchFilterChange('payment', e.target.value)}
-      className="w-full px-2 py-1 text-[9px] md:text-xs border border-gray-300 rounded focus:ring-1 focus:ring-blue-500 focus:border-transparent"
-    />
-  </td>
+                    {/* Payment Column Search */}
+                    <td className="px-3 md:px-4 py-1">
+                      <input
+                        type="text"
+                        placeholder="Payment..."
+                        value={searchFilters.payment}
+                        onChange={(e) =>
+                          handleSearchFilterChange("payment", e.target.value)
+                        }
+                        className="w-full px-2 py-1 text-[9px] md:text-xs border border-gray-300 rounded focus:ring-1 focus:ring-blue-500 focus:border-transparent"
+                      />
+                    </td>
 
-  {/* Actions Column - Clear Filter Button */}
-  <td className="px-3 md:px-4 py-1 text-center">
-    <button
-      onClick={clearAllFilters}
-      className="inline-flex items-center px-2 py-1 border border-gray-300 rounded hover:bg-gray-50 transition text-[9px] md:text-xs font-medium text-gray-700"
-      title="Clear Filters"
-    >
-      <XCircle className="w-3 h-3 mr-0.5" />
-      Clear
-    </button>
-  </td>
-</tr>
+                    {/* Actions Column - Clear Filter Button */}
+                    <td className="px-3 md:px-4 py-1 text-center">
+                      <button
+                        onClick={clearAllFilters}
+                        className="inline-flex items-center px-2 py-1 border border-gray-300 rounded hover:bg-gray-50 transition text-[9px] md:text-xs font-medium text-gray-700"
+                        title="Clear Filters"
+                      >
+                        <XCircle className="w-3 h-3 mr-0.5" />
+                        Clear
+                      </button>
+                    </td>
+                  </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-200">
                   {filteredPOs.map((po: any) => (
@@ -1295,97 +1464,111 @@ const clearAllFilters = () => {
                 </tr>
 
                 {/* Search Row - Separate Row Below Headers */}
-               {/* Management Tab - Search Row */}
-<tr className="bg-gray-50 border-b border-gray-200">
-  {/* PO Number Column Search */}
-  <td className="px-3 md:px-4 py-1">
-    <input
-      type="text"
-      placeholder="PO Number..."
-      value={searchFilters.poNumber}
-      onChange={(e) => handleSearchFilterChange('poNumber', e.target.value)}
-      className="w-full px-2 py-1 text-[9px] md:text-xs border border-gray-300 rounded focus:ring-1 focus:ring-blue-500 focus:border-transparent"
-    />
-  </td>
+                {/* Management Tab - Search Row */}
+                <tr className="bg-gray-50 border-b border-gray-200">
+                  {/* PO Number Column Search */}
+                  <td className="px-3 md:px-4 py-1">
+                    <input
+                      type="text"
+                      placeholder="PO Number..."
+                      value={searchFilters.poNumber}
+                      onChange={(e) =>
+                        handleSearchFilterChange("poNumber", e.target.value)
+                      }
+                      className="w-full px-2 py-1 text-[9px] md:text-xs border border-gray-300 rounded focus:ring-1 focus:ring-blue-500 focus:border-transparent"
+                    />
+                  </td>
 
-  {/* Vendor Column Search */}
-  <td className="px-3 md:px-4 py-1">
-    <input
-      type="text"
-      placeholder="Vendor..."
-      value={searchFilters.vendor}
-      onChange={(e) => handleSearchFilterChange('vendor', e.target.value)}
-      className="w-full px-2 py-1 text-[9px] md:text-xs border border-gray-300 rounded focus:ring-1 focus:ring-blue-500 focus:border-transparent"
-    />
-  </td>
+                  {/* Vendor Column Search */}
+                  <td className="px-3 md:px-4 py-1">
+                    <input
+                      type="text"
+                      placeholder="Vendor..."
+                      value={searchFilters.vendor}
+                      onChange={(e) =>
+                        handleSearchFilterChange("vendor", e.target.value)
+                      }
+                      className="w-full px-2 py-1 text-[9px] md:text-xs border border-gray-300 rounded focus:ring-1 focus:ring-blue-500 focus:border-transparent"
+                    />
+                  </td>
 
-  {/* Project Column Search */}
-  <td className="px-3 md:px-4 py-1">
-    <input
-      type="text"
-      placeholder="Project..."
-      value={searchFilters.project}
-      onChange={(e) => handleSearchFilterChange('project', e.target.value)}
-      className="w-full px-2 py-1 text-[9px] md:text-xs border border-gray-300 rounded focus:ring-1 focus:ring-blue-500 focus:border-transparent"
-    />
-  </td>
+                  {/* Project Column Search */}
+                  <td className="px-3 md:px-4 py-1">
+                    <input
+                      type="text"
+                      placeholder="Project..."
+                      value={searchFilters.project}
+                      onChange={(e) =>
+                        handleSearchFilterChange("project", e.target.value)
+                      }
+                      className="w-full px-2 py-1 text-[9px] md:text-xs border border-gray-300 rounded focus:ring-1 focus:ring-blue-500 focus:border-transparent"
+                    />
+                  </td>
 
-  {/* Type Column Search */}
-  <td className="px-3 md:px-4 py-1">
-    <input
-      type="text"
-      placeholder="Type..."
-      value={searchFilters.type}
-      onChange={(e) => handleSearchFilterChange('type', e.target.value)}
-      className="w-full px-2 py-1 text-[9px] md:text-xs border border-gray-300 rounded focus:ring-1 focus:ring-blue-500 focus:border-transparent"
-    />
-  </td>
+                  {/* Type Column Search */}
+                  <td className="px-3 md:px-4 py-1">
+                    <input
+                      type="text"
+                      placeholder="Type..."
+                      value={searchFilters.type}
+                      onChange={(e) =>
+                        handleSearchFilterChange("type", e.target.value)
+                      }
+                      className="w-full px-2 py-1 text-[9px] md:text-xs border border-gray-300 rounded focus:ring-1 focus:ring-blue-500 focus:border-transparent"
+                    />
+                  </td>
 
-  {/* Date Column Search */}
-  <td className="px-3 md:px-4 py-1">
-    <input
-      type="text"
-      placeholder="Date..."
-      value={searchFilters.date}
-      onChange={(e) => handleSearchFilterChange('date', e.target.value)}
-      className="w-full px-2 py-1 text-[9px] md:text-xs border border-gray-300 rounded focus:ring-1 focus:ring-blue-500 focus:border-transparent"
-    />
-  </td>
+                  {/* Date Column Search */}
+                  <td className="px-3 md:px-4 py-1">
+                    <input
+                      type="text"
+                      placeholder="Date..."
+                      value={searchFilters.date}
+                      onChange={(e) =>
+                        handleSearchFilterChange("date", e.target.value)
+                      }
+                      className="w-full px-2 py-1 text-[9px] md:text-xs border border-gray-300 rounded focus:ring-1 focus:ring-blue-500 focus:border-transparent"
+                    />
+                  </td>
 
-  {/* Amount Column Search */}
-  <td className="px-3 md:px-4 py-1">
-    <input
-      type="text"
-      placeholder="Amount..."
-      value={searchFilters.amount}
-      onChange={(e) => handleSearchFilterChange('amount', e.target.value)}
-      className="w-full px-2 py-1 text-[9px] md:text-xs border border-gray-300 rounded focus:ring-1 focus:ring-blue-500 focus:border-transparent"
-    />
-  </td>
+                  {/* Amount Column Search */}
+                  <td className="px-3 md:px-4 py-1">
+                    <input
+                      type="text"
+                      placeholder="Amount..."
+                      value={searchFilters.amount}
+                      onChange={(e) =>
+                        handleSearchFilterChange("amount", e.target.value)
+                      }
+                      className="w-full px-2 py-1 text-[9px] md:text-xs border border-gray-300 rounded focus:ring-1 focus:ring-blue-500 focus:border-transparent"
+                    />
+                  </td>
 
-  {/* Status Column Search */}
-  <td className="px-3 md:px-4 py-1">
-    <input
-      type="text"
-      placeholder="Status..."
-      value={searchFilters.poStatus}
-      onChange={(e) => handleSearchFilterChange('poStatus', e.target.value)}
-      className="w-full px-2 py-1 text-[9px] md:text-xs border border-gray-300 rounded focus:ring-1 focus:ring-blue-500 focus:border-transparent"
-    />
-  </td>
+                  {/* Status Column Search */}
+                  <td className="px-3 md:px-4 py-1">
+                    <input
+                      type="text"
+                      placeholder="Status..."
+                      value={searchFilters.poStatus}
+                      onChange={(e) =>
+                        handleSearchFilterChange("poStatus", e.target.value)
+                      }
+                      className="w-full px-2 py-1 text-[9px] md:text-xs border border-gray-300 rounded focus:ring-1 focus:ring-blue-500 focus:border-transparent"
+                    />
+                  </td>
 
-  {/* Actions Column - Clear Filter Button */}
-  <td className="px-3 md:px-4 py-1 text-center">
-    <button
-      onClick={clearAllFilters}
-      className="inline-flex items-center px-2 py-1 border border-gray-300 rounded hover:bg-gray-50 transition text-[9px] md:text-xs font-medium text-gray-700"
-      title="Clear Filters"
-    >
-      <XCircle className="w-3 h-3 mr-0.5" />
-      Clear
-    </button>
-  </td>
-</tr>
+                  {/* Actions Column - Clear Filter Button */}
+                  <td className="px-3 md:px-4 py-1 text-center">
+                    <button
+                      onClick={clearAllFilters}
+                      className="inline-flex items-center px-2 py-1 border border-gray-300 rounded hover:bg-gray-50 transition text-[9px] md:text-xs font-medium text-gray-700"
+                      title="Clear Filters"
+                    >
+                      <XCircle className="w-3 h-3 mr-0.5" />
+                      Clear
+                    </button>
+                  </td>
+                </tr>
               </thead>
               <tbody className="divide-y divide-gray-200">
                 {filteredPOs.map((po: any) => (
@@ -1585,8 +1768,7 @@ const clearAllFilters = () => {
                           po.status === "authorize" && (
                             <button
                               onClick={() => {
-                                setSelectedPO(po);
-                                setShowPaymentModal(true);
+                                openPaymentModal(po);
                               }}
                               className="p-1.5 md:p-2 text-green-600 hover:bg-green-50 rounded-lg transition"
                               title="Make Payment"
@@ -1673,16 +1855,16 @@ const clearAllFilters = () => {
           </div>
 
           {filteredPOs.length === 0 && (
-  <div className="text-center py-12">
-    <FileText className="w-12 h-12 md:w-16 md:h-16 text-gray-300 mx-auto mb-3" />
-    <p className="text-gray-600 text-sm md:text-lg font-medium">
-      No purchase orders found
-    </p>
-    <p className="text-gray-500 text-xs md:text-sm mt-2">
-      {'Click "Create PO" to get started'}
-    </p>
-  </div>
-)}
+            <div className="text-center py-12">
+              <FileText className="w-12 h-12 md:w-16 md:h-16 text-gray-300 mx-auto mb-3" />
+              <p className="text-gray-600 text-sm md:text-lg font-medium">
+                No purchase orders found
+              </p>
+              <p className="text-gray-500 text-xs md:text-sm mt-2">
+                {'Click "Create PO" to get started'}
+              </p>
+            </div>
+          )}
         </div>
       )}
 
@@ -1883,216 +2065,258 @@ const clearAllFilters = () => {
 
       {/* Payment Modal */}
       {showPaymentModal && selectedPO && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md">
-            <div className="px-6 py-4 flex justify-between items-center border-b">
-              <h2 className="text-xl font-bold">
-                Record Payment — {selectedPO.po_number}
-              </h2>
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-md flex items-center justify-center z-50 p-4">
+          <div className="bg-gradient-to-br from-gray-50 to-white rounded-2xl shadow-2xl shadow-gray-900/20 w-full max-w-2xl border border-gray-200 overflow-hidden">
+            {/* Modal Header */}
+            <div className="bg-gradient-to-r from-[#40423f] via-[#4a4c49] to-[#5a5d5a] px-5 py-3 flex justify-between items-center border-b border-gray-700/30">
+              <div className="flex items-center gap-2.5">
+                <div className="p-1.5 bg-white/20 rounded-xl backdrop-blur-sm">
+                  <IndianRupee className="w-4 h-4 text-white" />
+                </div>
+                <div>
+                  <h2 className="text-base font-bold text-white">
+                    Record Payment
+                  </h2>
+                  <p className="text-xs text-white/90 font-medium mt-0.5">
+                    PO: {selectedPO?.po_number}
+                  </p>
+                </div>
+              </div>
               <button
-                onClick={() => setShowPaymentModal(false)}
-                className="text-gray-600 hover:bg-gray-100 rounded p-1"
+                onClick={() => {
+                  setShowPaymentModal(false);
+                  setSelectedPO(null);
+                  setPaymentData({
+                    po_id: null,
+                    transaction_type: "payment",
+                    amount_paid: "",
+                    payment_method: "bank_transfer",
+                    payment_reference_no: "",
+                    payment_proof: null,
+                    payment_date: new Date().toISOString().split("T")[0],
+                    status: "pending",
+                    remarks: "",
+                    created_by: user?.id,
+                  });
+                }}
+                className="text-white hover:bg-white/20 rounded-xl p-1.5 transition-all duration-200"
               >
-                <X className="w-5 h-5" />
+                <X className="w-4 h-4" />
               </button>
             </div>
+
             <form
-              onSubmit={updateMaterialQuantity}
-              className="space-y-4 md:space-y-6"
+              onSubmit={handleMakePayment}
+              className="p-4 max-h-[calc(90vh-80px)] overflow-y-auto"
             >
-              {/* Header Section */}
-              <div className="bg-gradient-to-r from-blue-50 to-blue-100 px-4 py-3 rounded-xl border border-blue-200 mb-4">
-                <div className="flex items-center gap-3">
-                  <div className="p-2 bg-blue-100 rounded-lg border border-blue-300">
-                    <Truck className="w-4 h-4 text-blue-600" />
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mb-4">
+                <div className="space-y-1">
+                  <p className="text-xs font-semibold text-gray-800">
+                    PO Number
+                  </p>
+                  <div className="p-2 bg-gray-50 border border-gray-200 rounded-lg">
+                    <p className="font-bold text-gray-800">
+                      {selectedPO?.po_number}
+                    </p>
                   </div>
-                  <div>
-                    <h3 className="font-bold text-blue-800 text-sm">
-                      Material Transfer
-                    </h3>
-                    <p className="text-xs text-blue-600/80 mt-0.5">
-                      Transfer materials between vendors and store management
+                </div>
+
+                <div className="space-y-1">
+                  <p className="text-xs font-semibold text-gray-800">Vendor</p>
+                  <div className="p-2 bg-gray-50 border border-gray-200 rounded-lg">
+                    <p className="font-medium text-gray-800">
+                      {selectedPO?.vendors?.name}
+                    </p>
+                  </div>
+                </div>
+
+                <div className="space-y-1">
+                  <p className="text-xs font-semibold text-gray-800">
+                    Total Amount
+                  </p>
+                  <div className="p-2 bg-orange-50 border border-orange-200 rounded-lg">
+                    <p className="text-base font-bold text-orange-600">
+                      {formatCurrency(selectedPO?.grand_total || 0)}
+                    </p>
+                  </div>
+                </div>
+
+                <div className="space-y-1">
+                  <p className="text-xs font-semibold text-gray-800">
+                    Balance Amount
+                  </p>
+                  <div className="p-2 bg-red-50 border border-red-200 rounded-lg">
+                    <p className="text-base font-bold text-red-600">
+                      {formatCurrency(selectedPO?.balance_amount || 0)}
                     </p>
                   </div>
                 </div>
               </div>
 
-              {/* From Vendor Selection */}
-              <div className="space-y-1.5">
-                <label className="block text-xs font-semibold text-gray-700 mb-1 flex items-center gap-1.5">
-                  <User className="w-3 h-3 text-blue-600" />
-                  <span>From Vendor</span>
-                  <span className="text-red-500">*</span>
-                </label>
-                <div className="relative group">
-                  <div className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 group-focus-within:text-blue-600 transition-colors">
-                    <User className="w-3.5 h-3.5" />
+              <div className="space-y-3">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div className="space-y-1">
+                    <label className="block text-xs font-semibold text-gray-800">
+                      Payment Method <span className="text-red-500">*</span>
+                    </label>
+                    <select
+                      value={paymentData.payment_method || "bank_transfer"}
+                      onChange={(e) =>
+                        setPaymentData({
+                          ...paymentData,
+                          payment_method: e.target.value,
+                        })
+                      }
+                      className="w-full px-3 py-2 text-sm border-2 border-gray-200 rounded-xl focus:border-[#C62828] focus:ring-2 focus:ring-[#C62828]/20 outline-none"
+                    >
+                      <option value="bank_transfer">Bank Transfer</option>
+                      <option value="cheque">Cheque</option>
+                      <option value="cash">Cash</option>
+                      <option value="online">Online Payment</option>
+                    </select>
                   </div>
-                  <SearchableSelect
-                    options={vendors.map((v: any) => ({
-                      id: v.id,
-                      name: v.name || v.vendor_name || v.display || "",
-                    }))}
-                    value={from}
-                    onChange={(id) => {
-                      setFrom(id);
-                    }}
-                    placeholder="Select Vendor"
-                    required
-                    className="pl-10 pr-4 py-2 text-sm border border-gray-300 rounded-xl focus:border-blue-600 focus:ring-2 focus:ring-blue-600/20 outline-none transition-all duration-200 hover:border-gray-400"
-                    dropdownClassName="text-sm"
-                  />
-                </div>
-              </div>
 
-              {/* To Store Management Employee Selection */}
-              <div className="space-y-1.5">
-                <label className="block text-xs font-semibold text-gray-700 mb-1 flex items-center gap-1.5">
-                  <User className="w-3 h-3 text-green-600" />
-                  <span>To Store Manager</span>
-                  <span className="text-red-500">*</span>
-                </label>
-                <div className="relative group">
-                  <div className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 group-focus-within:text-green-600 transition-colors">
-                    <User className="w-3.5 h-3.5" />
+                  <div className="space-y-1">
+                    <label className="block text-xs font-semibold text-gray-800">
+                      Payment Date <span className="text-red-500">*</span>
+                    </label>
+                    <input
+                      type="date"
+                      value={paymentData.payment_date || ""}
+                      onChange={(e) => {
+                        setPaymentData({
+                          ...paymentData,
+                          payment_date: e.target.value,
+                        });
+                      }}
+                      className="w-full px-3 py-2 text-sm border-2 border-gray-200 rounded-xl focus:border-[#C62828] focus:ring-2 focus:ring-[#C62828]/20 outline-none"
+                      required
+                    />
                   </div>
-                  <SearchableSelect
-                    options={allStoreManagementEmployee.map((v: any) => ({
-                      id: v.id,
-                      name: v.full_name || v.vendor_name || v.display || "",
-                    }))}
-                    value={to}
-                    onChange={(id) => {
-                      setTo(id);
-                    }}
-                    placeholder="Select Store Manager"
-                    required
-                    className="pl-10 pr-4 py-2 text-sm border border-gray-300 rounded-xl focus:border-green-600 focus:ring-2 focus:ring-green-600/20 outline-none transition-all duration-200 hover:border-gray-400"
-                    dropdownClassName="text-sm"
-                  />
-                </div>
-              </div>
-
-              {/* Material Quantity Received */}
-              <div className="space-y-1.5">
-                <label className="block text-xs font-semibold text-gray-700 mb-1 flex items-center gap-1.5">
-                  <Package className="w-3 h-3 text-purple-600" />
-                  <span>Material Quantity Received</span>
-                  <span className="text-red-500">*</span>
-                </label>
-                <div className="relative group">
-                  <div className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 group-focus-within:text-purple-600 transition-colors">
-                    <Package className="w-3.5 h-3.5" />
+                  <div className="space-y-1">
+                    <label className="block text-xs font-semibold text-gray-800">
+                      Payment Amount <span className="text-red-500">*</span>
+                    </label>
+                    <input
+                      type="number"
+                      value={paymentData.amount_paid || ""}
+                      onChange={(e) => {
+                        if (
+                          Number(e.target.value) >
+                          Number(selectedPO?.balance_amount)
+                        ) {
+                          toast.warning(
+                            "You can not enter amount greater than balance amount",
+                          );
+                          return;
+                        }
+                        setPaymentData({
+                          ...paymentData,
+                          amount_paid: Number(e.target.value) || "",
+                        });
+                      }}
+                      className="w-full px-3 py-2 text-sm border-2 border-gray-200 rounded-xl focus:border-[#C62828] focus:ring-2 focus:ring-[#C62828]/20 outline-none"
+                      min="0.01"
+                      max={selectedPO?.balance_amount}
+                      step="0.01"
+                      required
+                    />
                   </div>
-                  <input
-                    type="number"
-                    min={0}
-                    step="0.01"
-                    value={materialQuantity}
-                    onChange={(e) =>
-                      setMaterialQuantity(Number(e.target.value))
-                    }
-                    className="w-full pl-10 pr-4 py-2 text-sm border border-gray-300 rounded-xl focus:border-purple-600 focus:ring-2 focus:ring-purple-600/20 outline-none transition-all duration-200 hover:border-gray-400 bg-white"
-                    placeholder="Enter quantity"
-                    required
-                  />
-                </div>
-                <p className="text-xs text-gray-500 mt-1">
-                  Enter the exact quantity received from vendor
-                </p>
-              </div>
-
-              {/* Challan Number */}
-              <div className="space-y-1.5">
-                <label className="block text-xs font-semibold text-gray-700 mb-1 flex items-center gap-1.5">
-                  <FileText className="w-3 h-3 text-amber-600" />
-                  <span>Challan Number</span>
-                </label>
-                <div className="relative group">
-                  <div className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 group-focus-within:text-amber-600 transition-colors">
-                    <FileText className="w-3.5 h-3.5" />
+                  <div className="space-y-1">
+                    <label className="block text-xs font-semibold text-gray-800">
+                      Reference Number <span className="text-red-500">*</span>
+                    </label>
+                    <input
+                      type="text"
+                      value={paymentData.payment_reference_no || ""}
+                      onChange={(e) =>
+                        setPaymentData({
+                          ...paymentData,
+                          payment_reference_no: e.target.value,
+                        })
+                      }
+                      className="w-full px-3 py-2 text-sm border-2 border-gray-200 rounded-xl focus:border-[#C62828] focus:ring-2 focus:ring-[#C62828]/20 outline-none"
+                      placeholder="Transaction reference"
+                      required
+                    />
                   </div>
-                  <input
-                    type="text"
-                    value={challanNumber}
-                    onChange={(e) => setChallanNumber(e.target.value)}
-                    className="w-full pl-10 pr-4 py-2 text-sm border border-gray-300 rounded-xl focus:border-amber-600 focus:ring-2 focus:ring-amber-600/20 outline-none transition-all duration-200 hover:border-gray-400 bg-white"
-                    placeholder="Enter challan number"
-                  />
-                </div>
-              </div>
 
-              {/* Upload Challan Photo */}
-              <div className="space-y-1.5">
-                <label className="block text-xs font-semibold text-gray-700 mb-1 flex items-center gap-1.5">
-                  <Upload className="w-3 h-3 text-indigo-600" />
-                  <span>Upload Challan Photo</span>
-                </label>
-                <div className="relative group">
-                  <label className="flex flex-col items-center justify-center w-full border-2 border-dashed border-gray-300 rounded-xl p-4 cursor-pointer hover:border-indigo-400 hover:bg-indigo-50/50 transition-all duration-200 group">
-                    <div className="flex flex-col items-center justify-center pt-2 pb-3">
-                      <Upload className="w-6 h-6 text-indigo-400 mb-2 group-hover:text-indigo-600" />
-                      <p className="text-xs font-medium text-gray-600 mb-1">
-                        {challanImage
-                          ? challanImage.name
-                          : "Click to upload challan photo"}
-                      </p>
-                      <p className="text-xs text-gray-500">
-                        Supports: JPG, PNG, WEBP (Max 5MB)
-                      </p>
-                    </div>
+                  <div className="space-y-1">
+                    <label className="block text-xs font-semibold text-gray-800">
+                      Upload Payment Proof{" "}
+                      <span className="text-red-500">*</span>
+                    </label>
                     <input
                       type="file"
-                      accept="image/*"
-                      onChange={(e) => {
-                        if (e.target.files?.[0]) {
-                          const file = e.target.files[0];
-                          if (file.size > 5 * 1024 * 1024) {
-                            toast.error("File too large", {
-                              description: "Maximum file size is 5MB",
-                            });
-                            return;
-                          }
-                          setChallanImage(file);
-                        }
-                      }}
-                      className="hidden"
+                      required
+                      id="payment_proof"
+                      onChange={handleFileUpload}
+                      className="w-full px-3 py-2 text-sm border-2 border-gray-200 rounded-xl focus:border-[#C62828] focus:ring-2 focus:ring-[#C62828]/20 outline-none file:border-none file:bg-gradient-to-r file:from-[#C62828] file:to-red-600 file:text-white file:font-medium file:px-3 file:py-1.5 file:rounded-lg file:cursor-pointer"
+                      accept=".pdf,.jpg,.jpeg,.png"
                     />
-                  </label>
-                </div>
-                {challanImage && (
-                  <div className="mt-2 flex items-center justify-between bg-green-50 border border-green-200 rounded-lg p-2">
-                    <div className="flex items-center gap-2">
-                      <FileText className="w-4 h-4 text-green-600" />
-                      <span className="text-xs font-medium text-green-800 truncate">
-                        {challanImage.name}
-                      </span>
-                    </div>
-                    <button
-                      type="button"
-                      onClick={() => setChallanImage(null)}
-                      className="text-xs text-red-600 hover:text-red-800 font-medium"
-                    >
-                      Remove
-                    </button>
                   </div>
-                )}
+                  <div className="space-y-1">
+                    <label className="block text-xs font-semibold text-gray-800">
+                      Payment Status <span className="text-red-500">*</span>
+                    </label>
+                    <select
+                      value={paymentData.status || "pending"}
+                      onChange={(e) =>
+                        setPaymentData({
+                          ...paymentData,
+                          status: e.target.value,
+                        })
+                      }
+                      className="w-full px-3 py-2 text-sm border-2 border-gray-200 rounded-xl focus:border-[#C62828] focus:ring-2 focus:ring-[#C62828]/20 outline-none"
+                    >
+                      <option value="PENDING">Pending</option>
+                      <option value="SUCCESS">Success</option>
+                      <option value="FAILED">Failed</option>
+                      <option value="CANCELLED">Cancelled</option>
+                    </select>
+                  </div>
+                </div>
+
+                <div className="space-y-1">
+                  <label className="block text-xs font-semibold text-gray-800">
+                    Remarks
+                  </label>
+                  <textarea
+                    value={paymentData.remarks || ""}
+                    onChange={(e) =>
+                      setPaymentData({
+                        ...paymentData,
+                        remarks: e.target.value || "",
+                      })
+                    }
+                    className="w-full px-3 py-2 text-sm border-2 border-gray-200 rounded-xl focus:border-[#C62828] focus:ring-2 focus:ring-[#C62828]/20 outline-none"
+                    rows={2}
+                    placeholder="Add any remarks..."
+                  />
+                </div>
               </div>
 
-              {/* Form Actions */}
-              <div className="flex flex-col sm:flex-row gap-2 pt-4 border-t border-gray-200">
+              {/* Modal Footer */}
+              <div className="border-t p-3 flex gap-2">
                 <button
                   type="submit"
-                  disabled={materialQuantity <= 0 || !from || !to}
-                  className="flex-1 bg-gradient-to-r from-blue-600 to-blue-700 text-white py-2.5 px-4 rounded-xl hover:from-blue-700 hover:to-blue-800 transition-all duration-200 font-medium text-sm shadow-sm hover:shadow disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 group"
+                  disabled={submitting}
+                  className="flex-1 bg-gradient-to-r from-[#C62828] to-red-600 text-white py-2 px-4 rounded-xl hover:from-red-600 hover:to-red-700 transition-all duration-200 font-semibold flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed text-sm"
                 >
-                  <Save className="w-4 h-4 group-hover:scale-110 transition-transform" />
-                  Save Changes
+                  {submitting ? (
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                  ) : (
+                    <IndianRupee className="w-4 h-4" />
+                  )}
+                  {submitting ? "Processing..." : "Record Payment"}
                 </button>
                 <button
                   type="button"
-                  onClick={() => setShowUpdateMaterialQuantity(false)}
-                  className="px-4 py-2.5 text-sm border border-gray-300 rounded-xl hover:bg-gray-50/50 hover:border-gray-400 transition-all duration-200 font-medium text-gray-700"
+                  onClick={() => {
+                    setShowPaymentModal(false);
+                    setSelectedPO(null);
+                  }}
+                  className="px-4 py-2 text-sm border border-gray-200 rounded-xl hover:bg-gray-50 transition-all duration-200 font-medium text-gray-700"
                 >
                   Cancel
                 </button>

@@ -33,6 +33,7 @@ export default function Permissions() {
 
   // STATIC permission list
   const permissionsList = [
+    { action: "full_access", label: "Full Access", module: "Full Access" },
     { action: "view_dashboard", label: "View Dashboard", module: "Dashboard" },
     { action: "view_vendors", label: "View Vendors", module: "Vendors" },
     { action: "create_vendors", label: "Create Vendors", module: "Vendors" },

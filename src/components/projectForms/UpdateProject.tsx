@@ -24,9 +24,12 @@ import {
   Clock,
   AlertTriangle,
   ChevronDown,
+  PlusCircle,
+  RulerDimensionLine,
 } from "lucide-react";
 import { toast } from "sonner";
 import projectApi from "../../lib/projectApi";
+import { BiArea, BiDownArrow, BiUpArrow } from "react-icons/bi";
 
 interface ProjectUpdateFormProps {
   setUpdateProjectDetails: any;
@@ -34,6 +37,7 @@ interface ProjectUpdateFormProps {
   projectData: any;
   allCommonArea: any;
   allFloors: any;
+  allFlats: any[];
 }
 
 interface Building {
@@ -101,9 +105,16 @@ export default function UpdateProject({
   projectData,
   allCommonArea,
   allFloors,
+  allFlats,
 }: ProjectUpdateFormProps) {
+  console.log("this is project details from project update", projectData);
+  console.log("this is project details from project update", allFlats);
+  console.log("this is project details from project update", allCommonArea);
+  const [showCommonAreaModal, setShowCommonAreaModal] = useState(false);
   const [currentStep, setCurrentStep] = useState(1);
   const [showInputFeild, setShowInputField] = useState(false);
+  const [isAreaDropDownOpen, setIsAreaDropDownOpen] = useState(false);
+  const [selectedAreas, setSelectedAreas] = useState<any>([]);
   const [showUpdateModalForItem, setShowModalForItem] = useState<string | null>(
     null,
   );
@@ -145,12 +156,15 @@ export default function UpdateProject({
         flats: floor.flats.map((flat: any) => ({
           id: flat.id,
           flat_name: flat.flat_name,
+          areas: flat.areas.map((a: any) => a),
           status: flat.status,
           workflow: flat.workflow || [...defaultWorkflow],
         })),
         common_areas: floor.common_areas.map((commonArea: any) => ({
           id: commonArea.id,
           common_area_name: commonArea.common_area_name,
+          common_area_size: commonArea.common_area_size,
+          common_area_size_unit: commonArea.common_area_size_unit,
           status: commonArea.status,
           workflow: commonArea.workflow || [...defaultWorkflow],
         })),
@@ -1461,6 +1475,18 @@ export default function UpdateProject({
                                           />
                                         </div>
                                         <div className="flex items-center gap-0.5">
+                                          <button
+                                            type="button"
+                                            onClick={() => {
+                                              setSelectedAreas(
+                                                flat.areas ?? [],
+                                              );
+                                              setShowModalForItem("flatArea");
+                                            }}
+                                            className="p-0.5 text-blue-600 hover:bg-green-50 rounded-lg transition-all duration-200"
+                                          >
+                                            <PlusCircle className="w-3 h-3" />
+                                          </button>
                                           {formData.buildings.length >= 1 && (
                                             <button
                                               type="button"
@@ -1495,6 +1521,40 @@ export default function UpdateProject({
                                           </button>
                                         </div>
                                       </div>
+                                      {flat.areas && (
+                                        <div>
+                                          {flat.areas.map(
+                                            (
+                                              a: any,
+                                              areaItemIndexr: number,
+                                            ) => (
+                                              <div
+                                                key={areaItemIndexr}
+                                                className="flex justify-between py-2 px-3 m-1 border border-slate-400 rounded-lg"
+                                              >
+                                                <div>
+                                                  <h1 className="text-xs">
+                                                    {a.name}
+                                                  </h1>
+                                                  <h5 className="text-xs text-slate-600">
+                                                    {a.area_size + " " + a.unit}
+                                                  </h5>
+                                                </div>
+                                                <div className="space-x-2 flex items-center">
+                                                  <button
+                                                    onClick={() => {
+                                                      alert("remove");
+                                                    }}
+                                                    className="p-0.5 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-all duration-200"
+                                                  >
+                                                    <X className="w-3 h-3" />
+                                                  </button>
+                                                </div>
+                                              </div>
+                                            ),
+                                          )}
+                                        </div>
+                                      )}
                                     </div>
                                   ),
                                 )}
@@ -1515,9 +1575,10 @@ export default function UpdateProject({
                                 </h5>
                                 <button
                                   type="button"
-                                  onClick={() =>
-                                    addCommonArea(buildingIndex, floorIndex)
-                                  }
+                                  onClick={() => {
+                                    setSelectedAreas(floor.common_areas);
+                                    setShowCommonAreaModal(true);
+                                  }}
                                   className="text-xs bg-green-50 text-green-600 px-2 py-1 rounded-lg hover:bg-green-100 transition-all duration-200 flex items-center gap-1"
                                 >
                                   <Plus className="w-3 h-3" /> Add Area
@@ -1532,23 +1593,32 @@ export default function UpdateProject({
                                       className="bg-white rounded p-1.5 border border-gray-200"
                                     >
                                       <div className="flex justify-between items-center">
-                                        <div className="flex flex-1 items-center">
-                                          <div className="bg-green-50 rounded-lg text-green-600 mr-1 p-1">
-                                            <DoorOpen className="w-3 h-3" />
+                                        <div className="flex flex-1  flex-col">
+                                          <div className="flex">
+                                            <div className="bg-green-50 rounded-lg text-green-600 mr-1 p-1">
+                                              <DoorOpen className="w-3 h-3" />
+                                            </div>
+                                            <input
+                                              type="text"
+                                              value={
+                                                commonArea.common_area_name
+                                              }
+                                              disabled
+                                              className={`w-full bg-transparent border-b focus:outline-none focus:border-[#C62828] px-1 py-0.5 text-xs ${
+                                                errors[
+                                                  `building_${buildingIndex}_floor_${floorIndex}_common_${caIndex}_name`
+                                                ]
+                                                  ? "border-red-300"
+                                                  : "border-gray-300"
+                                              }`}
+                                              placeholder="Common area name"
+                                            />
                                           </div>
-                                          <input
-                                            type="text"
-                                            value={commonArea.common_area_name}
-                                            disabled
-                                            className={`w-full bg-transparent border-b focus:outline-none focus:border-[#C62828] px-1 py-0.5 text-xs ${
-                                              errors[
-                                                `building_${buildingIndex}_floor_${floorIndex}_common_${caIndex}_name`
-                                              ]
-                                                ? "border-red-300"
-                                                : "border-gray-300"
-                                            }`}
-                                            placeholder="Common area name"
-                                          />
+                                          <h1 className="text-xs py-1 px-2 text-slate-600">
+                                            {commonArea.common_area_size ?? 0}{" "}
+                                            {commonArea.common_area_size_unit ??
+                                              "sqft"}
+                                          </h1>
                                         </div>
                                         <div className="flex items-center gap-0.5">
                                           {formData.buildings.length >= 1 && (
@@ -1861,6 +1931,9 @@ export default function UpdateProject({
             <div className="bg-gradient-to-r from-[#40423f] via-[#4a4c49] to-[#5a5d5a] px-6 py-4 flex justify-between items-center rounded-t-2xl border-b border-gray-700/30">
               <div className="flex items-center gap-3">
                 <div className="p-2 bg-white/20 rounded-xl backdrop-blur-sm">
+                  {showUpdateModalForItem === "flatArea" && (
+                    <BiArea className="w-5 h-5 text-white" />
+                  )}
                   {showUpdateModalForItem === "building" && (
                     <Building2 className="w-5 h-5 text-white" />
                   )}
@@ -1876,10 +1949,12 @@ export default function UpdateProject({
                 </div>
                 <div>
                   <h2 className="text-lg font-bold text-white">
-                    Update {showUpdateModalForItem === "building" && "Building"}
+                    {showUpdateModalForItem === "flatArea" ? "Add" : "Update"}{" "}
+                    {showUpdateModalForItem === "building" && "Building"}
                     {showUpdateModalForItem === "floor" && "Floor"}
                     {showUpdateModalForItem === "flat" && "Flat"}
                     {showUpdateModalForItem === "common_area" && "Common Area"}
+                    {showUpdateModalForItem === "flatArea" && "Flat Area"}
                   </h2>
                   <p className="text-xs text-white/90 font-medium mt-0.5">
                     Update details
@@ -1888,6 +1963,7 @@ export default function UpdateProject({
               </div>
               <button
                 onClick={() => {
+                  setSelectedAreas([]);
                   setShowModalForItem(null);
                 }}
                 className="text-white hover:bg-white/20 rounded-xl p-2 transition-all duration-200 hover:scale-105 active:scale-95"
@@ -1896,6 +1972,138 @@ export default function UpdateProject({
               </button>
             </div>
             <div className="px-6 py-4">
+              {showUpdateModalForItem === "flatArea" && (
+                <div className="min-h-20 max-h-96 overflow-y-scroll">
+                  <div className="space-y-1.5 sticky top-0 z-30 bg-white py-3 w-full z-50">
+                    <label className="text-xs font-semibold text-gray-800 mb-1 flex items-center gap-2">
+                      <BiArea className="w-3 h-3 text-[#C62828]" />
+                      Select Flat Areas <span className="text-red-500">*</span>
+                    </label>
+                    <button
+                      onClick={() => setIsAreaDropDownOpen(!isAreaDropDownOpen)}
+                      className="text-sm flex w-full justify-between border border-slate-300 rounded-lg items-center px-3 py-2"
+                    >
+                      <h1 className="text-slate-600">Select Flat Areas</h1>
+                      <div>
+                        {isAreaDropDownOpen ? (
+                          <BiUpArrow className="w-4 h-4" />
+                        ) : (
+                          <BiDownArrow className="w-4 h-4" />
+                        )}
+                      </div>
+                    </button>
+                    <div className="relative group z-50">
+                      {isAreaDropDownOpen && (
+                        <div className="z-50 bg-slate-100 rounded-lg w-full px-3 py-2 h-30 overflow-y-scroll">
+                          {allFlats.map((d: any, indx: number) => {
+                            return (
+                              <div>
+                                <input
+                                  type="checkbox"
+                                  checked={selectedAreas.some(
+                                    (a: any) => a.name === d.name,
+                                  )}
+                                  className="w-4 h-4"
+                                  key={indx}
+                                  onChange={(e) => {
+                                    console.log(selectedAreas);
+                                    if (e.target.checked) {
+                                      setSelectedAreas([
+                                        ...selectedAreas,
+                                        {
+                                          id: d.id,
+                                          name: d.name,
+                                          area_size: "",
+                                          unit: "sqft",
+                                          area_type: "flat",
+                                        },
+                                      ]);
+                                    } else {
+                                      const data = selectedAreas.filter(
+                                        (fit: any) => fit.id !== d.id,
+                                      );
+
+                                      setSelectedAreas(data);
+                                    }
+                                  }}
+                                />{" "}
+                                <span>{d.name}</span>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                  <div className="">
+                    {selectedAreas.map((d: any, indx: number) => (
+                      <div key={indx} className="grid grid-cols-2 mb-3">
+                        <div>
+                          <label className="text-xs font-semibold text-gray-800 mb-1 flex items-center gap-2">
+                            Area Name <span className="text-red-500">*</span>
+                          </label>
+                          <h1>{d.name}</h1>
+                        </div>
+                        <div className="space-y-1.5">
+                          <label className="text-xs font-semibold text-gray-800 mb-1 flex items-center gap-2">
+                            <RulerDimensionLine className="w-3 h-3 text-[#C62828]" />
+                            Area Size <span className="text-red-500">*</span>
+                          </label>
+                          <div className="relative group flex border-2 border-gray-200 rounded-xl ">
+                            <div className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 group-focus-within:text-[#C62828] transition-colors">
+                              <RulerDimensionLine className="w-3 h-3" />
+                            </div>
+                            <input
+                              type="text"
+                              value={d.area_size}
+                              onChange={(e) => {
+                                if (
+                                  !/^\d*\.?\d*$/.test(e.target.value) ||
+                                  Number(e.target.value) < 0
+                                )
+                                  return;
+                                setSelectedAreas((prev: any) =>
+                                  prev.map((sa: any) => {
+                                    return sa.id === d.id
+                                      ? { ...sa, area_size: e.target.value }
+                                      : sa;
+                                  }),
+                                );
+                              }}
+                              className={`rounded-l-xl w-full pl-9 pr-4 py-2.5 text-sm   outline-none`}
+                              placeholder="Size"
+                            />
+                            <select
+                              value={d.unit}
+                              onChange={(e) => {
+                                setSelectedAreas((prev: any) =>
+                                  prev.map((sa: any) => {
+                                    return sa.id === d.id
+                                      ? { ...sa, unit: e.target.value }
+                                      : sa;
+                                  }),
+                                );
+                              }}
+                              className="rounded-r-xl w-full px-3 py-2.5 text-sm  focus:border-[#C62828] focus:ring-2 focus:ring-[#C62828]/20 bg-white outline-none appearance-none"
+                              required
+                            >
+                              {["sqft", "sqm"].map((ca: any) => (
+                                <option key={ca} value={ca}>
+                                  {ca}
+                                </option>
+                              ))}
+                            </select>
+                            <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none">
+                              <ChevronDown className="w-3 h-3 text-gray-400" />
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
               {showUpdateModalForItem === "building" && (
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
                   <div className="space-y-1.5">
@@ -2188,6 +2396,7 @@ export default function UpdateProject({
                 </button>
                 <button
                   onClick={() => {
+                    setSelectedAreas([]);
                     setShowModalForItem(null);
                   }}
                   className="px-6 py-2.5 bg-gradient-to-r from-gray-600 to-gray-700 text-white rounded-xl hover:from-gray-700 hover:to-gray-800 transition-all duration-200 font-medium flex items-center justify-center gap-2"
@@ -2195,6 +2404,210 @@ export default function UpdateProject({
                   <X className="w-4 h-4" /> Cancel
                 </button>
               </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {showCommonAreaModal && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-md flex items-center justify-center z-50 p-4 animate-fadeIn">
+          <div
+            className={`bg-gradient-to-br from-gray-50 to-white rounded-2xl shadow-2xl shadow-gray-900/20 w-[450px] my-4 border border-gray-200`}
+          >
+            {/* Header */}
+            <div className="bg-gradient-to-r from-[#40423f] via-[#4a4c49] to-[#5a5d5a] px-6 py-4 flex justify-between items-center rounded-t-2xl border-b border-gray-700/30">
+              <div className="flex items-center text-white ">
+                <div className="p-2 bg-white/20 rounded-xl backdrop-blur-sm">
+                  <DoorOpen className="w-5 h-5 text-white" />
+                </div>
+                <h1 className="ml-3">Add Common Area</h1>
+              </div>
+              <button
+                onClick={() => {
+                  setSelectedAreas([]);
+                  setShowCommonAreaModal(false);
+                }}
+                className="text-white hover:bg-white/20 rounded-xl p-2 transition-all duration-200 hover:scale-105 active:scale-95"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+            <div className="min-h-20 max-h-96 overflow-y-scroll px-3">
+              <div className="space-y-1.5 sticky top-0  bg-white py-3 w-full z-50">
+                <label className="text-xs font-semibold text-gray-800 mb-1 flex items-center gap-2">
+                  <BiArea className="w-3 h-3 text-[#C62828]" />
+                  Select Common Areas <span className="text-red-500">*</span>
+                </label>
+                <button
+                  onClick={() => setIsAreaDropDownOpen(!isAreaDropDownOpen)}
+                  className="text-sm flex w-full justify-between border border-slate-300 rounded-lg items-center px-3 py-2"
+                >
+                  <h1 className="text-slate-600">Select Common Areas</h1>
+                  <div>
+                    {isAreaDropDownOpen ? (
+                      <BiUpArrow className="w-4 h-4" />
+                    ) : (
+                      <BiDownArrow className="w-4 h-4" />
+                    )}
+                  </div>
+                </button>
+                <div className="relative group z-50">
+                  {isAreaDropDownOpen && (
+                    <div className="z-50 bg-slate-100 rounded-lg w-full px-3 py-2 h-30 overflow-y-scroll">
+                      {allCommonArea.map((d: any, indx: number) => {
+                        return (
+                          <div>
+                            <input
+                              type="checkbox"
+                              checked={selectedAreas.some(
+                                (a: any) => a.common_area_name === d.name,
+                              )}
+                              className="w-4 h-4"
+                              key={indx}
+                              onChange={(e) => {
+                                console.log(selectedAreas);
+                                if (e.target.checked) {
+                                  setSelectedAreas([
+                                    ...selectedAreas,
+                                    {
+                                      id: d.id,
+                                      name: d.name,
+                                      area_size: "",
+                                      unit: "sqft",
+                                      area_type: "commonArea",
+                                    },
+                                  ]);
+                                } else {
+                                  const data = selectedAreas.filter(
+                                    (fit: any) => fit.id !== d.id,
+                                  );
+
+                                  setSelectedAreas(data);
+                                }
+                              }}
+                            />{" "}
+                            <span>{d.name}</span>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
+                </div>
+              </div>
+              <div className="">
+                {selectedAreas.map((d: any, indx: number) => (
+                  <div key={indx} className="grid grid-cols-2 mb-3">
+                    <div>
+                      <label className="text-xs font-semibold text-gray-800 mb-1 flex items-center gap-2">
+                        Area Name <span className="text-red-500">*</span>
+                      </label>
+                      <h1>{d.common_area_name}</h1>
+                    </div>
+                    <div className="space-y-1.5">
+                      <label className="text-xs font-semibold text-gray-800 mb-1 flex items-center gap-2">
+                        <RulerDimensionLine className="w-3 h-3 text-[#C62828]" />
+                        Area Size <span className="text-red-500">*</span>
+                      </label>
+                      <div className="relative group flex border-2 border-gray-200 rounded-xl ">
+                        <div className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 group-focus-within:text-[#C62828] transition-colors">
+                          <RulerDimensionLine className="w-3 h-3" />
+                        </div>
+                        <input
+                          type="text"
+                          value={d.common_area_size}
+                          onChange={(e) => {
+                            if (
+                              !/^\d*\.?\d*$/.test(e.target.value) ||
+                              Number(e.target.value) < 0
+                            )
+                              return;
+                            setSelectedAreas((prev: any) =>
+                              prev.map((sa: any) => {
+                                return sa.id === d.id
+                                  ? { ...sa, area_size: e.target.value }
+                                  : sa;
+                              }),
+                            );
+                          }}
+                          className={`rounded-l-xl w-full pl-9 pr-4 py-2.5 text-sm   outline-none`}
+                          placeholder="Size"
+                        />
+                        <select
+                          value={d.unit}
+                          onChange={(e) => {
+                            setSelectedAreas((prev: any) =>
+                              prev.map((sa: any) => {
+                                return sa.id === d.id
+                                  ? {
+                                      ...sa,
+                                      common_area_size_unit: e.target.value,
+                                    }
+                                  : sa;
+                              }),
+                            );
+                          }}
+                          className="rounded-r-xl w-full px-3 py-2.5 text-sm  focus:border-[#C62828] focus:ring-2 focus:ring-[#C62828]/20 bg-white outline-none appearance-none"
+                          required
+                        >
+                          {["sqft", "sqm"].map((ca: any) => (
+                            <option key={ca} value={ca}>
+                              {ca}
+                            </option>
+                          ))}
+                        </select>
+                        <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none">
+                          <ChevronDown className="w-3 h-3 text-gray-400" />
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            <div className="flex gap-3 py-3 px-3">
+              <button
+                onClick={() => {
+                  setSelectedItem({
+                    name: "",
+                    count: "",
+                    buildingId: "",
+                    floorId: "",
+                    flatId: "",
+                    commonAreaId: "",
+                  });
+                  setShowCommonAreaModal(false);
+                }}
+                className="flex-1 bg-gradient-to-r from-[#C62828] to-red-600 text-white py-2.5 rounded-xl hover:from-red-600 hover:to-red-700 transition-all duration-200 font-semibold flex items-center justify-center gap-2 group transform hover:-translate-y-0.5 active:translate-y-0"
+              >
+                <Save className="w-4 h-4 group-hover:scale-110 transition-transform" />
+                Save
+              </button>
+              <button
+                onClick={() => {
+                  setSelectedItem({
+                    name: "",
+                    count: "",
+                    buildingId: "",
+                    floorId: "",
+                    flatId: "",
+                    commonAreaId: "",
+                  });
+                  setShowCommonAreaModal(false);
+                }}
+                className="flex-1 bg-gradient-to-r from-[#C62828] to-red-600 text-white py-2.5 rounded-xl hover:from-red-600 hover:to-red-700 transition-all duration-200 font-semibold flex items-center justify-center gap-2 group transform hover:-translate-y-0.5 active:translate-y-0"
+              >
+                Add to All Floor
+              </button>
+              <button
+                onClick={() => {
+                  setSelectedAreas([]);
+                  setShowCommonAreaModal(false);
+                }}
+                className="px-6 py-2.5 bg-gradient-to-r from-gray-600 to-gray-700 text-white rounded-xl hover:from-gray-700 hover:to-gray-800 transition-all duration-200 font-medium flex items-center justify-center gap-2"
+              >
+                <X className="w-4 h-4" /> Cancel
+              </button>
             </div>
           </div>
         </div>

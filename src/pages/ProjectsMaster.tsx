@@ -2979,6 +2979,7 @@ export default function ProjectsMaster() {
           projectData={selectedProject}
           allCommonArea={allCommonArea}
           allFloors={allFloors}
+          allFlats={allFlats}
         />
       )}
       {showProjectDetailsForm && (
