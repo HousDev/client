@@ -490,11 +490,11 @@ const [searchStatus, setSearchStatus] = useState('');
         }
         parsed.sort((a, b) => (a.name || "").localeCompare(b.name || ""));
         setPaymentTerms(parsed);
-        toast.success('Payment terms loaded successfully!');
+       
       } catch (err) {
         console.error("Error loading payment terms from storage:", err);
         setPaymentTerms([]);
-        toast.error('Failed to load payment terms.');
+     
       } finally {
         setLoading(false);
       }

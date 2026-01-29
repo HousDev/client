@@ -2790,13 +2790,10 @@ export default function VendorsEnhanced(): JSX.Element {
                                 value={formData.contact_person_phone}
                                 onChange={(e) => {
                                   if (!/^\d*$/.test(e.target.value)) {
-                                    toast.warning("Enter Valid Phone Number.");
+                                    
                                     return;
                                   }
                                   if (e.target.value.length > 10) {
-                                    toast.warning(
-                                      "Mobile number must be 10 digit.",
-                                    );
                                     return;
                                   }
                                   setFormData({
