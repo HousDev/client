@@ -807,11 +807,11 @@ export default function IssueMaterial({
                     value={formData.receiverNumber}
                     onChange={(e) => {
                       if (!/^\d*$/.test(e.target.value)) {
-                        toast.warning("Enter Valid Phone Number.");
+                        
                         return;
                       }
                       if (e.target.value.length > 10) {
-                        toast.warning("Mobile number must be 10 digit.");
+                        
                         return;
                       }
                       handleInputChange("receiverNumber", e.target.value);

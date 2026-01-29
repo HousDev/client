@@ -1085,13 +1085,13 @@ export default function MaterialInForm({
                     value={formData.receiverPhone}
                     onChange={(e) => {
                       if (!/^\d*$/.test(e.target.value)) {
-                        toast.warning("Enter Valid Phone Number.");
+                     
                         return;
                       }
                       if (Number(e.target.value.length) <= 10) {
                         handleInputChange("receiverPhone", e.target.value);
                       } else {
-                        toast.warning("Only 10 digit mobile number allowed.");
+                        ;
                       }
                     }}
                     className="w-full pl-10 pr-4 py-2.5 text-sm border-2 border-gray-200 rounded-xl focus:border-[#C62828] focus:ring-2 focus:ring-[#C62828]/20 outline-none transition-all duration-200 hover:border-gray-300"
