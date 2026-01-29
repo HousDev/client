@@ -1164,7 +1164,6 @@
 //   );
 // }
 
-
 import { useState, useEffect, useRef } from "react";
 import {
   Clock,
@@ -1293,10 +1292,11 @@ export default function PaymentsEnhanced() {
   const [payments, setPayments] = useState<PaymentDataType[]>([]);
   const [paymentHistorys, setPaymentHistorys] = useState<any>([]);
   const [paymentReminders, setPaymentReminders] = useState<PaymentReminder[]>(
-    []
+    [],
   );
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
+  const [paymentProofUrl, setPaymentProofUrl] = useState<String>("");
 
   // Search states
   const [searchTerm, setSearchTerm] = useState("");
@@ -1306,6 +1306,8 @@ export default function PaymentsEnhanced() {
   const [searchDate, setSearchDate] = useState("");
   const [searchReference, setSearchReference] = useState("");
   const [paymentMethodFilter, setPaymentMethodFilter] = useState("all");
+  const [showPaymentProofModal, setShowPaymentProofModal] =
+    useState<boolean>(false);
 
   // Filter states
   const [statusFilter, setStatusFilter] = useState("all");
@@ -1346,7 +1348,10 @@ export default function PaymentsEnhanced() {
   // Close dropdown when clicking outside
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
-      if (filtersRef.current && !filtersRef.current.contains(event.target as Node)) {
+      if (
+        filtersRef.current &&
+        !filtersRef.current.contains(event.target as Node)
+      ) {
         setShowFilters(false);
       }
     };
@@ -1404,9 +1409,10 @@ export default function PaymentsEnhanced() {
 
   const loadPaymentReminders = async () => {
     try {
-      const PoPaymentRemindersApiRes = await PoPaymentRemindersApi.getReminders();
+      const PoPaymentRemindersApiRes =
+        await PoPaymentRemindersApi.getReminders();
       setPaymentReminders(
-        Array.isArray(PoPaymentRemindersApiRes) ? PoPaymentRemindersApiRes : []
+        Array.isArray(PoPaymentRemindersApiRes) ? PoPaymentRemindersApiRes : [],
       );
     } catch (error) {
       console.log(error);
@@ -1424,7 +1430,7 @@ export default function PaymentsEnhanced() {
       pos
         .filter(
           (p: any) =>
-            p.payment_status === "completed" || p.payment_status === "partial"
+            p.payment_status === "completed" || p.payment_status === "partial",
         )
         .reduce((s: any, p: any) => s + (Number(p.total_paid) || 0), 0) || 0;
 
@@ -1449,7 +1455,7 @@ export default function PaymentsEnhanced() {
     if (selectedItems.size > 0) {
       if (activeTab === "payments") {
         selectedAmount = pos
-          .filter(po => selectedItems.has(po.id))
+          .filter((po) => selectedItems.has(po.id))
           .reduce((sum, po) => sum + (Number(po.balance_amount) || 0), 0);
       }
     }
@@ -1480,11 +1486,17 @@ export default function PaymentsEnhanced() {
         if (!matches) return false;
       }
 
-      if (searchPONumber && !po.po_number?.toLowerCase().includes(searchPONumber.toLowerCase())) {
+      if (
+        searchPONumber &&
+        !po.po_number?.toLowerCase().includes(searchPONumber.toLowerCase())
+      ) {
         return false;
       }
 
-      if (searchVendor && !po.vendors?.name?.toLowerCase().includes(searchVendor.toLowerCase())) {
+      if (
+        searchVendor &&
+        !po.vendors?.name?.toLowerCase().includes(searchVendor.toLowerCase())
+      ) {
         return false;
       }
 
@@ -1505,18 +1517,30 @@ export default function PaymentsEnhanced() {
       if (searchTerm) {
         const searchLower = searchTerm.toLowerCase();
         const matches =
-          payment.purchase_order?.po_number?.toLowerCase().includes(searchLower) ||
-          payment.purchase_order?.vendors?.name?.toLowerCase().includes(searchLower) ||
+          payment.purchase_order?.po_number
+            ?.toLowerCase()
+            .includes(searchLower) ||
+          payment.purchase_order?.vendors?.name
+            ?.toLowerCase()
+            .includes(searchLower) ||
           payment.payment_method?.toLowerCase().includes(searchLower) ||
           payment.status?.toLowerCase().includes(searchLower);
         if (!matches) return false;
       }
 
-      if (paymentMethodFilter !== "all" && paymentMethodFilter !== payment.payment_method) {
+      if (
+        paymentMethodFilter !== "all" &&
+        paymentMethodFilter !== payment.payment_method
+      ) {
         return false;
       }
 
-      if (searchReference && !payment.payment_reference_no?.toLowerCase().includes(searchReference.toLowerCase())) {
+      if (
+        searchReference &&
+        !payment.payment_reference_no
+          ?.toLowerCase()
+          .includes(searchReference.toLowerCase())
+      ) {
         return false;
       }
 
@@ -1524,7 +1548,11 @@ export default function PaymentsEnhanced() {
         return false;
       }
 
-      if (searchDate && payment.payment_date && !payment.payment_date.includes(searchDate)) {
+      if (
+        searchDate &&
+        payment.payment_date &&
+        !payment.payment_date.includes(searchDate)
+      ) {
         return false;
       }
 
@@ -1543,7 +1571,11 @@ export default function PaymentsEnhanced() {
         if (!matches) return false;
       }
 
-      if (searchDate && reminder.due_date && !reminder.due_date.includes(searchDate)) {
+      if (
+        searchDate &&
+        reminder.due_date &&
+        !reminder.due_date.includes(searchDate)
+      ) {
         return false;
       }
 
@@ -1557,7 +1589,7 @@ export default function PaymentsEnhanced() {
     if (selectAll) {
       setSelectedItems(new Set());
     } else {
-      const allIds = new Set(filtered.map(po => po.id));
+      const allIds = new Set(filtered.map((po) => po.id));
       setSelectedItems(allIds);
     }
     setSelectAll(!selectAll);
@@ -1571,7 +1603,7 @@ export default function PaymentsEnhanced() {
       newSelected.add(id);
     }
     setSelectedItems(newSelected);
-    
+
     const filtered = getFilteredPOs();
     setSelectAll(newSelected.size === filtered.length);
   };
@@ -1581,9 +1613,11 @@ export default function PaymentsEnhanced() {
       toast.error("Please select at least one PO for bulk payment");
       return;
     }
-    
-    toast.success(`Initiating bulk payment for ${selectedItems.size} POs - Total: ${formatCurrency(stats.selectedAmount)}`);
-    
+
+    toast.success(
+      `Initiating bulk payment for ${selectedItems.size} POs - Total: ${formatCurrency(stats.selectedAmount)}`,
+    );
+
     setSelectedItems(new Set());
     setSelectAll(false);
   };
@@ -1615,7 +1649,8 @@ export default function PaymentsEnhanced() {
 
   const createPaymentReminder = async (payload: any) => {
     try {
-      const paymentReminderRes = await PoPaymentRemindersApi.createReminder(payload);
+      const paymentReminderRes: any =
+        await PoPaymentRemindersApi.createReminder(payload);
       if (paymentReminderRes.success) {
         loadPaymentReminders();
         toast.success(" created successfully!");
@@ -1645,12 +1680,12 @@ export default function PaymentsEnhanced() {
         toast.error("Enter a valid amount");
         return;
       }
-      
+
       if ((paymentData.payment_reference_no || "")?.length <= 0) {
         toast.error("Enter valid reference number");
         return;
       }
-      
+
       if (!paymentData.payment_proof) {
         toast.error("Upload valid payment proof");
         return;
@@ -1668,10 +1703,10 @@ export default function PaymentsEnhanced() {
         remarks: paymentData.remarks,
         created_by: user?.id,
       };
-      
+
       setSubmitting(true);
       const res: any = await poPaymentApi.createPayment(newPayment);
-      
+
       if (res.success) {
         loadPOData();
         toast.success("Payment recorded successfully!");
@@ -1702,7 +1737,8 @@ export default function PaymentsEnhanced() {
 
   const markReminderSeen = async (payload: any) => {
     try {
-      const markReminderSeenRes = await PoPaymentRemindersApi.markAsSeen(payload);
+      const markReminderSeenRes =
+        await PoPaymentRemindersApi.markAsSeen(payload);
       if (markReminderSeenRes.success) {
         loadPaymentReminders();
         toast.success("Reminder marked as seen!");
@@ -1717,7 +1753,9 @@ export default function PaymentsEnhanced() {
 
   const markAllReminderSeen = async () => {
     try {
-      const markAllReminderSeenRes = await PoPaymentRemindersApi.markAllAsSeen(user?.id);
+      const markAllReminderSeenRes = await PoPaymentRemindersApi.markAllAsSeen(
+        user?.id,
+      );
       if (markAllReminderSeenRes.success) {
         loadPaymentReminders();
         toast.success("All reminders marked as seen!");
@@ -1775,134 +1813,128 @@ export default function PaymentsEnhanced() {
     <div className="p-3 md:p-4 px-0 md:px-0 -mt-5 bg-gray-50 min-h-screen">
       {/* Header */}
       <div className="mb-0">
-       
-
         {/* Compact Stats Cards */}
-       <div className="grid grid-cols-2 lg:grid-cols-4 gap-2 md:gap-3 mb-4">
-  {/* Total Paid */}
-  <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-2.5 sm:p-3 hover:border-green-500 transition-all duration-200 min-w-0">
-    <div className="flex items-start justify-between gap-2">
-      <div className="min-w-0">
-        <p className="text-[11px] sm:text-xs text-gray-600 font-medium">
-          Total Paid
-        </p>
-        <p className="text-sm sm:text-base md:text-lg font-bold text-green-600 mt-1 break-all leading-tight">
-          {formatCurrency(stats.totalPaid)}
-        </p>
-      </div>
-      <div className="bg-green-100 p-1.5 sm:p-2 rounded-lg shrink-0">
-        <CheckCircle className="w-4 h-4 sm:w-5 sm:h-5 text-green-600" />
-      </div>
-    </div>
-  </div>
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-2 md:gap-3 mb-4">
+          {/* Total Paid */}
+          <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-2.5 sm:p-3 hover:border-green-500 transition-all duration-200 min-w-0">
+            <div className="flex items-start justify-between gap-2">
+              <div className="min-w-0">
+                <p className="text-[11px] sm:text-xs text-gray-600 font-medium">
+                  Total Paid
+                </p>
+                <p className="text-sm sm:text-base md:text-lg font-bold text-green-600 mt-1 break-all leading-tight">
+                  {formatCurrency(stats.totalPaid)}
+                </p>
+              </div>
+              <div className="bg-green-100 p-1.5 sm:p-2 rounded-lg shrink-0">
+                <CheckCircle className="w-4 h-4 sm:w-5 sm:h-5 text-green-600" />
+              </div>
+            </div>
+          </div>
 
-  {/* Pending */}
-  <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-2.5 sm:p-3 hover:border-orange-500 transition-all duration-200 min-w-0">
-    <div className="flex items-start justify-between gap-2">
-      <div className="min-w-0">
-        <p className="text-[11px] sm:text-xs text-gray-600 font-medium">
-          Pending
-        </p>
-        <p className="text-sm sm:text-base md:text-lg font-bold text-orange-600 mt-1 break-all leading-tight">
-          {formatCurrency(stats.totalPending)}
-        </p>
-      </div>
-      <div className="bg-orange-100 p-1.5 sm:p-2 rounded-lg shrink-0">
-        <Clock className="w-4 h-4 sm:w-5 sm:h-5 text-orange-600" />
-      </div>
-    </div>
-  </div>
+          {/* Pending */}
+          <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-2.5 sm:p-3 hover:border-orange-500 transition-all duration-200 min-w-0">
+            <div className="flex items-start justify-between gap-2">
+              <div className="min-w-0">
+                <p className="text-[11px] sm:text-xs text-gray-600 font-medium">
+                  Pending
+                </p>
+                <p className="text-sm sm:text-base md:text-lg font-bold text-orange-600 mt-1 break-all leading-tight">
+                  {formatCurrency(stats.totalPending)}
+                </p>
+              </div>
+              <div className="bg-orange-100 p-1.5 sm:p-2 rounded-lg shrink-0">
+                <Clock className="w-4 h-4 sm:w-5 sm:h-5 text-orange-600" />
+              </div>
+            </div>
+          </div>
 
-  {/* Overdue */}
-  <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-2.5 sm:p-3 hover:border-red-500 transition-all duration-200 min-w-0">
-    <div className="flex items-start justify-between gap-2">
-      <div className="min-w-0">
-        <p className="text-[11px] sm:text-xs text-gray-600 font-medium">
-          Overdue
-        </p>
-        <p className="text-sm sm:text-base md:text-lg font-bold text-red-600 mt-1 break-all leading-tight">
-          {formatCurrency(stats.totalOverdue)}
-        </p>
-      </div>
-      <div className="bg-red-100 p-1.5 sm:p-2 rounded-lg shrink-0">
-        <AlertCircle className="w-4 h-4 sm:w-5 sm:h-5 text-red-600" />
-      </div>
-    </div>
-  </div>
+          {/* Overdue */}
+          <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-2.5 sm:p-3 hover:border-red-500 transition-all duration-200 min-w-0">
+            <div className="flex items-start justify-between gap-2">
+              <div className="min-w-0">
+                <p className="text-[11px] sm:text-xs text-gray-600 font-medium">
+                  Overdue
+                </p>
+                <p className="text-sm sm:text-base md:text-lg font-bold text-red-600 mt-1 break-all leading-tight">
+                  {formatCurrency(stats.totalOverdue)}
+                </p>
+              </div>
+              <div className="bg-red-100 p-1.5 sm:p-2 rounded-lg shrink-0">
+                <AlertCircle className="w-4 h-4 sm:w-5 sm:h-5 text-red-600" />
+              </div>
+            </div>
+          </div>
 
-  {/* Selected */}
-  <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-2.5 sm:p-3 hover:border-blue-500 transition-all duration-200 min-w-0">
-    <div className="flex items-start justify-between gap-2">
-      <div className="min-w-0">
-        <p className="text-[11px] sm:text-xs text-gray-600 font-medium">
-          Selected
-        </p>
-        <p className="text-sm sm:text-base md:text-lg font-bold text-blue-600 mt-1 break-all leading-tight">
-          {formatCurrency(stats.selectedAmount)}
-        </p>
-        {selectedItems.size > 0 && (
-          <p className="text-[11px] text-blue-600 mt-0.5">
-            {selectedItems.size} item(s)
-          </p>
-        )}
-      </div>
-      <div className="bg-blue-100 p-1.5 sm:p-2 rounded-lg shrink-0">
-        <CheckSquare className="w-4 h-4 sm:w-5 sm:h-5 text-blue-600" />
-      </div>
-    </div>
-  </div>
-</div>
-
+          {/* Selected */}
+          <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-2.5 sm:p-3 hover:border-blue-500 transition-all duration-200 min-w-0">
+            <div className="flex items-start justify-between gap-2">
+              <div className="min-w-0">
+                <p className="text-[11px] sm:text-xs text-gray-600 font-medium">
+                  Selected
+                </p>
+                <p className="text-sm sm:text-base md:text-lg font-bold text-blue-600 mt-1 break-all leading-tight">
+                  {formatCurrency(stats.selectedAmount)}
+                </p>
+                {selectedItems.size > 0 && (
+                  <p className="text-[11px] text-blue-600 mt-0.5">
+                    {selectedItems.size} item(s)
+                  </p>
+                )}
+              </div>
+              <div className="bg-blue-100 p-1.5 sm:p-2 rounded-lg shrink-0">
+                <CheckSquare className="w-4 h-4 sm:w-5 sm:h-5 text-blue-600" />
+              </div>
+            </div>
+          </div>
+        </div>
 
         {/* Tabs */}
-     <div className="bg-white rounded-xl shadow-sm border border-gray-200 mb-4 overflow-hidden">
-  <div className="flex flex-row w-full overflow-x-auto scrollbar-hide">
+        <div className="bg-white rounded-xl shadow-sm border border-gray-200 mb-4 overflow-hidden">
+          <div className="flex flex-row w-full overflow-x-auto scrollbar-hide">
+            <button
+              onClick={() => setActiveTab("payments")}
+              className={`flex-1 min-w-[120px] px-3 py-2.5 font-medium transition ${
+                activeTab === "payments"
+                  ? "text-blue-600 border-b-2 border-blue-600 bg-blue-50"
+                  : "text-gray-600 hover:text-gray-800 hover:bg-gray-50 border-r border-gray-200"
+              }`}
+            >
+              <div className="flex items-center justify-center gap-1.5 whitespace-nowrap">
+                <IndianRupee className="w-4 h-4" />
+                <span className="text-xs sm:text-sm">PO Payments</span>
+              </div>
+            </button>
 
-    <button
-      onClick={() => setActiveTab("payments")}
-      className={`flex-1 min-w-[120px] px-3 py-2.5 font-medium transition ${
-        activeTab === "payments"
-          ? "text-blue-600 border-b-2 border-blue-600 bg-blue-50"
-          : "text-gray-600 hover:text-gray-800 hover:bg-gray-50 border-r border-gray-200"
-      }`}
-    >
-      <div className="flex items-center justify-center gap-1.5 whitespace-nowrap">
-        <IndianRupee className="w-4 h-4" />
-        <span className="text-xs sm:text-sm">PO Payments</span>
-      </div>
-    </button>
+            <button
+              onClick={() => setActiveTab("history")}
+              className={`flex-1 min-w-[130px] px-3 py-2.5 font-medium transition ${
+                activeTab === "history"
+                  ? "text-blue-600 border-b-2 border-blue-600 bg-blue-50"
+                  : "text-gray-600 hover:text-gray-800 hover:bg-gray-50 border-r border-gray-200"
+              }`}
+            >
+              <div className="flex items-center justify-center gap-1.5 whitespace-nowrap">
+                <FileClock className="w-4 h-4" />
+                <span className="text-xs sm:text-sm">Payment History</span>
+              </div>
+            </button>
 
-    <button
-      onClick={() => setActiveTab("history")}
-      className={`flex-1 min-w-[130px] px-3 py-2.5 font-medium transition ${
-        activeTab === "history"
-          ? "text-blue-600 border-b-2 border-blue-600 bg-blue-50"
-          : "text-gray-600 hover:text-gray-800 hover:bg-gray-50 border-r border-gray-200"
-      }`}
-    >
-      <div className="flex items-center justify-center gap-1.5 whitespace-nowrap">
-        <FileClock className="w-4 h-4" />
-        <span className="text-xs sm:text-sm">Payment History</span>
-      </div>
-    </button>
-
-    <button
-      onClick={() => setActiveTab("reminders")}
-      className={`flex-1 min-w-[150px] px-3 py-2.5 font-medium transition ${
-        activeTab === "reminders"
-          ? "text-blue-600 border-b-2 border-blue-600 bg-blue-50"
-          : "text-gray-600 hover:text-gray-800 hover:bg-gray-50"
-      }`}
-    >
-      <div className="flex items-center justify-center gap-1.5 whitespace-nowrap">
-        <Bell className="w-4 h-4" />
-        <span className="text-xs sm:text-sm">Payment Reminders</span>
-      </div>
-    </button>
-
-  </div>
-</div>
-
+            <button
+              onClick={() => setActiveTab("reminders")}
+              className={`flex-1 min-w-[150px] px-3 py-2.5 font-medium transition ${
+                activeTab === "reminders"
+                  ? "text-blue-600 border-b-2 border-blue-600 bg-blue-50"
+                  : "text-gray-600 hover:text-gray-800 hover:bg-gray-50"
+              }`}
+            >
+              <div className="flex items-center justify-center gap-1.5 whitespace-nowrap">
+                <Bell className="w-4 h-4" />
+                <span className="text-xs sm:text-sm">Payment Reminders</span>
+              </div>
+            </button>
+          </div>
+        </div>
       </div>
 
       {/* Bulk Payment Button */}
@@ -1915,7 +1947,8 @@ export default function PaymentsEnhanced() {
               </div>
               <div>
                 <p className="text-sm font-medium text-blue-700">
-                  {selectedItems.size} PO(s) selected • Total: {formatCurrency(stats.selectedAmount)}
+                  {selectedItems.size} PO(s) selected • Total:{" "}
+                  {formatCurrency(stats.selectedAmount)}
                 </p>
                 <p className="text-xs text-blue-600">Ready for bulk payment</p>
               </div>
@@ -1935,7 +1968,7 @@ export default function PaymentsEnhanced() {
       {activeTab === "payments" && (
         <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
           <div className="overflow-x-auto">
-<table className="w-full min-w-[820px] lg:min-w-full">
+            <table className="w-full min-w-[820px] lg:min-w-full">
               <thead className="bg-gray-200 border-b border-gray-200">
                 <tr>
                   <th className="px-2 md:px-4 py-2 text-center w-10">
@@ -1982,11 +2015,11 @@ export default function PaymentsEnhanced() {
                     </div>
                   </th>
                 </tr>
-                
+
                 {/* Search Row */}
                 <tr className="bg-gray-50 border-b border-gray-200">
                   <td className="px-2 md:px-4 py-1"></td>
-                  
+
                   {/* PO Number Search */}
                   <td className="px-2 md:px-4 py-1">
                     <div className="relative">
@@ -2002,7 +2035,7 @@ export default function PaymentsEnhanced() {
                       />
                     </div>
                   </td>
-                  
+
                   {/* Vendor Search */}
                   <td className="px-2 md:px-4 py-1">
                     <div className="relative">
@@ -2018,7 +2051,7 @@ export default function PaymentsEnhanced() {
                       />
                     </div>
                   </td>
-                  
+
                   {/* Total Search */}
                   <td className="px-2 md:px-4 py-1">
                     <div className="relative">
@@ -2034,13 +2067,13 @@ export default function PaymentsEnhanced() {
                       />
                     </div>
                   </td>
-                  
+
                   {/* Paid Column - No search */}
                   <td className="px-2 md:px-4 py-1"></td>
-                  
+
                   {/* Balance Column - No search */}
                   <td className="px-2 md:px-4 py-1"></td>
-                  
+
                   {/* Status Search */}
                   <td className="px-2 md:px-4 py-1">
                     <div className="relative">
@@ -2060,7 +2093,7 @@ export default function PaymentsEnhanced() {
                       </div>
                     </div>
                   </td>
-                  
+
                   {/* Actions Column - Filter button */}
                   <td className="px-2 md:px-4 py-1">
                     <div className="flex gap-1">
@@ -2099,7 +2132,9 @@ export default function PaymentsEnhanced() {
                           {po.po_number}
                         </div>
                         <div className="text-[10px] md:text-xs text-gray-500">
-                          {po.po_date ? new Date(po.po_date).toLocaleDateString() : ""}
+                          {po.po_date
+                            ? new Date(po.po_date).toLocaleDateString()
+                            : ""}
                         </div>
                       </td>
                       <td className="px-2 md:px-4 py-2">
@@ -2125,7 +2160,7 @@ export default function PaymentsEnhanced() {
                       <td className="px-2 md:px-4 py-2">
                         <span
                           className={`px-2 py-1 rounded-full text-[10px] md:text-xs font-medium ${getStatusColor(
-                            po.payment_status
+                            po.payment_status,
                           )}`}
                         >
                           {(po.payment_status || "pending").toUpperCase()}
@@ -2167,14 +2202,19 @@ export default function PaymentsEnhanced() {
                     </tr>
                   );
                 })}
-                
+
                 {filteredPOs.length === 0 && (
                   <tr>
                     <td colSpan={8} className="px-4 py-8 text-center">
                       <IndianRupee className="w-12 h-12 md:w-16 md:h-16 text-gray-300 mx-auto mb-3" />
-                      <p className="text-gray-600 text-sm md:text-lg font-medium">No payments found</p>
+                      <p className="text-gray-600 text-sm md:text-lg font-medium">
+                        No payments found
+                      </p>
                       <p className="text-gray-500 text-xs md:text-sm mt-1">
-                        {searchPONumber || searchVendor || searchAmount || statusFilter !== "all"
+                        {searchPONumber ||
+                        searchVendor ||
+                        searchAmount ||
+                        statusFilter !== "all"
                           ? "Try adjusting your search or filters"
                           : "No pending payments available"}
                       </p>
@@ -2229,8 +2269,13 @@ export default function PaymentsEnhanced() {
                       STATUS
                     </div>
                   </th>
+                  <th className="px-2 md:px-4 py-2 text-left">
+                    <div className="text-[10px] md:text-xs font-semibold text-gray-700 uppercase tracking-wider">
+                      Proof
+                    </div>
+                  </th>
                 </tr>
-                
+
                 {/* Search Row */}
                 <tr className="bg-gray-50 border-b border-gray-200">
                   <td className="px-2 md:px-4 py-1">
@@ -2247,7 +2292,7 @@ export default function PaymentsEnhanced() {
                       />
                     </div>
                   </td>
-                  
+
                   <td className="px-2 md:px-4 py-1">
                     <div className="relative">
                       <div className="absolute left-2 top-1/2 -translate-y-1/2">
@@ -2262,7 +2307,7 @@ export default function PaymentsEnhanced() {
                       />
                     </div>
                   </td>
-                  
+
                   <td className="px-2 md:px-4 py-1">
                     <div className="relative">
                       <div className="absolute left-2 top-1/2 -translate-y-1/2">
@@ -2277,7 +2322,7 @@ export default function PaymentsEnhanced() {
                       />
                     </div>
                   </td>
-                  
+
                   <td className="px-2 md:px-4 py-1">
                     <select
                       value={paymentMethodFilter}
@@ -2291,7 +2336,7 @@ export default function PaymentsEnhanced() {
                       <option value="online">Online</option>
                     </select>
                   </td>
-                  
+
                   <td className="px-2 md:px-4 py-1">
                     <div className="relative">
                       <div className="absolute left-2 top-1/2 -translate-y-1/2">
@@ -2306,7 +2351,7 @@ export default function PaymentsEnhanced() {
                       />
                     </div>
                   </td>
-                  
+
                   <td className="px-2 md:px-4 py-1">
                     <div className="relative">
                       <div className="absolute left-2 top-1/2 -translate-y-1/2">
@@ -2320,7 +2365,7 @@ export default function PaymentsEnhanced() {
                       />
                     </div>
                   </td>
-                  
+
                   <td className="px-2 md:px-4 py-1">
                     <select
                       value={statusFilter}
@@ -2355,7 +2400,9 @@ export default function PaymentsEnhanced() {
                     </td>
                     <td className="px-2 md:px-4 py-2">
                       <div className="text-gray-800 text-xs md:text-sm">
-                        {(payment.payment_method || "").replace("_", " ").toUpperCase() || "-"}
+                        {(payment.payment_method || "")
+                          .replace("_", " ")
+                          .toUpperCase() || "-"}
                       </div>
                     </td>
                     <td className="px-2 md:px-4 py-2">
@@ -2371,20 +2418,38 @@ export default function PaymentsEnhanced() {
                       </div>
                     </td>
                     <td className="px-2 md:px-4 py-2">
-                      <span className={`px-2 py-1 rounded-full text-[10px] md:text-xs font-medium ${getStatusColor(payment.status || "")}`}>
+                      <span
+                        className={`px-2 py-1 rounded-full text-[10px] md:text-xs font-medium ${getStatusColor(payment.status || "")}`}
+                      >
                         {(payment.status || "pending").toUpperCase()}
                       </span>
                     </td>
+                    <td className="px-2 md:px-4 py-2">
+                      <button
+                        onClick={() => {
+                          setShowPaymentProofModal(true);
+                          setPaymentProofUrl(payment.payment_proof);
+                        }}
+                        className={`px-2 py-1 rounded-full text-[10px] md:text-xs font-medium  cursor-pointer text-blue-600`}
+                      >
+                        <Eye className="w-4 h-4" />
+                      </button>
+                    </td>
                   </tr>
                 ))}
-                
+
                 {filteredHistory.length === 0 && (
                   <tr>
                     <td colSpan={7} className="px-4 py-8 text-center">
                       <FileClock className="w-12 h-12 md:w-16 md:h-16 text-gray-300 mx-auto mb-3" />
-                      <p className="text-gray-600 text-sm md:text-lg font-medium">No payment history found</p>
+                      <p className="text-gray-600 text-sm md:text-lg font-medium">
+                        No payment history found
+                      </p>
                       <p className="text-gray-500 text-xs md:text-sm mt-1">
-                        {searchPONumber || searchVendor || searchAmount || searchReference
+                        {searchPONumber ||
+                        searchVendor ||
+                        searchAmount ||
+                        searchReference
                           ? "Try adjusting your search"
                           : "No payment history available"}
                       </p>
@@ -2394,6 +2459,56 @@ export default function PaymentsEnhanced() {
               </tbody>
             </table>
           </div>
+          {showPaymentProofModal && (
+            <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+              <div className="bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-hidden">
+                <div
+                  className="bg-gradient-to-r from-[#4b4e4b] via-[#5a5d5a] to-[#6b6e6b]
+            px-6 py-4 flex justify-between items-center
+            rounded-t-2xl border-b border-white/10
+            backdrop-blur-md"
+                >
+                  <h2 className="text-2xl font-bold text-white">
+                    Payment Proof
+                  </h2>
+                  <button
+                    onClick={() => {
+                      setShowPaymentProofModal(false);
+                    }}
+                    className="text-white hover:bg-white hover:bg-opacity-20 rounded-lg p-2 transition"
+                  >
+                    <X className="w-6 h-6" />
+                  </button>
+                </div>
+                <div className="overflow-y-scroll h-[500px]">
+                  {paymentProofUrl.toLowerCase().endsWith(".pdf") ? (
+                    <iframe
+                      src={`${import.meta.env.VITE_API_URL}/uploads/${paymentProofUrl}`}
+                      title="Challan PDF"
+                      className="w-full h-full border rounded-lg"
+                    />
+                  ) : (
+                    <img
+                      src={`${import.meta.env.VITE_API_URL}/uploads/${paymentProofUrl}`}
+                      alt=""
+                      className="w-full h-full"
+                    />
+                  )}
+                </div>
+                <div className="flex justify-end gap-3 p-3 border-t">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setShowPaymentProofModal(false);
+                    }}
+                    className="px-6 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition font-medium"
+                  >
+                    Cancel
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
         </div>
       )}
 
@@ -2435,7 +2550,7 @@ export default function PaymentsEnhanced() {
                     </div>
                   </th>
                 </tr>
-                
+
                 {/* Search Row */}
                 <tr className="bg-gray-50 border-b border-gray-200">
                   <td className="px-2 md:px-4 py-1">
@@ -2452,7 +2567,7 @@ export default function PaymentsEnhanced() {
                       />
                     </div>
                   </td>
-                  
+
                   <td className="px-2 md:px-4 py-1">
                     <div className="relative">
                       <div className="absolute left-2 top-1/2 -translate-y-1/2">
@@ -2467,7 +2582,7 @@ export default function PaymentsEnhanced() {
                       />
                     </div>
                   </td>
-                  
+
                   <td className="px-2 md:px-4 py-1">
                     <div className="relative">
                       <div className="absolute left-2 top-1/2 -translate-y-1/2">
@@ -2482,7 +2597,7 @@ export default function PaymentsEnhanced() {
                       />
                     </div>
                   </td>
-                  
+
                   <td className="px-2 md:px-4 py-1">
                     <div className="relative">
                       <div className="absolute left-2 top-1/2 -translate-y-1/2">
@@ -2496,7 +2611,7 @@ export default function PaymentsEnhanced() {
                       />
                     </div>
                   </td>
-                  
+
                   <td className="px-2 md:px-4 py-1">
                     <select
                       value={statusFilter}
@@ -2508,10 +2623,12 @@ export default function PaymentsEnhanced() {
                       <option value="seen">Seen</option>
                     </select>
                   </td>
-                  
+
                   <td className="px-2 md:px-4 py-1">
                     <div className="flex gap-1">
-                      {paymentReminders.find((d: any) => d.status === "unseen") && (
+                      {paymentReminders.find(
+                        (d: any) => d.status === "unseen",
+                      ) && (
                         <button
                           onClick={markAllReminderSeen}
                           className="inline-flex items-center px-2 py-1 border border-gray-300 rounded hover:bg-gray-50 transition text-[10px] md:text-xs font-medium text-gray-700"
@@ -2544,11 +2661,14 @@ export default function PaymentsEnhanced() {
                     </td>
                     <td className="px-2 md:px-4 py-2">
                       <div className="text-gray-800 text-xs md:text-sm">
-                        {new Date(reminder.due_date).toLocaleDateString() || "--"}
+                        {new Date(reminder.due_date).toLocaleDateString() ||
+                          "--"}
                       </div>
                     </td>
                     <td className="px-2 md:px-4 py-2">
-                      <span className={`px-2 py-1 rounded-full text-[10px] md:text-xs font-medium ${getStatusColor(reminder.status)}`}>
+                      <span
+                        className={`px-2 py-1 rounded-full text-[10px] md:text-xs font-medium ${getStatusColor(reminder.status)}`}
+                      >
                         {(reminder.status || "pending").toUpperCase()}
                       </span>
                     </td>
@@ -2569,12 +2689,14 @@ export default function PaymentsEnhanced() {
                     </td>
                   </tr>
                 ))}
-                
+
                 {filteredReminders.length === 0 && (
                   <tr>
                     <td colSpan={6} className="px-4 py-8 text-center">
                       <Bell className="w-12 h-12 md:w-16 md:h-16 text-gray-300 mx-auto mb-3" />
-                      <p className="text-gray-600 text-sm md:text-lg font-medium">No payment reminders found</p>
+                      <p className="text-gray-600 text-sm md:text-lg font-medium">
+                        No payment reminders found
+                      </p>
                       <p className="text-gray-500 text-xs md:text-sm mt-1">
                         {searchPONumber || searchVendor || searchAmount
                           ? "Try adjusting your search"
@@ -2592,7 +2714,10 @@ export default function PaymentsEnhanced() {
       {/* Advanced Filters Sidebar */}
       {showFilters && (
         <div className="fixed inset-0 z-50 overflow-hidden">
-          <div className="absolute inset-0 bg-black bg-opacity-50" onClick={() => setShowFilters(false)}></div>
+          <div
+            className="absolute inset-0 bg-black bg-opacity-50"
+            onClick={() => setShowFilters(false)}
+          ></div>
           <div className="absolute inset-y-0 right-0 max-w-md w-full bg-white shadow-2xl flex flex-col">
             <div className="bg-red-600 px-6 py-4 flex justify-between items-center">
               <h2 className="text-xl font-bold text-white">Advanced Filters</h2>
@@ -2603,7 +2728,7 @@ export default function PaymentsEnhanced() {
                 <X className="w-5 h-5" />
               </button>
             </div>
-            
+
             <div className="flex-1 overflow-y-auto p-6 space-y-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -2611,7 +2736,10 @@ export default function PaymentsEnhanced() {
                 </label>
                 <div className="space-y-2">
                   {STATUS_FILTERS.map((filter) => (
-                    <label key={filter.value} className="flex items-center gap-2 cursor-pointer">
+                    <label
+                      key={filter.value}
+                      className="flex items-center gap-2 cursor-pointer"
+                    >
                       <input
                         type="radio"
                         name="status"
@@ -2620,19 +2748,24 @@ export default function PaymentsEnhanced() {
                         onChange={(e) => setStatusFilter(e.target.value)}
                         className="w-4 h-4 text-blue-600"
                       />
-                      <span className="text-sm text-gray-700">{filter.name}</span>
+                      <span className="text-sm text-gray-700">
+                        {filter.name}
+                      </span>
                     </label>
                   ))}
                 </div>
               </div>
-              
+
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
                   Payment Method
                 </label>
                 <div className="space-y-2">
                   {PAYMENT_METHODS.map((method) => (
-                    <label key={method.value} className="flex items-center gap-2 cursor-pointer">
+                    <label
+                      key={method.value}
+                      className="flex items-center gap-2 cursor-pointer"
+                    >
                       <input
                         type="radio"
                         name="method"
@@ -2641,13 +2774,15 @@ export default function PaymentsEnhanced() {
                         onChange={(e) => setPaymentMethodFilter(e.target.value)}
                         className="w-4 h-4 text-blue-600"
                       />
-                      <span className="text-sm text-gray-700">{method.name}</span>
+                      <span className="text-sm text-gray-700">
+                        {method.name}
+                      </span>
                     </label>
                   ))}
                 </div>
               </div>
             </div>
-            
+
             <div className="border-t p-4 flex gap-3">
               <button
                 onClick={resetFilters}
@@ -2677,7 +2812,9 @@ export default function PaymentsEnhanced() {
                   <IndianRupee className="w-4 h-4 text-white" />
                 </div>
                 <div>
-                  <h2 className="text-base font-bold text-white">Record Payment</h2>
+                  <h2 className="text-base font-bold text-white">
+                    Record Payment
+                  </h2>
                   <p className="text-xs text-white/90 font-medium mt-0.5">
                     PO: {selectedPO.po_number}
                   </p>
@@ -2706,33 +2843,50 @@ export default function PaymentsEnhanced() {
               </button>
             </div>
 
-            <form onSubmit={handleMakePayment} className="p-4 max-h-[calc(90vh-80px)] overflow-y-auto">
+            <form
+              onSubmit={handleMakePayment}
+              className="p-4 max-h-[calc(90vh-80px)] overflow-y-auto"
+            >
               <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mb-4">
                 <div className="space-y-1">
-                  <p className="text-xs font-semibold text-gray-800">PO Number</p>
+                  <p className="text-xs font-semibold text-gray-800">
+                    PO Number
+                  </p>
                   <div className="p-2 bg-gray-50 border border-gray-200 rounded-lg">
-                    <p className="font-bold text-gray-800">{selectedPO.po_number}</p>
+                    <p className="font-bold text-gray-800">
+                      {selectedPO.po_number}
+                    </p>
                   </div>
                 </div>
 
                 <div className="space-y-1">
                   <p className="text-xs font-semibold text-gray-800">Vendor</p>
                   <div className="p-2 bg-gray-50 border border-gray-200 rounded-lg">
-                    <p className="font-medium text-gray-800">{selectedPO.vendors?.name}</p>
+                    <p className="font-medium text-gray-800">
+                      {selectedPO.vendors?.name}
+                    </p>
                   </div>
                 </div>
 
                 <div className="space-y-1">
-                  <p className="text-xs font-semibold text-gray-800">Total Amount</p>
+                  <p className="text-xs font-semibold text-gray-800">
+                    Total Amount
+                  </p>
                   <div className="p-2 bg-orange-50 border border-orange-200 rounded-lg">
-                    <p className="text-base font-bold text-orange-600">{formatCurrency(selectedPO.grand_total || 0)}</p>
+                    <p className="text-base font-bold text-orange-600">
+                      {formatCurrency(selectedPO.grand_total || 0)}
+                    </p>
                   </div>
                 </div>
 
                 <div className="space-y-1">
-                  <p className="text-xs font-semibold text-gray-800">Balance Amount</p>
+                  <p className="text-xs font-semibold text-gray-800">
+                    Balance Amount
+                  </p>
                   <div className="p-2 bg-red-50 border border-red-200 rounded-lg">
-                    <p className="text-base font-bold text-red-600">{formatCurrency(selectedPO.balance_amount || 0)}</p>
+                    <p className="text-base font-bold text-red-600">
+                      {formatCurrency(selectedPO.balance_amount || 0)}
+                    </p>
                   </div>
                 </div>
               </div>
@@ -2767,74 +2921,104 @@ export default function PaymentsEnhanced() {
                     <input
                       type="date"
                       value={paymentData.payment_date || ""}
-                      onChange={(e) =>
+                      onChange={(e) => {
                         setPaymentData({
                           ...paymentData,
                           payment_date: e.target.value,
-                        })
-                      }
+                        });
+                      }}
                       className="w-full px-3 py-2 text-sm border-2 border-gray-200 rounded-xl focus:border-[#C62828] focus:ring-2 focus:ring-[#C62828]/20 outline-none"
                       required
                     />
+                  </div>
+                  <div className="space-y-1">
+                    <label className="block text-xs font-semibold text-gray-800">
+                      Payment Amount <span className="text-red-500">*</span>
+                    </label>
+                    <input
+                      type="number"
+                      value={paymentData.amount_paid || ""}
+                      onChange={(e) => {
+                        if (
+                          Number(e.target.value) >
+                          Number(selectedPO.balance_amount)
+                        ) {
+                          toast.warning(
+                            "You can not enter amount greater than balance amount",
+                          );
+                          return;
+                        }
+                        setPaymentData({
+                          ...paymentData,
+                          amount_paid: Number(e.target.value) || "",
+                        });
+                      }}
+                      className="w-full px-3 py-2 text-sm border-2 border-gray-200 rounded-xl focus:border-[#C62828] focus:ring-2 focus:ring-[#C62828]/20 outline-none"
+                      min="0.01"
+                      max={selectedPO.balance_amount}
+                      step="0.01"
+                      required
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <label className="block text-xs font-semibold text-gray-800">
+                      Reference Number <span className="text-red-500">*</span>
+                    </label>
+                    <input
+                      type="text"
+                      value={paymentData.payment_reference_no || ""}
+                      onChange={(e) =>
+                        setPaymentData({
+                          ...paymentData,
+                          payment_reference_no: e.target.value,
+                        })
+                      }
+                      className="w-full px-3 py-2 text-sm border-2 border-gray-200 rounded-xl focus:border-[#C62828] focus:ring-2 focus:ring-[#C62828]/20 outline-none"
+                      placeholder="Transaction reference"
+                      required
+                    />
+                  </div>
+
+                  <div className="space-y-1">
+                    <label className="block text-xs font-semibold text-gray-800">
+                      Upload Payment Proof{" "}
+                      <span className="text-red-500">*</span>
+                    </label>
+                    <input
+                      type="file"
+                      required
+                      id="payment_proof"
+                      onChange={handleFileUpload}
+                      className="w-full px-3 py-2 text-sm border-2 border-gray-200 rounded-xl focus:border-[#C62828] focus:ring-2 focus:ring-[#C62828]/20 outline-none file:border-none file:bg-gradient-to-r file:from-[#C62828] file:to-red-600 file:text-white file:font-medium file:px-3 file:py-1.5 file:rounded-lg file:cursor-pointer"
+                      accept=".pdf,.jpg,.jpeg,.png"
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <label className="block text-xs font-semibold text-gray-800">
+                      Payment Status <span className="text-red-500">*</span>
+                    </label>
+                    <select
+                      value={paymentData.status || "pending"}
+                      onChange={(e) =>
+                        setPaymentData({
+                          ...paymentData,
+                          status: e.target.value,
+                        })
+                      }
+                      className="w-full px-3 py-2 text-sm border-2 border-gray-200 rounded-xl focus:border-[#C62828] focus:ring-2 focus:ring-[#C62828]/20 outline-none"
+                    >
+                      <option value="PENDING">Pending</option>
+                      <option value="SUCCESS">Success</option>
+                      <option value="FAILED">Failed</option>
+                      <option value="CANCELLED">Cancelled</option>
+                    </select>
                   </div>
                 </div>
 
                 <div className="space-y-1">
                   <label className="block text-xs font-semibold text-gray-800">
-                    Payment Amount <span className="text-red-500">*</span>
+                    Remarks
                   </label>
-                  <input
-                    type="number"
-                    value={paymentData.amount_paid || ""}
-                    onChange={(e) =>
-                      setPaymentData({
-                        ...paymentData,
-                        amount_paid: Number(e.target.value) || "",
-                      })
-                    }
-                    className="w-full px-3 py-2 text-sm border-2 border-gray-200 rounded-xl focus:border-[#C62828] focus:ring-2 focus:ring-[#C62828]/20 outline-none"
-                    min="0.01"
-                    max={selectedPO.balance_amount}
-                    step="0.01"
-                    required
-                  />
-                </div>
-
-                <div className="space-y-1">
-                  <label className="block text-xs font-semibold text-gray-800">
-                    Reference Number <span className="text-red-500">*</span>
-                  </label>
-                  <input
-                    type="text"
-                    value={paymentData.payment_reference_no || ""}
-                    onChange={(e) =>
-                      setPaymentData({
-                        ...paymentData,
-                        payment_reference_no: e.target.value,
-                      })
-                    }
-                    className="w-full px-3 py-2 text-sm border-2 border-gray-200 rounded-xl focus:border-[#C62828] focus:ring-2 focus:ring-[#C62828]/20 outline-none"
-                    placeholder="Transaction reference"
-                    required
-                  />
-                </div>
-
-                <div className="space-y-1">
-                  <label className="block text-xs font-semibold text-gray-800">
-                    Upload Payment Proof <span className="text-red-500">*</span>
-                  </label>
-                  <input
-                    type="file"
-                    required
-                    id="payment_proof"
-                    onChange={handleFileUpload}
-                    className="w-full px-3 py-2 text-sm border-2 border-gray-200 rounded-xl focus:border-[#C62828] focus:ring-2 focus:ring-[#C62828]/20 outline-none file:border-none file:bg-gradient-to-r file:from-[#C62828] file:to-red-600 file:text-white file:font-medium file:px-3 file:py-1.5 file:rounded-lg file:cursor-pointer"
-                    accept=".pdf,.jpg,.jpeg,.png"
-                  />
-                </div>
-
-                <div className="space-y-1">
-                  <label className="block text-xs font-semibold text-gray-800">Remarks</label>
                   <textarea
                     value={paymentData.remarks || ""}
                     onChange={(e) =>
