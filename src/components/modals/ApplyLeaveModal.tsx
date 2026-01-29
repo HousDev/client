@@ -917,7 +917,6 @@
 //     </div>
 //   );
 // }
-
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import React, { useState, useRef, useEffect } from 'react';
 import { 
@@ -1845,4 +1844,4 @@ export default function ApplyLeaveForm({ isOpen, onClose, onSuccess, employees }
       </div>
     </div>
   );
-}
+} 

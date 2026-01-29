@@ -1,7 +1,6 @@
 import Modal from "../ui/Modal";
 import Badge from "../ui/Badge";
-import { User, Mail, Phone, Briefcase, Building, MapPin, Calendar, Users } from "lucide-react";
-
+import { User, Mail, Phone, Briefcase, Building, MapPin, Calendar, Users, IndianRupee } from "lucide-react";
 interface ViewEmployeeModalProps {
   isOpen: boolean;
   onClose: () => void;
@@ -21,6 +20,15 @@ interface ViewEmployeeModalProps {
     attendance_location?: string;
     joining_date: string;
     employee_status: string;
+    salary?: string;
+    salary_type?: string;
+    
+    // ADD THESE ADDITIONAL DETAILS (optional):
+    blood_group?: string;
+    date_of_birth?: string;
+    marital_status?: string;
+    emergency_contact?: string;
+    nationality?: string;
   };
 }
 
@@ -126,6 +134,21 @@ export default function ViewEmployeeModal({
                 <p className="text-xs text-slate-500">Date of Joining</p>
                 <p className="text-sm font-medium text-slate-900">{formatDate(employee.joining_date)}</p>
               </div>
+                <div className="flex items-center gap-3 p-3 bg-slate-50 rounded-lg">
+      <IndianRupee className="h-4 w-4 text-slate-500" /> {/* or IndianRupee */}
+      <div>
+        <p className="text-xs text-slate-500">Salary</p>
+        <p className="text-sm font-medium text-slate-900">
+          {employee.salary ? (
+            <>
+              ₹{employee.salary} <span className="text-xs text-slate-500">({employee.salary_type || 'monthly'})</span>
+            </>
+          ) : (
+            "N/A"
+          )}
+        </p>
+      </div>
+    </div>
             </div>
           </div>
         </div>

@@ -315,29 +315,7 @@ export default function Tickets() {
 
             {/* Tickets Table with Column Search */}
             <Card className="overflow-hidden">
-                <div className="p-4 border-b border-gray-200 bg-gradient-to-r from-gray-50 to-gray-100">
-                    <h2 className="text-lg font-semibold text-gray-800 mb-2">All Tickets ({stats.total})</h2>
-                    <div className="flex items-center justify-between gap-2">
-                        <div className="flex-1 relative max-w-md">
-                            <input
-                                type="text"
-                                placeholder="Search all tickets..."
-                                value={searchTerm}
-                                onChange={(e) => setSearchTerm(e.target.value)}
-                                className="w-full pl-10 pr-4 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#4a5568] focus:border-transparent"
-                            />
-                            <div className="absolute left-3 top-1/2 -translate-y-1/2">
-                                <Filter className="h-4 w-4 text-gray-400" />
-                            </div>
-                        </div>
-                        <button
-                            onClick={resetFilters}
-                            className="px-3 py-2 text-sm border border-gray-300 rounded-lg hover:bg-gray-50 transition"
-                        >
-                            Reset Filters
-                        </button>
-                    </div>
-                </div>
+                
 
                 <div className="overflow-x-auto">
                     <table className="w-full min-w-[1000px]">

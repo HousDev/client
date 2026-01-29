@@ -77,8 +77,14 @@ export default function ViewTicketModal({ isOpen, onClose, ticket }: ViewTicketM
     return (
         <>
             {/* Main Modal */}
-            <div className="fixed inset-0 bg-black/60 backdrop-blur-md flex items-center justify-center z-50 p-4 animate-fadeIn">
-                <div className="bg-gradient-to-br from-gray-50 to-white rounded-2xl shadow-2xl shadow-gray-900/20 w-full max-w-4xl my-4 border border-gray-200 overflow-hidden max-h-[90vh] flex flex-col">
+<div className="fixed inset-0 z-50 flex items-center justify-center p-4 animate-fadeIn">
+  {/* Backdrop */}
+  <div 
+    className="fixed inset-0 bg-black/60 backdrop-blur-md"
+    onClick={onClose}
+  />
+  
+  <div className="bg-gradient-to-br from-gray-50 to-white rounded-2xl shadow-2xl shadow-gray-900/20 w-full max-w-4xl my-4 border border-gray-200 overflow-hidden max-h-[90vh] flex flex-col relative z-10">
                     {/* Header */}
                     <div className="bg-gradient-to-r from-[#4a5568] via-[#2d3748] to-[#1a202c] px-6 py-4 flex justify-between items-center border-b border-gray-700/30">
                         <div className="flex items-center gap-3">
@@ -315,9 +321,18 @@ export default function ViewTicketModal({ isOpen, onClose, ticket }: ViewTicketM
             </div>
 
             {/* Image Preview Modal */}
-            {showImageModal && selectedImage && (
-                <div className="fixed inset-0 bg-black/90 backdrop-blur-md flex items-center justify-center z-[60] p-4">
-                    <div className="relative w-full max-w-4xl max-h-[90vh]">
+           {showImageModal && selectedImage && (
+  <div className="fixed inset-0 z-[60] flex items-center justify-center p-4">
+    {/* Backdrop for image preview */}
+    <div 
+      className="fixed inset-0 bg-black/90 backdrop-blur-md"
+      onClick={() => {
+        setShowImageModal(false);
+        setSelectedImage(null);
+      }}
+    />
+    
+    <div className="relative w-full max-w-4xl max-h-[90vh] relative z-10">
                         <div className="absolute top-4 right-4 z-10">
                             <button
                                 onClick={() => {
