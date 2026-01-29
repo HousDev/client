@@ -1975,7 +1975,6 @@ export default function AddEmployeeModal({
     gender: "male",
     allotted_project: [] as number[],
     company_id: "",
-    office_location_id: "",
     attendence_location: "",
     
     // Personal Details
@@ -2011,6 +2010,8 @@ export default function AddEmployeeModal({
     date_of_leaving: "",
     job_title: "",
     notice_period: "30",
+      salary: "", // Simple salary field
+
     
     // System Details
     laptop_assigned: "no",
@@ -2073,17 +2074,17 @@ export default function AddEmployeeModal({
   };
 
   const loadOfficeLocations = async (companyId: string) => {
-    try {
-      const data = await companyApi.getCompanyLocations(companyId);
-      console.log("Office locations loaded:", data);
-      // Filter only active locations
-      const activeLocations = data.filter((location: OfficeLocation) => location.is_active);
-      setOfficeLocations(activeLocations);
-    } catch (err) {
-      console.log(err);
-      toast.error("Failed to load office locations");
-    }
-  };
+  try {
+    const data = await companyApi.getCompanyLocations(companyId);
+    console.log("Office locations (branches) loaded:", data);
+    // Filter only active locations (branches)
+    const activeLocations = data.filter((location: OfficeLocation) => location.is_active);
+    setOfficeLocations(activeLocations);
+  } catch (err) {
+    console.log(err);
+    toast.error("Failed to load branches");
+  }
+};
 
   useEffect(() => {
     if (isOpen) {
@@ -2095,15 +2096,15 @@ export default function AddEmployeeModal({
     }
   }, [isOpen]);
 
-  useEffect(() => {
-    if (formData.company_id) {
-      loadOfficeLocations(formData.company_id);
-      // Reset office location when company changes
-      setFormData(prev => ({ ...prev, office_location_id: "" }));
-    } else {
-      setOfficeLocations([]);
-    }
-  }, [formData.company_id]);
+ useEffect(() => {
+  if (formData.company_id) {
+    loadOfficeLocations(formData.company_id);
+    // Reset attendance location when company changes
+    setFormData(prev => ({ ...prev, attendence_location: "" }));
+  } else {
+    setOfficeLocations([]);
+  }
+}, [formData.company_id]);
 
   // Close dropdown when clicking outside
   useEffect(() => {
@@ -2221,7 +2222,6 @@ export default function AddEmployeeModal({
         gender: "male",
         allotted_project: [] as number[],
         company_id: "",
-        office_location_id: "",
         attendence_location: "",
         blood_group: "",
         date_of_birth: "",
@@ -2247,6 +2247,7 @@ export default function AddEmployeeModal({
         date_of_leaving: "",
         job_title: "",
         notice_period: "30",
+        salary:"",
         laptop_assigned: "no",
         system_login_id: "",
         system_password: "",
@@ -2616,31 +2617,33 @@ export default function AddEmployeeModal({
                   </div>
 
                   {/* Office Location */}
-                  <div className="space-y-1">
-                    <label className="block text-xs font-semibold text-gray-700">
-                      Attendance Location <span className="text-red-500">*</span>
-                    </label>
-                    <select
-                      value={formData.office_location_id}
-                      onChange={(e) => setFormData({ ...formData, office_location_id: e.target.value })}
-                      className="w-full px-2 py-1.5 text-xs border border-gray-300 rounded focus:border-[#C62828] focus:ring-1 focus:ring-[#C62828] outline-none bg-white"
-                      required
-                      disabled={!formData.company_id}
-                    >
-                      <option value="">Select office location</option>
-                      {officeLocations.length > 0 ? (
-                        officeLocations.map((location) => (
-                          <option key={location.id} value={location.id}>
-                            {location.name} - {location.city}
-                          </option>
-                        ))
-                      ) : (
-                        <option value="" disabled>
-                          {formData.company_id ? "Loading locations..." : "Select company first"}
-                        </option>
-                      )}
-                    </select>
-                  </div>
+                {/* Attendance Location Dropdown */}
+<div className="space-y-1">
+  <label className="block text-xs font-semibold text-gray-700">
+    Attendance Location (Branch) <span className="text-red-500">*</span>
+  </label>
+  <select
+    value={formData.attendence_location}
+    onChange={(e) => setFormData({ ...formData, attendence_location: e.target.value })}
+    className="w-full px-2 py-1.5 text-xs border border-gray-300 rounded focus:border-[#C62828] focus:ring-1 focus:ring-[#C62828] outline-none bg-white"
+    required
+    disabled={!formData.company_id}
+  >
+    <option value="">Select branch</option>
+    {officeLocations.length > 0 ? (
+      officeLocations.map((location) => (
+        <option key={location.id} value={location.id}>
+          {location.name} - {location.city}
+        </option>
+      ))
+    ) : (
+      <option value="" disabled>
+        {formData.company_id ? "Loading branches..." : "Select company first"}
+      </option>
+    )}
+  </select>
+  
+</div>
 
                   {/* Designation */}
                   <div className="space-y-1">
@@ -3269,6 +3272,36 @@ export default function AddEmployeeModal({
                         <option value="90">90 days</option>
                       </select>
                     </div>
+
+                     <div className="space-y-1">
+        <label className="block text-xs font-semibold text-gray-700">
+          Salary (₹)
+        </label>
+        <input
+          type="number"
+          value={formData.salary}
+          onChange={(e) => setFormData({ ...formData, salary: e.target.value })}
+          className="w-full px-2 py-1.5 text-xs border border-gray-300 rounded focus:border-[#C62828] focus:ring-1 focus:ring-[#C62828] outline-none"
+          placeholder="Enter salary"
+          min="0"
+          step="0.01"
+        />
+      </div>
+                     <div className="space-y-1">
+        <label className="block text-xs font-semibold text-gray-700">
+          Salary Type
+        </label>
+        <select
+          value={formData.salary_type || "monthly"} // Add salary_type to formData
+          onChange={(e) => setFormData({ ...formData, salary_type: e.target.value })}
+          className="w-full px-2 py-1.5 text-xs border border-gray-300 rounded focus:border-[#C62828] focus:ring-1 focus:ring-[#C62828] outline-none bg-white"
+        >
+          <option value="monthly">Monthly</option>
+          <option value="yearly">Yearly</option>
+        </select>
+      </div>
+
+                    
                   </div>
                 </div>
               )}

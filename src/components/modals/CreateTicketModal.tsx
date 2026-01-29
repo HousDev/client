@@ -208,8 +208,14 @@ export default function CreateTicketModal({ isOpen, onClose, onSuccess, categori
     if (!isOpen) return null;
 
     return (
-        <div className="fixed inset-0 bg-black/60 backdrop-blur-md flex items-center justify-center z-50 p-4 animate-fadeIn">
-            <div className="bg-gradient-to-br from-gray-50 to-white rounded-2xl shadow-2xl shadow-gray-900/20 w-full max-w-2xl my-4 border border-gray-200 overflow-hidden max-h-[90vh] flex flex-col">
+ <div className="fixed inset-0 z-50 flex items-center justify-center p-4 animate-fadeIn">
+    {/* Backdrop - only opacity with blur */}
+    <div 
+      className="fixed inset-0 bg-black/60 backdrop-blur-md"
+      onClick={onClose}
+    />
+    
+    <div className="bg-gradient-to-br from-gray-50 to-white rounded-2xl shadow-2xl shadow-gray-900/20 w-full max-w-2xl my-4 border border-gray-200 overflow-hidden max-h-[90vh] flex flex-col relative z-10">
                 {/* Header */}
                 <div className="bg-gradient-to-r from-[#4a5568] via-[#2d3748] to-[#1a202c] px-6 py-4 flex justify-between items-center border-b border-gray-700/30 relative overflow-hidden">
                     <div className="flex items-center gap-3">

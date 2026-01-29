@@ -53,6 +53,8 @@ export default function AddMoreDetailsModal({
     work_mode: "office",
     job_title: "",
     notice_period: "30",
+    salary: "", // Add this
+  salary_type: "monthly", // Add this
     
     // System Details
     laptop_assigned: "no",
@@ -109,6 +111,8 @@ export default function AddMoreDetailsModal({
         work_mode: data.work_mode || "office",
         job_title: data.job_title || "",
         notice_period: data.notice_period || "30",
+        salary: data.salary || "", // Add this
+      salary_type: data.salary_type || "monthly", // Add this
         laptop_assigned: data.laptop_assigned || "no",
         system_login_id: data.system_login_id || "",
         system_password: data.system_password || "",
@@ -670,6 +674,34 @@ return (
                       <option value="90">90 days</option>
                     </select>
                   </div>
+
+                  <div className="space-y-1">
+      <label className="block text-xs font-semibold text-gray-700">
+        Salary (₹)
+      </label>
+      <input
+        type="number"
+        value={formData.salary}
+        onChange={(e) => setFormData({ ...formData, salary: e.target.value })}
+        className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:border-[#C62828] focus:ring-1 focus:ring-[#C62828] outline-none"
+        placeholder="Enter salary"
+        min="0"
+        step="0.01"
+      />
+    </div>
+     <div className="space-y-1">
+      <label className="block text-xs font-semibold text-gray-700">
+        Salary Type
+      </label>
+      <select
+        value={formData.salary_type}
+        onChange={(e) => setFormData({ ...formData, salary_type: e.target.value })}
+        className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:border-[#C62828] focus:ring-1 focus:ring-[#C62828] outline-none bg-white"
+      >
+        <option value="monthly">Monthly</option>
+        <option value="yearly">Yearly</option>
+      </select>
+    </div>
                 </div>
               </div>
 

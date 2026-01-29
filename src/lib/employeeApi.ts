@@ -268,6 +268,8 @@ export type HrmsEmployee = {
   date_of_leaving?: string;
   job_title?: string;
   notice_period?: string;
+  alary?: string; // or number if you prefer
+  salary_type?: string; // "monthly" or "yearly"
   
   // System Details
   laptop_assigned?: string;
