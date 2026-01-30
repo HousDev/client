@@ -390,7 +390,7 @@ const Dashboard: React.FC = () => {
     },
     {
       label: "Total Budgets",
-      value: `₹${(stats.totalBudgets / 1000000).toFixed(1)}M`,
+      value: `₹${(stats.totalBudgets / 1000000).toFixed(1)}Cr`,
       icon: TrendingUp,
       color: "text-[#d32f2f]",
       bg: "bg-red-50",
@@ -822,53 +822,6 @@ const Dashboard: React.FC = () => {
         </div>
       </div>
 
-      {/* 6. Footer Layout Responsive */}
-      <div className="bg-[#1a1a1a] p-6 md:p-10 rounded-2xl md:rounded-3xl text-white shadow-2xl relative overflow-hidden">
-        <div className="absolute top-0 right-0 w-1/2 h-full bg-[#d32f2f]/5 blur-[120px] rounded-full -translate-y-1/2 translate-x-1/4"></div>
-        <div className="relative z-10 flex flex-col md:flex-row items-center gap-6 md:gap-8 justify-between text-center md:text-left">
-          <div className="max-w-xl">
-            <div className="flex items-center justify-center md:justify-start gap-3 mb-4">
-              <div className="w-8 h-8 border-2 border-[#d32f2f] flex items-center justify-center">
-                <span className="text-[#d32f2f] font-black tracking-widest text-base">
-                  N
-                </span>
-              </div>
-              <h2 className="text-xl md:text-2xl font-black italic tracking-tighter uppercase">
-                Nayash Center
-              </h2>
-            </div>
-            <p className="text-gray-400 text-xs md:text-sm leading-relaxed mb-6">
-              Empowering enterprise visibility. Our unified ERP ensures no
-              project details are missed in the process.
-            </p>
-            <div className="flex flex-wrap justify-center md:justify-start gap-4 md:gap-6">
-              <div className="flex items-center gap-2">
-                <CheckCircle2 className="w-3 h-3 md:w-4 md:h-4 text-[#d32f2f]" />
-                <span className="text-[8px] md:text-[10px] font-bold uppercase tracking-widest text-gray-500">
-                  Secure
-                </span>
-              </div>
-              <div className="flex items-center gap-2">
-                <Clock className="w-3 h-3 md:w-4 md:h-4 text-[#d32f2f]" />
-                <span className="text-[8px] md:text-[10px] font-bold uppercase tracking-widest text-gray-500">
-                  Live Sync
-                </span>
-              </div>
-            </div>
-          </div>
-          <div className="flex flex-col items-center">
-            <div className="text-[32px] md:text-[40px] font-black text-[#d32f2f] mb-0 tracking-tighter leading-none">
-              98%
-            </div>
-            <div className="text-[9px] md:text-[10px] font-bold uppercase tracking-[0.2em] text-gray-500 mt-1">
-              Compliance
-            </div>
-            <button className="mt-4 flex items-center gap-2 px-5 md:px-6 py-2 bg-[#d32f2f] text-white rounded-full text-[10px] md:text-xs font-bold hover:bg-[#b71c1c] transition-all">
-              Reports <ArrowRight className="w-3 h-3" />
-            </button>
-          </div>
-        </div>
-      </div>
     </div>
   );
 };
