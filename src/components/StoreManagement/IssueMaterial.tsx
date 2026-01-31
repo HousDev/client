@@ -781,7 +781,6 @@ export default function IssueMaterial({
                     value={formData.receiverName}
                     onChange={(e) => {
                       if (!/^[A-Za-z\s]*$/.test(e.target.value)) {
-                        toast.warning("Only alphabet allowed.");
                         return;
                       }
                       handleInputChange("receiverName", e.target.value);

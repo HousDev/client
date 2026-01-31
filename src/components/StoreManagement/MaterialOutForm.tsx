@@ -1137,9 +1137,7 @@ export default function MaterialOutForm({
                     value={formData.receiver_name}
                     onChange={(e) => {
                       if (!/^[A-Za-z\s]*$/.test(e.target.value)) {
-                        toast.warning("Only alphabet allowed.", {
-                          description: "Please use letters only",
-                        });
+
                         return;
                       }
                       handleInputChange("receiver_name", e.target.value);
@@ -1166,9 +1164,7 @@ export default function MaterialOutForm({
                     value={formData.receiver_phone}
                     onChange={(e) => {
                       if (!/^\d*$/.test(e.target.value)) {
-                        toast.warning("Enter Valid Phone Number.", {
-                          description: "Please use numbers only",
-                        });
+
                         return;
                       }
                       if (Number(e.target.value.length) <= 10) {

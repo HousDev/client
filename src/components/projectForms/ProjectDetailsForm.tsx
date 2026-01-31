@@ -100,7 +100,7 @@ export default function ProjectDetailsForm({
         toast.warning("Please fill valid details.");
       }
     } catch (error: any) {
-      toast.success(error.message);
+      toast.error(error.message);
     }
   };
 

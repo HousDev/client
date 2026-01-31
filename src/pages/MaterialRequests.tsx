@@ -1268,6 +1268,7 @@ const [searchItems, setSearchItems] = useState("");
     setLoading(true);
     try {
       const response: any = await RequestMaterialApi.getAll();
+      console.log(response)
       setRequests(response);
       loadAllInventory();
     } catch (error) {

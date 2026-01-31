@@ -818,12 +818,16 @@ export default function MaterialInForm({
         toast.error("At least one item is required.");
         return;
       }
-
+      let statusOfQuantity = true;
       for (const item of formData.items) {
-        if (item.quantity_received < 0) {
-          toast.error("Received quantity must be greater than 0.");
-          return;
+        if (item.quantity_received > 0) {
+          statusOfQuantity = false
         }
+      }
+      if (statusOfQuantity) {
+        toast.error("All items have recieved quantity zero.");
+        setLoading(false);
+        return
       }
 
       const formDataObj = new FormData();
@@ -948,6 +952,9 @@ export default function MaterialInForm({
                       handleInputChange("po_id", purchaseOrdersData.id);
                       handleInputChange("vendor_id", vendorData.id);
                       handleInputChange("vendor", vendorData.name);
+                      console.log("this is all projects", allProjects)
+                      const project = allProjects.find((p: any) => p.id === Number(purchaseOrdersData.project_id))
+                      handleInputChange("deliveryLocation", project.name + " " + project.location);
 
                       const poItems = allPOItems.filter(
                         (poItem: any) => poItem.po_id === purchaseOrdersData.id
@@ -1059,7 +1066,6 @@ export default function MaterialInForm({
                     value={formData.receiverName}
                     onChange={(e) => {
                       if (!/^[A-Za-z\s]*$/.test(e.target.value)) {
-                        toast.warning("Only alphabet allowed.");
                         return;
                       }
                       handleInputChange("receiverName", e.target.value);
@@ -1112,21 +1118,13 @@ export default function MaterialInForm({
                   <div className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 group-focus-within:text-[#C62828] transition-colors">
                     <MapPin className="w-4 h-4" />
                   </div>
-                  <select
-                    value={`${formData.deliveryLocation}`}
-                    onChange={(e) =>
-                      handleInputChange("deliveryLocation", e.target.value)
-                    }
-                    className="w-full pl-10 pr-10 py-2.5 text-sm border-2 border-gray-200 rounded-xl focus:border-[#C62828] focus:ring-2 focus:ring-[#C62828]/20 bg-white outline-none transition-all duration-200 appearance-none hover:border-gray-300"
-                    required
-                  >
-                    <option value="" className="text-gray-400">Select delivery location</option>
-                    {allProjects.map((project: any) => (
-                      <option key={project.id} value={project.loaction} className="py-2">
-                        {project.name} - ({project.location})
-                      </option>
-                    ))}
-                  </select>
+                  <input
+                    type="text"
+                    value={formData.deliveryLocation}
+                    className="w-full pl-10 pr-4 py-2.5 text-sm border-2 border-gray-200 rounded-xl focus:border-[#C62828] focus:ring-2 focus:ring-[#C62828]/20 outline-none transition-all duration-200 hover:border-gray-300"
+                    placeholder="Enter receiver name"
+                    disabled
+                  />
                   <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none">
                     <ChevronDown className="w-4 h-4 text-gray-400" />
                   </div>
@@ -1273,7 +1271,7 @@ export default function MaterialInForm({
                                       : 'border-gray-200 hover:border-gray-300 focus:border-[#C62828]'
                                   }`}
                                   placeholder="Enter Qty"
-                                  required
+
                                 />
                               </div>
                             </td>

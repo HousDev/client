@@ -32,6 +32,9 @@ export const RequestMaterialApi = {
   // 2️⃣ Create a new request material
   create: async (payload: Partial<RequestMaterial>): Promise<RequestMaterial> =>
     unwrap(api.post("/requestMaterial", payload)),
+  
+  createPOMaterialRequest: async (payload: Partial<RequestMaterial>): Promise<RequestMaterial> =>
+    unwrap(api.post("/requestMaterial/po-request", payload)),
 
   // 3️⃣ Update status
   updateStatus: async (

@@ -905,7 +905,6 @@ export default function ViewRequestMaterial({
         approved_quantity: material.approved_quantity,
       }));
       console.log(items);
-
       const submissionData = {
         userId: user?.id,
         projectId: materialRequest.projectId,
@@ -917,10 +916,11 @@ export default function ViewRequestMaterial({
         start_date: materialRequest.start_date,
         remark: materialRequest.remark,
         materials: items,
+        previous_request_id: requestData.request_material_id
       };
       console.log(submissionData);
 
-      const response: any = await RequestMaterialApi.create(submissionData);
+      const response: any = await RequestMaterialApi.createPOMaterialRequest(submissionData);
 
       if (response.success) {
         loadMaterialRequests();
@@ -1443,7 +1443,7 @@ export default function ViewRequestMaterial({
               (i: any) =>
                 i.stock_status === "OUT OF STOCK" ||
                 i.stock_status === "LOW STOCK"
-            ) && (
+            ) && !requestData.previous_request_id && (
               <button
                 onClick={handleSubmit}
                 className="flex-1 bg-gradient-to-r from-[#b52124] to-[#d43538] text-white py-1.5 px-4 rounded-lg hover:from-[#d43538] hover:to-[#b52124] transition-all font-medium text-xs sm:text-sm shadow-sm active:scale-[0.98]"
