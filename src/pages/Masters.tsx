@@ -8,14 +8,19 @@ import {
   Wrench,
   Shield,
   Building,
+  Award,
+  MapPin,
 } from "lucide-react";
 import ItemsMaster from "./ItemsMaster";
 import TermsConditionsMaster from "./TermsConditionsMaster";
 import PaymentTermsMaster from "./PaymentTermsMaster";
-import ProjectsMaster from "./ProjectsMaster";
 import GenericMaster from "./GenericMaster";
 import DepartmentsMaster from "../components/DepartmentsMaster";
 import RolesMaster from "../components/RolesMaster";
+import DesignationMaster from "../components/DesignationMaster";
+import LocationMaster from "../components/LocationMaster"; // Import the new component
+
+
 
 export default function Masters() {
   const [activeTab, setActiveTab] = useState("items");
@@ -84,7 +89,22 @@ export default function Masters() {
       icon: Building,
       description: "Department management",
       component: DepartmentsMaster,
-    }
+    },
+    {
+    id: "designations",
+    label: "Designations",
+    icon: Award,
+    description: "Job titles by department",
+    component: DesignationMaster,
+  },
+  {
+      id: "locations", // Add this tab
+      label: "Locations",
+      icon: MapPin,
+      description: "Manage locations",
+      component: LocationMaster,
+    },
+
   ];
 
   const ActiveComponent = tabs.find((tab) => tab.id === activeTab)?.component;

@@ -371,8 +371,6 @@
 
 
 
-
-
 import React, { useState, useEffect, useRef } from 'react';
 import { 
   Calendar, Plus, Search, Filter, CheckCircle, XCircle, Clock, 
@@ -392,7 +390,8 @@ import { toast } from 'sonner';
 import { api } from '../lib/Api';
 import { useAuth } from '../contexts/AuthContext';
 import HrmsEmployeesApi, { HrmsEmployee } from '../lib/employeeApi';
-import { LeaveApi } from '../lib/leaveApi'; // Import LeaveApi
+import { LeaveApi } from '../lib/leaveApi';
+import Swal from 'sweetalert2';
 
 registerLocale('en-GB', enGB);
 
@@ -418,12 +417,12 @@ interface LeaveRequest {
   rejection_reason: string | null;
   attachment_path: string | null;
   attachment_name: string | null;
-  is_half_day?: boolean; // Add this
-  half_day_period?: 'morning' | 'afternoon'; // Add this
+  is_half_day?: boolean;
+  half_day_period?: 'morning' | 'afternoon';
 }
 
 interface EnhancedLeaveRequest extends LeaveRequest {
-  is_half_day?: boolean; // Add this
+  is_half_day?: boolean;
   employee_name?: string;
   employee_email?: string;
   employee_phone?: string;
@@ -457,6 +456,10 @@ export default function Leaves() {
   const [selectedLeave, setSelectedLeave] = useState<EnhancedLeaveRequest | null>(null);
   const [isViewOpen, setIsViewOpen] = useState(false);
   const [openMenuId, setOpenMenuId] = useState<string | null>(null);
+  const [showApproveModal, setShowApproveModal] = useState(false);
+  const [showRejectModal, setShowRejectModal] = useState(false);
+  const [selectedLeaveId, setSelectedLeaveId] = useState<number | null>(null);
+  const [rejectionReason, setRejectionReason] = useState('');
 
   const [stats, setStats] = useState<LeaveStats>({
     pending: 0,
@@ -477,7 +480,6 @@ export default function Leaves() {
       const employeesData = await HrmsEmployeesApi.getEmployees();
       setEmployees(employeesData);
       
-      // Create employee map for quick lookup
       const map = new Map<number, HrmsEmployee>();
       employeesData.forEach(emp => {
         map.set(emp.id, emp);
@@ -489,11 +491,11 @@ export default function Leaves() {
     }
   };
 
-  // Load leaves data - FIXED: Using LeaveApi.getLeaves()
+  // Load leaves data
   const loadLeaves = async () => {
     setLoading(true);
     try {
-      const response = await LeaveApi.getLeaves(); // Use LeaveApi instead of direct api.get
+      const response = await LeaveApi.getLeaves();
       if (response.data) {
         const leavesData: LeaveRequest[] = response.data;
         setAllLeaves(leavesData);
@@ -506,7 +508,7 @@ export default function Leaves() {
     }
   };
 
-  // Load statistics - FIXED: Using LeaveApi.getLeaveStats()
+  // Load statistics
   const loadStats = async () => {
     try {
       const response = await LeaveApi.getLeaveStats();
@@ -519,13 +521,12 @@ export default function Leaves() {
   };
 
   // Enhance leaves with employee data
-   // Enhance leaves with employee data
   const enhanceLeavesWithEmployeeData = (leavesData: LeaveRequest[]): EnhancedLeaveRequest[] => {
     return leavesData.map(leave => {
       const employee = employeeMap.get(leave.employee_id);
       return {
         ...leave,
-        is_half_day: leave.is_half_day || false, // Add this line
+        is_half_day: leave.is_half_day || false,
         employee_name: employee ? `${employee.first_name} ${employee.last_name}` : 'Unknown Employee',
         employee_email: employee?.email || 'N/A',
         employee_phone: employee?.phone || 'N/A',
@@ -550,87 +551,131 @@ export default function Leaves() {
     }
   }, [employeeMap, allLeaves]);
 
-// In Leaves.jsx - Update handleApprove function (around line 118)
-// In Leaves.tsx - Update handleApprove and handleReject
+  // Handle approve leave with SweetAlert
+  const handleApprove = (id: number) => {
+    setSelectedLeaveId(id);
+    setShowApproveModal(true);
+  };
 
-// Handle approve leave - Send string user_id
-const handleApprove = async (id: number) => {
-  if (!confirm('Are you sure you want to approve this leave?')) return;
+  const confirmApprove = async () => {
+    if (!selectedLeaveId) return;
 
-  try {
-    // Get user ID as string from your auth context
-    const userId = user?.id ? user.id.toString() : '1'; // Convert to string
-    const userName = user?.username || user?.name || 'Admin';
-    
-    // Updated: Pass user data as strings
-    const response = await LeaveApi.approveLeave(
-      id, 
-      userId, // String user ID
-      user?.username || 'usr_admin_01',
-      user?.name || 'Admin User'
-    );
-    
-    if (response.success) {
-      toast.success('Leave approved successfully');
-      loadLeaves();
-      loadStats();
+    try {
+      // Get user ID as string from your auth context
+      const userId = user?.id ? user.id.toString() : '1';
+      
+      const response = await LeaveApi.approveLeave(
+        selectedLeaveId, 
+        userId,
+        user?.username || 'usr_admin_01',
+        user?.name || 'Admin User'
+      );
+      
+      if (response.success) {
+        toast.success('Leave approved successfully');
+        loadLeaves();
+        loadStats();
+      }
+    } catch (error: any) {
+      console.error('Error approving leave:', error);
+      toast.error(error.response?.data?.message || 'Failed to approve leave');
+    } finally {
+      setShowApproveModal(false);
+      setSelectedLeaveId(null);
     }
-  } catch (error: any) {
-    console.error('Error approving leave:', error);
-    toast.error(error.response?.data?.message || 'Failed to approve leave');
-  }
-};
+  };
 
-// Handle reject leave - Send string user_id
-const handleReject = async (id: number) => {
-  const reason = prompt('Please enter rejection reason:');
-  if (!reason || reason.trim() === '') {
-    toast.error('Rejection reason is required');
-    return;
-  }
+  // Handle reject leave with SweetAlert
+  const handleReject = (id: number) => {
+    setSelectedLeaveId(id);
+    setShowRejectModal(true);
+  };
 
-  try {
-    // Get user ID as string
-    const userId = user?.id ? user.id.toString() : '1'; // Convert to string
-    
-    // Updated: Pass user data as strings
-    const response = await LeaveApi.rejectLeave(
-      id,
-      userId, // String user ID
-      reason,
-      user?.username || 'usr_admin_01',
-      user?.name || 'Admin User'
-    );
-    
-    if (response.success) {
-      toast.success('Leave rejected');
-      loadLeaves();
-      loadStats();
+  const confirmReject = async () => {
+    if (!selectedLeaveId || !rejectionReason.trim()) {
+      toast.error('Please enter rejection reason');
+      return;
     }
-  } catch (error: any) {
-    console.error('Error rejecting leave:', error);
-    toast.error(error.response?.data?.message || 'Failed to reject leave');
-  }
-};
-  // Handle delete leave
-// Handle delete leave
-const handleDelete = async (id: number) => {
-  if (!confirm('Are you sure you want to delete this leave? This action cannot be undone.')) return;
 
-  try {
-    const response = await api.delete(`/leaves/${id}`);
-    
-    if (response.data.success) {
-      toast.success('Leave deleted successfully');
-      loadLeaves();
-      loadStats();
+    try {
+      const userId = user?.id ? user.id.toString() : '1';
+      
+      const response = await LeaveApi.rejectLeave(
+        selectedLeaveId,
+        userId,
+        rejectionReason,
+        user?.username || 'usr_admin_01',
+        user?.name || 'Admin User'
+      );
+      
+      if (response.success) {
+        toast.success('Leave rejected successfully');
+        loadLeaves();
+        loadStats();
+      }
+    } catch (error: any) {
+      console.error('Error rejecting leave:', error);
+      toast.error(error.response?.data?.message || 'Failed to reject leave');
+    } finally {
+      setShowRejectModal(false);
+      setSelectedLeaveId(null);
+      setRejectionReason('');
     }
-  } catch (error: any) {
-    console.error('Error deleting leave:', error);
-    console.error('Server response data:', error.response?.data);
-    toast.error(error.response?.data?.message || 'Failed to delete leave');
-  }
-};
+  };
+
+  // Handle delete leave with SweetAlert
+  const handleDelete = async (id: number) => {
+    Swal.fire({
+      title: 'Are you sure?',
+      text: "You won't be able to revert this!",
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonColor: '#d33',
+      cancelButtonColor: '#3085d6',
+      confirmButtonText: 'Yes, delete it!',
+      cancelButtonText: 'Cancel',
+      reverseButtons: true,
+      customClass: {
+        popup: 'rounded-2xl',
+        confirmButton: 'px-4 py-2 rounded-lg',
+        cancelButton: 'px-4 py-2 rounded-lg'
+      }
+    }).then(async (result) => {
+      if (result.isConfirmed) {
+        try {
+          const response = await api.delete(`/leaves/${id}`);
+          
+          if (response.data.success) {
+            Swal.fire({
+              title: 'Deleted!',
+              text: 'Leave has been deleted.',
+              icon: 'success',
+              confirmButtonColor: '#3085d6',
+              customClass: {
+                popup: 'rounded-2xl',
+                confirmButton: 'px-4 py-2 rounded-lg'
+              }
+            });
+            loadLeaves();
+            loadStats();
+          }
+        } catch (error: any) {
+          console.error('Error deleting leave:', error);
+          Swal.fire({
+            title: 'Error!',
+            text: error.response?.data?.message || 'Failed to delete leave',
+            icon: 'error',
+            confirmButtonColor: '#3085d6',
+            customClass: {
+              popup: 'rounded-2xl',
+              confirmButton: 'px-4 py-2 rounded-lg'
+            }
+          });
+        }
+      }
+    });
+  };
+
   // Handle download attachment
   const handleDownload = async (id: number, fileName?: string) => {
     try {
@@ -638,7 +683,6 @@ const handleDelete = async (id: number) => {
       
       let downloadName = fileName || 'leave_document.pdf';
       
-      // Create blob and download
       const url = window.URL.createObjectURL(blob);
       const link = document.createElement('a');
       link.href = url;
@@ -680,7 +724,6 @@ const handleDelete = async (id: number) => {
       ? leave.to_date.includes(searchToDate)
       : true;
 
-    // Date range filters
     let matchesDateRange = true;
     if (!ignoreDate) {
       if (startDate) {
@@ -728,13 +771,7 @@ const handleDelete = async (id: number) => {
   return (
     <div className="space-y-6 p-4">
       {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-800">Leave Management</h1>
-          <p className="text-gray-600">
-            Manage all employee leaves - {filteredLeaves.length} of {leaves.length} requests
-          </p>
-        </div>
+      <div className="flex items-end justify-end -mt-6">
         <Button onClick={() => setShowApplyForm(true)} className="bg-blue-600 hover:bg-blue-700">
           <Plus className="h-4 w-4 mr-2" />
           Apply Leave
@@ -805,8 +842,6 @@ const handleDelete = async (id: number) => {
         <div className="overflow-x-auto">
           <table className="w-full min-w-[1300px]">
             <thead className="bg-gray-50">
-              {/* Main Header Row */}
-                           {/* Main Header Row */}
               <tr className="border-b border-gray-200">
                 <th className="px-4 py-3 text-left">
                   <div className="text-xs font-semibold text-gray-700 uppercase tracking-wider">
@@ -852,7 +887,6 @@ const handleDelete = async (id: number) => {
 
               {/* Search Row */}
               <tr className="bg-gray-100 border-b border-gray-200 ">
-                {/* Application # Search */}
                 <td className="px-4 py-2">
                   <div className="relative">
                     <input
@@ -865,7 +899,6 @@ const handleDelete = async (id: number) => {
                   </div>
                 </td>
 
-                {/* Employee Search */}
                 <td className="px-4 py-2">
                   <div className="relative">
                     <div className="absolute left-2 top-1/2 -translate-y-1/2">
@@ -881,7 +914,6 @@ const handleDelete = async (id: number) => {
                   </div>
                 </td>
 
-                {/* Leave Type Search */}
                 <td className="px-4 py-2">
                   <select
                     value={searchLeaveType}
@@ -897,7 +929,6 @@ const handleDelete = async (id: number) => {
                   </select>
                 </td>
 
-                {/* From Date Search */}
                 <td className="px-4 py-2">
                   <input
                     type="date"
@@ -907,7 +938,6 @@ const handleDelete = async (id: number) => {
                   />
                 </td>
 
-                {/* To Date Search */}
                 <td className="px-4 py-2">
                   <input
                     type="date"
@@ -917,10 +947,8 @@ const handleDelete = async (id: number) => {
                   />
                 </td>
 
-                {/* Days Search (empty) */}
                 <td className="px-4 py-2"></td>
 
-                {/* Status Search */}
                 <td className="px-4 py-2">
                   <select
                     value={searchStatus}
@@ -934,18 +962,8 @@ const handleDelete = async (id: number) => {
                   </select>
                 </td>
 
-                {/* Actions with Filter Button */}
                 <td className="px-4 py-2">
-                  <div className="flex gap-1">
-                    {/* <button
-                      onClick={() => setShowFilterSidebar(true)}
-                      className="flex items-center gap-1 px-2 py-1 text-xs border border-gray-300 rounded hover:bg-gray-50 transition font-medium"
-                      title="Advanced Filters"
-                    >
-                      <Filter className="w-3 h-3" />
-                      Filters
-                    </button> */}
-                  </div>
+                  <div className="flex gap-1"></div>
                 </td>
               </tr>
             </thead>
@@ -976,7 +994,6 @@ const handleDelete = async (id: number) => {
                       </button>
                     </td>
                     
-                    {/* Employee Column */}
                     <td className="px-4 py-3">
                       <div>
                         <p className="text-sm font-medium text-gray-900">{leave.employee_name}</p>
@@ -1001,7 +1018,6 @@ const handleDelete = async (id: number) => {
                       <span className="text-sm text-gray-700">{new Date(leave.to_date).toLocaleDateString()}</span>
                     </td>
                     
-                    {/* Days Column - Fixed to show 0.5 for half days */}
                     <td className="px-4 py-3">
                       <span className="text-sm font-medium text-gray-900">
                         {leave.is_half_day ? '0.5' : leave.total_days}
@@ -1011,116 +1027,105 @@ const handleDelete = async (id: number) => {
                       </span>
                     </td>
                     
-                    {/* Status Column - Fixed to show half day indicator */}
                     <td className="px-4 py-3">
                       <Badge variant={
                         leave.status === 'approved' ? 'success' :
                         leave.status === 'rejected' ? 'error' : 'warning'
                       }>
                         {leave.status.charAt(0).toUpperCase() + leave.status.slice(1)}
-                       
                       </Badge>
                     </td>
                     
-                   <td className="px-4 py-3 relative">
-  {/* Three Dot Button */}
-  <button
-    onClick={() =>
-      setOpenMenuId(openMenuId === leave.id ? null : leave.id)
-    }
-    className="p-2 rounded hover:bg-gray-100 transition"
-  >
-    <MoreVertical className="w-4 h-4 text-gray-600" />
-  </button>
+                    <td className="px-4 py-3 relative">
+                      <button
+                        onClick={() =>
+                          setOpenMenuId(openMenuId === leave.id ? null : leave.id)
+                        }
+                        className="p-2 rounded hover:bg-gray-100 transition"
+                      >
+                        <MoreVertical className="w-4 h-4 text-gray-600" />
+                      </button>
 
-  {/* Dropdown */}
-  {openMenuId === leave.id && (
-    <div className="absolute right-4 top-10 z-50 w-44 bg-white border border-gray-200 rounded-lg shadow-lg">
-      <ul className="py-1 text-sm text-gray-700">
+                      {openMenuId === leave.id && (
+                        <div className="absolute right-4 top-10 z-50 w-44 bg-white border border-gray-200 rounded-lg shadow-lg">
+                          <ul className="py-1 text-sm text-gray-700">
+                            <li>
+                              <button
+                                onClick={() => {
+                                  setSelectedLeave(leave);
+                                  setIsViewOpen(true);
+                                  setOpenMenuId(null);
+                                }}
+                                className="w-full flex items-center gap-2 px-4 py-2 hover:bg-gray-100"
+                              >
+                                <Eye className="w-4 h-4" />
+                                View
+                              </button>
+                            </li>
 
-        {/* View */}
-        <li>
-          <button
-            onClick={() => {
-              setSelectedLeave(leave);
-              setIsViewOpen(true);
-              setOpenMenuId(null);
-            }}
-            className="w-full flex items-center gap-2 px-4 py-2 hover:bg-gray-100"
-          >
-            <Eye className="w-4 h-4" />
-            View
-          </button>
-        </li>
+                            {leave.attachment_path && (
+                              <li>
+                                <button
+                                  onClick={() => {
+                                    handleDownload(leave.id, leave.attachment_name || undefined);
+                                    setOpenMenuId(null);
+                                  }}
+                                  className="w-full flex items-center gap-2 px-4 py-2 hover:bg-gray-100 text-blue-600"
+                                >
+                                  <Download className="w-4 h-4" />
+                                  Download
+                                </button>
+                              </li>
+                            )}
 
-        {/* Download */}
-        {leave.attachment_path && (
-          <li>
-            <button
-              onClick={() => {
-                handleDownload(leave.id, leave.attachment_name || undefined);
-                setOpenMenuId(null);
-              }}
-              className="w-full flex items-center gap-2 px-4 py-2 hover:bg-gray-100 text-blue-600"
-            >
-              <Download className="w-4 h-4" />
-              Download
-            </button>
-          </li>
-        )}
+                            {leave.status === "pending" && (
+                              <>
+                                <li>
+                                  <button
+                                    onClick={() => {
+                                      handleApprove(leave.id);
+                                      setOpenMenuId(null);
+                                    }}
+                                    className="w-full flex items-center gap-2 px-4 py-2 hover:bg-gray-100 text-green-600"
+                                  >
+                                    <CheckCircle className="w-4 h-4" />
+                                    Approve
+                                  </button>
+                                </li>
 
-        {/* Approve / Reject */}
-        {leave.status === "pending" && (
-          <>
-            <li>
-              <button
-                onClick={() => {
-                  handleApprove(leave.id);
-                  setOpenMenuId(null);
-                }}
-                className="w-full flex items-center gap-2 px-4 py-2 hover:bg-gray-100 text-green-600"
-              >
-                <CheckCircle className="w-4 h-4" />
-                Approve
-              </button>
-            </li>
+                                <li>
+                                  <button
+                                    onClick={() => {
+                                      handleReject(leave.id);
+                                      setOpenMenuId(null);
+                                    }}
+                                    className="w-full flex items-center gap-2 px-4 py-2 hover:bg-gray-100 text-red-600"
+                                  >
+                                    <XCircle className="w-4 h-4" />
+                                    Reject
+                                  </button>
+                                </li>
+                              </>
+                            )}
 
-            <li>
-              <button
-                onClick={() => {
-                  handleReject(leave.id);
-                  setOpenMenuId(null);
-                }}
-                className="w-full flex items-center gap-2 px-4 py-2 hover:bg-gray-100 text-red-600"
-              >
-                <XCircle className="w-4 h-4" />
-                Reject
-              </button>
-            </li>
-          </>
-        )}
+                            <hr className="my-1" />
 
-        <hr className="my-1" />
-
-        {/* Delete */}
-        <li>
-          <button
-            onClick={() => {
-              handleDelete(leave.id);
-              setOpenMenuId(null);
-            }}
-            className="w-full flex items-center gap-2 px-4 py-2 hover:bg-red-50 text-red-600"
-          >
-            <Trash2 className="w-4 h-4" />
-            Delete
-          </button>
-        </li>
-
-      </ul>
-    </div>
-  )}
-</td>
-
+                            <li>
+                              <button
+                                onClick={() => {
+                                  handleDelete(leave.id);
+                                  setOpenMenuId(null);
+                                }}
+                                className="w-full flex items-center gap-2 px-4 py-2 hover:bg-red-50 text-red-600"
+                              >
+                                <Trash2 className="w-4 h-4" />
+                                Delete
+                              </button>
+                            </li>
+                          </ul>
+                        </div>
+                      )}
+                    </td>
                   </tr>
                 ))
               )}
@@ -1128,9 +1133,6 @@ const handleDelete = async (id: number) => {
           </table>
         </div>
       </Card>
-
-    
-
 
       {/* Apply Leave Form Modal */}
       {showApplyForm && (
@@ -1156,6 +1158,92 @@ const handleDelete = async (id: number) => {
           }}
           employees={employees}
         />
+      )}
+
+      {/* Approve Confirmation Modal */}
+      {showApproveModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black bg-opacity-50">
+          <div className="bg-white rounded-xl shadow-xl w-full max-w-md p-6">
+            <div className="flex items-center gap-3 mb-4">
+              <div className="p-2 bg-green-100 rounded-lg">
+                <CheckCircle className="w-6 h-6 text-green-600" />
+              </div>
+              <div>
+                <h3 className="text-lg font-semibold text-gray-800">Approve Leave</h3>
+                <p className="text-sm text-gray-600">Are you sure you want to approve this leave?</p>
+              </div>
+            </div>
+            
+            <div className="flex justify-end gap-3 mt-6">
+              <button
+                onClick={() => {
+                  setShowApproveModal(false);
+                  setSelectedLeaveId(null);
+                }}
+                className="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={confirmApprove}
+                className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition"
+              >
+                Yes, Approve
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Reject Confirmation Modal */}
+      {showRejectModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black bg-opacity-50">
+          <div className="bg-white rounded-xl shadow-xl w-full max-w-md p-6">
+            <div className="flex items-center gap-3 mb-4">
+              <div className="p-2 bg-red-100 rounded-lg">
+                <XCircle className="w-6 h-6 text-red-600" />
+              </div>
+              <div>
+                <h3 className="text-lg font-semibold text-gray-800">Reject Leave</h3>
+                <p className="text-sm text-gray-600">Please provide a reason for rejection:</p>
+              </div>
+            </div>
+            
+            <div className="mb-4">
+              <textarea
+                value={rejectionReason}
+                onChange={(e) => setRejectionReason(e.target.value)}
+                placeholder="Enter rejection reason..."
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500 outline-none"
+                rows={3}
+              />
+            </div>
+            
+            <div className="flex justify-end gap-3">
+              <button
+                onClick={() => {
+                  setShowRejectModal(false);
+                  setSelectedLeaveId(null);
+                  setRejectionReason('');
+                }}
+                className="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={confirmReject}
+                disabled={!rejectionReason.trim()}
+                className={`px-4 py-2 rounded-lg transition ${
+                  rejectionReason.trim() 
+                    ? 'bg-red-600 text-white hover:bg-red-700' 
+                    : 'bg-red-300 text-white cursor-not-allowed'
+                }`}
+              >
+                Reject Leave
+              </button>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );

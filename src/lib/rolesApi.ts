@@ -15,10 +15,39 @@ export interface Role {
 export const getAllRoles = async (): Promise<Role[]> => {
   try {
     const response: any = await api.get("/roles");
-    return unwrap(response);
+    
+    // Extract data from response properly
+    let data = response.data;
+    
+    // If response has a data property with array
+    if (data && data.data && Array.isArray(data.data)) {
+      return data.data;
+    }
+    // If response is already an array
+    else if (Array.isArray(data)) {
+      return data;
+    }
+    // If response has success and data structure
+    else if (data && data.success && Array.isArray(data.data)) {
+      return data.data;
+    }
+    // If response has items
+    else if (data && data.items && Array.isArray(data.items)) {
+      return data.items;
+    }
+    // If response has roles
+    else if (data && data.roles && Array.isArray(data.roles)) {
+      return data.roles;
+    }
+    // Default fallback
+    else {
+      console.warn("Unexpected roles API response format:", data);
+      return [];
+    }
   } catch (error) {
     console.error("Error fetching roles:", error);
-    throw error;
+    // Return empty array instead of throwing to prevent UI crash
+    return [];
   }
 };
 

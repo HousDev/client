@@ -191,17 +191,173 @@
 
 
 
+// // src/components/Login.tsx
+// import { useState } from "react";
+// import { useAuth } from "../contexts/AuthContext";
+// import Logo from "../assets/images/Nayash Logo.png";
+
+// export default function Login() {
+//   const [email, setEmail] = useState("");
+//   const [password, setPassword] = useState("");
+//   const [error, setError] = useState("");
+//   const [loading, setLoading] = useState(false);
+//   const { signIn } = useAuth(); // only signIn now
+
+//   // const handleSubmit = async (e: React.FormEvent) => {
+//   //   e.preventDefault();
+//   //   setError("");
+//   //   setLoading(true);
+
+//   //   try {
+//   //     await signIn(email, password);
+//   //   } catch (err: any) {
+//   //     console.log(err);
+//   //     if (err.status === 401) {
+//   //       setError("Invalid Credentials.");
+//   //     } else {
+//   //       setError("Something went wrong.");
+//   //     }
+//   //   } finally {
+//   //     setLoading(false);
+//   //   }
+//   // };
+
+//   const handleSubmit = async (e: React.FormEvent) => {
+//   e.preventDefault();
+//   setError("");
+//   setLoading(true);
+
+//   try {
+//     await signIn(email, password);
+//   } catch (err: any) {
+//     console.log(err);
+    
+//     // Handle different error scenarios
+//     if (err.response?.status === 403) {
+//       // Account deactivated
+//       setError(err.response?.data?.error || "Account is deactivated");
+//     } else if (err.response?.status === 401) {
+//       setError("Invalid email or password");
+//     } else {
+//       setError(err.response?.data?.error || "Something went wrong");
+//     }
+//   } finally {
+//     setLoading(false);
+//   }
+// };
+
+//   return (
+//     <div className="min-h-screen bg-gradient-to-r from-[#d32f2f] to-[#b71c1c] flex items-center justify-center p-4">
+//       <div className="w-full max-w-md">
+//         <div
+//           className="bg-white rounded-2xl shadow-2xl p-6 sm:p-8 md:p-8 border-2 border-transparent"
+//           style={{ boxShadow: "0 10px 30px rgba(2,6,23,0.45)" }}
+//         >
+//           {/* Logo block */}
+//           <div className="flex items-center justify-center mb-4">
+//             <div className="rounded-xl p-2 bg-white shadow-sm">
+//               <img
+//                 src={Logo}
+//                 alt="Nayash Group"
+//                 className="h-16 sm:h-18 md:h-20 object-contain"
+//                 style={{ filter: "drop-shadow(0 6px 18px rgba(0,0,0,0.12))" }}
+//               />
+//             </div>
+//           </div>
+
+//           <p className="text-center text-gray-600 mb-6 text-sm sm:text-base">
+//             Vendor & Purchase Management System
+//           </p>
+
+//           <form onSubmit={handleSubmit} className="space-y-4 sm:space-y-5">
+//             <div>
+//               <label
+//                 htmlFor="email"
+//                 className="block text-sm font-medium text-gray-700 mb-2"
+//               >
+//                 Email Address
+//               </label>
+//               <input
+//                 id="email"
+//                 type="email"
+//                 value={email}
+//                 onChange={(e) => setEmail(e.target.value)}
+//                 className="w-full px-3 py-2.5 sm:px-4 sm:py-3 border border-gray-200 rounded-lg focus:outline-none transition placeholder:text-gray-400 text-sm sm:text-base
+//                   focus:ring-2 focus:ring-red-400 focus:border-transparent"
+//                 placeholder="Enter your email"
+//                 required
+//               />
+//             </div>
+
+//             <div>
+//               <label
+//                 htmlFor="password"
+//                 className="block text-sm font-medium text-gray-700 mb-2"
+//               >
+//                 Password
+//               </label>
+//               <input
+//                 id="password"
+//                 type="password"
+//                 value={password}
+//                 onChange={(e) => setPassword(e.target.value)}
+//                 className="w-full px-3 py-2.5 sm:px-4 sm:py-3 border border-gray-200 rounded-lg focus:outline-none transition placeholder:text-gray-400 text-sm sm:text-base
+//                   focus:ring-2 focus:ring-red-400 focus:border-transparent"
+//                 placeholder="Enter your password"
+//                 required
+//               />
+//             </div>
+
+//             {error && (
+//               <div className="bg-red-50 border border-red-200 text-red-700 px-3 py-2.5 sm:px-4 sm:py-3 rounded-lg text-xs sm:text-sm">
+//                 {error}
+//               </div>
+//             )}
+
+//             <button
+//               type="submit"
+//               disabled={loading}
+//               className="w-full py-2.5 sm:py-3 px-4 rounded-lg font-medium text-white shadow-md text-sm sm:text-base
+//                 bg-gradient-to-r from-[#d32f2f] to-[#b71c1c] hover:from-[#e03b3b] hover:to-[#9a1414] transition-transform transform active:scale-95 disabled:opacity-60 disabled:cursor-not-allowed"
+//             >
+//               {loading ? "Please wait..." : "Sign In"}
+//             </button>
+//           </form>
+
+//           <div className="mt-4 text-center">
+//             <span className="text-xs text-gray-500">Forgot password? </span>
+//             <button
+//               type="button"
+//               className="text-xs font-medium text-[#b71c1c] hover:underline ml-1"
+//               onClick={() => alert("Password reset flow")}
+//             >
+//               Reset
+//             </button>
+//           </div>
+//         </div>
+
+//         <p className="text-center text-white text-xs sm:text-sm mt-4 sm:mt-6 opacity-80 px-2">
+//           Manage vendors, purchase orders, payments, and services in one place
+//         </p>
+//       </div>
+//     </div>
+//   );
+// }
+
+
 // src/components/Login.tsx
 import { useState } from "react";
 import { useAuth } from "../contexts/AuthContext";
 import Logo from "../assets/images/Nayash Logo.png";
+import { Eye, EyeOff } from "lucide-react"; // Add these icons
 
 export default function Login() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
-  const { signIn } = useAuth(); // only signIn now
+  const [showPassword, setShowPassword] = useState(false); // Add this state
+  const { signIn } = useAuth();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -211,15 +367,33 @@ export default function Login() {
     try {
       await signIn(email, password);
     } catch (err: any) {
-      console.log(err);
-      if (err.status === 401) {
-        setError("Invalid Credentials.");
+      console.log("Login error:", err);
+      
+      // Debug: Show actual password in console (remove in production)
+      console.log("Attempted login with:", { email, password });
+      
+      // Handle different error scenarios
+      if (err.response?.status === 403) {
+        setError(err.response?.data?.error || "Account is deactivated");
+      } else if (err.response?.status === 401) {
+        setError("Invalid email or password");
+      } else if (err.response?.status === 400) {
+        setError(err.response?.data?.error || "Bad request - check your inputs");
+      } else if (err.response?.status === 404) {
+        setError("Login endpoint not found");
+      } else if (!err.response) {
+        setError("Network error - cannot connect to server");
       } else {
-        setError("Something went wrong.");
+        setError(err.response?.data?.error || "Something went wrong");
       }
     } finally {
       setLoading(false);
     }
+  };
+
+  // Debug button to show password in alert (remove in production)
+  const showPasswordInAlert = () => {
+    alert(`Current password value: ${password}`);
   };
 
   return (
@@ -272,21 +446,39 @@ export default function Login() {
               >
                 Password
               </label>
-              <input
-                id="password"
-                type="password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                className="w-full px-3 py-2.5 sm:px-4 sm:py-3 border border-gray-200 rounded-lg focus:outline-none transition placeholder:text-gray-400 text-sm sm:text-base
-                  focus:ring-2 focus:ring-red-400 focus:border-transparent"
-                placeholder="Enter your password"
-                required
-              />
+              <div className="relative">
+                <input
+                  id="password"
+                  type={showPassword ? "text" : "password"}
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  className="w-full px-3 py-2.5 sm:px-4 sm:py-3 border border-gray-200 rounded-lg focus:outline-none transition placeholder:text-gray-400 text-sm sm:text-base
+                    focus:ring-2 focus:ring-red-400 focus:border-transparent pr-10"
+                  placeholder="Enter your password"
+                  required
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-gray-600"
+                  tabIndex={-1} // Prevent tab focus on this button
+                >
+                  {showPassword ? (
+                    <EyeOff className="h-4 w-4 sm:h-5 sm:w-5" />
+                  ) : (
+                    <Eye className="h-4 w-4 sm:h-5 sm:w-5" />
+                  )}
+                </button>
+              </div>
             </div>
 
             {error && (
               <div className="bg-red-50 border border-red-200 text-red-700 px-3 py-2.5 sm:px-4 sm:py-3 rounded-lg text-xs sm:text-sm">
                 {error}
+                {/* Debug info - remove in production */}
+                <div className="mt-1 text-xs opacity-75">
+                  Trying: {email} / {password.length > 0 ? "••••" : "(empty)"}
+                </div>
               </div>
             )}
 
@@ -298,6 +490,8 @@ export default function Login() {
             >
               {loading ? "Please wait..." : "Sign In"}
             </button>
+
+         
           </form>
 
           <div className="mt-4 text-center">
@@ -310,6 +504,8 @@ export default function Login() {
               Reset
             </button>
           </div>
+
+
         </div>
 
         <p className="text-center text-white text-xs sm:text-sm mt-4 sm:mt-6 opacity-80 px-2">

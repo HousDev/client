@@ -393,7 +393,7 @@ const GeneralSettings: React.FC = () => {
                   <div className="flex flex-col md:flex-row items-center md:items-start gap-8">
                     {/* Avatar Section */}
                     <div className="relative">
-                      <div className="w-40 h-40 rounded-2xl border-8 border-white shadow-xl overflow-hidden bg-gradient-to-br from-gray-100 to-gray-200">
+                      <div className="w-40 h-40 rounded-full border-8 border-white shadow-xl overflow-hidden bg-gradient-to-br from-gray-100 to-gray-200">
                         {userProfile.avatar ? (
                           <img
                             src={userProfile.avatar}

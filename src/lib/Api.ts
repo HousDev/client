@@ -9,6 +9,7 @@ export type Permissions = {
 };
 
 export interface UserProfile {
+  _id: string;
   success: any;
   success: any;
   id: string;
@@ -139,7 +140,8 @@ export const UsersApi = {
     unwrap(api.delete(`/users/${id}`)),
 
   toggleActive: async (id: string): Promise<UserProfile> =>
-    unwrap(api.put(`/users/${id}/toggle-active`)),
+  unwrap(api.patch(`/users/${id}/toggle-active`)),  // Changed from put to patch
+
 
   // Add profile picture upload method
   uploadProfilePicture: async (id: string, file: File): Promise<any> => {

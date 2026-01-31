@@ -417,13 +417,13 @@ export default function Employees({ onViewProfile }: EmployeesProps) {
   return (
     <div className="space-y-5">
       <div className="flex items-center justify-end py-0 -mt-2 -mb-2">
-        <Button onClick={() => setShowAddModal(true)} className="text-sm">
+        {/* <Button onClick={() => setShowAddModal(true)} className="text-sm">
           <Plus className="h-4 w-4 mr-1.5" />
           Add Employee
-        </Button>
+        </Button> */}
       </div>
 
-      <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-4 gap-2 md:gap-3">
+      <div className=" grid grid-cols-2 sm:grid-cols-2 md:grid-cols-4 gap-2 md:gap-3">
         <Card className="p-2 sm:p-3 md:p-3.5">
           <div className="flex items-center justify-between">
             <div>
@@ -493,7 +493,7 @@ export default function Employees({ onViewProfile }: EmployeesProps) {
         <div className="p-4 border-b border-slate-200">
           <div className="flex flex-col md:flex-row gap-3 items-center justify-end">
             {/* Global Search */}
-            <div className="w-full md:w-auto">
+            {/* <div className="w-full md:w-auto">
               <Input
                 placeholder="Search employees..."
                 value={searchTerm}
@@ -501,7 +501,7 @@ export default function Employees({ onViewProfile }: EmployeesProps) {
                 className="w-full md:w-64"
                 startIcon={<Search className="h-4 w-4" />}
               />
-            </div>
+            </div> */}
 
             {/* Action Buttons */}
             <div className="flex gap-2 w-full md:w-auto">
@@ -774,7 +774,7 @@ export default function Employees({ onViewProfile }: EmployeesProps) {
                         </button>
 
                         {/* Add/Edit Details Button */}
-                        <button
+                        {/* <button
                           onClick={() => {
                             setSelectedEmployee(employee);
                             setShowAddMoreDetailsModal(true);
@@ -797,7 +797,7 @@ export default function Employees({ onViewProfile }: EmployeesProps) {
                               </div>
                             </>
                           )}
-                        </button>
+                        </button> */}
 
                         {/* Delete Button */}
                         <button

@@ -144,6 +144,7 @@ export default function Tickets() {
     const loadCategories = async () => {
         try {
             const data = await ticketApi.getCategories();
+            console.log("ct",data)
             setCategories(data);
         } catch (error) {
             console.error('Error loading categories:', error);

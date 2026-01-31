@@ -1334,17 +1334,14 @@
 //   );
 // }
 
-
-
 import { useState, useEffect } from "react";
 import {
   ArrowLeft, User, Mail, Phone, Briefcase, Building, MapPin,
   Calendar, Heart, Home, GraduationCap, CreditCard,
-  Laptop, Edit, FileText, Globe,
+  Laptop, Edit, FileText, IdCard,
   Smartphone, Award, School, Clock, CheckCircle,
-  XCircle, MoreVertical, Download, Share2, IdCard, 
-  Building2, Wallet, Lock, Star, Sparkles,
-  Eye, Search, Filter
+  XCircle, Download, Share2, Wallet, Lock,
+  Star, Building2, Globe, ChevronRight, ExternalLink
 } from "lucide-react";
 import { toast } from "sonner";
 import employeeAPI from "../lib/employeeApi";
@@ -1383,21 +1380,17 @@ export default function EmployeeProfile({ employeeId, onBack }: EmployeeProfileP
     if (employeeId) loadEmployee();
   }, [employeeId]);
 
-const getImageUrl = (imagePath?: string) => {
+ const getImageUrl = (imagePath?: string) => {
   if (!imagePath) return null;
   if (imagePath.startsWith('http')) return imagePath;
   
-  // Get base URL and remove /api suffix for image paths
+  // Get base URL - keep /api in the path
+  // eslint-disable-next-line prefer-const
   let baseUrl = import.meta.env.VITE_API_URL || 'http://localhost:4000/api';
   
-  // Remove /api from the end since images are served from root
-  baseUrl = baseUrl.replace(/\/api\/?$/, '');
-  
-  if (imagePath.startsWith('uploads/') || imagePath.startsWith('/uploads/')) {
-    return `${baseUrl}/${imagePath.replace(/^\//, '')}`;
-  }
+  // Simply append the image path to baseUrl
   return `${baseUrl}${imagePath.startsWith('/') ? imagePath : `/${imagePath}`}`;
-}; 
+};
 
   const calculateAge = (dob: string) => {
     if (!dob) return "";
@@ -1438,75 +1431,35 @@ const getImageUrl = (imagePath?: string) => {
     );
   };
 
-  const GlassCard = ({ children, className = "" }: any) => (
-    <div className={`bg-white border border-gray-200 rounded-xl shadow-sm ${className}`}>
-      {children}
-    </div>
-  );
-
-  const StatsCard = ({ icon: Icon, label, value, gradient }: any) => (
-    <GlassCard>
-      <div className="p-4">
-        <div className="flex items-center gap-3">
-          <div className={`p-2.5 rounded-lg ${gradient}`}>
-            <Icon className="w-5 h-5 text-white" />
-          </div>
-          <div className="flex-1 min-w-0">
-            <p className="text-xs font-medium text-gray-500 mb-0.5">{label}</p>
-            <p className="text-base font-semibold text-gray-900 truncate">{value || 'N/A'}</p>
-          </div>
-        </div>
-      </div>
-    </GlassCard>
-  );
-
-  const InfoItem = ({ icon: Icon, label, value, gradient }: any) => {
-    if (!value || value === "N/A") return null;
-    return (
-      <div className="p-3 bg-white border border-gray-200 rounded-lg hover:border-gray-300 transition-colors">
-        <div className="flex items-start gap-3">
-          <div className={`p-2 rounded-lg ${gradient}`}>
-            <Icon className="w-4 h-4 text-white" />
-          </div>
-          <div className="flex-1 min-w-0">
-            <p className="text-xs font-medium text-gray-500 mb-1">{label}</p>
-            <p className="text-sm font-semibold text-gray-900">{value}</p>
-          </div>
-        </div>
-      </div>
-    );
+  // Parse allotted projects from JSON string/array
+  const getAllottedProjects = () => {
+    if (!employee?.allotted_project) return [];
+    try {
+      if (typeof employee.allotted_project === 'string') {
+        const parsed = JSON.parse(employee.allotted_project);
+        return Array.isArray(parsed) ? parsed : [];
+      }
+      return Array.isArray(employee.allotted_project) ? employee.allotted_project : [];
+    } catch {
+      return [];
+    }
   };
-
-  const Section = ({ title, icon: Icon, children, className = "" }: any) => (
-    <GlassCard className={className}>
-      <div className="flex items-center gap-3 px-5 py-4 border-b border-gray-200 bg-gray-50 rounded-t-xl">
-        <div className="p-2 rounded-lg bg-gradient-to-r from-[#40423f] to-[#4a4c49]">
-          <Icon className="w-4 h-4 text-white" />
-        </div>
-        <h3 className="text-sm font-semibold text-gray-900 uppercase tracking-wide">{title}</h3>
-        <div className="flex-1" />
-      </div>
-      <div className="p-5">{children}</div>
-    </GlassCard>
-  );
 
   const tabs = [
     { id: "overview", label: "Overview", icon: Star },
-    { id: "personal", label: "Personal", icon: Heart },
+    { id: "personal", label: "Personal", icon: User },
     { id: "employment", label: "Employment", icon: Briefcase },
     { id: "education", label: "Education", icon: GraduationCap },
-    { id: "bank", label: "Bank", icon: CreditCard },
-    { id: "system", label: "System", icon: Laptop }
+    { id: "system", label: "System", icon: Laptop },
+    { id: "bank", label: "Bank", icon: CreditCard }
   ];
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-gray-50 to-white flex items-center justify-center p-4">
-        <div className="text-center">
-          <div className="w-16 h-16 mx-auto mb-4 relative">
-            <div className="w-16 h-16 border-4 border-[#40423f]/20 border-t-[#40423f] rounded-full animate-spin" />
-          </div>
-          <p className="text-base font-medium text-gray-700">Loading profile...</p>
+      <div className="min-h-screen bg-gradient-to-b from-gray-50 to-white flex items-center justify-center">
+        <div className="text-center space-y-4">
+          <div className="w-16 h-16 mx-auto border-4 border-[#C62828]/20 border-t-[#C62828] rounded-full animate-spin" />
+          <p className="text-gray-600 font-medium">Loading profile...</p>
         </div>
       </div>
     );
@@ -1514,64 +1467,71 @@ const getImageUrl = (imagePath?: string) => {
 
   if (!employee) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-gray-50 to-white flex items-center justify-center p-4">
-        <GlassCard className="max-w-md w-full p-8 text-center">
+      <div className="min-h-screen bg-gradient-to-b from-gray-50 to-white flex items-center justify-center p-6">
+        <div className="max-w-md w-full p-8 text-center bg-white rounded-2xl shadow-lg border">
           <div className="w-20 h-20 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-6">
             <User className="w-10 h-10 text-gray-400" />
           </div>
-          <h2 className="text-xl font-semibold text-gray-900 mb-3">Employee Not Found</h2>
-          <p className="text-sm text-gray-600 mb-6">The profile you're looking for doesn't exist.</p>
-          <button onClick={onBack} className="inline-flex items-center gap-2 px-5 py-2.5 bg-gradient-to-r from-[#40423f] to-[#4a4c49] text-white text-sm font-medium rounded-lg hover:shadow-md transition-all">
+          <h2 className="text-xl font-bold text-gray-900 mb-3">Employee Not Found</h2>
+          <p className="text-gray-600 mb-6">The profile you're looking for doesn't exist or has been removed.</p>
+          <button 
+            onClick={onBack} 
+            className="inline-flex items-center gap-2 px-5 py-2.5 bg-[#C62828] text-white font-medium rounded-lg hover:bg-red-700 transition"
+          >
             <ArrowLeft className="w-4 h-4" />
             Back to Employees
           </button>
-        </GlassCard>
+        </div>
       </div>
     );
   }
 
   const profileImageUrl = getImageUrl(employee.profile_picture);
   const employeeInitials = `${employee.first_name?.charAt(0) || ''}${employee.last_name?.charAt(0) || ''}`;
+  const allottedProjects = getAllottedProjects();
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-100 to-blue-100">
+    <div className="min-h-screen bg-gradient-to-b from-gray-50 to-white">
       {/* Header */}
-      <div className="sticky top-0 z-50 bg-white text-black shadow-lg">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center justify-between h-16">
-            <button onClick={onBack} className="flex items-center gap-2 text-black hover:text-red-600 transition-colors">
-              <div className="p-2 rounded-lg bg-white/10">
-                <ArrowLeft className="w-4 h-4" />
-              </div>
-              <span className="text-sm font-medium hidden sm:inline">Back to Employees</span>
-            </button>
-            <div className="flex items-center gap-2">
-              {[Download, Share2, MoreVertical].map((Icon, i) => (
-                <button key={i} className="p-2 rounded-lg bg-white/10 text-black hover:bg-white/20 transition-colors">
-                  <Icon className="w-4 h-4" />
-                </button>
-              ))}
-            </div>
-          </div>
-        </div>
+     <div className="sticky top-16 z-50 bg-white border-b shadow-sm">
+  <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+    <div className="flex items-center justify-between h-16">
+      <div className="flex items-center gap-3">
+        <button 
+          onClick={onBack}
+          className="flex items-center gap-2 text-gray-700 hover:text-[#C62828] transition-colors"
+        >
+          <ArrowLeft className="w-5 h-5" />
+          <span className="text-sm font-medium hidden sm:inline">Employees</span>
+        </button>
+        <div className="h-6 w-px bg-gray-300" />
+        <span className="text-sm text-gray-500">Profile</span>
       </div>
+      
+      <div className="flex items-center gap-2">
+        <button className="p-2 text-gray-600 hover:text-[#C62828] transition-colors">
+          <Download className="w-5 h-5" />
+        </button>
+        <button className="p-2 text-gray-600 hover:text-[#C62828] transition-colors">
+          <Share2 className="w-5 h-5" />
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
 
       {/* Main Content */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 lg:py-8">
+      <div className="  max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 lg:py-8">
         {/* Profile Header */}
-        <GlassCard className="mb-6">
-          <div className="relative h-32 bg-blue-200 rounded-t-xl overflow-hidden">
-            <div className="absolute inset-0 bg-black/10" />
-            <div className="absolute top-4 right-4">
-              <StatusBadge status={employee.employee_status || 'active'} />
-            </div>
-          </div>
+        <div className="bg-white rounded-2xl shadow-lg border overflow-hidden mb-6">
+          <div className="relative h-40 bg-gradient-to-r from-[#40423f] to-[#5a5d5a]" />
           
           <div className="px-6 pb-6">
-            <div className="flex flex-col sm:flex-row items-start sm:items-end gap-6 -mt-16">
+            <div className="flex flex-col sm:flex-row items-start sm:items-end gap-6 -mt-20">
               {/* Avatar */}
               <div className="relative">
-                <div className="relative w-32 h-32 rounded-full bg-gradient-to-r from-[#40423f] to-[#5a5d5a] flex items-center justify-center text-white border-4 border-white shadow-lg overflow-hidden">
+                <div className="relative w-40 h-40 rounded-full bg-gradient-to-r from-[#40423f] to-[#5a5d5a] flex items-center justify-center text-white border-4 border-white shadow-2xl overflow-hidden">
                   {profileImageUrl && !imageError ? (
                     <img
                       src={profileImageUrl}
@@ -1580,7 +1540,7 @@ const getImageUrl = (imagePath?: string) => {
                       onError={() => setImageError(true)}
                     />
                   ) : (
-                    <span className="text-3xl font-semibold">{employeeInitials}</span>
+                    <span className="text-4xl font-bold">{employeeInitials}</span>
                   )}
                 </div>
               </div>
@@ -1588,31 +1548,45 @@ const getImageUrl = (imagePath?: string) => {
               {/* Info */}
               <div className="flex-1 mt-4 sm:mt-0">
                 <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
-                  <div>
-                    <h1 className="text-2xl lg:text-3xl font-semibold text-gray-900 mb-2">
-                      {employee.first_name} {employee.last_name}
-                    </h1>
-                    <p className="text-base font-medium text-gray-600 mb-3">{employee.designation || 'N/A'}</p>
-                    <div className="flex flex-wrap gap-2">
-                      {[
-                        { icon: IdCard, text: employee.employee_code, bg: "bg-blue-500" },
-                        { icon: Building, text: employee.department_name, bg: "bg-purple-500" },
-                        { icon: Clock, text: getTenure(employee.joining_date), bg: "bg-green-500" }
-                      ].map((item, i) => (
-                        <div key={i} className={`flex items-center gap-2 px-3 py-1.5 ${item.bg} text-white rounded-full text-xs font-medium`}>
-                          <item.icon className="w-3 h-3" />
-                          {item.text || 'N/A'}
+                  <div className="space-y-3">
+                    <div className="flex items-center gap-3">
+                      <h1 className="text-3xl font-bold text-gray-900">
+                        {employee.first_name} {employee.last_name}
+                      </h1>
+                      <StatusBadge status={employee.employee_status || 'active'} />
+                    </div>
+                    
+                    <div className="space-y-2">
+                      <p className="text-lg text-gray-700 font-medium">{employee.designation || 'No designation'}</p>
+                      <div className="flex flex-wrap gap-2">
+                        <div className="flex items-center gap-2 px-3 py-1.5 bg-blue-100 text-blue-700 rounded-full text-sm">
+                          <IdCard className="w-3 h-3" />
+                          {employee.employee_code || 'No ID'}
                         </div>
-                      ))}
+                        <div className="flex items-center gap-2 px-3 py-1.5 bg-purple-100 text-purple-700 rounded-full text-sm">
+                          <Building className="w-3 h-3" />
+                          {employee.department_name || 'No department'}
+                        </div>
+                        <div className="flex items-center gap-2 px-3 py-1.5 bg-green-100 text-green-700 rounded-full text-sm">
+                          <Clock className="w-3 h-3" />
+                          {getTenure(employee.joining_date)}
+                        </div>
+                      </div>
                     </div>
                   </div>
 
                   <div className="flex flex-row sm:flex-col gap-2 w-full sm:w-auto">
-                    <button onClick={() => setShowEditModal(true)} className="flex-1 sm:flex-none flex items-center justify-center gap-2 px-4 py-2.5 bg-gray-100 text-gray-700 text-sm font-medium rounded-lg hover:bg-gray-200 transition-colors">
+                    <button 
+                      onClick={() => setShowEditModal(true)}
+                      className="flex-1 sm:w-40 flex items-center justify-center gap-2 px-4 py-2.5 bg-gray-100 text-gray-700 font-medium rounded-lg hover:bg-gray-200 transition-colors"
+                    >
                       <Edit className="w-4 h-4" />
-                      Edit
+                      Edit Profile
                     </button>
-                    <button onClick={() => setShowAddDetailsModal(true)} className="flex-1 sm:flex-none flex items-center justify-center gap-2 px-4 py-2.5 bg-gradient-to-r from-[#C62828] to-red-600 text-white text-sm font-medium rounded-lg hover:shadow-md transition-all">
+                    <button 
+                      onClick={() => setShowAddDetailsModal(true)}
+                      className="flex-1 sm:w-40 flex items-center justify-center gap-2 px-4 py-2.5 bg-[#C62828] text-white font-medium rounded-lg hover:bg-red-700 transition"
+                    >
                       <FileText className="w-4 h-4" />
                       Add Details
                     </button>
@@ -1621,310 +1595,535 @@ const getImageUrl = (imagePath?: string) => {
               </div>
             </div>
           </div>
-        </GlassCard>
+        </div>
 
         {/* Quick Stats */}
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-          <StatsCard icon={Mail} label="Email" value={employee.email} gradient="bg-gradient-to-r from-blue-500 to-cyan-500" />
-          <StatsCard icon={Phone} label="Phone" value={employee.phone} gradient="bg-gradient-to-r from-green-500 to-emerald-500" />
-          <StatsCard icon={Briefcase} label="Role" value={employee.role_name} gradient="bg-gradient-to-r from-purple-500 to-pink-500" />
-          <StatsCard icon={MapPin} label="Location" value={employee.office_location} gradient="bg-gradient-to-r from-orange-500 to-red-500" />
+          {[
+            { icon: Mail, label: "Email", value: employee.email, color: "bg-blue-500" },
+            { icon: Phone, label: "Phone", value: employee.phone, color: "bg-green-500" },
+            { icon: Briefcase, label: "Role", value: employee.role_name, color: "bg-purple-500" },
+            { icon: MapPin, label: "Company", value: employee.company_name, color: "bg-amber-500" }
+          ].map((item, i) => (
+            <div key={i} className="bg-white rounded-xl border p-4 shadow-sm">
+              <div className="flex items-center gap-3">
+                <div className={`p-2.5 ${item.color} rounded-lg`}>
+                  <item.icon className="w-5 h-5 text-white" />
+                </div>
+                <div>
+                  <p className="text-xs text-gray-500 font-medium">{item.label}</p>
+                  <p className="text-sm font-semibold text-gray-900 truncate">{item.value || 'N/A'}</p>
+                </div>
+              </div>
+            </div>
+          ))}
         </div>
 
         {/* Tabs */}
         <div className="mb-6">
-          <GlassCard>
-            <div className="p-2">
-              <div className="flex overflow-x-auto scrollbar-hide gap-1">
-                {tabs.map((tab) => {
-                  const Icon = tab.icon;
-                  const isActive = activeTab === tab.id;
-                  return (
-                    <button
-                      key={tab.id}
-                      onClick={() => setActiveTab(tab.id)}
-                      className={`flex items-center gap-2 px-4 py-2.5 rounded-lg text-sm font-medium transition-all whitespace-nowrap ${
-                        isActive 
-                          ? 'bg-gradient-to-r from-[#40423f] to-[#5a5d5a] text-white shadow-sm' 
-                          : 'text-gray-600 hover:bg-gray-100'
-                      }`}
-                    >
-                      <Icon className="w-4 h-4" />
-                      <span className="hidden sm:inline">{tab.label}</span>
-                    </button>
-                  );
-                })}
-              </div>
+          <div className="bg-white rounded-xl border overflow-hidden">
+            <div className="flex overflow-x-auto px-4 py-2">
+              {tabs.map((tab) => {
+                const Icon = tab.icon;
+                const isActive = activeTab === tab.id;
+                return (
+                  <button
+                    key={tab.id}
+                    onClick={() => setActiveTab(tab.id)}
+                    className={`flex items-center gap-2 px-5 py-3 text-sm font-medium transition-all whitespace-nowrap border-b-2 ${
+                      isActive 
+                        ? 'border-[#C62828] text-[#C62828]' 
+                        : 'border-transparent text-gray-600 hover:text-gray-900'
+                    }`}
+                  >
+                    <Icon className="w-4 h-4" />
+                    {tab.label}
+                  </button>
+                );
+              })}
             </div>
-          </GlassCard>
+          </div>
         </div>
 
         {/* Content */}
-        <div>
+        <div className="space-y-6">
           {activeTab === "overview" && (
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              <Section title="Contact Information" icon={Mail}>
-                <div className="grid gap-3">
-                  <InfoItem icon={Mail} label="Email" value={employee.email} gradient="bg-gradient-to-r from-blue-500 to-cyan-500" />
-                  <InfoItem icon={Phone} label="Phone" value={employee.phone} gradient="bg-gradient-to-r from-green-500 to-emerald-500" />
-                  <InfoItem icon={Smartphone} label="Emergency" value={employee.emergency_contact} gradient="bg-gradient-to-r from-red-500 to-rose-500" />
-                  <InfoItem icon={Building} label="Office" value={employee.office_location} gradient="bg-gradient-to-r from-purple-500 to-pink-500" />
-                  <InfoItem icon={MapPin} label="Attendance" value={employee.attendence_location} gradient="bg-gradient-to-r from-orange-500 to-amber-500" />
+              {/* Contact Information */}
+              <div className="bg-white rounded-xl border p-6 shadow-sm">
+                <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
+                  <Mail className="w-5 h-5 text-[#C62828]" />
+                  Contact Information
+                </h3>
+                <div className="space-y-4">
+                  <div>
+                    <label className="text-xs text-gray-500 font-medium">Email</label>
+                    <p className="text-sm font-semibold text-gray-900">{employee.email || 'N/A'}</p>
+                  </div>
+                  <div>
+                    <label className="text-xs text-gray-500 font-medium">Phone</label>
+                    <p className="text-sm font-semibold text-gray-900">{employee.phone || 'N/A'}</p>
+                  </div>
+                  <div>
+                    <label className="text-xs text-gray-500 font-medium">Emergency Contact</label>
+                    <p className="text-sm font-semibold text-gray-900">{employee.emergency_contact || 'N/A'}</p>
+                  </div>
+                  {employee.emergency_contact_name && (
+                    <div>
+                      <label className="text-xs text-gray-500 font-medium">Emergency Contact Name</label>
+                      <p className="text-sm font-semibold text-gray-900">{employee.emergency_contact_name}</p>
+                    </div>
+                  )}
+                  {employee.emergency_contact_relationship && (
+                    <div>
+                      <label className="text-xs text-gray-500 font-medium">Relationship</label>
+                      <p className="text-sm font-semibold text-gray-900 capitalize">{employee.emergency_contact_relationship}</p>
+                    </div>
+                  )}
                 </div>
-              </Section>
+              </div>
 
-              <Section title="Personal Details" icon={User}>
-                <div className="grid gap-3">
-                  <InfoItem icon={User} label="Gender" value={employee.gender?.charAt(0).toUpperCase() + employee.gender?.slice(1)} gradient="bg-gradient-to-r from-indigo-500 to-purple-500" />
-                  <InfoItem icon={Calendar} label="Birth Date" value={employee.date_of_birth ? new Date(employee.date_of_birth).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' }) : null} gradient="bg-gradient-to-r from-pink-500 to-rose-500" />
-                  {employee.date_of_birth && <InfoItem icon={Heart} label="Age" value={`${calculateAge(employee.date_of_birth)} years`} gradient="bg-gradient-to-r from-red-500 to-pink-500" />}
-                  <InfoItem icon={Heart} label="Blood Group" value={employee.blood_group} gradient="bg-gradient-to-r from-red-500 to-rose-500" />
-                  <InfoItem icon={Heart} label="Marital Status" value={employee.marital_status?.charAt(0).toUpperCase() + employee.marital_status?.slice(1)} gradient="bg-gradient-to-r from-pink-500 to-fuchsia-500" />
-                  <InfoItem icon={Globe} label="Nationality" value={employee.nationality} gradient="bg-gradient-to-r from-blue-500 to-indigo-500" />
+              {/* Personal Details */}
+              <div className="bg-white rounded-xl border p-6 shadow-sm">
+                <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
+                  <User className="w-5 h-5 text-[#C62828]" />
+                  Personal Details
+                </h3>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="text-xs text-gray-500 font-medium">Gender</label>
+                    <p className="text-sm font-semibold text-gray-900 capitalize">{employee.gender || 'N/A'}</p>
+                  </div>
+                  <div>
+                    <label className="text-xs text-gray-500 font-medium">Date of Birth</label>
+                    <p className="text-sm font-semibold text-gray-900">
+                      {employee.date_of_birth ? new Date(employee.date_of_birth).toLocaleDateString() : 'N/A'}
+                    </p>
+                  </div>
+                  <div>
+                    <label className="text-xs text-gray-500 font-medium">Age</label>
+                    <p className="text-sm font-semibold text-gray-900">
+                      {employee.date_of_birth ? `${calculateAge(employee.date_of_birth)} years` : 'N/A'}
+                    </p>
+                  </div>
+                  <div>
+                    <label className="text-xs text-gray-500 font-medium">Blood Group</label>
+                    <p className="text-sm font-semibold text-gray-900">{employee.blood_group || 'N/A'}</p>
+                  </div>
+                  <div>
+                    <label className="text-xs text-gray-500 font-medium">Marital Status</label>
+                    <p className="text-sm font-semibold text-gray-900 capitalize">{employee.marital_status || 'N/A'}</p>
+                  </div>
+                  <div>
+                    <label className="text-xs text-gray-500 font-medium">Nationality</label>
+                    <p className="text-sm font-semibold text-gray-900">{employee.nationality || 'N/A'}</p>
+                  </div>
                 </div>
-              </Section>
+              </div>
 
-              <Section title="Employment" icon={Briefcase} className="lg:col-span-2">
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-                  <InfoItem icon={Briefcase} label="Type" value={employee.employee_type?.charAt(0).toUpperCase() + employee.employee_type?.slice(1)} gradient="bg-gradient-to-r from-purple-500 to-indigo-500" />
-                  <InfoItem icon={Laptop} label="Work Mode" value={employee.work_mode?.charAt(0).toUpperCase() + employee.work_mode?.slice(1)} gradient="bg-gradient-to-r from-blue-500 to-cyan-500" />
-                  <InfoItem icon={Building} label="Branch" value={employee.branch} gradient="bg-gradient-to-r from-green-500 to-teal-500" />
-                  <InfoItem icon={Briefcase} label="Job Title" value={employee.job_title} gradient="bg-gradient-to-r from-indigo-500 to-violet-500" />
-                  <InfoItem icon={Calendar} label="Joined" value={employee.joining_date ? new Date(employee.joining_date).toLocaleDateString('en-US', { month: 'short', year: 'numeric' }) : null} gradient="bg-gradient-to-r from-pink-500 to-rose-500" />
-                  <InfoItem icon={Clock} label="Notice" value={employee.notice_period ? `${employee.notice_period} days` : null} gradient="bg-gradient-to-r from-orange-500 to-amber-500" />
+              {/* Allotted Projects */}
+              {allottedProjects.length > 0 && (
+                <div className="bg-white rounded-xl border p-6 shadow-sm">
+                  <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
+                    <Briefcase className="w-5 h-5 text-[#C62828]" />
+                    Allotted Projects
+                  </h3>
+                  <div className="flex flex-wrap gap-2">
+                    {allottedProjects.map((projectId: number) => (
+                      <span key={projectId} className="px-3 py-1.5 bg-blue-100 text-blue-700 rounded-full text-sm font-medium">
+                        Project #{projectId}
+                      </span>
+                    ))}
+                  </div>
                 </div>
-              </Section>
+              )}
 
+              {/* Address Details */}
               {(employee.current_address || employee.permanent_address) && (
-                <Section title="Addresses" icon={Home} className="lg:col-span-2">
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="bg-white rounded-xl border p-6 shadow-sm lg:col-span-2">
+                  <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
+                    <Home className="w-5 h-5 text-[#C62828]" />
+                    Address Details
+                  </h3>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     {employee.current_address && (
-                      <div className="p-5 bg-gradient-to-r from-blue-500 to-cyan-600 rounded-xl text-white">
-                        <div className="flex items-center gap-3 mb-3">
-                          <div className="p-2 bg-white/20 rounded-lg">
-                            <MapPin className="w-4 h-4" />
-                          </div>
-                          <p className="text-sm font-semibold uppercase">Current Address</p>
+                      <div>
+                        <h4 className="text-sm font-medium text-gray-700 mb-2">Current Address</h4>
+                        <div className="p-4 bg-gray-50 rounded-lg">
+                          <p className="text-sm text-gray-900">{employee.current_address}</p>
+                          {(employee.city || employee.state || employee.pincode) && (
+                            <p className="text-sm text-gray-600 mt-2">
+                              {employee.city && `${employee.city}, `}
+                              {employee.state && `${employee.state} `}
+                              {employee.pincode && `- ${employee.pincode}`}
+                            </p>
+                          )}
                         </div>
-                        <p className="text-sm leading-relaxed opacity-90">{employee.current_address}</p>
                       </div>
                     )}
                     {employee.permanent_address && (
-                      <div className="p-5 bg-gradient-to-r from-purple-500 to-pink-600 rounded-xl text-white">
-                        <div className="flex items-center gap-3 mb-3">
-                          <div className="p-2 bg-white/20 rounded-lg">
-                            <Home className="w-4 h-4" />
-                          </div>
-                          <p className="text-sm font-semibold uppercase">Permanent Address</p>
+                      <div>
+                        <h4 className="text-sm font-medium text-gray-700 mb-2">Permanent Address</h4>
+                        <div className="p-4 bg-gray-50 rounded-lg">
+                          <p className="text-sm text-gray-900">{employee.permanent_address}</p>
+                          {(employee.city || employee.state || employee.pincode) && !employee.same_as_permanent && (
+                            <p className="text-sm text-gray-600 mt-2">
+                              {employee.city && `${employee.city}, `}
+                              {employee.state && `${employee.state} `}
+                              {employee.pincode && `- ${employee.pincode}`}
+                            </p>
+                          )}
                         </div>
-                        <p className="text-sm leading-relaxed opacity-90">{employee.permanent_address}</p>
                       </div>
                     )}
                   </div>
-                </Section>
+                </div>
               )}
             </div>
           )}
 
           {activeTab === "personal" && (
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              <Section title="Basic Info" icon={User}>
-                <div className="grid gap-3">
-                  <InfoItem icon={User} label="Name" value={`${employee.first_name} ${employee.last_name}`} gradient="bg-gradient-to-r from-blue-500 to-indigo-500" />
-                  <InfoItem icon={User} label="Gender" value={employee.gender?.charAt(0).toUpperCase() + employee.gender?.slice(1)} gradient="bg-gradient-to-r from-indigo-500 to-purple-500" />
-                  <InfoItem icon={Calendar} label="DOB" value={employee.date_of_birth ? new Date(employee.date_of_birth).toLocaleDateString() : null} gradient="bg-gradient-to-r from-pink-500 to-rose-500" />
-                  {employee.date_of_birth && <InfoItem icon={Heart} label="Age" value={`${calculateAge(employee.date_of_birth)} years`} gradient="bg-gradient-to-r from-red-500 to-pink-500" />}
-                  <InfoItem icon={Heart} label="Blood" value={employee.blood_group} gradient="bg-gradient-to-r from-red-500 to-rose-500" />
-                  <InfoItem icon={Heart} label="Marital" value={employee.marital_status?.charAt(0).toUpperCase() + employee.marital_status?.slice(1)} gradient="bg-gradient-to-r from-pink-500 to-fuchsia-500" />
-                  <InfoItem icon={Globe} label="Nationality" value={employee.nationality} gradient="bg-gradient-to-r from-blue-500 to-cyan-500" />
-                </div>
-              </Section>
-
-              <Section title="Contact" icon={Phone}>
-                <div className="grid gap-3">
-                  <InfoItem icon={Mail} label="Email" value={employee.email} gradient="bg-gradient-to-r from-blue-500 to-cyan-500" />
-                  <InfoItem icon={Phone} label="Phone" value={employee.phone} gradient="bg-gradient-to-r from-green-500 to-emerald-500" />
-                  <InfoItem icon={Smartphone} label="Emergency" value={employee.emergency_contact} gradient="bg-gradient-to-r from-red-500 to-rose-500" />
-                </div>
-              </Section>
-
+              {/* Identification Details */}
               {(employee.aadhar_number || employee.pan_number) && (
-                <Section title="Documents" icon={IdCard} className="lg:col-span-2">
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="bg-white rounded-xl border p-6 shadow-sm">
+                  <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
+                    <IdCard className="w-5 h-5 text-[#C62828]" />
+                    Identification
+                  </h3>
+                  <div className="space-y-4">
                     {employee.aadhar_number && (
-                      <div className="p-5 bg-gradient-to-r from-green-500 to-emerald-600 rounded-xl text-white">
-                        <div className="flex items-center gap-3 mb-3">
-                          <div className="p-2 bg-white/20 rounded-lg"><IdCard className="w-4 h-4" /></div>
-                          <p className="text-sm font-semibold uppercase">Aadhar</p>
-                        </div>
-                        <p className="text-lg font-medium">{employee.aadhar_number}</p>
+                      <div className="p-4 bg-blue-50 rounded-lg">
+                        <label className="text-xs text-blue-700 font-medium">Aadhar Number</label>
+                        <p className="text-lg font-semibold text-blue-900">{employee.aadhar_number}</p>
                       </div>
                     )}
                     {employee.pan_number && (
-                      <div className="p-5 bg-gradient-to-r from-blue-500 to-cyan-600 rounded-xl text-white">
-                        <div className="flex items-center gap-3 mb-3">
-                          <div className="p-2 bg-white/20 rounded-lg"><CreditCard className="w-4 h-4" /></div>
-                          <p className="text-sm font-semibold uppercase">PAN</p>
-                        </div>
-                        <p className="text-lg font-medium">{employee.pan_number}</p>
+                      <div className="p-4 bg-green-50 rounded-lg">
+                        <label className="text-xs text-green-700 font-medium">PAN Number</label>
+                        <p className="text-lg font-semibold text-green-900">{employee.pan_number}</p>
                       </div>
                     )}
                   </div>
-                </Section>
+                </div>
               )}
+
+              {/* Contact Details */}
+              <div className="bg-white rounded-xl border p-6 shadow-sm">
+                <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
+                  <Phone className="w-5 h-5 text-[#C62828]" />
+                  Contact Details
+                </h3>
+                <div className="space-y-4">
+                  <div className="p-4 bg-gray-50 rounded-lg">
+                    <label className="text-xs text-gray-500 font-medium">Email</label>
+                    <p className="text-sm font-semibold text-gray-900">{employee.email}</p>
+                  </div>
+                  <div className="p-4 bg-gray-50 rounded-lg">
+                    <label className="text-xs text-gray-500 font-medium">Phone</label>
+                    <p className="text-sm font-semibold text-gray-900">{employee.phone}</p>
+                  </div>
+                  {employee.emergency_contact && (
+                    <div className="p-4 bg-red-50 rounded-lg">
+                      <label className="text-xs text-red-700 font-medium">Emergency Contact</label>
+                      <p className="text-lg font-semibold text-red-900">{employee.emergency_contact}</p>
+                      {employee.emergency_contact_name && (
+                        <p className="text-sm text-red-700 mt-1">
+                          {employee.emergency_contact_name} ({employee.emergency_contact_relationship})
+                        </p>
+                      )}
+                    </div>
+                  )}
+                </div>
+              </div>
             </div>
           )}
 
           {activeTab === "employment" && (
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              <Section title="Details" icon={Briefcase}>
-                <div className="grid gap-3">
-                  <InfoItem icon={IdCard} label="Code" value={employee.employee_code} gradient="bg-gradient-to-r from-blue-500 to-cyan-500" />
-                  <InfoItem icon={Briefcase} label="Designation" value={employee.designation} gradient="bg-gradient-to-r from-purple-500 to-pink-500" />
-                  <InfoItem icon={Briefcase} label="Job Title" value={employee.job_title} gradient="bg-gradient-to-r from-indigo-500 to-violet-500" />
-                  <InfoItem icon={Building} label="Department" value={employee.department_name} gradient="bg-gradient-to-r from-green-500 to-teal-500" />
-                  <InfoItem icon={User} label="Role" value={employee.role_name} gradient="bg-gradient-to-r from-pink-500 to-rose-500" />
-                  <InfoItem icon={Briefcase} label="Type" value={employee.employee_type?.charAt(0).toUpperCase() + employee.employee_type?.slice(1)} gradient="bg-gradient-to-r from-orange-500 to-amber-500" />
-                  <InfoItem icon={Laptop} label="Mode" value={employee.work_mode?.charAt(0).toUpperCase() + employee.work_mode?.slice(1)} gradient="bg-gradient-to-r from-blue-500 to-indigo-500" />
+              {/* Employment Details */}
+              <div className="bg-white rounded-xl border p-6 shadow-sm">
+                <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
+                  <Briefcase className="w-5 h-5 text-[#C62828]" />
+                  Employment Details
+                </h3>
+                <div className="space-y-4">
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <label className="text-xs text-gray-500 font-medium">Employee Type</label>
+                      <p className="text-sm font-semibold text-gray-900 capitalize">{employee.employee_type || 'N/A'}</p>
+                    </div>
+                    <div>
+                      <label className="text-xs text-gray-500 font-medium">Work Mode</label>
+                      <p className="text-sm font-semibold text-gray-900 capitalize">{employee.work_mode || 'N/A'}</p>
+                    </div>
+                    <div>
+                      <label className="text-xs text-gray-500 font-medium">Probation Period</label>
+                      <p className="text-sm font-semibold text-gray-900">{employee.probation_period ? `${employee.probation_period} months` : 'N/A'}</p>
+                    </div>
+                    <div>
+                      <label className="text-xs text-gray-500 font-medium">Notice Period</label>
+                      <p className="text-sm font-semibold text-gray-900">{employee.notice_period ? `${employee.notice_period} days` : 'N/A'}</p>
+                    </div>
+                  </div>
+                  
+                  <div className="pt-4 border-t">
+                    <label className="text-xs text-gray-500 font-medium">Joining Date</label>
+                    <p className="text-lg font-semibold text-gray-900">
+                      {employee.joining_date ? new Date(employee.joining_date).toLocaleDateString('en-US', { 
+                        year: 'numeric', 
+                        month: 'long', 
+                        day: 'numeric' 
+                      }) : 'N/A'}
+                    </p>
+                  </div>
+                  
+                  {employee.date_of_leaving && (
+                    <div>
+                      <label className="text-xs text-gray-500 font-medium">Date of Leaving</label>
+                      <p className="text-sm font-semibold text-gray-900">
+                        {new Date(employee.date_of_leaving).toLocaleDateString()}
+                      </p>
+                    </div>
+                  )}
                 </div>
-              </Section>
+              </div>
 
-              <Section title="Dates" icon={Calendar}>
-                <div className="grid gap-3">
-                  <InfoItem icon={Calendar} label="Joined" value={employee.joining_date ? new Date(employee.joining_date).toLocaleDateString() : null} gradient="bg-gradient-to-r from-green-500 to-emerald-500" />
-                  <InfoItem icon={Calendar} label="Leaving" value={employee.date_of_leaving ? new Date(employee.date_of_leaving).toLocaleDateString() : null} gradient="bg-gradient-to-r from-red-500 to-rose-500" />
-                  <InfoItem icon={Clock} label="Probation" value={employee.probation_period ? `${employee.probation_period} months` : null} gradient="bg-gradient-to-r from-orange-500 to-amber-500" />
-                  <InfoItem icon={Clock} label="Notice" value={employee.notice_period ? `${employee.notice_period} days` : null} gradient="bg-gradient-to-r from-blue-500 to-cyan-500" />
+              {/* Salary Details */}
+              {employee.salary && (
+                <div className="bg-white rounded-xl border p-6 shadow-sm">
+                  <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
+                    <Wallet className="w-5 h-5 text-[#C62828]" />
+                    Salary Details
+                  </h3>
+                  <div className="p-6 bg-gradient-to-r from-green-500 to-emerald-600 rounded-xl text-white">
+                    <div className="flex items-center justify-between mb-4">
+                      <div>
+                        <p className="text-sm font-medium opacity-90">Current Salary</p>
+                        <p className="text-2xl font-bold">₹{employee.salary}</p>
+                      </div>
+                      <div className="text-right">
+                        <p className="text-sm font-medium opacity-90">Payment Type</p>
+                        <p className="text-lg font-bold capitalize">{employee.salary_type || 'monthly'}</p>
+                      </div>
+                    </div>
+                    <div className="text-center">
+                      <p className="text-xs opacity-80">Last updated on {new Date().toLocaleDateString()}</p>
+                    </div>
+                  </div>
                 </div>
-              </Section>
-
-              <Section title="Office" icon={Building2} className="lg:col-span-2">
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                  <InfoItem icon={Building2} label="Branch" value={employee.branch} gradient="bg-gradient-to-r from-purple-500 to-indigo-500" />
-                  <InfoItem icon={MapPin} label="Office" value={employee.office_location} gradient="bg-gradient-to-r from-green-500 to-emerald-500" />
-                  <InfoItem icon={MapPin} label="Attendance" value={employee.attendence_location} gradient="bg-gradient-to-r from-blue-500 to-cyan-500" />
-                </div>
-              </Section>
+              )}
             </div>
           )}
 
           {activeTab === "education" && (
-            <Section title="Education" icon={GraduationCap}>
+            <div className="bg-white rounded-xl border p-6 shadow-sm">
+              <h3 className="text-lg font-semibold text-gray-900 mb-6 flex items-center gap-2">
+                <GraduationCap className="w-5 h-5 text-[#C62828]" />
+                Educational Qualifications
+              </h3>
+              
               {employee.highest_qualification || employee.university ? (
-                <div className="flex flex-col md:flex-row gap-6">
-                  <div className="md:w-1/3">
-                    <div className="p-6 bg-gradient-to-r from-blue-500 to-indigo-600 rounded-xl shadow-sm text-center text-white">
-                      <div className="w-16 h-16 bg-white/20 rounded-xl flex items-center justify-center mx-auto mb-4">
-                        <GraduationCap className="w-8 h-8" />
+                <div className="space-y-6">
+                  <div className="p-6 bg-gradient-to-r from-blue-500 to-indigo-600 rounded-xl text-white">
+                    <div className="flex items-center gap-4">
+                      <div className="w-14 h-14 bg-white/20 rounded-xl flex items-center justify-center">
+                        <GraduationCap className="w-7 h-7" />
                       </div>
-                      <p className="text-lg font-semibold mb-2">{employee.highest_qualification || 'Education'}</p>
-                      <p className="text-sm font-medium opacity-80">{employee.passing_year || 'Year'}</p>
+                      <div>
+                        <p className="text-xl font-bold">{employee.highest_qualification || 'Education'}</p>
+                        <p className="text-sm font-medium opacity-90">{employee.university || ''}</p>
+                      </div>
                     </div>
                   </div>
-                  <div className="md:w-2/3 grid gap-3">
-                    <InfoItem icon={Award} label="Qualification" value={employee.highest_qualification} gradient="bg-gradient-to-r from-purple-500 to-pink-500" />
-                    <InfoItem icon={School} label="University" value={employee.university} gradient="bg-gradient-to-r from-blue-500 to-indigo-500" />
-                    <InfoItem icon={Calendar} label="Year" value={employee.passing_year} gradient="bg-gradient-to-r from-pink-500 to-rose-500" />
-                    <InfoItem icon={Award} label="Score" value={employee.percentage ? `${employee.percentage}%` : null} gradient="bg-gradient-to-r from-green-500 to-emerald-500" />
+                  
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                    {employee.highest_qualification && (
+                      <div className="p-4 bg-gray-50 rounded-lg">
+                        <label className="text-xs text-gray-500 font-medium">Highest Qualification</label>
+                        <p className="text-sm font-semibold text-gray-900">{employee.highest_qualification}</p>
+                      </div>
+                    )}
+                    {employee.university && (
+                      <div className="p-4 bg-gray-50 rounded-lg">
+                        <label className="text-xs text-gray-500 font-medium">University/College</label>
+                        <p className="text-sm font-semibold text-gray-900">{employee.university}</p>
+                      </div>
+                    )}
+                    {employee.passing_year && (
+                      <div className="p-4 bg-gray-50 rounded-lg">
+                        <label className="text-xs text-gray-500 font-medium">Passing Year</label>
+                        <p className="text-sm font-semibold text-gray-900">{employee.passing_year}</p>
+                      </div>
+                    )}
+                    {employee.percentage && (
+                      <div className="p-4 bg-gray-50 rounded-lg">
+                        <label className="text-xs text-gray-500 font-medium">Percentage/CGPA</label>
+                        <p className="text-sm font-semibold text-gray-900">{employee.percentage}%</p>
+                      </div>
+                    )}
                   </div>
                 </div>
               ) : (
                 <div className="text-center py-12">
-                  <div className="w-20 h-20 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                  <div className="w-20 h-20 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-6">
                     <School className="w-10 h-10 text-gray-400" />
                   </div>
-                  <p className="text-base font-medium text-gray-600 mb-4">No education data</p>
-                  <button onClick={() => setShowAddDetailsModal(true)} className="inline-flex items-center gap-2 px-5 py-2.5 bg-gradient-to-r from-[#40423f] to-[#5a5d5a] text-white text-sm font-medium rounded-lg hover:shadow-md transition-all">
+                  <p className="text-gray-600 font-medium mb-4">No educational information added</p>
+                  <button 
+                    onClick={() => setShowAddDetailsModal(true)}
+                    className="inline-flex items-center gap-2 px-5 py-2.5 bg-[#C62828] text-white font-medium rounded-lg hover:bg-red-700 transition"
+                  >
                     <FileText className="w-4 h-4" />
-                    Add Details
+                    Add Education Details
                   </button>
                 </div>
-              )}
-            </Section>
-          )}
-
-          {activeTab === "bank" && (
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              <Section title="Bank Details" icon={CreditCard}>
-                <div className="grid gap-3">
-                  <InfoItem icon={Building2} label="Bank" value={employee.bank_name} gradient="bg-gradient-to-r from-blue-500 to-cyan-500" />
-                  <InfoItem icon={CreditCard} label="Account" value={employee.bank_account_number} gradient="bg-gradient-to-r from-green-500 to-emerald-500" />
-                  <InfoItem icon={Building} label="IFSC" value={employee.ifsc_code} gradient="bg-gradient-to-r from-purple-500 to-pink-500" />
-                  <InfoItem icon={Wallet} label="UPI" value={employee.upi_id} gradient="bg-gradient-to-r from-orange-500 to-amber-500" />
-                </div>
-              </Section>
-
-              {employee.bank_name && (
-                <Section title="Summary" icon={Wallet}>
-                  <div className="p-6 bg-gradient-to-r from-green-500 to-emerald-600 rounded-xl text-white">
-                    <div className="flex items-center gap-4 mb-5">
-                      <div className="w-12 h-12 bg-white/20 rounded-lg flex items-center justify-center">
-                        <Wallet className="w-6 h-6" />
-                      </div>
-                      <div>
-                        <p className="text-lg font-semibold">{employee.bank_name}</p>
-                        <p className="text-sm font-medium opacity-80">Primary Account</p>
-                      </div>
-                    </div>
-                    {employee.bank_account_number && (
-                      <div className="bg-white/20 rounded-lg p-4">
-                        <p className="text-xs font-medium uppercase mb-2 opacity-70">Account</p>
-                        <p className="text-lg font-medium">•••• •••• {employee.bank_account_number.slice(-4)}</p>
-                      </div>
-                    )}
-                  </div>
-                </Section>
               )}
             </div>
           )}
 
           {activeTab === "system" && (
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              <Section title="Access" icon={Laptop}>
+              {/* System Access */}
+              <div className="bg-white rounded-xl border p-6 shadow-sm">
+                <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
+                  <Laptop className="w-5 h-5 text-[#C62828]" />
+                  System Access
+                </h3>
                 <div className="space-y-4">
-                  <div className="p-4 bg-gradient-to-r from-blue-500 to-indigo-600 rounded-lg text-white flex items-center justify-between">
-                    <div className="flex items-center gap-3">
-                      <div className="p-2 bg-white/20 rounded-lg"><Laptop className="w-4 h-4" /></div>
-                      <span className="text-sm font-medium uppercase">Laptop</span>
+                  <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
+                    <div>
+                      <p className="text-sm font-medium text-gray-700">Laptop Assigned</p>
+                      <p className={`text-sm font-semibold ${employee.laptop_assigned === 'yes' ? 'text-green-600' : 'text-gray-600'}`}>
+                        {employee.laptop_assigned === 'yes' ? 'Yes ✓' : 'No'}
+                      </p>
                     </div>
-                    <span className={`px-3 py-1 rounded-full text-xs font-medium ${employee.laptop_assigned === 'yes' ? 'bg-green-400 text-green-900' : 'bg-gray-300 text-gray-700'}`}>
-                      {employee.laptop_assigned === 'yes' ? 'Yes' : 'No'}
-                    </span>
                   </div>
-                  <div className="grid gap-3">
-                    <InfoItem icon={User} label="Login" value={employee.system_login_id} gradient="bg-gradient-to-r from-blue-500 to-cyan-500" />
-                    <InfoItem icon={Lock} label="Password" value={employee.system_password ? '••••••••' : null} gradient="bg-gradient-to-r from-red-500 to-rose-500" />
-                    <InfoItem icon={Mail} label="Email" value={employee.office_email_id} gradient="bg-gradient-to-r from-green-500 to-emerald-500" />
-                    <InfoItem icon={Lock} label="Email Pass" value={employee.office_email_password ? '••••••••' : null} gradient="bg-gradient-to-r from-orange-500 to-amber-500" />
-                  </div>
-                </div>
-              </Section>
-
-              <Section title="Summary" icon={Lock}>
-                <div className="p-6 bg-gradient-to-r from-purple-500 to-pink-600 rounded-xl text-white">
-                  <div className="flex items-center gap-4 mb-5">
-                    <div className="w-12 h-12 bg-white/20 rounded-lg flex items-center justify-center">
-                      <Lock className="w-6 h-6" />
+                  
+                  <div className="space-y-3">
+                    <div>
+                      <label className="text-xs text-gray-500 font-medium">System Login ID</label>
+                      <p className="text-sm font-semibold text-gray-900">{employee.system_login_id || 'Not set'}</p>
                     </div>
                     <div>
-                      <p className="text-lg font-semibold">Credentials</p>
-                      <p className="text-sm font-medium opacity-80">Access Details</p>
+                      <label className="text-xs text-gray-500 font-medium">System Password</label>
+                      <p className="text-sm font-semibold text-gray-900">{employee.system_password ? '••••••••' : 'Not set'}</p>
+                    </div>
+                    <div>
+                      <label className="text-xs text-gray-500 font-medium">Office Email ID</label>
+                      <p className="text-sm font-semibold text-gray-900">{employee.office_email_id || 'Not set'}</p>
+                    </div>
+                    <div>
+                      <label className="text-xs text-gray-500 font-medium">Office Email Password</label>
+                      <p className="text-sm font-semibold text-gray-900">{employee.office_email_password ? '••••••••' : 'Not set'}</p>
                     </div>
                   </div>
-                  <div className="space-y-3">
-                    {[
-                      { label: 'Status', value: <span className="px-3 py-1 bg-green-400 text-green-900 rounded-full text-xs font-medium">Active</span> },
-                      { label: 'Last Login', value: 'Today, 09:42 AM' },
-                      { label: 'Email', value: employee.office_email_id ? 'Configured' : 'Not Set' }
-                    ].map((item, i) => (
-                      <div key={i} className="flex items-center justify-between p-3 bg-white/20 rounded-lg">
-                        <span className="text-sm font-medium">{item.label}</span>
-                        <span className="text-sm font-semibold">{item.value}</span>
-                      </div>
-                    ))}
+                </div>
+              </div>
+
+              {/* Security Status */}
+              <div className="bg-white rounded-xl border p-6 shadow-sm">
+                <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
+                  <Lock className="w-5 h-5 text-[#C62828]" />
+                  Security Status
+                </h3>
+                <div className="p-6 bg-gradient-to-r from-purple-500 to-pink-600 rounded-xl text-white">
+                  <div className="space-y-4">
+                    <div className="flex items-center justify-between">
+                      <span className="text-sm font-medium">Account Status</span>
+                      <span className="px-3 py-1 bg-green-400 text-green-900 rounded-full text-xs font-bold">Active</span>
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <span className="text-sm font-medium">Last Login</span>
+                      <span className="text-sm font-semibold">Today, 09:42 AM</span>
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <span className="text-sm font-medium">Email Setup</span>
+                      <span className={`px-3 py-1 rounded-full text-xs font-bold ${employee.office_email_id ? 'bg-green-400 text-green-900' : 'bg-yellow-400 text-yellow-900'}`}>
+                        {employee.office_email_id ? 'Configured' : 'Pending'}
+                      </span>
+                    </div>
+                  </div>
+                  <button className="w-full mt-6 py-2.5 bg-white/20 text-white font-medium rounded-lg hover:bg-white/30 transition">
+                    View Access Logs
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {activeTab === "bank" && (
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              {/* Bank Details */}
+              <div className="bg-white rounded-xl border p-6 shadow-sm">
+                <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
+                  <CreditCard className="w-5 h-5 text-[#C62828]" />
+                  Bank Account
+                </h3>
+                <div className="space-y-4">
+                  <div>
+                    <label className="text-xs text-gray-500 font-medium">Bank Name</label>
+                    <p className="text-lg font-semibold text-gray-900">{employee.bank_name || 'Not set'}</p>
+                  </div>
+                  <div>
+                    <label className="text-xs text-gray-500 font-medium">Account Number</label>
+                    <p className="text-lg font-semibold text-gray-900">
+                      {employee.bank_account_number || 'Not set'}
+                    </p>
+                  </div>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <label className="text-xs text-gray-500 font-medium">IFSC Code</label>
+                      <p className="text-sm font-semibold text-gray-900">{employee.ifsc_code || 'Not set'}</p>
+                    </div>
+                    <div>
+                      <label className="text-xs text-gray-500 font-medium">UPI ID</label>
+                      <p className="text-sm font-semibold text-gray-900">{employee.upi_id || 'Not set'}</p>
+                    </div>
                   </div>
                 </div>
-              </Section>
+              </div>
+
+              {/* Summary Card */}
+              <div className="bg-white rounded-xl border p-6 shadow-sm">
+                <h3 className="text-lg font-semibold text-gray-900 mb-4">Account Summary</h3>
+                {employee.bank_name ? (
+                  <div className="p-6 bg-gradient-to-r from-blue-500 to-cyan-600 rounded-xl text-white">
+                    <div className="flex items-center gap-4 mb-6">
+                      <div className="w-12 h-12 bg-white/20 rounded-lg flex items-center justify-center">
+                        <Wallet className="w-6 h-6" />
+                      </div>
+                      <div>
+                        <p className="text-xl font-bold">{employee.bank_name}</p>
+                        <p className="text-sm opacity-90">Primary Account</p>
+                      </div>
+                    </div>
+                    
+                    {employee.bank_account_number && (
+                      <div className="bg-white/20 rounded-lg p-4">
+                        <p className="text-xs font-medium uppercase mb-2 opacity-70">Account Number</p>
+                        <p className="text-lg font-mono font-bold tracking-wider">
+                          •••• •••• {employee.bank_account_number.slice(-4)}
+                        </p>
+                      </div>
+                    )}
+                  </div>
+                ) : (
+                  <div className="text-center py-12">
+                    <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                      <CreditCard className="w-8 h-8 text-gray-400" />
+                    </div>
+                    <p className="text-gray-600 font-medium mb-4">No bank details added</p>
+                    <button 
+                      onClick={() => setShowAddDetailsModal(true)}
+                      className="inline-flex items-center gap-2 px-5 py-2.5 bg-[#C62828] text-white font-medium rounded-lg hover:bg-red-700 transition"
+                    >
+                      <FileText className="w-4 h-4" />
+                      Add Bank Details
+                    </button>
+                  </div>
+                )}
+              </div>
             </div>
           )}
         </div>
@@ -1936,7 +2135,7 @@ const getImageUrl = (imagePath?: string) => {
           isOpen={showEditModal}
           onClose={() => { setShowEditModal(false); loadEmployee(); }}
           employeeId={employee.id}
-          onSuccess={() => { loadEmployee(); toast.success("Updated!"); }}
+          onSuccess={() => { loadEmployee(); toast.success("Profile updated successfully!"); }}
         />
       )}
 
@@ -1945,7 +2144,7 @@ const getImageUrl = (imagePath?: string) => {
           isOpen={showAddDetailsModal}
           onClose={() => { setShowAddDetailsModal(false); loadEmployee(); }}
           employeeId={employee.id}
-          onSuccess={() => { loadEmployee(); toast.success("Details added!"); }}
+          onSuccess={() => { loadEmployee(); toast.success("Details added successfully!"); }}
         />
       )}
     </div>

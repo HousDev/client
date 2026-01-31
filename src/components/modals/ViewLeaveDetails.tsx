@@ -27,7 +27,7 @@ export default function ViewLeaveDetails({ leave, onClose, employees }: ViewLeav
   const getBaseUrl = () => {
     // Check if we're in development or production
     if (window.location.hostname === 'localhost') {
-      return 'http://localhost:4000';
+      return 'http://localhost:4000/api';
     } else {
       return window.location.origin.includes('nayashgroup.in') 
         ? 'https://nayashgroup.in'
@@ -35,8 +35,7 @@ export default function ViewLeaveDetails({ leave, onClose, employees }: ViewLeav
     }
   };
 
-  // Build full URL for attachments
- // Build full URL for attachments - FIXED
+
 const buildAttachmentUrl = (path: string) => {
   if (!path) return '';
   
