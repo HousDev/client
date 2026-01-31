@@ -15,54 +15,54 @@ const TaskProject = ({
   const fetchProjects = async () => {
     try {
       const projectRes: any = await projectApi.getProjects();
-      const areaTasks: any = await AreaTasksApi.getAreaTasks();
+      // const areaTasks: any = await AreaTasksApi.getAreaTasks();
 
       const projects = Array.isArray(projectRes.data) ? projectRes.data : [];
 
-      const tasks = Array.isArray(areaTasks.data) ? areaTasks.data : [];
+      // const tasks = Array.isArray(areaTasks.data) ? areaTasks.data : [];
 
       // 🔹 Build project-wise task status counts
-      const taskCountMap = new Map<number, any>();
+      // const taskCountMap = new Map<number, any>();
 
-      tasks.forEach((task: any) => {
-        if (!taskCountMap.has(task.project_id)) {
-          taskCountMap.set(task.project_id, {
-            total_tasks: 0,
-            not_started: 0,
-            in_progress: 0,
-            completed: 0,
-            delayed: 0,
-          });
-        }
+      // tasks.forEach((task: any) => {
+      //   if (!taskCountMap.has(task.project_id)) {
+      //     taskCountMap.set(task.project_id, {
+      //       total_tasks: 0,
+      //       not_started: 0,
+      //       in_progress: 0,
+      //       completed: 0,
+      //       delayed: 0,
+      //     });
+      //   }
 
-        const counter = taskCountMap.get(task.project_id);
+      //   const counter = taskCountMap.get(task.project_id);
 
-        counter.total_tasks++;
+      //   counter.total_tasks++;
 
-        if (task.status === "not_started") counter.not_started++;
-        if (task.status === "in_progress") counter.in_progress++;
-        if (task.status === "completed") counter.completed++;
-        if (task.status === "delayed") counter.delayed++;
-      });
+      //   if (task.status === "not_started") counter.not_started++;
+      //   if (task.status === "in_progress") counter.in_progress++;
+      //   if (task.status === "completed") counter.completed++;
+      //   if (task.status === "delayed") counter.delayed++;
+      // });
 
       // 🔹 Merge counts into projects
-      const updatedProjects = projects.map((project: any) => {
-        const taskSummary = taskCountMap.get(project.id) || {
-          total_tasks: 0,
-          not_started: 0,
-          in_progress: 0,
-          completed: 0,
-          delayed: 0,
-        };
+      // const updatedProjects = projects.map((project: any) => {
+      //   const taskSummary = taskCountMap.get(project.id) || {
+      //     total_tasks: 0,
+      //     not_started: 0,
+      //     in_progress: 0,
+      //     completed: 0,
+      //     delayed: 0,
+      //   };
 
-        return {
-          ...project,
-          task_summary: taskSummary,
-        };
-      });
+      //   return {
+      //     ...project,
+      //     task_summary: taskSummary,
+      //   };
+      // });
 
-      console.log("projects with task summary", updatedProjects);
-      setProjects(updatedProjects);
+      console.log("projects with task summary", projects);
+      setProjects(projects);
     } catch (error) {
       console.log(error);
       toast.error("Error while fetching projects.");
@@ -127,7 +127,7 @@ const TaskProject = ({
                   {new Date(project.end_date).toLocaleDateString()}
                 </h1>
               </div>
-              <div className="grid grid-cols-3 mt-5 gap-2 border-t border-slate-300 pt-3">
+              {/* <div className="grid grid-cols-3 mt-5 gap-2 border-t border-slate-300 pt-3">
                 <div
                   className={`font-semibold  text-[0.8rem]  px-3 py-1 rounded-full`}
                 >
@@ -153,7 +153,7 @@ const TaskProject = ({
                 >
                   Delayed : {project.task_summary.delayed}
                 </div>
-              </div>
+              </div> */}
             </div>
           </button>
         );
