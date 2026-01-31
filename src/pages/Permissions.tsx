@@ -1,5 +1,8 @@
 import { useState, useEffect } from "react";
 import { Shield, Users, Key, Save, CheckCircle } from "lucide-react";
+import { toast } from "sonner";
+import rolesApi from "../lib/rolesApi";
+import { UsersApi } from "../lib/Api";
 
 type Role = {
   id: string;
@@ -82,137 +85,71 @@ export default function Permissions() {
       label: "Manage Permissions",
       module: "Permissions",
     },
+    {
+      action: "create_notifications",
+      label: "Create Notifications",
+      module: "Notifications",
+    },
+    {
+      action: "view_notifications",
+      label: "View Notifications",
+      module: "Notifications",
+    },
+    {
+      action: "update_notifications",
+      label: "Update Notifications",
+      module: "Notifications",
+    },
+    {
+      action: "delete_notifications",
+      label: "Delete Notifications",
+      module: "Notifications",
+    },
   ];
+
+  const loadUsers = async () => {
+    try {
+      const usersRes: any = await UsersApi.list();
+
+      setSelectedUser(Array.isArray(usersRes) ? usersRes[0].id : {});
+      setUserPermissions(
+        Array.isArray(usersRes) ? usersRes[0].permissions : {},
+      );
+      setUsers(Array.isArray(usersRes) ? usersRes : []);
+      console.log("users", usersRes);
+    } catch (error) {
+      toast.error("Something went wrong while loading roles");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const loadRoles = async () => {
+    try {
+      const rolesRes: any = await rolesApi.getAllRoles();
+      setSelectedRole(Array.isArray(rolesRes.data) ? rolesRes.data[0].id : {});
+      setRolePermissions(
+        Array.isArray(rolesRes.data) ? rolesRes.data[0].permissions : {},
+      );
+      setRoles(Array.isArray(rolesRes.data) ? rolesRes.data : []);
+      console.log("roles", rolesRes);
+    } catch (error) {
+      toast.error("Something went wrong while loading roles");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    loadRoles();
+    loadUsers();
+  }, []);
 
   const groupedPermissions = permissionsList.reduce((acc: any, p) => {
     if (!acc[p.module]) acc[p.module] = [];
     acc[p.module].push(p);
     return acc;
   }, {});
-
-  // Default static roles
-  const defaultRoles: Role[] = [
-    {
-      id: "admin",
-      name: "admin",
-      description: "Full Access",
-      permissions: Object.fromEntries(
-        permissionsList.map((p) => [p.action, true]),
-      ),
-    },
-    {
-      id: "manager",
-      name: "manager",
-      description: "Manager Role",
-      permissions: {},
-    },
-    { id: "staff", name: "staff", description: "Staff Role", permissions: {} },
-  ];
-
-  // Default static users
-  const defaultUsers: User[] = [
-    {
-      id: "1",
-      full_name: "Alice Admin",
-      email: "alice@example.com",
-      role: "admin",
-      permissions: {},
-    },
-    {
-      id: "2",
-      full_name: "Bob Manager",
-      email: "bob@example.com",
-      role: "manager",
-      permissions: {},
-    },
-    {
-      id: "3",
-      full_name: "Charlie Staff",
-      email: "charlie@example.com",
-      role: "staff",
-      permissions: {},
-    },
-  ];
-
-  // Try to read known localStorage keys to find your actual users (and pick admin if present)
-  const loadUsersFromLocalStorage = (): User[] | null => {
-    const keysToTry = [
-      "users_master_data_v1",
-      "mock_users_v1",
-      "MOCK_USERS_KEY",
-      "mock_users_v1",
-    ];
-    for (const key of keysToTry) {
-      try {
-        const raw = localStorage.getItem(key);
-        if (!raw) continue;
-        const parsed = JSON.parse(raw);
-        if (Array.isArray(parsed) && parsed.length > 0) {
-          // normalize items that might have different property names
-          const normalized: User[] = parsed.map((p: any, idx: number) => ({
-            id: p.id ?? p.user_id ?? String(idx + 1),
-            full_name:
-              p.full_name ??
-              p.name ??
-              p.fullName ??
-              p.username ??
-              `User ${idx + 1}`,
-            email: p.email ?? p.username ?? "",
-            role: p.role ?? p.role_name ?? p.roleName ?? undefined,
-            permissions: p.permissions ?? {},
-          }));
-          return normalized;
-        }
-      } catch (e) {
-        // ignore parse errors and continue to next key
-      }
-    }
-    return null;
-  };
-
-  useEffect(() => {
-    setLoading(true);
-
-    setTimeout(() => {
-      // load roles (static defaults)
-      setRoles(defaultRoles);
-
-      // try to get users from localStorage (various keys)
-      const storedUsers = loadUsersFromLocalStorage();
-      const useUsers = storedUsers ?? defaultUsers;
-      setUsers(useUsers);
-
-      // find an admin user (role === 'admin' case-insensitive)
-      const adminUser =
-        useUsers.find(
-          (u) => (u.role ?? "").toString().toLowerCase() === "admin",
-        ) ??
-        useUsers.find((u) =>
-          (u.email ?? "").toString().toLowerCase().includes("admin"),
-        ) ??
-        useUsers[0];
-
-      if (adminUser) {
-        setSelectedUser(adminUser.id);
-        setUserPermissions(adminUser.permissions ?? {});
-        // if the adminUser's role exists in our roles, select it and set rolePermissions
-        const roleMatch =
-          defaultRoles.find(
-            (r) =>
-              r.name.toLowerCase() === (adminUser.role ?? "").toLowerCase(),
-          ) ?? defaultRoles[0];
-        setSelectedRole(roleMatch.id);
-        setRolePermissions(roleMatch.permissions ?? {});
-      } else {
-        setSelectedUser(useUsers[0]?.id ?? "");
-        setSelectedRole(defaultRoles[0].id);
-        setRolePermissions(defaultRoles[0].permissions ?? {});
-      }
-
-      setLoading(false);
-    }, 300);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
 
   const handleRolePermissionChange = (action: string, value: boolean) => {
     setRolePermissions((prev) => ({ ...prev, [action]: value }));
@@ -222,23 +159,36 @@ export default function Permissions() {
     setUserPermissions((prev) => ({ ...prev, [action]: value }));
   };
 
-  const saveUserPermissions = () => {
-    // Static demo: show alert and mirror into local state (no backend)
-    alert("Saved (static demo)");
-    // optionally persist to localStorage 'mock_users_v1' so next load remembers
+  const updateRolePermissions = async () => {
     try {
-      const updatedUsers = users.map((u) =>
-        u.id === selectedUser
-          ? {
-              ...u,
-              permissions: { ...(u.permissions || {}), ...userPermissions },
-            }
-          : u,
+      console.log(rolePermissions, "dfasjdhfkh");
+      const rolePermissionRes = await rolesApi.updateRolePermissions(
+        selectedRole,
+        rolePermissions,
       );
-      localStorage.setItem("mock_users_v1", JSON.stringify(updatedUsers));
-      setUsers(updatedUsers);
+      if (rolePermissionRes.success) {
+        loadRoles();
+        toast.success("Role Permssions Updated Successfully.");
+      }
+      console.log(rolePermissionRes);
+    } catch (error) {
+      toast.error("Something went wrong while updating role permissions.");
+    }
+  };
+
+  const saveUserPermissions = async () => {
+    try {
+      const userPermissionsRes: any = await UsersApi.updateUserPermissions(
+        selectedUser,
+        userPermissions,
+      );
+
+      if (userPermissionsRes.success) {
+        loadUsers();
+        toast.success("User Permissions Updated Successfully.");
+      }
     } catch (e) {
-      // ignore storage errors
+      toast.error("Something went wrong while updating user permissions.");
     }
   };
 
@@ -265,7 +215,12 @@ export default function Permissions() {
           </button>
 
           <button
-            onClick={() => setActiveTab("user-permissions")}
+            onClick={() => {
+              setActiveTab("user-permissions");
+              console.log(users[0].id, users[0]?.permissions);
+              setSelectedUser(users[0].id);
+              setUserPermissions(users[0]?.permissions || {});
+            }}
             className={`flex-1 py-4 text-center ${activeTab === "user-permissions" ? "bg-blue-50 text-blue-600 border-b-2 border-blue-600" : ""}`}
           >
             <Users className="w-5 h-5 inline-block mr-2" />
@@ -282,9 +237,9 @@ export default function Permissions() {
                 onChange={(e) => {
                   const newRole = e.target.value;
                   setSelectedRole(newRole);
-                  const r = roles.find(
-                    (x) => x.id === newRole || x.name === newRole,
-                  );
+                  console.log(roles, newRole);
+                  const r = roles.find((x: any) => x.id === Number(newRole));
+                  console.log(r);
                   setRolePermissions(r?.permissions ?? {});
                 }}
                 className="border p-3 rounded-lg"
@@ -300,25 +255,33 @@ export default function Permissions() {
                 ([module, perms]: [any, any]) => (
                   <div key={module} className="border p-4 rounded-lg">
                     <h3 className="font-semibold mb-3">{module}</h3>
-                    {perms.map((perm: any) => (
-                      <label key={perm.action} className="block py-1">
-                        <input
-                          type="checkbox"
-                          checked={!!rolePermissions[perm.action]}
-                          onChange={(e) =>
-                            handleRolePermissionChange(
-                              perm.action,
-                              e.target.checked,
-                            )
-                          }
-                          className="mr-2"
-                        />
-                        {perm.label}
-                      </label>
-                    ))}
+                    <div className="grid grid-cols-3">
+                      {perms.map((perm: any) => (
+                        <label key={perm.action} className="block py-1">
+                          <input
+                            type="checkbox"
+                            checked={!!rolePermissions[perm.action]}
+                            onChange={(e) =>
+                              handleRolePermissionChange(
+                                perm.action,
+                                e.target.checked,
+                              )
+                            }
+                            className="mr-2"
+                          />
+                          {perm.label}
+                        </label>
+                      ))}
+                    </div>
                   </div>
                 ),
               )}
+              <button
+                onClick={updateRolePermissions}
+                className="px-6 py-3 bg-blue-600 text-white rounded-lg flex items-center gap-2"
+              >
+                <Save className="w-5 h-5" /> Save
+              </button>
             </div>
           )}
 
@@ -355,22 +318,24 @@ export default function Permissions() {
                 ([module, perms]: [any, any]) => (
                   <div key={module} className="border p-4 rounded-lg">
                     <h3 className="font-semibold mb-3">{module}</h3>
-                    {perms.map((perm: any) => (
-                      <label key={perm.action} className="block py-1">
-                        <input
-                          type="checkbox"
-                          checked={!!userPermissions[perm.action]}
-                          onChange={(e) =>
-                            handleUserPermissionChange(
-                              perm.action,
-                              e.target.checked,
-                            )
-                          }
-                          className="mr-2"
-                        />
-                        {perm.label}
-                      </label>
-                    ))}
+                    <div className="grid grid-cols-3">
+                      {perms.map((perm: any) => (
+                        <label key={perm.action} className="block py-1">
+                          <input
+                            type="checkbox"
+                            checked={!!userPermissions[perm.action]}
+                            onChange={(e) =>
+                              handleUserPermissionChange(
+                                perm.action,
+                                e.target.checked,
+                              )
+                            }
+                            className="mr-2"
+                          />
+                          {perm.label}
+                        </label>
+                      ))}
+                    </div>
                   </div>
                 ),
               )}

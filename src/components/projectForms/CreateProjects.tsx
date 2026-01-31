@@ -490,6 +490,9 @@ export default function ConstructionProjectWizardForm({
     const updatedBuildings = [...formData.buildings];
 
     if (selectedAreas.length > 0) {
+      updatedBuildings[selectedArea.buildingId].floors[
+        selectedArea.floorId
+      ].common_areas = [];
       selectedAreas.forEach((element: any) => {
         const newCommonArea: CommonArea = {
           common_area_name: element.name,
@@ -498,6 +501,7 @@ export default function ConstructionProjectWizardForm({
           area_size: element.area_size,
           unit: element.unit,
         };
+
         updatedBuildings[selectedArea.buildingId].floors[
           selectedArea.floorId
         ].common_areas.push(newCommonArea);
@@ -1559,6 +1563,14 @@ export default function ConstructionProjectWizardForm({
                               type="button"
                               onClick={() => {
                                 setShowCommonAreaModal(true);
+                                setSelectedAreas(
+                                  floor.common_areas.map((d: any) => ({
+                                    ...d,
+                                    name: d.common_area_name,
+                                    area_size: d.area_size,
+                                    unit: d.unit,
+                                  })),
+                                );
                                 setSelectedArea((prev: any) => ({
                                   ...prev,
                                   buildingId: buildingIndex,
@@ -2529,12 +2541,13 @@ export default function ConstructionProjectWizardForm({
                   {isAreaDropDownOpen && (
                     <div className="z-50 bg-slate-100 rounded-lg w-full px-3 py-2 h-30 overflow-y-scroll">
                       {allCommonArea.map((d: any, indx: number) => {
+                        console.log(allCommonArea, selectedAreas);
                         return (
                           <div>
                             <input
                               type="checkbox"
                               checked={selectedAreas.some(
-                                (a: any) => a.id === d.id,
+                                (a: any) => a.name === d.name,
                               )}
                               className="w-4 h-4"
                               key={indx}
@@ -2553,7 +2566,7 @@ export default function ConstructionProjectWizardForm({
                                   ]);
                                 } else {
                                   const data = selectedAreas.filter(
-                                    (fit: any) => fit.id !== d.id,
+                                    (fit: any) => fit.name !== d.name,
                                   );
 
                                   setSelectedAreas(data);
@@ -2597,7 +2610,7 @@ export default function ConstructionProjectWizardForm({
                               return;
                             setSelectedAreas((prev: any) =>
                               prev.map((sa: any) => {
-                                return sa.id === d.id
+                                return sa.name === d.name
                                   ? { ...sa, area_size: e.target.value }
                                   : sa;
                               }),
@@ -2611,7 +2624,7 @@ export default function ConstructionProjectWizardForm({
                           onChange={(e) => {
                             setSelectedAreas((prev: any) =>
                               prev.map((sa: any) => {
-                                return sa.id === d.id
+                                return sa.name === d.name
                                   ? { ...sa, unit: e.target.value }
                                   : sa;
                               }),

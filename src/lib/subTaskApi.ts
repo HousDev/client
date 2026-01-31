@@ -36,11 +36,14 @@ export const AreaSubTasksApi = {
   getSubTask: async (id: number | string): Promise<AreaSubTask> =>
     unwrap(api.get(`/area-sub-tasks/${id}`)),
 
+  getSubTasksByProjectId: async (id: number | string): Promise<AreaSubTask> =>
+    unwrap(api.get(`/area-sub-tasks/tasks/${id}`)),
+
   /**
    * Create new sub-task
    * POST /api/area-sub-tasks
    */
-  createSubTask: async (payload: Partial<AreaSubTask>): Promise<AreaSubTask> =>
+  createSubTask: async (payload: any): Promise<AreaSubTask> =>
     unwrap(api.post("/area-sub-tasks", payload)),
 
   /**

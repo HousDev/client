@@ -17,6 +17,9 @@ export type Item = {
 export const ItemsApi = {
   getItems: async (): Promise<Item[]> => unwrap(api.get("/items")),
 
+  getLastItemCode: async (): Promise<Item[]> =>
+    unwrap(api.get("/items/last-code")),
+
   getItem: async (id: string | number): Promise<Item> =>
     unwrap(api.get(`/items/${id}`)),
 
