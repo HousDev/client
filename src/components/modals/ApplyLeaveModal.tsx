@@ -917,6 +917,8 @@
 //     </div>
 //   );
 // }
+
+
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import React, { useState, useRef, useEffect } from 'react';
 import { 
@@ -1219,12 +1221,16 @@ export default function ApplyLeaveForm({ isOpen, onClose, onSuccess, employees }
       }
     } catch (error: any) {
       console.error('Error submitting leave:', error);
+      if (error.response?.data?.message?.includes('Duplicate entry')) {
+      toast.error('Duplicate application detected. Please try again.');
+      // You can auto-retry or just show the message
+    } else {
       toast.error(error.response?.data?.message || 'Failed to submit leave application');
-    } finally {
-      setLoading(false);
     }
-  };
-
+  } finally {
+    setLoading(false);
+  }
+};
   const resetForm = () => {
     setFormData({
       employee_id: '',

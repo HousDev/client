@@ -488,17 +488,18 @@ export default function Layout({
   }, [activeTab, currentSetActiveFormTab]);
 
   // Handle menu item click with submenu toggle
-  const handleMenuItemClick = (item: any) => {
-    if (item.submenu) {
-      // Toggle submenu
-      setOpenSubmenu(openSubmenu === item.id ? null : item.id);
-    } else {
-      // Regular menu item
-      onTabChange(item.id);
-      setMobileSidebarOpen(false);
-      setOpenSubmenu(null);
-    }
-  };
+  // Handle menu item click with submenu toggle
+const handleMenuItemClick = (item: any) => {
+  if (item.submenu) {
+    // Toggle submenu ONLY, don't navigate
+    setOpenSubmenu(openSubmenu === item.id ? null : item.id);
+  } else {
+    // Regular menu item - navigate
+    onTabChange(item.id);
+    setMobileSidebarOpen(false);
+    setOpenSubmenu(null);
+  }
+};
 
   // Handle HRMS submenu item click
   const handleHRMSSubmenuClick = (subItemId: string) => {
@@ -1159,12 +1160,15 @@ export default function Layout({
                         {/* Actions */}
                         <div className="p-2">
                           <button
-                            onClick={() => setProfileOpen(false)}
-                            className="w-full text-left px-3 py-2.5 rounded-lg hover:bg-gray-100 text-sm text-gray-700 flex items-center gap-3 transition"
-                          >
-                            <FaCog className="w-4 h-4 text-gray-500" />
-                            Settings
-                          </button>
+  onClick={() => {
+    setProfileOpen(false);
+    onTabChange("settings"); // Navigate to settings tab
+  }}
+  className="w-full text-left px-3 py-2.5 rounded-lg hover:bg-gray-100 text-sm text-gray-700 flex items-center gap-3 transition"
+>
+  <FaCog className="w-4 h-4 text-gray-500" />
+  Settings
+</button>
 
                           <button
                             onClick={handleSignOut}

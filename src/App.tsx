@@ -154,6 +154,9 @@ function AppContent() {
       case "hr-settings":
         return <HrSettings />;
       // Settings Submenu Pages
+      case "settings":
+      // When settings is clicked from profile dropdown or sidebar, show General Settings
+      return <GeneralSettings />;
       case "general-settings":
         return <GeneralSettings />;
       case "integration":
