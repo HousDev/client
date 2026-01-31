@@ -1363,7 +1363,7 @@ export default function StoreManagement({
   );
 
   // --- Loading State ---
-  if (loading && !refreshing) {
+  if (loading) {
     return (
       <div className="flex items-center justify-center h-96 px-3">
         <div className="text-center">

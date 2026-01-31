@@ -1,4 +1,3 @@
-
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import axios, { AxiosInstance, AxiosError } from "axios";
 
@@ -9,7 +8,6 @@ export type Permissions = {
 };
 
 export interface UserProfile {
-  success: any;
   success: any;
   id: string;
   email: string;
@@ -120,7 +118,7 @@ export const UsersApi = {
 
   get: async (id: string): Promise<UserProfile> =>
     unwrap(api.get(`/users/${id}`)),
-  
+
   getById: async (id: string): Promise<UserProfile> => {
     const response = await api.get(`/users/${id}`);
     if (response.data.success && response.data.data) return response.data.data;
@@ -135,6 +133,14 @@ export const UsersApi = {
   update: async (id: string, payload: any): Promise<UserProfile> =>
     unwrap(api.put(`/users/${id}`, payload)),
 
+  updateUserPermissions: async (
+    id: string,
+    permissions: any,
+  ): Promise<UserProfile> => {
+    console.log("from api", permissions);
+    return unwrap(api.put(`/users/${id}/permissions`, permissions));
+  },
+
   remove: async (id: string): Promise<void> =>
     unwrap(api.delete(`/users/${id}`)),
 
@@ -145,13 +151,13 @@ export const UsersApi = {
   uploadProfilePicture: async (id: string, file: File): Promise<any> => {
     const formData = new FormData();
     formData.append("profile_picture", file);
-    
+
     const response = await api.patch(`/users/${id}/profile-picture`, formData, {
       headers: {
         "Content-Type": "multipart/form-data",
       },
     });
-    
+
     return response.data;
   },
 

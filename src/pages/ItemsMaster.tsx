@@ -813,13 +813,23 @@ export default function ItemsMaster(): JSX.Element {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (!formData.item_code.trim() || !formData.item_name.trim()) {
+    if (!formData.item_name.trim()) {
       toast.error("Please fill required fields (Item Code & Item Name).");
       return;
     }
+    const tempData: any = await ItemsApi.getLastItemCode();
+    const lic = tempData.lastItemCode;
+    const PREFIX = "MAT";
+    const MIN_DIGITS = 4;
+
+    const lastCode = lic ?? `${PREFIX}0`;
+
+    const nextNumber = Number(lastCode.replace(PREFIX, "")) + 1;
+
+    const nextItemCode = PREFIX + String(nextNumber).padStart(MIN_DIGITS, "0");
 
     const payload: any = {
-      item_code: formData.item_code.trim().toUpperCase(),
+      item_code: nextItemCode,
       item_name: formData.item_name.trim(),
       category: formData.category,
       description: formData.description,
@@ -1123,9 +1133,13 @@ export default function ItemsMaster(): JSX.Element {
   const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
+    const tempData: any = await ItemsApi.getLastItemCode();
 
     try {
-      const excelData: any = await excelToItemsData(file);
+      const excelData: any = await excelToItemsData(
+        file,
+        tempData.lastItemCode,
+      );
       console.log("data", excelData);
 
       const res: any = await ItemsApi.addDataByImport(excelData);
@@ -1270,7 +1284,7 @@ export default function ItemsMaster(): JSX.Element {
               style={{ display: "none" }}
             />
             <a
-              href={`${import.meta.env.VITE_API_URL}/templates/project-import`}
+              href={`${import.meta.env.VITE_API_URL}/templates/items-import-template`}
               title="Download Template Data"
               className="p-2 rounded-lg bg-gray-100 hover:bg-gray-200 transition-all duration-200"
             >
@@ -1644,30 +1658,32 @@ export default function ItemsMaster(): JSX.Element {
               <div className="p-4 max-h-[60vh] overflow-y-auto custom-scrollbar">
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
                   {/* Item Code */}
-                  <div className="space-y-1">
-                    <label className="block text-xs font-semibold text-gray-800 mb-1">
-                      Item Code <span className="text-red-500">*</span>
-                    </label>
-                    <div className="relative group">
-                      <div className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 group-focus-within:text-[#C62828] transition-colors">
-                        <Package className="w-3.5 h-3.5" />
+                  {editingId && (
+                    <div className="space-y-1">
+                      <label className="block text-xs font-semibold text-gray-800 mb-1">
+                        Item Code <span className="text-red-500">*</span>
+                      </label>
+                      <div className="relative group">
+                        <div className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 group-focus-within:text-[#C62828] transition-colors">
+                          <Package className="w-3.5 h-3.5" />
+                        </div>
+                        <input
+                          type="text"
+                          value={formData.item_code}
+                          onChange={(e) =>
+                            setFormData({
+                              ...formData,
+                              item_code: e.target.value.toUpperCase(),
+                            })
+                          }
+                          className="w-full pl-9 pr-3 py-2 text-sm border-2 border-gray-200 rounded-xl focus:border-[#C62828] focus:ring-2 focus:ring-[#C62828]/20 outline-none transition-all duration-200 hover:border-gray-300"
+                          placeholder="MAT001"
+                          required
+                          disabled={!!editingId}
+                        />
                       </div>
-                      <input
-                        type="text"
-                        value={formData.item_code}
-                        onChange={(e) =>
-                          setFormData({
-                            ...formData,
-                            item_code: e.target.value.toUpperCase(),
-                          })
-                        }
-                        className="w-full pl-9 pr-3 py-2 text-sm border-2 border-gray-200 rounded-xl focus:border-[#C62828] focus:ring-2 focus:ring-[#C62828]/20 outline-none transition-all duration-200 hover:border-gray-300"
-                        placeholder="MAT001"
-                        required
-                        disabled={!!editingId}
-                      />
                     </div>
-                  </div>
+                  )}
 
                   {/* Item Name */}
                   <div className="space-y-1">

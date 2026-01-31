@@ -434,6 +434,7 @@ export default function UpdateProject({
   };
 
   const handleSubmit = async () => {
+    console.log(formData);
     if (validateStep(5)) {
       if (
         !formData.name ||
@@ -673,20 +674,20 @@ export default function UpdateProject({
     setFormData((prev) => ({ ...prev, buildings: updatedBuildings }));
   };
 
-  const addCommonArea = (buildingIndex: number, floorIndex: number) => {
-    const updatedBuildings = [...formData.buildings];
-    const floor = updatedBuildings[buildingIndex].floors[floorIndex];
-    const commonAreaNumber = floor.common_areas.length + 1;
-    const newCommonArea: CommonArea = {
-      common_area_name: `Common Area ${commonAreaNumber}`,
-      status: "pending",
-      workflow: [...defaultWorkflow],
-    };
-    updatedBuildings[buildingIndex].floors[floorIndex].common_areas.push(
-      newCommonArea,
-    );
-    setFormData((prev) => ({ ...prev, buildings: updatedBuildings }));
-  };
+  // const addCommonArea = (buildingIndex: number, floorIndex: number) => {
+  //   const updatedBuildings = [...formData.buildings];
+  //   const floor = updatedBuildings[buildingIndex].floors[floorIndex];
+  //   const commonAreaNumber = floor.common_areas.length + 1;
+  //   const newCommonArea: CommonArea = {
+  //     common_area_name: `Common Area ${commonAreaNumber}`,
+  //     status: "pending",
+  //     workflow: [...defaultWorkflow],
+  //   };
+  //   updatedBuildings[buildingIndex].floors[floorIndex].common_areas.push(
+  //     newCommonArea,
+  //   );
+  //   setFormData((prev) => ({ ...prev, buildings: updatedBuildings }));
+  // };
 
   const updateCommonArea = (
     buildingIndex: number,
@@ -846,6 +847,122 @@ export default function UpdateProject({
       ["common_area_name"]: value,
     };
     setFormData((prev) => ({ ...prev, buildings: updatedBuildings }));
+  };
+
+  const addAreas = () => {
+    console.log(selectedAreas);
+    const buildings = structuredClone(formData.buildings); // 🔥 safest
+
+    const floor =
+      buildings[selectedItem.buildingId]?.floors[selectedItem.floorId];
+    if (!floor) return;
+
+    const flat = floor.flats?.[selectedItem.flatId];
+    if (!flat) return;
+
+    flat.areas = selectedAreas;
+
+    // Step 2️⃣ Single state update
+    setFormData((prev) => ({
+      ...prev,
+      buildings,
+    }));
+    setSelectedAreas([]);
+  };
+
+  const addAreaToAllFlats = () => {
+    const buildings = structuredClone(formData.buildings);
+    console.log(selectedItem);
+    buildings.forEach((building: any) => {
+      building.floors?.forEach((floor: any) => {
+        if (floor.flats[selectedItem.flatId]) {
+          floor.flats[selectedItem.flatId].areas = selectedAreas;
+        }
+      });
+    });
+
+    setFormData((prev) => ({
+      ...prev,
+      buildings,
+    }));
+  };
+
+  const addCommonArea = () => {
+    const updatedBuildings = [...formData.buildings];
+
+    if (selectedAreas.length > 0) {
+      console.log(selectedAreas, "this is common area test");
+      updatedBuildings[selectedItem.buildingId].floors[
+        selectedItem.floorId
+      ].common_areas = [];
+      selectedAreas.forEach((element: any) => {
+        const newCommonArea: any = {
+          id: element.id,
+          common_area_name: element.common_area_name,
+          status: "pending",
+          workflow: defaultWorkflow,
+          common_area_size: element.area_size,
+          common_area_size_unit: element.unit,
+        };
+
+        updatedBuildings[selectedItem.buildingId].floors[
+          selectedItem.floorId
+        ].common_areas.push(newCommonArea);
+      });
+    }
+    setFormData((prev) => ({ ...prev, buildings: updatedBuildings }));
+  };
+
+  const addCommonAreaToAllFloors = () => {
+    const buildings = structuredClone(formData.buildings);
+
+    const newCommonAreas = selectedAreas.map((element: any) => ({
+      id: element.id,
+      common_area_name: element.common_area_name,
+      status: "pending",
+      workflow: defaultWorkflow,
+      common_area_size: element.area_size,
+      common_area_size_unit: element.unit,
+    }));
+    if (selectedAreas.length > 0) {
+      buildings.forEach((building: any) => {
+        building.floors?.forEach((floor: any) => {
+          floor.common_area = [];
+          floor.common_areas = newCommonAreas;
+        });
+      });
+    }
+
+    setFormData((prev) => ({
+      ...prev,
+      buildings,
+    }));
+  };
+
+  const removeArea = (
+    buildingIndex: number,
+    floorIndex: number,
+    areaIndex: number,
+    areaItemIndex: number, // index of area inside areas[]
+    area_type: string,
+  ) => {
+    console.log(buildingIndex, floorIndex, areaIndex, areaItemIndex, area_type);
+    const buildings = structuredClone(formData.buildings);
+
+    const floor = buildings[buildingIndex]?.floors[floorIndex];
+    if (!floor) return;
+
+    if (area_type === "flat") {
+      const flat = floor.flats?.[areaIndex];
+      if (!flat || !flat.areas) return;
+
+      flat.areas = flat.areas.filter((_: any, i: any) => i !== areaItemIndex);
+    }
+
+    setFormData((prev) => ({
+      ...prev,
+      buildings,
+    }));
   };
 
   return (
@@ -1481,6 +1598,12 @@ export default function UpdateProject({
                                               setSelectedAreas(
                                                 flat.areas ?? [],
                                               );
+                                              setSelectedItem({
+                                                ...selectedItem,
+                                                buildingId: buildingIndex,
+                                                floorId: floorIndex,
+                                                flatId: flatIndex,
+                                              });
                                               setShowModalForItem("flatArea");
                                             }}
                                             className="p-0.5 text-blue-600 hover:bg-green-50 rounded-lg transition-all duration-200"
@@ -1543,7 +1666,13 @@ export default function UpdateProject({
                                                 <div className="space-x-2 flex items-center">
                                                   <button
                                                     onClick={() => {
-                                                      alert("remove");
+                                                      removeArea(
+                                                        buildingIndex,
+                                                        floorIndex,
+                                                        flatIndex,
+                                                        areaItemIndexr,
+                                                        "flat",
+                                                      );
                                                     }}
                                                     className="p-0.5 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-all duration-200"
                                                   >
@@ -1576,7 +1705,19 @@ export default function UpdateProject({
                                 <button
                                   type="button"
                                   onClick={() => {
-                                    setSelectedAreas(floor.common_areas);
+                                    setSelectedItem({
+                                      ...selectedItem,
+                                      buildingId: buildingIndex,
+                                      floorId: floorIndex,
+                                    });
+                                    setSelectedAreas(
+                                      floor.common_areas.map((d: any) => ({
+                                        ...d,
+                                        name: d.common_area_name,
+                                        area_size: d.common_area_size,
+                                        unit: d.common_area_size_unit,
+                                      })),
+                                    );
                                     setShowCommonAreaModal(true);
                                   }}
                                   className="text-xs bg-green-50 text-green-600 px-2 py-1 rounded-lg hover:bg-green-100 transition-all duration-200 flex items-center gap-1"
@@ -2011,7 +2152,6 @@ export default function UpdateProject({
                                       setSelectedAreas([
                                         ...selectedAreas,
                                         {
-                                          id: d.id,
                                           name: d.name,
                                           area_size: "",
                                           unit: "sqft",
@@ -2020,7 +2160,7 @@ export default function UpdateProject({
                                       ]);
                                     } else {
                                       const data = selectedAreas.filter(
-                                        (fit: any) => fit.id !== d.id,
+                                        (fit: any) => fit.name !== d.name,
                                       );
 
                                       setSelectedAreas(data);
@@ -2064,7 +2204,7 @@ export default function UpdateProject({
                                   return;
                                 setSelectedAreas((prev: any) =>
                                   prev.map((sa: any) => {
-                                    return sa.id === d.id
+                                    return sa.name === d.name
                                       ? { ...sa, area_size: e.target.value }
                                       : sa;
                                   }),
@@ -2078,7 +2218,7 @@ export default function UpdateProject({
                               onChange={(e) => {
                                 setSelectedAreas((prev: any) =>
                                   prev.map((sa: any) => {
-                                    return sa.id === d.id
+                                    return sa.name === d.name
                                       ? { ...sa, unit: e.target.value }
                                       : sa;
                                   }),
@@ -2185,7 +2325,7 @@ export default function UpdateProject({
                         className="w-full pl-9 pr-10 py-2.5 text-sm border-2 border-gray-200 rounded-xl focus:border-[#C62828] focus:ring-2 focus:ring-[#C62828]/20 bg-white outline-none appearance-none"
                         required
                       >
-                        <option value="0">Select Common Area Name</option>
+                        <option value="0">Select Floor Name</option>
                         {allFloors.map((ca: any) => (
                           <option key={ca.name} value={ca.name}>
                             {ca.name}
@@ -2342,7 +2482,10 @@ export default function UpdateProject({
               <div className="flex gap-3 mt-6">
                 <button
                   onClick={() => {
-                    if (selectedItem.name.length === 0) {
+                    if (
+                      selectedItem.name.length === 0 &&
+                      !(showUpdateModalForItem === "flatArea")
+                    ) {
                       toast.warning("Fill Correct data.");
                       return;
                     }
@@ -2378,6 +2521,11 @@ export default function UpdateProject({
                       );
                     }
 
+                    if (showUpdateModalForItem == "flatArea") {
+                      addAreas();
+                    }
+                    setSelectedAreas([]);
+
                     setSelectedItem({
                       name: "",
                       count: "",
@@ -2394,6 +2542,25 @@ export default function UpdateProject({
                   <Save className="w-4 h-4 group-hover:scale-110 transition-transform" />
                   Save
                 </button>
+                {showUpdateModalForItem === "flatArea" && (
+                  <button
+                    onClick={() => {
+                      addAreaToAllFlats();
+                      setSelectedItem({
+                        name: "",
+                        count: "",
+                        buildingId: "",
+                        floorId: "",
+                        flatId: "",
+                        commonAreaId: "",
+                      });
+                      setShowModalForItem(null);
+                    }}
+                    className={`flex-1 bg-gradient-to-r from-[#C62828] to-red-600 text-white py-2.5 rounded-xl hover:from-red-600 hover:to-red-700 transition-all duration-200 font-semibold flex items-center justify-center gap-2 group transform hover:-translate-y-0.5 active:translate-y-0`}
+                  >
+                    Add to All Flat
+                  </button>
+                )}
                 <button
                   onClick={() => {
                     setSelectedAreas([]);
@@ -2455,6 +2622,11 @@ export default function UpdateProject({
                   {isAreaDropDownOpen && (
                     <div className="z-50 bg-slate-100 rounded-lg w-full px-3 py-2 h-30 overflow-y-scroll">
                       {allCommonArea.map((d: any, indx: number) => {
+                        console.log(
+                          "this is error",
+                          allCommonArea,
+                          selectedAreas,
+                        );
                         return (
                           <div>
                             <input
@@ -2470,8 +2642,7 @@ export default function UpdateProject({
                                   setSelectedAreas([
                                     ...selectedAreas,
                                     {
-                                      id: d.id,
-                                      name: d.name,
+                                      common_area_name: d.name,
                                       area_size: "",
                                       unit: "sqft",
                                       area_type: "commonArea",
@@ -2479,7 +2650,8 @@ export default function UpdateProject({
                                   ]);
                                 } else {
                                   const data = selectedAreas.filter(
-                                    (fit: any) => fit.id !== d.id,
+                                    (fit: any) =>
+                                      fit.common_area_name !== d.name,
                                   );
 
                                   setSelectedAreas(data);
@@ -2495,79 +2667,90 @@ export default function UpdateProject({
                 </div>
               </div>
               <div className="">
-                {selectedAreas.map((d: any, indx: number) => (
-                  <div key={indx} className="grid grid-cols-2 mb-3">
-                    <div>
-                      <label className="text-xs font-semibold text-gray-800 mb-1 flex items-center gap-2">
-                        Area Name <span className="text-red-500">*</span>
-                      </label>
-                      <h1>{d.common_area_name}</h1>
-                    </div>
-                    <div className="space-y-1.5">
-                      <label className="text-xs font-semibold text-gray-800 mb-1 flex items-center gap-2">
-                        <RulerDimensionLine className="w-3 h-3 text-[#C62828]" />
-                        Area Size <span className="text-red-500">*</span>
-                      </label>
-                      <div className="relative group flex border-2 border-gray-200 rounded-xl ">
-                        <div className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 group-focus-within:text-[#C62828] transition-colors">
-                          <RulerDimensionLine className="w-3 h-3" />
-                        </div>
-                        <input
-                          type="text"
-                          value={d.common_area_size}
-                          onChange={(e) => {
-                            if (
-                              !/^\d*\.?\d*$/.test(e.target.value) ||
-                              Number(e.target.value) < 0
-                            )
-                              return;
-                            setSelectedAreas((prev: any) =>
-                              prev.map((sa: any) => {
-                                return sa.id === d.id
-                                  ? { ...sa, area_size: e.target.value }
-                                  : sa;
-                              }),
-                            );
-                          }}
-                          className={`rounded-l-xl w-full pl-9 pr-4 py-2.5 text-sm   outline-none`}
-                          placeholder="Size"
-                        />
-                        <select
-                          value={d.unit}
-                          onChange={(e) => {
-                            setSelectedAreas((prev: any) =>
-                              prev.map((sa: any) => {
-                                return sa.id === d.id
-                                  ? {
-                                      ...sa,
-                                      common_area_size_unit: e.target.value,
-                                    }
-                                  : sa;
-                              }),
-                            );
-                          }}
-                          className="rounded-r-xl w-full px-3 py-2.5 text-sm  focus:border-[#C62828] focus:ring-2 focus:ring-[#C62828]/20 bg-white outline-none appearance-none"
-                          required
-                        >
-                          {["sqft", "sqm"].map((ca: any) => (
-                            <option key={ca} value={ca}>
-                              {ca}
-                            </option>
-                          ))}
-                        </select>
-                        <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none">
-                          <ChevronDown className="w-3 h-3 text-gray-400" />
+                {selectedAreas.map((d: any, indx: number) => {
+                  return (
+                    <div key={indx} className="grid grid-cols-2 mb-3">
+                      <div>
+                        <label className="text-xs font-semibold text-gray-800 mb-1 flex items-center gap-2">
+                          Area Name <span className="text-red-500">*</span>
+                        </label>
+                        <h1>{d.common_area_name}</h1>
+                      </div>
+                      <div className="space-y-1.5">
+                        <label className="text-xs font-semibold text-gray-800 mb-1 flex items-center gap-2">
+                          <RulerDimensionLine className="w-3 h-3 text-[#C62828]" />
+                          Area Size <span className="text-red-500">*</span>
+                        </label>
+                        <div className="relative group flex border-2 border-gray-200 rounded-xl ">
+                          <div className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 group-focus-within:text-[#C62828] transition-colors">
+                            <RulerDimensionLine className="w-3 h-3" />
+                          </div>
+                          <input
+                            type="text"
+                            value={d.area_size}
+                            onChange={(e) => {
+                              if (
+                                !/^\d*\.?\d*$/.test(e.target.value) ||
+                                Number(e.target.value) < 0
+                              )
+                                return;
+
+                              console.log("selctedAreas", selectedAreas);
+                              setSelectedAreas((prev: any) =>
+                                prev.map((sa: any) => {
+                                  return sa.common_area_name ===
+                                    d.common_area_name
+                                    ? {
+                                        ...sa,
+                                        area_size: e.target.value,
+                                      }
+                                    : sa;
+                                }),
+                              );
+                            }}
+                            className={`rounded-l-xl w-full pl-9 pr-4 py-2.5 text-sm   outline-none`}
+                            placeholder="Size"
+                          />
+                          <select
+                            value={d.common_area_size_unit}
+                            onChange={(e) => {
+                              setSelectedAreas((prev: any) =>
+                                prev.map((sa: any) => {
+                                  return sa.common_area_name ===
+                                    d.common_area_name
+                                    ? {
+                                        ...sa,
+                                        unit: e.target.value,
+                                      }
+                                    : sa;
+                                }),
+                              );
+                            }}
+                            className="rounded-r-xl w-full px-3 py-2.5 text-sm  focus:border-[#C62828] focus:ring-2 focus:ring-[#C62828]/20 bg-white outline-none appearance-none"
+                            required
+                          >
+                            {["sqft", "sqm"].map((ca: any) => (
+                              <option key={ca} value={ca}>
+                                {ca}
+                              </option>
+                            ))}
+                          </select>
+                          <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none">
+                            <ChevronDown className="w-3 h-3 text-gray-400" />
+                          </div>
                         </div>
                       </div>
                     </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             </div>
 
             <div className="flex gap-3 py-3 px-3">
               <button
                 onClick={() => {
+                  addCommonArea();
+                  setSelectedAreas([]);
                   setSelectedItem({
                     name: "",
                     count: "",
@@ -2585,6 +2768,7 @@ export default function UpdateProject({
               </button>
               <button
                 onClick={() => {
+                  addCommonAreaToAllFloors();
                   setSelectedItem({
                     name: "",
                     count: "",
