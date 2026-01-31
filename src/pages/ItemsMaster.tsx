@@ -694,6 +694,10 @@ import {
   Loader2,
   XCircle,
   Download,
+  ChevronLeft,
+  ChevronRight,
+  ChevronsLeft,
+  ChevronsRight,
 } from "lucide-react";
 import ItemsApi from "../lib/itemsApi";
 import { toast } from "sonner";
@@ -740,6 +744,11 @@ export default function ItemsMaster(): JSX.Element {
   // Bulk selection
   const [selectedItems, setSelectedItems] = useState<Set<string>>(new Set());
   const [selectAll, setSelectAll] = useState(false);
+
+  // Pagination states
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage, setItemsPerPage] = useState(10);
+  const [totalPages, setTotalPages] = useState(1);
 
   const [formData, setFormData] = useState<ItemFormData>({
     item_code: "",
@@ -1032,12 +1041,12 @@ export default function ItemsMaster(): JSX.Element {
     setSelectAll(newSelected.size === filteredItems.length);
   };
 
-  // Handle select all
+  // Handle select all for current page
   const handleSelectAll = () => {
     if (selectAll) {
       setSelectedItems(new Set());
     } else {
-      const allIds = new Set(filteredItems.map((item) => item.id));
+      const allIds = new Set(getCurrentPageItems().map((item) => item.id));
       setSelectedItems(allIds);
     }
     setSelectAll(!selectAll);
@@ -1118,6 +1127,41 @@ export default function ItemsMaster(): JSX.Element {
       matchesStatus
     );
   });
+
+  // Calculate pagination data
+  useEffect(() => {
+    const total = filteredItems.length;
+    const pages = Math.ceil(total / itemsPerPage);
+    setTotalPages(pages > 0 ? pages : 1);
+
+    // Reset to page 1 if current page exceeds total pages
+    if (currentPage > pages && pages > 0) {
+      setCurrentPage(1);
+    }
+  }, [filteredItems, itemsPerPage, currentPage]);
+
+  // Get current page items
+  const getCurrentPageItems = () => {
+    const startIndex = (currentPage - 1) * itemsPerPage;
+    const endIndex = startIndex + itemsPerPage;
+    return filteredItems.slice(startIndex, endIndex);
+  };
+
+  // Pagination handlers
+  const goToPage = (page: number) => {
+    if (page >= 1 && page <= totalPages) {
+      setCurrentPage(page);
+    }
+  };
+
+  const handleItemsPerPageChange = (value: string) => {
+    console.log(value)
+    const newValue = parseInt(value, 10);
+    if (!isNaN(newValue) && newValue > 0) {
+      setItemsPerPage(newValue);
+      setCurrentPage(1); // Reset to first page when changing items per page
+    }
+  };
 
   const formatCurrency = (amount: number) =>
     new Intl.NumberFormat("en-IN", {
@@ -1244,6 +1288,27 @@ export default function ItemsMaster(): JSX.Element {
 
           {/* Divider (desktop only) */}
           <div className="hidden md:block h-6 border-l border-gray-300 mx-1"></div>
+
+          <div className="flex items-center gap-2">
+            <span className="text-xs md:text-sm text-gray-600">
+              Show
+            </span>
+            {/* <input
+              type="text"
+              disabled
+              min="1"
+              max="100"
+              value={itemsPerPage}
+              onChange={(e) => handleItemsPerPageChange(e.target.value)}
+              className="w-16 px-2 py-1 text-xs md:text-sm border border-gray-300 rounded focus:ring-1 focus:ring-[#C62828] focus:border-transparent text-center"
+            /> */}
+            <select name="" onChange={(e) => handleItemsPerPageChange(e.target.value)} className="border border-slate-400 px-3 py-1 rounded-lg">
+              <option value={10}>10</option>
+              <option value={25}>25</option>
+              <option value={50}>50</option>
+              <option value={100}>100</option>
+            </select>
+          </div>
 
           {/* Add Item */}
           <button
@@ -1498,14 +1563,13 @@ export default function ItemsMaster(): JSX.Element {
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-200">
-              {filteredItems.map((item) => {
+              {getCurrentPageItems().map((item) => {
                 const isSelected = selectedItems.has(item.id);
                 return (
                   <tr
                     key={item.id}
-                    className={`hover:bg-gray-50 transition ${
-                      isSelected ? "bg-blue-50" : ""
-                    }`}
+                    className={`hover:bg-gray-50 transition ${isSelected ? "bg-blue-50" : ""
+                      }`}
                   >
                     <td className="px-3 md:px-4 py-3 text-center">
                       <input
@@ -1534,11 +1598,10 @@ export default function ItemsMaster(): JSX.Element {
                     </td>
                     <td className="px-3 md:px-4 py-3">
                       <span
-                        className={`px-2 py-0.5 md:px-3 md:py-1 rounded-full text-[10px] md:text-xs font-medium ${
-                          item.category === "material"
+                        className={`px-2 py-0.5 md:px-3 md:py-1 rounded-full text-[10px] md:text-xs font-medium ${item.category === "material"
                             ? "bg-blue-100 text-blue-700"
                             : "bg-green-100 text-green-700"
-                        }`}
+                          }`}
                       >
                         {item.category?.toUpperCase()}
                       </span>
@@ -1564,11 +1627,10 @@ export default function ItemsMaster(): JSX.Element {
                     <td className="px-3 md:px-4 py-3">
                       <button
                         onClick={() => toggleActive(item.id, item.is_active)}
-                        className={`px-2 py-0.5 md:px-3 md:py-1 rounded-full text-[10px] md:text-xs font-medium ${
-                          item.is_active
+                        className={`px-2 py-0.5 md:px-3 md:py-1 rounded-full text-[10px] md:text-xs font-medium ${item.is_active
                             ? "bg-green-100 text-green-700"
                             : "bg-red-100 text-red-700"
-                        }`}
+                          }`}
                       >
                         {item.is_active ? "ACTIVE" : "INACTIVE"}
                       </button>
@@ -1595,7 +1657,7 @@ export default function ItemsMaster(): JSX.Element {
                 );
               })}
 
-              {filteredItems.length === 0 && (
+              {getCurrentPageItems().length === 0 && (
                 <tr>
                   <td colSpan={12} className="px-4 py-8 text-center">
                     <Package className="w-12 h-12 md:w-16 md:h-16 text-gray-300 mx-auto mb-3" />
@@ -1604,15 +1666,15 @@ export default function ItemsMaster(): JSX.Element {
                     </p>
                     <p className="text-gray-500 text-xs md:text-sm mt-1">
                       {searchItemCode ||
-                      searchItemName ||
-                      searchCategory ||
-                      searchHSN ||
-                      searchUnit ||
-                      searchIGST ||
-                      searchCGST ||
-                      searchSGST ||
-                      searchRate ||
-                      searchStatus
+                        searchItemName ||
+                        searchCategory ||
+                        searchHSN ||
+                        searchUnit ||
+                        searchIGST ||
+                        searchCGST ||
+                        searchSGST ||
+                        searchRate ||
+                        searchStatus
                         ? "Try a different search term"
                         : "No items available"}
                     </p>
@@ -1622,6 +1684,111 @@ export default function ItemsMaster(): JSX.Element {
             </tbody>
           </table>
         </div>
+
+        {/* Pagination Controls */}
+        {filteredItems.length > 0 && (
+          <div className="border-t border-gray-200 bg-white p-3 md:p-4">
+            <div className="flex flex-col md:flex-row md:items-center justify-between gap-3 md:gap-4">
+              {/* Items per page selector */}
+
+
+              {/* Page info */}
+              <div className="text-xs md:text-sm text-gray-700">
+                Showing{" "}
+                <span className="font-semibold">
+                  {Math.min((currentPage - 1) * itemsPerPage + 1, filteredItems.length)}
+                </span>{" "}
+                to{" "}
+                <span className="font-semibold">
+                  {Math.min(currentPage * itemsPerPage, filteredItems.length)}
+                </span>{" "}
+                of{" "}
+                <span className="font-semibold">{filteredItems.length}</span>{" "}
+                items
+              </div>
+
+              {/* Pagination buttons */}
+              <div className="flex items-center gap-1 md:gap-2">
+                <button
+                  onClick={() => goToPage(1)}
+                  disabled={currentPage === 1}
+                  className={`p-1.5 md:p-2 rounded border ${currentPage === 1
+                    ? "border-gray-200 text-gray-400 cursor-not-allowed"
+                    : "border-gray-300 text-gray-700 hover:bg-gray-50"
+                    }`}
+                  title="First page"
+                >
+                  <ChevronsLeft className="w-3.5 h-3.5 md:w-4 md:h-4" />
+                </button>
+
+                <button
+                  onClick={() => goToPage(currentPage - 1)}
+                  disabled={currentPage === 1}
+                  className={`p-1.5 md:p-2 rounded border ${currentPage === 1
+                    ? "border-gray-200 text-gray-400 cursor-not-allowed"
+                    : "border-gray-300 text-gray-700 hover:bg-gray-50"
+                    }`}
+                  title="Previous page"
+                >
+                  <ChevronLeft className="w-3.5 h-3.5 md:w-4 md:h-4" />
+                </button>
+
+                {/* Page numbers */}
+                <div className="flex items-center gap-1">
+                  {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+                    let pageNum;
+                    if (totalPages <= 5) {
+                      pageNum = i + 1;
+                    } else if (currentPage <= 3) {
+                      pageNum = i + 1;
+                    } else if (currentPage >= totalPages - 2) {
+                      pageNum = totalPages - 4 + i;
+                    } else {
+                      pageNum = currentPage - 2 + i;
+                    }
+
+                    return (
+                      <button
+                        key={pageNum}
+                        onClick={() => goToPage(pageNum)}
+                        className={`w-7 h-7 md:w-8 md:h-8 rounded border text-xs md:text-sm font-medium ${currentPage === pageNum
+                          ? "bg-[#C62828] text-white border-[#C62828]"
+                          : "border-gray-300 text-gray-700 hover:bg-gray-50"
+                          }`}
+                      >
+                        {pageNum}
+                      </button>
+                    );
+                  })}
+                </div>
+
+                <button
+                  onClick={() => goToPage(currentPage + 1)}
+                  disabled={currentPage === totalPages}
+                  className={`p-1.5 md:p-2 rounded border ${currentPage === totalPages
+                    ? "border-gray-200 text-gray-400 cursor-not-allowed"
+                    : "border-gray-300 text-gray-700 hover:bg-gray-50"
+                    }`}
+                  title="Next page"
+                >
+                  <ChevronRight className="w-3.5 h-3.5 md:w-4 md:h-4" />
+                </button>
+
+                <button
+                  onClick={() => goToPage(totalPages)}
+                  disabled={currentPage === totalPages}
+                  className={`p-1.5 md:p-2 rounded border ${currentPage === totalPages
+                    ? "border-gray-200 text-gray-400 cursor-not-allowed"
+                    : "border-gray-300 text-gray-700 hover:bg-gray-50"
+                    }`}
+                  title="Last page"
+                >
+                  <ChevronsRight className="w-3.5 h-3.5 md:w-4 md:h-4" />
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Add/Edit Modal - Kept as is */}

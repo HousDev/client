@@ -795,6 +795,8 @@
 // }
 /* eslint-disable @typescript-eslint/no-explicit-any */
 // src/components/StoreManagement.tsx
+
+
 import { useState, useEffect, useMemo, SetStateAction } from "react";
 import {
   Plus,
@@ -819,6 +821,10 @@ import {
   Filter,
   X,
   Building2,
+  ChevronLeft,
+  ChevronRight,
+  ChevronsLeft,
+  ChevronsRight,
 } from "lucide-react";
 import { useAuth } from "../contexts/AuthContext";
 import InventoryTransaction from "../components/InventoryTransaction";
@@ -910,7 +916,7 @@ interface StoreManagementProps {
 
 export default function StoreManagement({
   activeFormTab = "",
-  setActiveFormTab = () => {},
+  setActiveFormTab = () => { },
 }: StoreManagementProps): JSX.Element {
   // ADD RETURN TYPE JSX.Element
   const { user, profile } = useAuth();
@@ -965,6 +971,11 @@ export default function StoreManagement({
   // Checkbox selection states
   const [selectedItems, setSelectedItems] = useState<Set<number>>(new Set());
   const [selectAll, setSelectAll] = useState(false);
+
+  // Pagination states
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage, setItemsPerPage] = useState(10);
+  const [totalPages, setTotalPages] = useState(1);
 
   // --- Permissions ---
   const can = (permission: string) => {
@@ -1239,12 +1250,36 @@ export default function StoreManagement({
     activeTab,
   ]);
 
+  // Calculate pagination data
+  useEffect(() => {
+    if (activeTab === "management") {
+      const total = filteredInventory.length;
+      const pages = Math.ceil(total / itemsPerPage);
+      setTotalPages(pages > 0 ? pages : 1);
+
+      // Reset to page 1 if current page exceeds total pages
+      if (currentPage > pages && pages > 0) {
+        setCurrentPage(1);
+      }
+    }
+  }, [filteredInventory, itemsPerPage, currentPage, activeTab]);
+
+  // Get current page items
+  const getCurrentPageItems = () => {
+    if (activeTab !== "management") return [];
+
+    const startIndex = (currentPage - 1) * itemsPerPage;
+    const endIndex = startIndex + itemsPerPage;
+    return filteredInventory.slice(startIndex, endIndex);
+  };
+
   // --- Checkbox handlers ---
   const handleSelectAll = () => {
     if (selectAll) {
       setSelectedItems(new Set());
     } else {
-      const allIds = new Set(filteredInventory.map((item) => item.id));
+      const currentPageItems = getCurrentPageItems();
+      const allIds = new Set(currentPageItems.map((item) => item.id));
       setSelectedItems(allIds);
     }
     setSelectAll(!selectAll);
@@ -1258,7 +1293,24 @@ export default function StoreManagement({
       newSelected.add(id);
     }
     setSelectedItems(newSelected);
-    setSelectAll(newSelected.size === filteredInventory.length);
+
+    const currentPageItems = getCurrentPageItems();
+    setSelectAll(newSelected.size === currentPageItems.length);
+  };
+
+  // Pagination handlers
+  const goToPage = (page: number) => {
+    if (page >= 1 && page <= totalPages) {
+      setCurrentPage(page);
+    }
+  };
+
+  const handleItemsPerPageChange = (value: string) => {
+    const newValue = parseInt(value, 10);
+    if (!isNaN(newValue) && newValue > 0) {
+      setItemsPerPage(newValue);
+      setCurrentPage(1); // Reset to first page when changing items per page
+    }
   };
 
   // --- Handlers ---
@@ -1319,9 +1371,8 @@ export default function StoreManagement({
     try {
       const payload = {
         title: `Inventory Reminder (${item.item_name})`,
-        description: `Inventory Reminder: In Stock ${
-          item.quantity + " " + item.unit
-        } of ${item.item_name}(${item.item_code}) status: ${item.status}`,
+        description: `Inventory Reminder: In Stock ${item.quantity + " " + item.unit
+          } of ${item.item_name}(${item.item_code}) status: ${item.status}`,
         type: "reminder",
       };
       const result: any = await NotificationsApi.createNotification(payload);
@@ -1407,11 +1458,10 @@ export default function StoreManagement({
         {" "}
         <button
           onClick={() => setActiveTab("tracking")}
-          className={`flex-1 px-3 md:px-6 py-2 md:py-4 font-medium transition-all duration-200 flex items-center justify-center gap-1.5 md:gap-3 ${
-            activeTab === "tracking"
+          className={`flex-1 px-3 md:px-6 py-2 md:py-4 font-medium transition-all duration-200 flex items-center justify-center gap-1.5 md:gap-3 ${activeTab === "tracking"
               ? "bg-[#C62828] text-white"
               : "text-gray-700 hover:bg-gray-50"
-          }`}
+            }`}
         >
           <FileText
             className={`w-3 h-3 md:w-5 md:h-5 ${activeTab === "tracking" ? "text-white" : "text-gray-500"}`}
@@ -1420,11 +1470,10 @@ export default function StoreManagement({
         </button>
         <button
           onClick={() => setActiveTab("management")}
-          className={`flex-1 px-3 md:px-6 py-2 md:py-4 font-medium transition-all duration-200 flex items-center justify-center gap-1.5 md:gap-3 ${
-            activeTab === "management"
+          className={`flex-1 px-3 md:px-6 py-2 md:py-4 font-medium transition-all duration-200 flex items-center justify-center gap-1.5 md:gap-3 ${activeTab === "management"
               ? "bg-[#C62828] text-white"
               : "text-gray-700 hover:bg-gray-50"
-          }`}
+            }`}
         >
           <Package
             className={`w-3 h-3 md:w-5 md:h-5 ${activeTab === "management" ? "text-white" : "text-gray-500"}`}
@@ -1441,16 +1490,14 @@ export default function StoreManagement({
             onClick={() => setSubTabs("MaterialIn")}
             className={`flex-1 px-2 md:px-4 py-2 font-medium transition-all duration-200
         flex items-center justify-center gap-1.5
-        ${
-          subTabs === "MaterialIn"
-            ? "bg-emerald-50 text-emerald-700 border-b-2 border-emerald-500"
-            : "text-gray-600 hover:bg-gray-50"
-        }`}
+        ${subTabs === "MaterialIn"
+                ? "bg-emerald-50 text-emerald-700 border-b-2 border-emerald-500"
+                : "text-gray-600 hover:bg-gray-50"
+              }`}
           >
             <Download
-              className={`w-3.5 h-3.5 md:w-4 md:h-4 ${
-                subTabs === "MaterialIn" ? "text-emerald-600" : "text-gray-500"
-              }`}
+              className={`w-3.5 h-3.5 md:w-4 md:h-4 ${subTabs === "MaterialIn" ? "text-emerald-600" : "text-gray-500"
+                }`}
             />
             <span className="text-[11px] md:text-sm whitespace-nowrap">
               Material In
@@ -1461,16 +1508,14 @@ export default function StoreManagement({
             onClick={() => setSubTabs("MaterialOut")}
             className={`flex-1 px-2 md:px-4 py-2 font-medium transition-all duration-200
         flex items-center justify-center gap-1.5
-        ${
-          subTabs === "MaterialOut"
-            ? "bg-blue-50 text-blue-700 border-b-2 border-blue-500"
-            : "text-gray-600 hover:bg-gray-50"
-        }`}
+        ${subTabs === "MaterialOut"
+                ? "bg-blue-50 text-blue-700 border-b-2 border-blue-500"
+                : "text-gray-600 hover:bg-gray-50"
+              }`}
           >
             <Truck
-              className={`w-3.5 h-3.5 md:w-4 md:h-4 ${
-                subTabs === "MaterialOut" ? "text-blue-600" : "text-gray-500"
-              }`}
+              className={`w-3.5 h-3.5 md:w-4 md:h-4 ${subTabs === "MaterialOut" ? "text-blue-600" : "text-gray-500"
+                }`}
             />
             <span className="text-[11px] md:text-sm whitespace-nowrap">
               Material Out
@@ -1481,16 +1526,14 @@ export default function StoreManagement({
             onClick={() => setSubTabs("MaterialIssue")}
             className={`flex-1 px-2 md:px-4 py-2 font-medium transition-all duration-200
         flex items-center justify-center gap-1.5
-        ${
-          subTabs === "MaterialIssue"
-            ? "bg-amber-50 text-amber-700 border-b-2 border-amber-500"
-            : "text-gray-600 hover:bg-gray-50"
-        }`}
+        ${subTabs === "MaterialIssue"
+                ? "bg-amber-50 text-amber-700 border-b-2 border-amber-500"
+                : "text-gray-600 hover:bg-gray-50"
+              }`}
           >
             <HandCoins
-              className={`w-3.5 h-3.5 md:w-4 md:h-4 ${
-                subTabs === "MaterialIssue" ? "text-amber-600" : "text-gray-500"
-              }`}
+              className={`w-3.5 h-3.5 md:w-4 md:h-4 ${subTabs === "MaterialIssue" ? "text-amber-600" : "text-gray-500"
+                }`}
             />
             <span className="text-[11px] md:text-sm whitespace-nowrap">
               Material Issue
@@ -1525,7 +1568,7 @@ export default function StoreManagement({
                       className="w-3 h-3 md:w-4 md:h-4 text-[#C62828] border-gray-300 rounded focus:ring-[#C62828]"
                     />
                   </th>
-                  <th className="px-2 md:px-4 py-2 text-left">
+                  <th className="px-2 md:px-4 py-2 text-left w-40">
                     <div className="text-[10px] md:text-xs font-semibold text-gray-700 uppercase tracking-wider">
                       Material Details
                     </div>
@@ -1646,9 +1689,9 @@ export default function StoreManagement({
                 </tr>
               </thead>
 
-              {/* Rest of your table body remains the same */}
+              {/* Table Body */}
               <tbody className="divide-y divide-gray-200">
-                {filteredInventory.length === 0 ? (
+                {getCurrentPageItems().length === 0 ? (
                   <tr>
                     <td colSpan={8} className="px-4 py-8 text-center">
                       <Package className="w-12 h-12 md:w-16 md:h-16 text-gray-300 mx-auto mb-3" />
@@ -1661,16 +1704,15 @@ export default function StoreManagement({
                     </td>
                   </tr>
                 ) : (
-                  filteredInventory.map((item, index) => {
+                    getCurrentPageItems().map((item, index) => {
                     const totalValue = calculateTotalValue(item);
                     const isSelected = selectedItems.has(item.id);
 
                     return (
                       <tr
                         key={item.id}
-                        className={`hover:bg-gray-50 transition ${
-                          index % 2 === 0 ? "bg-white" : "bg-gray-50/50"
-                        } ${isSelected ? "bg-blue-50" : ""}`}
+                        className={`hover:bg-gray-50 transition ${index % 2 === 0 ? "bg-white" : "bg-gray-50/50"
+                          } ${isSelected ? "bg-blue-50" : ""}`}
                       >
                         <td className="px-2 md:px-4 py-2 text-center">
                           <input
@@ -1680,8 +1722,8 @@ export default function StoreManagement({
                             className="w-3 h-3 md:w-4 md:h-4 text-[#C62828] border-gray-300 rounded focus:ring-[#C62828]"
                           />
                         </td>
-                        <td className="px-2 md:px-4 py-2">
-                          <div className="flex items-center gap-1.5 md:gap-3">
+                        <td className="px-2 md:px-4 py-2 w-40 text-wrap">
+                          <div className="flex items-center gap-1.5 md:gap-3 w-72 text-wrap">
                             <div className="bg-[#C62828] w-6 h-6 md:w-8 md:h-8 rounded-full flex items-center justify-center text-white font-semibold text-[10px] md:text-xs flex-shrink-0">
                               {(item.item_name || "U").charAt(0).toUpperCase()}
                             </div>
@@ -1789,7 +1831,134 @@ export default function StoreManagement({
               </tbody>
             </table>
           </div>
-          {/* Bulk Actions Bar (unchanged) */}
+
+          {/* Pagination Controls */}
+          {filteredInventory.length > 0 && (
+            <div className="border-t border-gray-200 bg-white p-3 md:p-4">
+              <div className="flex flex-col md:flex-row md:items-center justify-between gap-3 md:gap-4">
+                {/* Items per page selector */}
+                <div className="flex items-center gap-2">
+                  <span className="text-xs md:text-sm text-gray-600">
+                    Show
+                  </span>
+                  {/* <input
+                    type="number"
+                    min="1"
+                    max="100"
+                    value={itemsPerPage}
+                    onChange={(e) => handleItemsPerPageChange(e.target.value)}
+                    className="w-16 px-2 py-1 text-xs md:text-sm border border-gray-300 rounded focus:ring-1 focus:ring-[#C62828] focus:border-transparent text-center"
+                  /> */}
+                  <select name="" onChange={(e) => handleItemsPerPageChange(e.target.value)} className="border border-slate-400 px-3 py-1 rounded-lg">
+                    <option value={10}>10</option>
+                    <option value={25}>25</option>
+                    <option value={50}>50</option>
+                    <option value={100}>100</option>
+                  </select>
+                  <span className="text-xs md:text-sm text-gray-600">
+                    items per page
+                  </span>
+                </div>
+
+                {/* Page info */}
+                <div className="text-xs md:text-sm text-gray-700">
+                  Showing{" "}
+                  <span className="font-semibold">
+                    {Math.min((currentPage - 1) * itemsPerPage + 1, filteredInventory.length)}
+                  </span>{" "}
+                  to{" "}
+                  <span className="font-semibold">
+                    {Math.min(currentPage * itemsPerPage, filteredInventory.length)}
+                  </span>{" "}
+                  of{" "}
+                  <span className="font-semibold">{filteredInventory.length}</span>{" "}
+                  items
+                </div>
+
+                {/* Pagination buttons */}
+                <div className="flex items-center gap-1 md:gap-2">
+                  <button
+                    onClick={() => goToPage(1)}
+                    disabled={currentPage === 1}
+                    className={`p-1.5 md:p-2 rounded border ${currentPage === 1
+                      ? "border-gray-200 text-gray-400 cursor-not-allowed"
+                      : "border-gray-300 text-gray-700 hover:bg-gray-50"
+                      }`}
+                    title="First page"
+                  >
+                    <ChevronsLeft className="w-3.5 h-3.5 md:w-4 md:h-4" />
+                  </button>
+
+                  <button
+                    onClick={() => goToPage(currentPage - 1)}
+                    disabled={currentPage === 1}
+                    className={`p-1.5 md:p-2 rounded border ${currentPage === 1
+                      ? "border-gray-200 text-gray-400 cursor-not-allowed"
+                      : "border-gray-300 text-gray-700 hover:bg-gray-50"
+                      }`}
+                    title="Previous page"
+                  >
+                    <ChevronLeft className="w-3.5 h-3.5 md:w-4 md:h-4" />
+                  </button>
+
+                  {/* Page numbers */}
+                  <div className="flex items-center gap-1">
+                    {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+                      let pageNum;
+                      if (totalPages <= 5) {
+                        pageNum = i + 1;
+                      } else if (currentPage <= 3) {
+                        pageNum = i + 1;
+                      } else if (currentPage >= totalPages - 2) {
+                        pageNum = totalPages - 4 + i;
+                      } else {
+                        pageNum = currentPage - 2 + i;
+                      }
+
+                      return (
+                        <button
+                          key={pageNum}
+                          onClick={() => goToPage(pageNum)}
+                          className={`w-7 h-7 md:w-8 md:h-8 rounded border text-xs md:text-sm font-medium ${currentPage === pageNum
+                            ? "bg-[#C62828] text-white border-[#C62828]"
+                            : "border-gray-300 text-gray-700 hover:bg-gray-50"
+                            }`}
+                        >
+                          {pageNum}
+                        </button>
+                      );
+                    })}
+                  </div>
+
+                  <button
+                    onClick={() => goToPage(currentPage + 1)}
+                    disabled={currentPage === totalPages}
+                    className={`p-1.5 md:p-2 rounded border ${currentPage === totalPages
+                      ? "border-gray-200 text-gray-400 cursor-not-allowed"
+                      : "border-gray-300 text-gray-700 hover:bg-gray-50"
+                      }`}
+                    title="Next page"
+                  >
+                    <ChevronRight className="w-3.5 h-3.5 md:w-4 md:h-4" />
+                  </button>
+
+                  <button
+                    onClick={() => goToPage(totalPages)}
+                    disabled={currentPage === totalPages}
+                    className={`p-1.5 md:p-2 rounded border ${currentPage === totalPages
+                      ? "border-gray-200 text-gray-400 cursor-not-allowed"
+                      : "border-gray-300 text-gray-700 hover:bg-gray-50"
+                      }`}
+                    title="Last page"
+                  >
+                    <ChevronsRight className="w-3.5 h-3.5 md:w-4 md:h-4" />
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Bulk Actions Bar */}
           {selectedItems.size > 0 && (
             <div className="border-t border-gray-200 bg-blue-50 p-2 md:p-3">
               <div className="flex flex-col md:flex-row md:items-center justify-between gap-2">
@@ -1814,9 +1983,8 @@ export default function StoreManagement({
         <div className="fixed inset-0 z-50 overflow-hidden">
           {/* Overlay */}
           <div
-            className={`absolute inset-0 bg-black bg-opacity-50 transition-opacity duration-300 ${
-              showFilterSidebar ? "opacity-100" : "opacity-0"
-            }`}
+            className={`absolute inset-0 bg-black bg-opacity-50 transition-opacity duration-300 ${showFilterSidebar ? "opacity-100" : "opacity-0"
+              }`}
             onClick={() => setShowFilterSidebar(false)}
           />
 
