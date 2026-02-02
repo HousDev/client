@@ -1,4 +1,3 @@
-
 // src/components/UsersMaster.tsx
 import React, {
   useEffect,
@@ -216,7 +215,7 @@ export default function UsersMaster() {
   const loadProjects = useCallback(async () => {
     setLoadingProjects(true);
     try {
-      const projectsData = await projectApi.getProjects();
+      const projectsData: any = await projectApi.getProjects();
       setProjects(projectsData.data || []);
     } catch (err: any) {
       console.error("Failed to load projects:", err);
@@ -319,7 +318,7 @@ export default function UsersMaster() {
   // Load all roles (for fallback)
   const loadAllRoles = useCallback(async () => {
     try {
-      const rolesData = await getAllRoles();
+      const rolesData: any = await getAllRoles();
       let rolesArray: Role[] = [];
 
       if (Array.isArray(rolesData)) {
@@ -331,7 +330,7 @@ export default function UsersMaster() {
       ) {
         rolesArray = rolesData.data;
       } else if (rolesData && typeof rolesData === "object") {
-        const tempArray = Object.values(rolesData);
+        const tempArray: any = Object.values(rolesData);
         if (Array.isArray(tempArray)) {
           rolesArray = tempArray;
         }
@@ -364,7 +363,8 @@ export default function UsersMaster() {
       try {
         console.log("Loading roles for department:", departmentId);
         // Try to get roles by department from designation API
-        const roles = await designationApi.getRolesByDepartment(departmentId);
+        const roles: any =
+          await designationApi.getRolesByDepartment(departmentId);
         console.log("Department roles from API:", roles);
 
         if (Array.isArray(roles) && roles.length > 0) {
@@ -786,238 +786,240 @@ export default function UsersMaster() {
   );
 
   // Handle form submission
- // Updated handleSubmit function - Phone check ONLY on create
-const handleSubmit = async (e: React.FormEvent) => {
-  e.preventDefault();
+  // Updated handleSubmit function - Phone check ONLY on create
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
 
-  // Validation
-  if (!formData.email.trim()) {
-    toast.error("Email is required");
-    return;
-  }
-
-  if (!editingId) {
-    if (!formData.password || formData.password.length < 6) {
-      toast.error("Password must be at least 6 characters");
+    // Validation
+    if (!formData.email.trim()) {
+      toast.error("Email is required");
       return;
     }
 
-    if (formData.password !== formData.confirm_password) {
-      toast.error("Passwords do not match");
-      return;
-    }
-  }
-
-  if (!formData.first_name.trim()) {
-    toast.error("First name is required");
-    return;
-  }
-
-  if (formData.phone && formData.phone.length !== 10) {
-    toast.error("Phone number must be 10 digits");
-    return;
-  }
-
-  if (!formData.department_id) {
-    toast.error("Please select a department");
-    return;
-  }
-
-  if (!formData.role_id) {
-    toast.error("Please select a role");
-    return;
-  }
-
-  // ✅ ONLY CHECK PHONE DUPLICATE ON CREATE (not on update)
-  if (!editingId && formData.phone && formData.phone.trim() !== "") {
-    try {
-      // Check in existing users
-      const existingUserWithPhone = users.find(
-        (user) => user.phone === formData.phone
-      );
-
-      if (existingUserWithPhone) {
-        toast.error("This phone number is already in use by another user");
+    if (!editingId) {
+      if (!formData.password || formData.password.length < 6) {
+        toast.error("Password must be at least 6 characters");
         return;
       }
 
-      // Also check in employees table to prevent cross-table duplicates
+      if (formData.password !== formData.confirm_password) {
+        toast.error("Passwords do not match");
+        return;
+      }
+    }
+
+    if (!formData.first_name.trim()) {
+      toast.error("First name is required");
+      return;
+    }
+
+    if (formData.phone && formData.phone.length !== 10) {
+      toast.error("Phone number must be 10 digits");
+      return;
+    }
+
+    if (!formData.department_id) {
+      toast.error("Please select a department");
+      return;
+    }
+
+    if (!formData.role_id) {
+      toast.error("Please select a role");
+      return;
+    }
+
+    // ✅ ONLY CHECK PHONE DUPLICATE ON CREATE (not on update)
+    if (!editingId && formData.phone && formData.phone.trim() !== "") {
       try {
-        const employees = await HrmsEmployeesApi.getEmployees();
-        const existingEmployeeWithPhone = employees.find(
-          (emp: any) => emp.phone === formData.phone
+        // Check in existing users
+        const existingUserWithPhone = users.find(
+          (user) => user.phone === formData.phone,
         );
 
-        if (existingEmployeeWithPhone) {
-          toast.error("This phone number is already in use by an employee");
+        if (existingUserWithPhone) {
+          toast.error("This phone number is already in use by another user");
           return;
         }
-      } catch (empError) {
-        console.warn("Could not check employee phone duplicates:", empError);
-        // Continue with user check only
-      }
-    } catch (error) {
-      console.error("Error checking phone duplicate:", error);
-      // Continue with submission if check fails
-    }
-  }
 
-  // Validate employee fields
-  if (formData.is_employee) {
-    if (!formData.designation.trim()) {
-      toast.error("Designation is required for employees");
-      return;
-    }
-    if (!formData.joining_date) {
-      toast.error("Date of joining is required for employees");
-      return;
-    }
-    if (!formData.company_id) {
-      toast.error("Company is required for employees");
-      return;
-    }
-    if (!formData.attendance_location_id) {
-      toast.error("Attendance location (branch) is required for employees");
-      return;
-    }
-  }
+        // Also check in employees table to prevent cross-table duplicates
+        try {
+          const employees = await HrmsEmployeesApi.getEmployees();
+          const existingEmployeeWithPhone = employees.find(
+            (emp: any) => emp.phone === formData.phone,
+          );
 
-  setSubmitting(true);
-
-  try {
-    const fullName = [
-      formData.first_name,
-      formData.middle_name,
-      formData.last_name,
-    ]
-      .filter((name) => name.trim())
-      .join(" ");
-
-    const payload: any = {
-      email: formData.email.trim(),
-      full_name: fullName,
-      phone: formData.phone,
-      role: formData.role,
-      department: formData.department,
-      department_id: formData.department_id,
-      is_active: formData.is_active,
-      permissions: formData.permissions || {},
-    };
-
-    if (formData.password && formData.password.length > 0 && !editingId) {
-      payload.password = formData.password;
-    }
-
-    if (editingId) {
-      // Update existing user
-      const response = await UsersApi.update(editingId, payload);
-
-      let result: UserProfile;
-
-      if (response.success && response.data) {
-        result = response.data;
-      } else if (response.id) {
-        result = response;
-      } else {
-        throw new Error("Invalid response format");
-      }
-
-      if (selectedFile) {
-        const profilePicUrl = await uploadProfilePicture(editingId);
-        if (profilePicUrl) {
-          result = { ...result, profile_picture: profilePicUrl };
+          if (existingEmployeeWithPhone) {
+            toast.error("This phone number is already in use by an employee");
+            return;
+          }
+        } catch (empError) {
+          console.warn("Could not check employee phone duplicates:", empError);
+          // Continue with user check only
         }
+      } catch (error) {
+        console.error("Error checking phone duplicate:", error);
+        // Continue with submission if check fails
       }
+    }
 
-      setUsers((prev) =>
-        prev.map((u) => (u.id === editingId ? { ...u, ...result } : u)),
-      );
-      toast.success("User updated successfully!");
-    } else {
-      // Create new user
-      if (
-        users.some(
-          (u) => u.email.toLowerCase() === formData.email.toLowerCase(),
-        )
-      ) {
-        toast.error("A user with this email already exists");
-        setSubmitting(false);
+    // Validate employee fields
+    if (formData.is_employee) {
+      if (!formData.designation.trim()) {
+        toast.error("Designation is required for employees");
         return;
       }
+      if (!formData.joining_date) {
+        toast.error("Date of joining is required for employees");
+        return;
+      }
+      if (!formData.company_id) {
+        toast.error("Company is required for employees");
+        return;
+      }
+      if (!formData.attendance_location_id) {
+        toast.error("Attendance location (branch) is required for employees");
+        return;
+      }
+    }
 
-      const response = await UsersApi.create(payload);
+    setSubmitting(true);
 
-      let newUser: UserProfile;
-      let userId: string;
+    try {
+      const fullName = [
+        formData.first_name,
+        formData.middle_name,
+        formData.last_name,
+      ]
+        .filter((name) => name.trim())
+        .join(" ");
 
-      if (response.success && response.data) {
-        newUser = response.data;
-        userId = newUser.id || newUser._id;
-      } else if (response.id || response._id) {
-        newUser = response;
-        userId = response.id || response._id;
+      const payload: any = {
+        email: formData.email.trim(),
+        full_name: fullName,
+        phone: formData.phone,
+        role: formData.role,
+        department: formData.department,
+        department_id: formData.department_id,
+        is_active: formData.is_active,
+        permissions: formData.permissions || {},
+      };
+
+      console.log("this is payload", payload);
+
+      if (formData.password && formData.password.length > 0 && !editingId) {
+        payload.password = formData.password;
+      }
+
+      if (editingId) {
+        // Update existing user
+        const response: any = await UsersApi.update(editingId, payload);
+
+        let result: UserProfile;
+
+        if (response.success && response.data) {
+          result = response.data;
+        } else if (response.id) {
+          result = response;
+        } else {
+          throw new Error("Invalid response format");
+        }
+
+        if (selectedFile) {
+          const profilePicUrl = await uploadProfilePicture(editingId);
+          if (profilePicUrl) {
+            result = { ...result, profile_picture: profilePicUrl };
+          }
+        }
+
+        setUsers((prev) =>
+          prev.map((u) => (u.id === editingId ? { ...u, ...result } : u)),
+        );
+        toast.success("User updated successfully!");
       } else {
-        throw new Error("Invalid response format from server");
-      }
-
-      if (!userId) {
-        throw new Error("User ID not found in response");
-      }
-
-      let finalUser = newUser;
-      let profilePicUrl: string | null = null;
-
-      if (selectedFile && userId) {
-        profilePicUrl = await uploadProfilePicture(userId);
-        if (profilePicUrl) {
-          finalUser = {
-            ...newUser,
-            profile_picture: profilePicUrl,
-          };
+        // Create new user
+        if (
+          users.some(
+            (u) => u.email.toLowerCase() === formData.email.toLowerCase(),
+          )
+        ) {
+          toast.error("A user with this email already exists");
+          setSubmitting(false);
+          return;
         }
-      }
 
-      // Create employee record if needed
-      if (formData.is_employee && userId) {
-        try {
-          await createEmployeeRecord(userId, profilePicUrl);
-          toast.success("Employee record created successfully!");
-        } catch (empError: any) {
-          console.error("Failed to create employee record:", empError);
-          toast.warning(
-            "User created but employee record creation failed: " +
-              (empError.message || "Unknown error"),
-          );
+        const response: any = await UsersApi.create(payload);
+
+        let newUser: UserProfile;
+        let userId: string;
+
+        if (response.success && response.data) {
+          newUser = response.data;
+          userId = newUser.id;
+        } else if (response.id || response._id) {
+          newUser = response;
+          userId = response.id || response._id;
+        } else {
+          throw new Error("Invalid response format from server");
         }
+
+        if (!userId) {
+          throw new Error("User ID not found in response");
+        }
+
+        let finalUser = newUser;
+        let profilePicUrl: string | null = null;
+
+        if (selectedFile && userId) {
+          profilePicUrl = await uploadProfilePicture(userId);
+          if (profilePicUrl) {
+            finalUser = {
+              ...newUser,
+              profile_picture: profilePicUrl,
+            };
+          }
+        }
+
+        // Create employee record if needed
+        if (formData.is_employee && userId) {
+          try {
+            await createEmployeeRecord(userId, profilePicUrl);
+            toast.success("Employee record created successfully!");
+          } catch (empError: any) {
+            console.error("Failed to create employee record:", empError);
+            toast.warning(
+              "User created but employee record creation failed: " +
+                (empError.message || "Unknown error"),
+            );
+          }
+        }
+
+        if (previewUrl && previewUrl.startsWith("blob:")) {
+          URL.revokeObjectURL(previewUrl);
+        }
+
+        if (!finalUser.id) {
+          finalUser = { ...finalUser, id: userId };
+        }
+
+        setUsers((prev) => [...prev, finalUser]);
+        toast.success("User created successfully!");
       }
 
-      if (previewUrl && previewUrl.startsWith("blob:")) {
-        URL.revokeObjectURL(previewUrl);
-      }
+      setShowModal(false);
+      resetForm();
+    } catch (err: any) {
+      console.error("Submit error:", err);
 
-      if (!finalUser.id) {
-        finalUser = { ...finalUser, id: userId };
+      // Handle phone duplicate error from backend
+      if (err?.message?.toLowerCase().includes("phone")) {
+        toast.error(err.message);
+      } else {
+        toast.error(err?.message || "Operation failed");
       }
-
-      setUsers((prev) => [...prev, finalUser]);
-      toast.success("User created successfully!");
+    } finally {
+      setSubmitting(false);
     }
-
-    setShowModal(false);
-    resetForm();
-  } catch (err: any) {
-    console.error("Submit error:", err);
-    
-    // Handle phone duplicate error from backend
-    if (err?.message?.toLowerCase().includes("phone")) {
-      toast.error(err.message);
-    } else {
-      toast.error(err?.message || "Operation failed");
-    }
-  } finally {
-    setSubmitting(false);
-  }
-};
+  };
   // Reset form
   const resetForm = useCallback(() => {
     if (previewUrl && previewUrl.startsWith("blob:")) {
@@ -1154,7 +1156,8 @@ const handleSubmit = async (e: React.FormEvent) => {
           setDepartmentRoles([]);
 
           // Try to get roles from designation API
-          const roles = await designationApi.getRolesByDepartment(departmentId);
+          const roles: any =
+            await designationApi.getRolesByDepartment(departmentId);
           console.log("API roles response:", roles);
 
           if (Array.isArray(roles) && roles.length > 0) {
@@ -1410,11 +1413,11 @@ const handleSubmit = async (e: React.FormEvent) => {
       console.log("Toggling user status:", { id, currentStatus });
 
       // Call API
-      const response = await UsersApi.toggleActive(id);
+      const response: any = await UsersApi.toggleActive(id);
       console.log("Toggle response:", response);
 
       // Extract the updated user from response
-      let updatedUser;
+      let updatedUser: any;
       if (response.success && response.data) {
         updatedUser = response.data;
       } else if (response.id) {
@@ -1489,13 +1492,17 @@ const handleSubmit = async (e: React.FormEvent) => {
   // Handle role change
   const handleRoleChange = useCallback(
     (roleName: string) => {
-      const selectedRole = departmentRoles.find(
+      const selectedRole: any = departmentRoles.find(
         (role) => role.name === roleName,
       );
+
+      console.log("this is selected role : ", selectedRole);
+
       setFormData((prev) => ({
         ...prev,
-        role: roleName, // यहाँ uppercase न करें
+        role: roleName,
         role_id: selectedRole?.id?.toString() || "",
+        permissions: selectedRole.permissions,
       }));
     },
     [departmentRoles],
@@ -2142,22 +2149,24 @@ const handleSubmit = async (e: React.FormEvent) => {
                     </div>
 
                     {/* Phone */}
-                 <div className="space-y-1">
-  <label className="block text-xs font-semibold text-gray-700">
-    Phone
-  </label>
-  <input
-    type="tel"
-    value={formData.phone}
-    onChange={(e) => {
-      const value = e.target.value.replace(/\D/g, "").slice(0, 10);
-      setFormData({ ...formData, phone: value });
-    }}
-    className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
-    placeholder="9876543210"
-    maxLength={10}
-  />
-</div>
+                    <div className="space-y-1">
+                      <label className="block text-xs font-semibold text-gray-700">
+                        Phone
+                      </label>
+                      <input
+                        type="tel"
+                        value={formData.phone}
+                        onChange={(e) => {
+                          const value = e.target.value
+                            .replace(/\D/g, "")
+                            .slice(0, 10);
+                          setFormData({ ...formData, phone: value });
+                        }}
+                        className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
+                        placeholder="9876543210"
+                        maxLength={10}
+                      />
+                    </div>
 
                     {/* Password (only for new users) */}
                     {!editingId && (
@@ -2301,8 +2310,7 @@ const handleSubmit = async (e: React.FormEvent) => {
                           departmentRoles.map((role) => (
                             <option key={role.id} value={role.name}>
                               {" "}
-                              {/* यहाँ .toUpperCase() हटाएं */}
-                              {role.name} {/* यहाँ .toUpperCase() हटाएं */}
+                              {role.name}
                             </option>
                           ))
                         ) : formData.department_id &&
