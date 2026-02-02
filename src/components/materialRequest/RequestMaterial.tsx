@@ -932,8 +932,6 @@
 //   );
 // }
 
-
-
 /* eslint-disable @typescript-eslint/no-explicit-any */
 // src/components/MaterialOutForm.tsx
 import React, { SetStateAction, useEffect, useState, useRef } from "react";
@@ -1041,7 +1039,7 @@ export default function RequestMaterial({
       const data: any = await projectApi.getProjects();
       if (data.success) {
         const tempProjects = data.data.filter(
-          (project: any) => project.status !== "completed"
+          (project: any) => project.status !== "completed",
         );
         setAllProjects(tempProjects);
       } else {
@@ -1091,7 +1089,7 @@ export default function RequestMaterial({
 
   const handleBuildingChange = (buildingId: number) => {
     const building = selectedProject?.buildings?.find(
-      (b: any) => b.id === buildingId
+      (b: any) => b.id === buildingId,
     );
     if (building) {
       setSelectedBuilding(building);
@@ -1141,7 +1139,7 @@ export default function RequestMaterial({
 
   const handleCommonAreaChange = (commonAreaId: number) => {
     const commonArea = selectedFloor?.common_areas?.find(
-      (ca: any) => ca.id === commonAreaId
+      (ca: any) => ca.id === commonAreaId,
     );
     if (commonArea) {
       setSelectedCommonArea(commonArea);
@@ -1168,7 +1166,7 @@ export default function RequestMaterial({
 
   const addMaterial = (inventoryItem: any) => {
     const existingIndex = formData.materials.findIndex(
-      (item: any) => item.materialId === inventoryItem.id
+      (item: any) => item.materialId === inventoryItem.id,
     );
 
     if (existingIndex !== -1) {
@@ -1208,7 +1206,7 @@ export default function RequestMaterial({
             quantity,
             required_quantity: parseFloat(quantity) || 0,
           }
-        : item
+        : item,
     );
     setFormData((prev: any) => ({ ...prev, materials: updatedMaterials }));
   };
@@ -1217,12 +1215,14 @@ export default function RequestMaterial({
     try {
       const itemsRes: any = await ItemsApi.getItems();
       const allInventory: any = await inventoryApi.getInventory();
-      const data = itemsRes.map((item: any) => {
-        const inventoryItem = allInventory.find(
-          (ii: any) => ii.item_id === item.id
-        );
-        return { ...item, inventoryItem: inventoryItem };
-      });
+      const data = itemsRes
+        .filter((f: any) => f.category === "material")
+        .map((item: any) => {
+          const inventoryItem = allInventory.find(
+            (ii: any) => ii.item_id === item.id,
+          );
+          return { ...item, inventoryItem: inventoryItem };
+        });
       console.log(data, "res");
       setAllItems(Array.isArray(data) ? data : []);
     } catch (error) {
@@ -1236,7 +1236,7 @@ export default function RequestMaterial({
 
   const removeMaterial = (id: number) => {
     const updatedMaterials = formData.materials.filter(
-      (item: any) => item.id !== id
+      (item: any) => item.id !== id,
     );
     setFormData((prev: any) => ({ ...prev, materials: updatedMaterials }));
   };
@@ -1257,11 +1257,11 @@ export default function RequestMaterial({
       }
 
       const stockItem = allItems.find(
-        (item: any) => item.id === material.materialId
+        (item: any) => item.id === material.materialId,
       );
       if (stockItem && parseFloat(material.quantity) > stockItem.quantity) {
         alert(
-          `Insufficient stock for ${material.materialName}! Available: ${stockItem.quantity} ${stockItem.unit}`
+          `Insufficient stock for ${material.materialName}! Available: ${stockItem.quantity} ${stockItem.unit}`,
         );
         return false;
       }
@@ -1369,7 +1369,7 @@ export default function RequestMaterial({
 
   return (
     <div className="fixed inset-0 bg-black/60 backdrop-blur-md flex items-center justify-center z-50 p-4 animate-fadeIn">
-      <div 
+      <div
         ref={formRef}
         className="bg-gradient-to-br from-gray-50 to-white rounded-2xl shadow-2xl shadow-gray-900/20 w-full max-w-2xl my-4 border border-gray-200 overflow-hidden"
       >
@@ -1426,7 +1426,9 @@ export default function RequestMaterial({
                     className="w-full pl-10 pr-10 py-2.5 text-sm border-2 border-gray-200 rounded-xl focus:border-[#C62828] focus:ring-2 focus:ring-[#C62828]/20 bg-white outline-none transition-all duration-200 appearance-none hover:border-gray-300"
                     required
                   >
-                    <option value="" className="text-gray-400">Select Project</option>
+                    <option value="" className="text-gray-400">
+                      Select Project
+                    </option>
                     {allProjects.map((project: any) => (
                       <option key={project.id} value={project.id}>
                         {project.name}
@@ -1457,7 +1459,9 @@ export default function RequestMaterial({
                     className="w-full pl-10 pr-10 py-2.5 text-sm border-2 border-gray-200 rounded-xl focus:border-[#C62828] focus:ring-2 focus:ring-[#C62828]/20 bg-white outline-none transition-all duration-200 appearance-none hover:border-gray-300 disabled:bg-gray-100 disabled:cursor-not-allowed"
                     required
                   >
-                    <option value="" className="text-gray-400">Select Building</option>
+                    <option value="" className="text-gray-400">
+                      Select Building
+                    </option>
                     {selectedProject?.buildings?.map((building: any) => (
                       <option key={building.id} value={building.id}>
                         {building.building_name}
@@ -1488,7 +1492,9 @@ export default function RequestMaterial({
                     className="w-full pl-10 pr-10 py-2.5 text-sm border-2 border-gray-200 rounded-xl focus:border-[#C62828] focus:ring-2 focus:ring-[#C62828]/20 bg-white outline-none transition-all duration-200 appearance-none hover:border-gray-300 disabled:bg-gray-100 disabled:cursor-not-allowed"
                     required
                   >
-                    <option value="" className="text-gray-400">Select Floor</option>
+                    <option value="" className="text-gray-400">
+                      Select Floor
+                    </option>
                     {selectedBuilding?.floors?.map((floor: any) => (
                       <option key={floor.id} value={floor.id}>
                         {floor.floor_name}
@@ -1525,7 +1531,9 @@ export default function RequestMaterial({
                     }
                     className="w-full pl-10 pr-10 py-2.5 text-sm border-2 border-gray-200 rounded-xl focus:border-[#C62828] focus:ring-2 focus:ring-[#C62828]/20 bg-white outline-none transition-all duration-200 appearance-none hover:border-gray-300 disabled:bg-gray-100 disabled:cursor-not-allowed"
                   >
-                    <option value="" className="text-gray-400">Select Flat</option>
+                    <option value="" className="text-gray-400">
+                      Select Flat
+                    </option>
                     {selectedFloor?.flats?.map((flat: any) => (
                       <option key={flat.id} value={flat.id}>
                         {flat.flat_name}
@@ -1559,7 +1567,9 @@ export default function RequestMaterial({
                     }
                     className="w-full pl-10 pr-10 py-2.5 text-sm border-2 border-gray-200 rounded-xl focus:border-[#C62828] focus:ring-2 focus:ring-[#C62828]/20 bg-white outline-none transition-all duration-200 appearance-none hover:border-gray-300 disabled:bg-gray-100 disabled:cursor-not-allowed"
                   >
-                    <option value="" className="text-gray-400">Select Common Area</option>
+                    <option value="" className="text-gray-400">
+                      Select Common Area
+                    </option>
                     {selectedFloor?.common_areas?.map((commonArea: any) => (
                       <option key={commonArea.id} value={commonArea.id}>
                         {commonArea.common_area_name}
@@ -1587,7 +1597,9 @@ export default function RequestMaterial({
                     onChange={(e: any) => handleWorkChange(e.target.value)}
                     className="w-full pl-10 pr-10 py-2.5 text-sm border-2 border-gray-200 rounded-xl focus:border-[#C62828] focus:ring-2 focus:ring-[#C62828]/20 bg-white outline-none transition-all duration-200 appearance-none hover:border-gray-300"
                   >
-                    <option value="" className="text-gray-400">Select Work</option>
+                    <option value="" className="text-gray-400">
+                      Select Work
+                    </option>
                     {defaultWork.map((work: any) => (
                       <option key={work} value={work}>
                         {work}
@@ -1632,9 +1644,7 @@ export default function RequestMaterial({
                 <input
                   type="text"
                   value={formData.remark}
-                  onChange={(e) =>
-                    handleInputChange("remark", e.target.value)
-                  }
+                  onChange={(e) => handleInputChange("remark", e.target.value)}
                   className="w-full px-4 py-2.5 text-sm border-2 border-gray-200 rounded-xl focus:border-[#C62828] focus:ring-2 focus:ring-[#C62828]/20 outline-none transition-all duration-200 hover:border-gray-300"
                   placeholder="Enter remark"
                 />
@@ -1667,8 +1677,12 @@ export default function RequestMaterial({
               {formData.materials.length === 0 ? (
                 <div className="bg-gradient-to-br from-gray-50 to-gray-100 border-2 border-dashed border-gray-300 rounded-xl p-6 text-center">
                   <Package className="w-10 h-10 text-gray-400 mx-auto mb-3" />
-                  <p className="text-gray-600 text-sm font-medium">No materials added yet</p>
-                  <p className="text-xs text-gray-500 mt-1">Click "Add Material" to select materials to request</p>
+                  <p className="text-gray-600 text-sm font-medium">
+                    No materials added yet
+                  </p>
+                  <p className="text-xs text-gray-500 mt-1">
+                    Click "Add Material" to select materials to request
+                  </p>
                 </div>
               ) : (
                 <div className="border-2 border-gray-200 rounded-2xl overflow-hidden bg-gradient-to-b from-gray-50 to-white shadow-sm">
@@ -1683,25 +1697,38 @@ export default function RequestMaterial({
                   <div className="divide-y divide-gray-100">
                     {formData.materials.map((material: any) => {
                       const inventory = allItems.find(
-                        (d: any) => d.id === material.materialId
+                        (d: any) => d.id === material.materialId,
                       )?.inventoryItem;
-                      const isLowStock = inventory?.quantity_after_approve < material.reorder_qty;
-                      
+                      const isLowStock =
+                        inventory?.quantity_after_approve <
+                        material.reorder_qty;
+
                       return (
-                        <div key={material.id} className="px-5 py-3 hover:bg-gray-50/50 transition-colors">
+                        <div
+                          key={material.id}
+                          className="px-5 py-3 hover:bg-gray-50/50 transition-colors"
+                        >
                           <div className="flex items-center justify-between gap-4">
                             <div className="flex items-center gap-3 flex-1">
-                              <div className={`p-1.5 rounded-lg ${isLowStock ? 'bg-red-100' : 'bg-green-100'}`}>
-                                <Package className={`w-4 h-4 ${isLowStock ? 'text-red-600' : 'text-green-600'}`} />
+                              <div
+                                className={`p-1.5 rounded-lg ${isLowStock ? "bg-red-100" : "bg-green-100"}`}
+                              >
+                                <Package
+                                  className={`w-4 h-4 ${isLowStock ? "text-red-600" : "text-green-600"}`}
+                                />
                               </div>
                               <div className="flex-1 min-w-0">
-                                <div className="font-semibold text-gray-800 text-sm truncate">
+                                <div className="font-semibold text-gray-800 text-xs text-wrap w-36">
                                   {material.materialName}
                                 </div>
                                 <div className="flex items-center gap-3 mt-1">
                                   <div className="text-xs text-gray-600">
-                                    Stock: <span className={`font-medium ${isLowStock ? 'text-red-600' : 'text-gray-700'}`}>
-                                      {inventory?.quantity_after_approve || 0} {material.unit}
+                                    Stock:{" "}
+                                    <span
+                                      className={`font-medium ${isLowStock ? "text-red-600" : "text-gray-700"}`}
+                                    >
+                                      {inventory?.quantity_after_approve || 0}{" "}
+                                      {material.unit}
                                     </span>
                                   </div>
                                   {isLowStock && (
@@ -1716,7 +1743,8 @@ export default function RequestMaterial({
                             <div className="flex items-center gap-3">
                               <div className="relative">
                                 <label className="text-xs text-gray-600 mb-1 block text-right">
-                                  Required Qty <span className="text-red-500">*</span>
+                                  Required Qty{" "}
+                                  <span className="text-red-500">*</span>
                                 </label>
                                 <div className="flex items-center gap-2">
                                   <input
@@ -1732,13 +1760,13 @@ export default function RequestMaterial({
                                         material.currentStock < e.target.value
                                       ) {
                                         toast.warning(
-                                          "Entered quantity is exceeding stock quantity."
+                                          "Entered quantity is exceeding stock quantity.",
                                         );
                                         return;
                                       }
                                       updateMaterialQuantity(
                                         material.id,
-                                        e.target.value
+                                        e.target.value,
                                       );
                                     }}
                                     className="w-24 px-3 py-1.5 text-sm border-2 border-gray-200 rounded-xl focus:border-[#C62828] focus:ring-2 focus:ring-[#C62828]/20 outline-none transition-all duration-200 hover:border-gray-300"
@@ -1849,7 +1877,7 @@ export default function RequestMaterial({
                   ) : (
                     filteredInventory.map((item: any) => {
                       const existingMaterial = formData.materials.find(
-                        (m: any) => m.materialId === item.id
+                        (m: any) => m.materialId === item.id,
                       );
 
                       return (
@@ -1861,16 +1889,24 @@ export default function RequestMaterial({
                             existingMaterial
                               ? "bg-blue-50 border-blue-300"
                               : "border-gray-200 hover:border-[#C62828] hover:bg-red-50/30"
-                          } ${item.quantity === 0 ? 'opacity-50 cursor-not-allowed' : ''}`}
+                          } ${item.quantity === 0 ? "opacity-50 cursor-not-allowed" : ""}`}
                         >
                           <div className="flex items-center justify-between gap-4">
                             <div className="flex items-center gap-3 flex-1 min-w-0">
-                              <div className={`p-2 rounded-lg ${
-                                existingMaterial ? 'bg-blue-100' : 'bg-gray-100'
-                              }`}>
-                                <Package className={`w-4 h-4 ${
-                                  existingMaterial ? 'text-blue-600' : 'text-gray-600'
-                                }`} />
+                              <div
+                                className={`p-2 rounded-lg ${
+                                  existingMaterial
+                                    ? "bg-blue-100"
+                                    : "bg-gray-100"
+                                }`}
+                              >
+                                <Package
+                                  className={`w-4 h-4 ${
+                                    existingMaterial
+                                      ? "text-blue-600"
+                                      : "text-gray-600"
+                                  }`}
+                                />
                               </div>
                               <div className="flex-1 min-w-0">
                                 <div className="font-semibold text-gray-800 text-sm truncate">
@@ -1878,15 +1914,19 @@ export default function RequestMaterial({
                                 </div>
                                 <div className="flex items-center gap-3 mt-1">
                                   <span className="text-xs text-gray-600">
-                                    HSN: {item.hsn_code || 'N/A'}
+                                    HSN: {item.hsn_code || "N/A"}
                                   </span>
                                   <span className="text-xs text-gray-600">
-                                    Stock: {item.inventoryItem?.quantity_after_approve || 0} {item.unit}
+                                    Stock:{" "}
+                                    {item.inventoryItem
+                                      ?.quantity_after_approve || 0}{" "}
+                                    {item.unit}
                                   </span>
                                 </div>
                                 {existingMaterial && (
                                   <div className="text-xs bg-blue-100 text-blue-700 px-2 py-1 rounded-full mt-1 inline-flex items-center gap-1">
-                                    ✓ Added ({existingMaterial.quantity} {item.unit})
+                                    ✓ Added ({existingMaterial.quantity}{" "}
+                                    {item.unit})
                                   </div>
                                 )}
                               </div>
@@ -1901,11 +1941,11 @@ export default function RequestMaterial({
                               disabled={item.quantity === 0}
                               className={`px-4 py-2 text-sm font-medium rounded-xl transition-all duration-200 ${
                                 existingMaterial
-                                  ? 'bg-green-600 hover:bg-green-700 text-white'
-                                  : 'bg-[#C62828] hover:bg-red-700 text-white'
-                              } ${item.quantity === 0 ? 'opacity-50 cursor-not-allowed' : ''} transform hover:-translate-y-0.5`}
+                                  ? "bg-green-600 hover:bg-green-700 text-white"
+                                  : "bg-[#C62828] hover:bg-red-700 text-white"
+                              } ${item.quantity === 0 ? "opacity-50 cursor-not-allowed" : ""} transform hover:-translate-y-0.5`}
                             >
-                              {existingMaterial ? 'Add More' : 'Add'}
+                              {existingMaterial ? "Add More" : "Add"}
                             </button>
                           </div>
                         </button>
@@ -1920,7 +1960,8 @@ export default function RequestMaterial({
                   <div className="text-sm text-gray-600">
                     {formData.materials.length > 0 ? (
                       <span className="font-medium">
-                        {formData.materials.length} item{formData.materials.length !== 1 ? "s" : ""} selected
+                        {formData.materials.length} item
+                        {formData.materials.length !== 1 ? "s" : ""} selected
                       </span>
                     ) : (
                       <span>No items selected</span>
@@ -1959,8 +2000,14 @@ export default function RequestMaterial({
             background: #b71c1c;
           }
           @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(10px); }
-            to { opacity: 1; transform: translateY(0); }
+            from {
+              opacity: 0;
+              transform: translateY(10px);
+            }
+            to {
+              opacity: 1;
+              transform: translateY(0);
+            }
           }
           .animate-fadeIn {
             animation: fadeIn 0.3s ease-out;

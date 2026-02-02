@@ -127,11 +127,11 @@ export default function Permissions() {
   const loadRoles = async () => {
     try {
       const rolesRes: any = await rolesApi.getAllRoles();
-      setSelectedRole(Array.isArray(rolesRes.data) ? rolesRes.data[0].id : {});
+      setSelectedRole(Array.isArray(rolesRes) ? rolesRes[0].id : {});
       setRolePermissions(
-        Array.isArray(rolesRes.data) ? rolesRes.data[0].permissions : {},
+        Array.isArray(rolesRes) ? rolesRes[0].permissions : {},
       );
-      setRoles(Array.isArray(rolesRes.data) ? rolesRes.data : []);
+      setRoles(Array.isArray(rolesRes) ? rolesRes : []);
       console.log("roles", rolesRes);
     } catch (error) {
       toast.error("Something went wrong while loading roles");
@@ -178,6 +178,7 @@ export default function Permissions() {
 
   const saveUserPermissions = async () => {
     try {
+      console.log("this is permissions for testing", userPermissions);
       const userPermissionsRes: any = await UsersApi.updateUserPermissions(
         selectedUser,
         userPermissions,

@@ -1334,7 +1334,7 @@ export default function MaterialInForm({
         </div>
 
         {/* Add some custom styles for scrollbar */}
-        <style jsx>{`
+        <style>{`
           .custom-scrollbar::-webkit-scrollbar {
             width: 6px;
           }

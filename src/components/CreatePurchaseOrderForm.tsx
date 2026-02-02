@@ -148,8 +148,8 @@ function SearchableSelect({
   return (
     <div ref={containerRef} className="relative">
       <div
-        className={`w-full flex items-center gap-2 px-3 py-2 border rounded-lg bg-white cursor-pointer ${
-          disabled ? "opacity-50 cursor-not-allowed" : "hover:shadow-sm"
+        className={`w-full flex items-center gap-2 px-3 py-2 ${disabled ? "border" : "border border-slate-400"} rounded-lg bg-white cursor-pointer ${
+          disabled ? "opacity-90 cursor-not-allowed" : "hover:shadow-sm"
         }`}
         onClick={() => !disabled && setOpen((s) => !s)}
         role="button"
@@ -365,12 +365,22 @@ export default function CreatePurchaseOrderForm({
     setPOTypesLoading(true);
     try {
       const data = await poTypeApi.getPOTypes();
+      console.log(data);
       const list = Array.isArray(data)
         ? data
         : Array.isArray((data as any)?.data)
           ? (data as any).data
           : [];
       setPOTypes(list);
+      if (Array.isArray(data)) {
+        console.log(String(data.find((d: any) => d.name === "Material")?.id));
+        setFormData({
+          ...formData,
+          po_type_id: String(
+            data.find((d: any) => d.name === "Material")?.id ?? "",
+          ),
+        });
+      }
     } catch (err) {
       console.warn("loadPOTypes failed, fallback to empty", err);
       setPOTypes([]);
@@ -1014,21 +1024,21 @@ export default function CreatePurchaseOrderForm({
                     <span className="text-red-500">*</span>
                   </label>
                   <div className="relative group">
-                    <div className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 group-focus-within:text-purple-600 transition-colors">
-                      <Tag className="w-3.5 h-3.5" />
-                    </div>
                     <SearchableSelect
                       options={poTypes.map((t: any) => ({
-                        id: t.id,
+                        id: String(t.id),
                         name: t.name,
                       }))}
                       value={formData.po_type_id}
-                      onChange={(id) => handlePOTypeChange(id)}
+                      onChange={(id) => {
+                        console.log(id);
+                        handlePOTypeChange(id);
+                      }}
                       placeholder={
                         poTypesLoading ? "Loading types..." : "Select Type"
                       }
                       required
-                      disabled={poTypesLoading}
+                      disabled={true}
                     />
                   </div>
                 </div>

@@ -1279,6 +1279,7 @@ import poApi from "../lib/poApi"; // getItems
 import SearchableSelect from "../components/SearchableSelect";
 import { toast } from "sonner";
 import locationData from "../data/india_city_state_pincode_country.json";
+import MySwal from "../utils/swal";
 
 /* ---------------------------
    Types
@@ -1735,7 +1736,17 @@ export default function VendorsEnhanced(): JSX.Element {
   };
 
   const handleDelete = async (id: number | string) => {
-    if (!confirm("Are you sure you want to delete this vendor?")) return;
+    const result: any = await MySwal.fire({
+      title: "Delete Item?",
+      text: "This action cannot be undone",
+      icon: "warning",
+      showCancelButton: true,
+      confirmButtonColor: "#C62828",
+      cancelButtonColor: "#6b7280",
+      confirmButtonText: "Delete",
+    });
+
+    if (!result.isConfirmed) return;
     try {
       await vendorApi.deleteVendor(id);
       await loadData();
@@ -1905,17 +1916,7 @@ export default function VendorsEnhanced(): JSX.Element {
               <thead className="bg-gray-200 border-b border-gray-200">
                 {/* Header Row */}
                 <tr>
-                  <th className="px-3 md:px-4 py-2 text-left">
-                    <input
-                      type="checkbox"
-                      checked={
-                        selectedVendors.size === filteredVendors.length &&
-                        filteredVendors.length > 0
-                      }
-                      onChange={handleSelectAll}
-                      className="w-3.5 h-3.5 md:w-4 md:h-4 text-blue-600 rounded focus:ring-blue-500"
-                    />
-                  </th>
+                  {/* Removed checkbox header */}
                   <th className="px-3 md:px-4 py-2 text-left">
                     <div className="text-[10px] md:text-xs font-semibold text-gray-700 uppercase tracking-wider">
                       Name
@@ -1950,7 +1951,7 @@ export default function VendorsEnhanced(): JSX.Element {
 
                 {/* Search Row - Separate Row Below Headers */}
                 <tr className="bg-gray-50 border-b border-gray-200">
-                  <td className="px-3 md:px-4 py-1"></td>
+                  {/* Removed empty td for checkbox column */}
 
                   {/* Name Column Search */}
                   <td className="px-3 md:px-4 py-1">
@@ -1992,7 +1993,7 @@ export default function VendorsEnhanced(): JSX.Element {
                       placeholder="Search..."
                       value={searchCategory}
                       onChange={(e) => setSearchCategory(e.target.value)}
-                      className="w-full px-2 py-1 text-[9px] md:text-xs border border-gray-300 rounded focus:ring-1 focus:ring-blue-500 focus:border-transparent"
+                      className="w-32 px-2 py-1 text-[9px] md:text-xs border border-gray-300 rounded focus:ring-1 focus:ring-blue-500 focus:border-transparent"
                     />
                   </td>
 
@@ -2024,7 +2025,8 @@ export default function VendorsEnhanced(): JSX.Element {
               <tbody className="divide-y divide-gray-200">
                 {filteredVendors.length === 0 ? (
                   <tr>
-                    <td colSpan={7} className="px-6 py-12 text-center">
+                    {/* Changed colSpan from 7 to 6 since we removed one column */}
+                    <td colSpan={6} className="px-6 py-12 text-center">
                       <Building2 className="w-12 h-12 md:w-16 md:h-16 text-gray-300 mx-auto mb-3" />
                       <p className="text-gray-600 text-sm md:text-lg font-medium">
                         No vendors found
@@ -2040,14 +2042,7 @@ export default function VendorsEnhanced(): JSX.Element {
                       key={vendor.id}
                       className={`hover:bg-gray-50 transition ${index % 2 === 0 ? "bg-white" : "bg-gray-50/50"}`}
                     >
-                      <td className="px-3 md:px-4 py-3">
-                        <input
-                          type="checkbox"
-                          checked={selectedVendors.has(vendor.id)}
-                          onChange={() => handleCheckboxChange(vendor.id)}
-                          className="w-3.5 h-3.5 md:w-4 md:h-4 text-blue-600 rounded focus:ring-blue-500"
-                        />
-                      </td>
+                      {/* Removed checkbox cell */}
 
                       <td className="px-3 md:px-4 py-3">
                         <div className="flex items-center gap-2 md:gap-3">
@@ -2068,19 +2063,19 @@ export default function VendorsEnhanced(): JSX.Element {
                       </td>
                       <td className="px-3 md:px-4 py-3">
                         <div className="space-y-1">
-                          <div className="flex items-center gap-1.5 md:gap-2 text-xs md:text-sm text-gray-900">
+                          <div className="flex items-center gap-1.5 md:gap-2 text-xs  text-gray-900">
                             <User className="w-3 h-3 md:w-4 md:h-4 text-gray-400" />
                             {vendor.contact_person_name || "-"}
                           </div>
                           {vendor.contact_person_phone && (
-                            <div className="flex items-center gap-1.5 md:gap-2 text-[11px] md:text-sm text-gray-600">
+                            <div className="flex items-center gap-1.5 md:gap-2 text-[11px]  text-gray-600">
                               <Phone className="w-2.5 h-2.5 md:w-3.5 md:h-3.5 text-gray-400" />
                               {vendor.phone_country_code}{" "}
                               {vendor.contact_person_phone}
                             </div>
                           )}
                           {vendor.contact_person_email && (
-                            <div className="flex items-center gap-1.5 md:gap-2 text-[11px] md:text-sm text-gray-600">
+                            <div className="flex items-center gap-1.5 md:gap-2 text-[11px] text-gray-600">
                               <Mail className="w-2.5 h-2.5 md:w-3.5 md:h-3.5 text-gray-400" />
                               <span className="truncate max-w-[120px]">
                                 {vendor.contact_person_email}
@@ -2092,7 +2087,7 @@ export default function VendorsEnhanced(): JSX.Element {
                       <td className="px-3 md:px-4 py-3">
                         <div className="flex items-center gap-1.5 md:gap-2">
                           <MapPin className="w-3 h-3 md:w-4 md:h-4 text-gray-400" />
-                          <span className="text-xs md:text-sm text-gray-900 truncate max-w-[100px]">
+                          <span className="text-xs text-gray-900 text-wrap max-w-[100px]">
                             {[vendor.office_city, vendor.office_state]
                               .filter(Boolean)
                               .join(", ") || "-"}
@@ -2109,7 +2104,7 @@ export default function VendorsEnhanced(): JSX.Element {
                           {vendor.gst_number && (
                             <div className="flex items-center gap-1 md:gap-1.5">
                               <FileText className="w-2.5 h-2.5 md:w-3.5 md:h-3.5 text-gray-400" />
-                              <span className="text-[10px] md:text-xs text-gray-600 truncate max-w-[80px]">
+                              <span className="text-[10px] text-xs text-gray-600 w-full">
                                 GST: {vendor.gst_number}
                               </span>
                             </div>
@@ -2117,7 +2112,7 @@ export default function VendorsEnhanced(): JSX.Element {
                           {vendor.pan_number && (
                             <div className="flex items-center gap-1 md:gap-1.5">
                               <FileText className="w-2.5 h-2.5 md:w-3.5 md:h-3.5 text-gray-400" />
-                              <span className="text-[10px] md:text-xs text-gray-600 truncate max-w-[80px]">
+                              <span className="text-[10px] text-xs text-gray-600 w-full">
                                 PAN: {vendor.pan_number}
                               </span>
                             </div>
@@ -2406,12 +2401,6 @@ export default function VendorsEnhanced(): JSX.Element {
 
             {/* ================= FOOTER ================= */}
             <div className="border-t p-4 flex gap-3">
-              <button
-                onClick={resetFilters}
-                className="flex-1 px-4 py-2.5 border rounded-lg text-sm"
-              >
-                Reset
-              </button>
               <button
                 onClick={applyFilters}
                 className="flex-1 bg-[#C62828] text-white px-4 py-2.5 rounded-lg text-sm"

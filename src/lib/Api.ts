@@ -166,7 +166,6 @@
 //   toggleActive: async (id: string): Promise<UserProfile> =>
 //   unwrap(api.patch(`/users/${id}/toggle-active`)),  // Changed from put to patch
 
-
 //   // Add profile picture upload method
 //   uploadProfilePicture: async (id: string, file: File): Promise<any> => {
 //     const formData = new FormData();
@@ -357,13 +356,15 @@ export const UsersApi = {
 
   getByRole: async (role: string): Promise<UserProfile> =>
     unwrap(api.get(`/users/role/${role}`)),
-  
+
   create: async (payload: any): Promise<UserProfile> => {
     try {
       return await unwrap(api.post("/users", payload));
     } catch (error: any) {
-      if (error.response?.data?.message?.toLowerCase().includes('phone') ||
-          error.response?.data?.errors?.phone) {
+      if (
+        error.response?.data?.message?.toLowerCase().includes("phone") ||
+        error.response?.data?.errors?.phone
+      ) {
         throw new Error("Phone number already exists");
       }
       throw error;
@@ -374,8 +375,10 @@ export const UsersApi = {
     try {
       return await unwrap(api.put(`/users/${id}`, payload));
     } catch (error: any) {
-      if (error.response?.data?.message?.toLowerCase().includes('phone') ||
-          error.response?.data?.errors?.phone) {
+      if (
+        error.response?.data?.message?.toLowerCase().includes("phone") ||
+        error.response?.data?.errors?.phone
+      ) {
         throw new Error("Phone number already exists");
       }
       throw error;
@@ -387,14 +390,14 @@ export const UsersApi = {
     permissions: any,
   ): Promise<UserProfile> => {
     console.log("from api", permissions);
-    return unwrap(api.put(`/users/${id}/permissions`, permissions));
+    return unwrap(api.put(`/users/${id}/permissions`, { permissions }));
   },
 
   remove: async (id: string): Promise<void> =>
     unwrap(api.delete(`/users/${id}`)),
 
   toggleActive: async (id: string): Promise<UserProfile> =>
-    unwrap(api.patch(`/users/${id}/toggle-active`)),  // Changed from put to patch
+    unwrap(api.patch(`/users/${id}/toggle-active`)), // Changed from put to patch
 
   // Add profile picture upload method
   uploadProfilePicture: async (id: string, file: File): Promise<any> => {
