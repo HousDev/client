@@ -1038,7 +1038,7 @@ export default function ApplyLeaveForm({ isOpen, onClose, onSuccess, employees }
       }
       
       // If no match found, show error
-      toast.error('Could not find your employee record. Please contact HR.');
+      toast.error('This feature is accessible to employees only.');
       onClose();
     }
   }, [isOpen, employees, profile, onClose]);

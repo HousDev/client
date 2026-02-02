@@ -115,11 +115,10 @@ export default function SubmitExpenseModal({ isOpen, onClose, onSuccess }: Submi
                     }));
                 } else {
                     console.error('No employee found for profile:', profile);
-                    toast.error('Could not find your employee record. Please contact HR.');
+                    toast.error('This feature is accessible to employees only.');
                     onClose();
                 }
             } catch (error: any) {
-                console.error('Error fetching employee data:', error);
                 toast.error('Failed to load your employee information');
                 onClose();
             } finally {

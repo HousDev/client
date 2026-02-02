@@ -69,7 +69,7 @@ export default function CreateTicketModal({ isOpen, onClose, onSuccess, categori
                 if (foundEmployee) {
                     setEmployeeData(foundEmployee);
                 } else {
-                    toast.error('Could not find your employee record. Please contact HR.');
+                    toast.error('This feature is accessible to employees only.');
                     onClose();
                 }
             } catch (error) {
