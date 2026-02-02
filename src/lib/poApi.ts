@@ -74,10 +74,10 @@ export async function deletePurchaseOrder(id: any) {
 
 export async function deletePurchaseOrderItem(
   POItemId: any,
-  POMaterialTrackingId: any
+  POMaterialTrackingId: any,
 ) {
   const res = await api.delete(
-    `/purchase-orders/poItem/${POItemId}/${POMaterialTrackingId}`
+    `/purchase-orders/poItem/${POItemId}/${POMaterialTrackingId}`,
   );
   return unwrap(res);
 }
@@ -89,7 +89,7 @@ export async function getPOsItems() {
 
 export async function updatePurchaseOrderStatus(
   id: number | string,
-  status: any
+  status: any,
 ) {
   const res = await api.put(`/purchase-orders/updatePOStatus/${id}`, {
     status,

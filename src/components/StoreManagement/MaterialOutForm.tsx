@@ -897,9 +897,6 @@ export default function MaterialOutForm({
         parseFloat(updatedMaterials[existingIndex].quantity) || 0;
       updatedMaterials[existingIndex].quantity = (currentQty + 1).toString();
       setFormData((prev) => ({ ...prev, materials: updatedMaterials }));
-      toast.success(
-        `Increased quantity for ${inventoryItem.item_name || inventoryItem.name}`,
-      );
     } else {
       // Add new material
       const newMaterial: MaterialItem = {
@@ -916,9 +913,6 @@ export default function MaterialOutForm({
         ...prev,
         materials: [...prev.materials, newMaterial],
       }));
-      toast.success(
-        `Added ${inventoryItem.item_name || inventoryItem.name} to list`,
-      );
     }
 
     setShowMaterialSelector(false);
@@ -1137,7 +1131,6 @@ export default function MaterialOutForm({
                     value={formData.receiver_name}
                     onChange={(e) => {
                       if (!/^[A-Za-z\s]*$/.test(e.target.value)) {
-
                         return;
                       }
                       handleInputChange("receiver_name", e.target.value);
@@ -1164,16 +1157,13 @@ export default function MaterialOutForm({
                     value={formData.receiver_phone}
                     onChange={(e) => {
                       if (!/^\d*$/.test(e.target.value)) {
-
                         return;
                       }
                       if (Number(e.target.value.length) <= 10) {
                         handleInputChange("receiver_phone", e.target.value);
                       } else {
-                        
-                        }
                       }
-                    }
+                    }}
                     className="w-full pl-10 pr-4 py-2.5 text-sm border border-gray-300 rounded-xl focus:border-[#b52124] focus:ring-2 focus:ring-[#b52124]/20 outline-none transition-all duration-200 hover:border-gray-400 bg-white/50 text-[#40423f] placeholder-gray-500"
                     placeholder="Enter phone number"
                     required

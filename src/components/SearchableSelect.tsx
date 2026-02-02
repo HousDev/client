@@ -27,13 +27,13 @@ export default function SearchableSelect({
 
   // Normalize options to {id,name}
   const normalized = options.map((opt) =>
-    typeof opt === "string" ? { id: opt, name: opt } : opt
+    typeof opt === "string" ? { id: opt, name: opt } : opt,
   );
 
   const selected = normalized.find((o) => o.id === value) || null;
 
   const filtered = normalized.filter((o) =>
-    o.name.toLowerCase().includes(filter.toLowerCase())
+    o.name.toLowerCase().includes(filter.toLowerCase()),
   );
 
   useEffect(() => {
@@ -75,8 +75,8 @@ export default function SearchableSelect({
   return (
     <div ref={containerRef} className="relative">
       <div
-        className={`w-full flex items-center gap-2 px-3 py-3 border rounded-lg bg-white cursor-pointer ${
-          disabled ? "opacity-50 cursor-not-allowed" : "hover:shadow-sm"
+        className={`w-full flex items-center gap-2 px-3 py-3 ${disabled ? "border" : "border border-slate-400"} rounded-lg bg-white cursor-pointer ${
+          disabled ? "opacity-90 cursor-not-allowed" : "hover:shadow-sm"
         }`}
         onClick={() => !disabled && setOpen((s: any) => !s)}
         role="button"

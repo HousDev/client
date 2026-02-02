@@ -7,15 +7,11 @@ import {
   Trash2,
   Package,
   Save,
-  Truck,
   Layers,
   ClipboardCheck,
   Calendar,
   User,
-  MapPin,
-  ChevronDown,
   Search,
-  Box,
 } from "lucide-react";
 import { useAuth } from "../contexts/AuthContext";
 import poApi from "../lib/poApi";
@@ -147,9 +143,9 @@ function SearchableSelect({
   return (
     <div ref={containerRef} className="relative">
       <div
-        className={`w-full flex items-center gap-2 px-3 py-2 border border-gray-300 rounded-xl bg-white/50 cursor-pointer text-sm ${
+        className={`w-full flex items-center gap-2 px-3 py-2 ${disabled ? "border" : "border border-slate-400"} border-gray-300 rounded-xl bg-white/50 cursor-pointer text-sm ${
           disabled
-            ? "opacity-50 cursor-not-allowed"
+            ? "opacity-90 cursor-not-allowed"
             : "hover:shadow-sm hover:border-gray-400"
         }`}
         onClick={() => !disabled && setOpen((s) => !s)}
@@ -160,7 +156,7 @@ function SearchableSelect({
       >
         <div className="flex-1 text-left">
           {selected ? (
-            <div className="text-sm text-[#40423f]">{selected.name}</div>
+            <div className="text-sm text-gray-800">{selected.name}</div>
           ) : (
             <div className="text-sm text-gray-500">{placeholder}</div>
           )}
@@ -280,7 +276,7 @@ export default function UpdatePurchaseOrderForm({
   }, []);
 
   useEffect(() => {
-    loadPOTypes(formData.project_id || undefined);
+    loadPOTypes();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [formData.project_id]);
 
@@ -676,9 +672,6 @@ export default function UpdatePurchaseOrderForm({
         });
       });
 
-      console.log(selected_terms_idsData);
-      console.log(terms_and_conditionsData);
-
       const payload = {
         po_number: formData.po_number,
         vendor_id: formData.vendor_id,
@@ -711,7 +704,10 @@ export default function UpdatePurchaseOrderForm({
         created_by: user?.id,
       };
 
-      toast.success("PO Updated Successfully.");
+      const updatePORes: any = await poApi.updatePO(selectedPO.poId, payload);
+      console.log(updatePORes);
+      if (updatePORes.success) toast.success("PO Updated Successfully.");
+      else toast.error("Faild to update PO.");
       await loadAllData();
 
       setShowEditModal(false);
@@ -885,7 +881,7 @@ export default function UpdatePurchaseOrderForm({
                     poTypesLoading ? "Loading types..." : "Select Type"
                   }
                   required
-                  disabled={poTypesLoading}
+                  disabled={true}
                 />
               </div>
 

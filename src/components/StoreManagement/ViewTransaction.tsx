@@ -750,11 +750,11 @@ export default function ViewTransaction({
   const totals = {
     issued: transaction.items.reduce(
       (sum, item) => sum + item.quantity_issued,
-      0
+      0,
     ),
     remaining: transaction.items.reduce(
       (sum, item) => sum + (item.initial_quantity - item.quantity_issued),
-      0
+      0,
     ),
   };
 
@@ -819,7 +819,7 @@ export default function ViewTransaction({
               </h2>
               <p className="text-[10px] sm:text-xs text-white/80 mt-0.5">
                 {new Date(
-                  transaction.created_at || transaction.issue_date
+                  transaction.created_at || transaction.issue_date,
                 ).toLocaleDateString("en-US", {
                   month: "short",
                   day: "numeric",
@@ -844,13 +844,17 @@ export default function ViewTransaction({
               <div className="bg-white rounded-lg border border-gray-200 p-3 sm:p-4 shadow-xs">
                 <div className="flex items-center gap-2 mb-3 sm:mb-4">
                   <div className={`p-1.5 ${sectionStyle.iconBg} rounded-md`}>
-                    <Wrench className={`w-3 h-3 sm:w-3.5 sm:h-3.5 ${sectionStyle.iconColor}`} />
+                    <Wrench
+                      className={`w-3 h-3 sm:w-3.5 sm:h-3.5 ${sectionStyle.iconColor}`}
+                    />
                   </div>
                   <div>
                     <h3 className="text-xs sm:text-sm font-semibold text-gray-800">
                       Basic Information
                     </h3>
-                    <p className="text-[10px] sm:text-xs text-gray-500">Transaction details</p>
+                    <p className="text-[10px] sm:text-xs text-gray-500">
+                      Transaction details
+                    </p>
                   </div>
                 </div>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-3 sm:gap-4">
@@ -868,7 +872,7 @@ export default function ViewTransaction({
                               month: "short",
                               day: "numeric",
                               year: "numeric",
-                            }
+                            },
                           )}
                         </div>
                       </div>
@@ -889,7 +893,9 @@ export default function ViewTransaction({
                     <div className="flex items-start gap-2">
                       <Truck className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-gray-400 mt-0.5 sm:mt-1 flex-shrink-0" />
                       <div className="flex-1">
-                        <div className="text-[10px] sm:text-xs text-gray-500 mb-0.5">Vendor</div>
+                        <div className="text-[10px] sm:text-xs text-gray-500 mb-0.5">
+                          Vendor
+                        </div>
                         <div className="text-xs sm:text-sm font-medium text-gray-800 bg-gray-50 px-2 py-1.5 rounded-md">
                           {transaction.vendor_name}
                         </div>
@@ -933,23 +939,31 @@ export default function ViewTransaction({
               <div className="bg-white rounded-lg border border-gray-200 p-3 sm:p-4 shadow-xs">
                 <div className="flex items-center gap-2 mb-3 sm:mb-4">
                   <div className={`p-1.5 ${sectionStyle.iconBg} rounded-md`}>
-                    <MapPin className={`w-3 h-3 sm:w-3.5 sm:h-3.5 ${sectionStyle.iconColor}`} />
+                    <MapPin
+                      className={`w-3 h-3 sm:w-3.5 sm:h-3.5 ${sectionStyle.iconColor}`}
+                    />
                   </div>
                   <div>
                     <h3 className="text-xs sm:text-sm font-semibold text-gray-800">
                       Location Details
                     </h3>
-                    <p className="text-[10px] sm:text-xs text-gray-500">Delivery location</p>
+                    <p className="text-[10px] sm:text-xs text-gray-500">
+                      Delivery location
+                    </p>
                   </div>
                 </div>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-2 sm:gap-3">
                   <div className="space-y-2">
                     <div className="flex items-center gap-2 sm:gap-3 p-2 bg-gray-50 rounded-md">
                       <div className="p-1 sm:p-1.5 bg-white rounded shadow-xs">
-                        <Building className={`w-3 h-3 sm:w-3.5 sm:h-3.5 ${sectionStyle.iconColor}`} />
+                        <Building
+                          className={`w-3 h-3 sm:w-3.5 sm:h-3.5 ${sectionStyle.iconColor}`}
+                        />
                       </div>
                       <div className="flex-1">
-                        <div className="text-[10px] sm:text-xs text-gray-500">Building</div>
+                        <div className="text-[10px] sm:text-xs text-gray-500">
+                          Building
+                        </div>
                         <div className="text-xs sm:text-sm font-medium text-gray-800">
                           {transaction.building_name}
                         </div>
@@ -958,10 +972,14 @@ export default function ViewTransaction({
 
                     <div className="flex items-center gap-2 sm:gap-3 p-2 bg-gray-50 rounded-md">
                       <div className="p-1 sm:p-1.5 bg-white rounded shadow-xs">
-                        <Layers className={`w-3 h-3 sm:w-3.5 sm:h-3.5 ${sectionStyle.iconColor}`} />
+                        <Layers
+                          className={`w-3 h-3 sm:w-3.5 sm:h-3.5 ${sectionStyle.iconColor}`}
+                        />
                       </div>
                       <div className="flex-1">
-                        <div className="text-[10px] sm:text-xs text-gray-500">Floor</div>
+                        <div className="text-[10px] sm:text-xs text-gray-500">
+                          Floor
+                        </div>
                         <div className="text-xs sm:text-sm font-medium text-gray-800">
                           {transaction.floor_name}
                         </div>
@@ -972,10 +990,14 @@ export default function ViewTransaction({
                   <div className="space-y-2">
                     <div className="flex items-center gap-2 sm:gap-3 p-2 bg-gray-50 rounded-md">
                       <div className="p-1 sm:p-1.5 bg-white rounded shadow-xs">
-                        <Home className={`w-3 h-3 sm:w-3.5 sm:h-3.5 ${sectionStyle.iconColor}`} />
+                        <Home
+                          className={`w-3 h-3 sm:w-3.5 sm:h-3.5 ${sectionStyle.iconColor}`}
+                        />
                       </div>
                       <div className="flex-1">
-                        <div className="text-[10px] sm:text-xs text-gray-500">Flat</div>
+                        <div className="text-[10px] sm:text-xs text-gray-500">
+                          Flat
+                        </div>
                         <div className="text-xs sm:text-sm font-medium text-gray-800">
                           {transaction.flat_name || "N/A"}
                         </div>
@@ -989,7 +1011,9 @@ export default function ViewTransaction({
                         </div>
                       </div>
                       <div className="flex-1">
-                        <div className="text-[10px] sm:text-xs text-gray-500">Common Area</div>
+                        <div className="text-[10px] sm:text-xs text-gray-500">
+                          Common Area
+                        </div>
                         <div className="text-xs sm:text-sm font-medium text-gray-800">
                           {transaction.common_area_name || "N/A"}
                         </div>
@@ -1007,13 +1031,17 @@ export default function ViewTransaction({
               <div className="bg-white rounded-lg border border-gray-200 p-3 sm:p-4 shadow-xs">
                 <div className="flex items-center gap-2 mb-3 sm:mb-4">
                   <div className={`p-1.5 ${sectionStyle.iconBg} rounded-md`}>
-                    <Package className={`w-3 h-3 sm:w-3.5 sm:h-3.5 ${sectionStyle.iconColor}`} />
+                    <Package
+                      className={`w-3 h-3 sm:w-3.5 sm:h-3.5 ${sectionStyle.iconColor}`}
+                    />
                   </div>
                   <div>
                     <h3 className="text-xs sm:text-sm font-semibold text-gray-800">
                       Receiving Information
                     </h3>
-                    <p className="text-[10px] sm:text-xs text-gray-500">Material receipt</p>
+                    <p className="text-[10px] sm:text-xs text-gray-500">
+                      Material receipt
+                    </p>
                   </div>
                 </div>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-3 sm:gap-4">
@@ -1025,14 +1053,13 @@ export default function ViewTransaction({
                           Receiving Date
                         </div>
                         <div className="text-xs sm:text-sm font-medium text-gray-800 bg-gray-50 px-2 py-1.5 rounded-md">
-                          {new Date(transaction.receiving_date).toLocaleDateString(
-                            "en-US",
-                            {
-                              month: "short",
-                              day: "numeric",
-                              year: "numeric",
-                            }
-                          )}
+                          {new Date(
+                            transaction.receiving_date,
+                          ).toLocaleDateString("en-US", {
+                            month: "short",
+                            day: "numeric",
+                            year: "numeric",
+                          })}
                         </div>
                       </div>
                     </div>
@@ -1052,7 +1079,9 @@ export default function ViewTransaction({
                     <div className="flex items-start gap-2">
                       <Truck className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-gray-400 mt-0.5 sm:mt-1 flex-shrink-0" />
                       <div className="flex-1">
-                        <div className="text-[10px] sm:text-xs text-gray-500 mb-0.5">Vendor</div>
+                        <div className="text-[10px] sm:text-xs text-gray-500 mb-0.5">
+                          Vendor
+                        </div>
                         <div className="text-xs sm:text-sm font-medium text-gray-800 bg-gray-50 px-2 py-1.5 rounded-md">
                           {transaction.vender_name}
                         </div>
@@ -1112,13 +1141,17 @@ export default function ViewTransaction({
               <div className="bg-white rounded-lg border border-gray-200 p-3 sm:p-4 shadow-xs">
                 <div className="flex items-center gap-2 mb-3 sm:mb-4">
                   <div className={`p-1.5 ${sectionStyle.iconBg} rounded-md`}>
-                    <Truck className={`w-3 h-3 sm:w-3.5 sm:h-3.5 ${sectionStyle.iconColor}`} />
+                    <Truck
+                      className={`w-3 h-3 sm:w-3.5 sm:h-3.5 ${sectionStyle.iconColor}`}
+                    />
                   </div>
                   <div>
                     <h3 className="text-xs sm:text-sm font-semibold text-gray-800">
                       Dispatch Information
                     </h3>
-                    <p className="text-[10px] sm:text-xs text-gray-500">Material dispatch</p>
+                    <p className="text-[10px] sm:text-xs text-gray-500">
+                      Material dispatch
+                    </p>
                   </div>
                 </div>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-3 sm:gap-4">
@@ -1130,14 +1163,13 @@ export default function ViewTransaction({
                           Receiving Date
                         </div>
                         <div className="text-xs sm:text-sm font-medium text-gray-800 bg-gray-50 px-2 py-1.5 rounded-md">
-                          {new Date(transaction.receiving_date).toLocaleDateString(
-                            "en-US",
-                            {
-                              month: "short",
-                              day: "numeric",
-                              year: "numeric",
-                            }
-                          )}
+                          {new Date(
+                            transaction.receiving_date,
+                          ).toLocaleDateString("en-US", {
+                            month: "short",
+                            day: "numeric",
+                            year: "numeric",
+                          })}
                         </div>
                       </div>
                     </div>
@@ -1206,20 +1238,26 @@ export default function ViewTransaction({
             <div className="flex items-center justify-between mb-3 sm:mb-4">
               <div className="flex items-center gap-2">
                 <div className={`p-1.5 ${sectionStyle.iconBg} rounded-md`}>
-                  <Layers className={`w-3 h-3 sm:w-3.5 sm:h-3.5 ${sectionStyle.iconColor}`} />
+                  <Layers
+                    className={`w-3 h-3 sm:w-3.5 sm:h-3.5 ${sectionStyle.iconColor}`}
+                  />
                 </div>
                 <div>
                   <h3 className="text-xs sm:text-sm font-semibold text-gray-800">
                     Items Details
                   </h3>
-                  <p className="text-[10px] sm:text-xs text-gray-500">Material quantities</p>
+                  <p className="text-[10px] sm:text-xs text-gray-500">
+                    Material quantities
+                  </p>
                 </div>
               </div>
             </div>
 
             <div className="border border-gray-200 rounded-lg overflow-hidden">
               <table className="w-full text-xs sm:text-sm">
-                <thead className={`bg-gradient-to-r ${sectionStyle.tableHeader}`}>
+                <thead
+                  className={`bg-gradient-to-r ${sectionStyle.tableHeader}`}
+                >
                   <tr>
                     <th className="px-3 py-2 sm:px-4 sm:py-2.5 text-left text-[10px] sm:text-xs font-semibold text-gray-700 border-r border-gray-200">
                       <div className="flex items-center gap-1 sm:gap-1.5">
@@ -1278,28 +1316,40 @@ export default function ViewTransaction({
                         </td>
                         <td className="px-3 py-2 sm:px-4 sm:py-2.5 border-r border-gray-200">
                           <div className="flex items-center gap-1 sm:gap-1.5">
-                            <div className={`p-1 ${sectionStyle.iconBg} rounded`}>
+                            <div
+                              className={`p-1 ${sectionStyle.iconBg} rounded`}
+                            >
                               {transactionType === "MaterialIn" ? (
-                                <TrendingUp className={`w-2.5 h-2.5 sm:w-3 sm:h-3 ${sectionStyle.iconColor}`} />
+                                <TrendingUp
+                                  className={`w-2.5 h-2.5 sm:w-3 sm:h-3 ${sectionStyle.iconColor}`}
+                                />
                               ) : (
-                                <TrendingDown className={`w-2.5 h-2.5 sm:w-3 sm:h-3 ${sectionStyle.iconColor}`} />
+                                <TrendingDown
+                                  className={`w-2.5 h-2.5 sm:w-3 sm:h-3 ${sectionStyle.iconColor}`}
+                                />
                               )}
                             </div>
-                            <span className={`text-xs font-bold ${sectionStyle.textColor}`}>
+                            <span
+                              className={`text-xs font-bold ${sectionStyle.textColor}`}
+                            >
                               {item.quantity_issued}
                             </span>
                           </div>
                         </td>
                         <td className="px-3 py-2 sm:px-4 sm:py-2.5">
                           <div className="flex items-center gap-1 sm:gap-1.5">
-                            <div className={`p-1 rounded ${remaining >= 0 ? "bg-green-100" : "bg-red-100"}`}>
+                            <div
+                              className={`p-1 rounded ${remaining >= 0 ? "bg-green-100" : "bg-red-100"}`}
+                            >
                               {remaining >= 0 ? (
                                 <CheckCircle className="w-2.5 h-2.5 sm:w-3 sm:h-3 text-green-600" />
                               ) : (
                                 <AlertCircle className="w-2.5 h-2.5 sm:w-3 sm:h-3 text-red-600" />
                               )}
                             </div>
-                            <span className={`text-xs font-bold ${remaining >= 0 ? "text-green-600" : "text-red-600"}`}>
+                            <span
+                              className={`text-xs font-bold ${remaining >= 0 ? "text-green-600" : "text-red-600"}`}
+                            >
                               {remaining}
                             </span>
                           </div>
@@ -1324,7 +1374,7 @@ export default function ViewTransaction({
         </div>
 
         {/* Add custom styles for scrollbar */}
-        <style jsx>{`
+        <style>{`
           .custom-scrollbar::-webkit-scrollbar {
             width: 4px;
           }
