@@ -2316,20 +2316,20 @@ const handleDesignationChange = useCallback((designationId: string) => {
       }
     });
 
-     if (formData.phone && formData.phone.trim() !== '') {
-      // You might need to fetch current employees to check duplicates
-      // Or rely on backend validation
-      const employees = await employeeAPI.getEmployees();
-      const phoneExists = employees.some(
-        (emp: any) => emp.phone === formData.phone && emp.id.toString() !== employeeId
-      );
+    //  if (formData.phone && formData.phone.trim() !== '') {
+    //   // You might need to fetch current employees to check duplicates
+    //   // Or rely on backend validation
+    //   const employees = await employeeAPI.getEmployees();
+    //   const phoneExists = employees.some(
+    //     (emp: any) => emp.phone === formData.phone && emp.id.toString() !== employeeId
+    //   );
       
-      if (phoneExists) {
-        toast.error("Phone number already exists for another employee");
-        setLoading(false);
-        return;
-      }
-    }
+    //   if (phoneExists) {
+    //     toast.error("Phone number already exists for another employee");
+    //     setLoading(false);
+    //     return;
+    //   }
+    // }
 
       // Append profile picture if exists
       if (profilePicture) {

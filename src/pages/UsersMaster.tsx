@@ -786,7 +786,7 @@ export default function UsersMaster() {
   );
 
   // Handle form submission
-  // ✅ UPDATED handleSubmit function with phone duplicate check
+ // Updated handleSubmit function - Phone check ONLY on create
 const handleSubmit = async (e: React.FormEvent) => {
   e.preventDefault();
 
@@ -828,57 +828,37 @@ const handleSubmit = async (e: React.FormEvent) => {
     return;
   }
 
-  // ✅ ADDED: Phone Duplicate Check Function
-  const checkPhoneDuplicate = async (phone: string, excludeUserId?: string) => {
-    if (!phone || phone.trim() === "" || phone.length !== 10) {
-      return { isDuplicate: false, message: "" };
-    }
-
+  // ✅ ONLY CHECK PHONE DUPLICATE ON CREATE (not on update)
+  if (!editingId && formData.phone && formData.phone.trim() !== "") {
     try {
-      // Check in existing users (excluding current editing user)
+      // Check in existing users
       const existingUserWithPhone = users.find(
-        (user) => user.phone === phone && (!excludeUserId || user.id !== excludeUserId)
+        (user) => user.phone === formData.phone
       );
 
       if (existingUserWithPhone) {
-        return { 
-          isDuplicate: true, 
-          message: "This phone number is already in use by another user" 
-        };
+        toast.error("This phone number is already in use by another user");
+        return;
       }
 
       // Also check in employees table to prevent cross-table duplicates
       try {
         const employees = await HrmsEmployeesApi.getEmployees();
         const existingEmployeeWithPhone = employees.find(
-          (emp: any) => emp.phone === phone
+          (emp: any) => emp.phone === formData.phone
         );
 
         if (existingEmployeeWithPhone) {
-          return { 
-            isDuplicate: true, 
-            message: "This phone number is already in use by an employee" 
-          };
+          toast.error("This phone number is already in use by an employee");
+          return;
         }
       } catch (empError) {
         console.warn("Could not check employee phone duplicates:", empError);
         // Continue with user check only
       }
-
-      return { isDuplicate: false, message: "" };
     } catch (error) {
       console.error("Error checking phone duplicate:", error);
-      return { isDuplicate: false, message: "" };
-    }
-  };
-
-  // ✅ ADDED: Check for phone duplicate before submission
-  if (formData.phone && formData.phone.trim() !== "") {
-    const phoneCheck = await checkPhoneDuplicate(formData.phone, editingId || undefined);
-    
-    if (phoneCheck.isDuplicate) {
-      toast.error(phoneCheck.message);
-      return;
+      // Continue with submission if check fails
     }
   }
 
@@ -1038,7 +1018,6 @@ const handleSubmit = async (e: React.FormEvent) => {
     setSubmitting(false);
   }
 };
-
   // Reset form
   const resetForm = useCallback(() => {
     if (previewUrl && previewUrl.startsWith("blob:")) {
@@ -2163,34 +2142,22 @@ const handleSubmit = async (e: React.FormEvent) => {
                     </div>
 
                     {/* Phone */}
-                    <div className="space-y-1">
-                      <label className="block text-xs font-semibold text-gray-700">
-                        Phone
-                      </label>
-<input
-  type="tel"
-  value={formData.phone}
-  onChange={(e) => {
-    const value = e.target.value.replace(/\D/g, "").slice(0, 10);
-    setFormData({ ...formData, phone: value });
-  }}
-  onBlur={async () => {
-    if (formData.phone && formData.phone.length === 10) {
-      try {
-        const phoneCheck = await checkPhoneDuplicate(formData.phone, editingId || undefined);
-        if (phoneCheck.isDuplicate) {
-          toast.error(phoneCheck.message);
-        }
-      } catch (error) {
-        console.error("Phone validation error:", error);
-      }
-    }
-  }}
-  className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
-  placeholder="9876543210"
-  maxLength={10}
-/>
-                    </div>
+                 <div className="space-y-1">
+  <label className="block text-xs font-semibold text-gray-700">
+    Phone
+  </label>
+  <input
+    type="tel"
+    value={formData.phone}
+    onChange={(e) => {
+      const value = e.target.value.replace(/\D/g, "").slice(0, 10);
+      setFormData({ ...formData, phone: value });
+    }}
+    className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
+    placeholder="9876543210"
+    maxLength={10}
+  />
+</div>
 
                     {/* Password (only for new users) */}
                     {!editingId && (
