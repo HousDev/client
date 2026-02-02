@@ -1691,9 +1691,12 @@ export default function VendorsEnhanced(): JSX.Element {
       setShowModal(false);
       resetForm();
       await loadData();
-    } catch (error) {
-      console.error("Error saving vendor:", error);
-      alert("Error saving vendor — check console for details");
+    } catch (error: any) {
+      console.error("Error saving vendor:", error.response);
+      toast.error(
+        error.response.data.message ??
+          "Something went wrong while creating venodr. Please try again.",
+      );
     } finally {
       setSubmitting(false);
     }
@@ -1738,7 +1741,7 @@ export default function VendorsEnhanced(): JSX.Element {
       await loadData();
     } catch (error) {
       console.error("Error deleting vendor:", error);
-      alert("Error deleting vendor");
+      toast.error("Error deleting vendor");
     }
   };
 
@@ -1870,8 +1873,8 @@ export default function VendorsEnhanced(): JSX.Element {
     px-3 py-1.5 
     sm:px-4 sm:py-2 
     md:px-5 md:py-2.5 
-    lg:px-6 lg:py-3 
-    xl:px-7 xl:py-3 
+    lg:px-6 lg:py-2
+    xl:px-7 xl:py-2
     rounded-md sm:rounded-lg
     hover:bg-gray-800 
     transition-all duration-200
@@ -2790,7 +2793,6 @@ export default function VendorsEnhanced(): JSX.Element {
                                 value={formData.contact_person_phone}
                                 onChange={(e) => {
                                   if (!/^\d*$/.test(e.target.value)) {
-                                    
                                     return;
                                   }
                                   if (e.target.value.length > 10) {

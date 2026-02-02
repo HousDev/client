@@ -616,7 +616,6 @@
 //   );
 // }
 
-
 import React, { useState, useEffect, useRef } from "react";
 import {
   X,
@@ -734,7 +733,7 @@ export default function MaterialInForm({
       };
     });
     const data = poItemsData.filter(
-      (d: any) => d.status === "authorize" && d.material_status !== "completed"
+      (d: any) => d.status === "authorize" && d.material_status !== "completed",
     );
     setPurchaseOrder(Array.isArray(data) ? data : []);
   };
@@ -754,7 +753,7 @@ export default function MaterialInForm({
     const poMaterialTracking: any = await po_trackingApi.getTrackings();
 
     setPoMaterialTracking(
-      Array.isArray(poMaterialTracking) ? poMaterialTracking : []
+      Array.isArray(poMaterialTracking) ? poMaterialTracking : [],
     );
   };
 
@@ -768,7 +767,7 @@ export default function MaterialInForm({
 
   const handleInputChange = (
     field: keyof MaterialInFormData,
-    value: string
+    value: string,
   ) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
   };
@@ -777,7 +776,7 @@ export default function MaterialInForm({
     setFormData((prev) => ({
       ...prev,
       items: prev.items.map((item: any) =>
-        item.id === id ? { ...item, quantity_received: value } : item
+        item.id === id ? { ...item, quantity_received: value } : item,
       ),
     }));
   };
@@ -821,13 +820,13 @@ export default function MaterialInForm({
       let statusOfQuantity = true;
       for (const item of formData.items) {
         if (item.quantity_received > 0) {
-          statusOfQuantity = false
+          statusOfQuantity = false;
         }
       }
       if (statusOfQuantity) {
         toast.error("All items have recieved quantity zero.");
         setLoading(false);
-        return
+        return;
       }
 
       const formDataObj = new FormData();
@@ -853,8 +852,8 @@ export default function MaterialInForm({
           formData.items.map((item: any) => ({
             id: item.item_id,
             quantity_issued: Number(item.quantity_received),
-          }))
-        )
+          })),
+        ),
       );
 
       const response = await api.post("/inventory-transaction", formDataObj, {
@@ -895,12 +894,14 @@ export default function MaterialInForm({
 
   return (
     <div className="fixed inset-0 bg-black/60 backdrop-blur-md flex items-center justify-center z-50 p-4 animate-fadeIn">
-      <div 
+      <div
         ref={formRef}
         className="bg-gradient-to-br from-gray-50 to-white rounded-2xl shadow-2xl shadow-gray-900/20 w-full max-w-2xl my-4 border border-gray-200 overflow-hidden"
       >
         {/* Header */}
-<div className="bg-gradient-to-r from-[#40423f] via-[#4a4c49] to-[#5a5d5a] px-6 py-4 flex justify-between items-center border-b border-gray-700/30 relative overflow-hidden">          <div className="flex items-center gap-3">
+        <div className="bg-gradient-to-r from-[#40423f] via-[#4a4c49] to-[#5a5d5a] px-6 py-4 flex justify-between items-center border-b border-gray-700/30 relative overflow-hidden">
+          {" "}
+          <div className="flex items-center gap-3">
             <div className="p-2 bg-white/20 rounded-xl backdrop-blur-sm">
               <Truck className="w-5 h-5 text-white" />
             </div>
@@ -942,22 +943,28 @@ export default function MaterialInForm({
                     value={`${formData.po_number}`}
                     onChange={(e) => {
                       const purchaseOrdersData = purchaseOrders.find(
-                        (po: any) => po.po_number === e.target.value
+                        (po: any) => po.po_number === e.target.value,
                       );
                       const vendorData = vendors.find(
-                        (v: any) => v.id === purchaseOrdersData.vendor_id
+                        (v: any) => v.id === purchaseOrdersData.vendor_id,
                       );
 
                       handleInputChange("po_number", e.target.value);
                       handleInputChange("po_id", purchaseOrdersData.id);
                       handleInputChange("vendor_id", vendorData.id);
                       handleInputChange("vendor", vendorData.name);
-                      console.log("this is all projects", allProjects)
-                      const project = allProjects.find((p: any) => p.id === Number(purchaseOrdersData.project_id))
-                      handleInputChange("deliveryLocation", project.name + " " + project.location);
+                      console.log("this is all projects", allProjects);
+                      const project = allProjects.find(
+                        (p: any) =>
+                          p.id === Number(purchaseOrdersData.project_id),
+                      );
+                      handleInputChange(
+                        "deliveryLocation",
+                        project.name + " " + project.location,
+                      );
 
                       const poItems = allPOItems.filter(
-                        (poItem: any) => poItem.po_id === purchaseOrdersData.id
+                        (poItem: any) => poItem.po_id === purchaseOrdersData.id,
                       );
 
                       const poItemsWithReceivedQuantity = poItems.map(
@@ -965,7 +972,7 @@ export default function MaterialInForm({
                           const tracking = poMaterialTracking.find(
                             (mt: any) =>
                               String(mt.po_id) === String(pi.po_id) &&
-                              String(mt.item_id) === String(pi.item_id)
+                              String(mt.item_id) === String(pi.item_id),
                           );
 
                           return {
@@ -975,14 +982,16 @@ export default function MaterialInForm({
                               : 0,
                             quantity_received: 0,
                           };
-                        }
+                        },
                       );
                       handleInputChange("items", poItemsWithReceivedQuantity);
                     }}
                     className="w-full pl-10 pr-10 py-2.5 text-sm border-2 border-gray-200 rounded-xl focus:border-[#C62828] focus:ring-2 focus:ring-[#C62828]/20 bg-white outline-none transition-all duration-200 appearance-none hover:border-gray-300"
                     required
                   >
-                    <option value="" className="text-gray-400">Select PO Number</option>
+                    <option value="" className="text-gray-400">
+                      Select PO Number
+                    </option>
                     {purchaseOrders.map((po: any) => (
                       <option key={po.id} value={po.po_number} className="py-2">
                         {po.vendor} - ({po.po_number})
@@ -1002,7 +1011,9 @@ export default function MaterialInForm({
                 </label>
                 <div className="flex items-center gap-3 px-4 py-2.5 border-2 border-gray-200 rounded-xl bg-gradient-to-r from-gray-50 to-white group hover:border-gray-300 transition-all duration-200">
                   <Truck className="w-4 h-4 text-gray-600 group-hover:text-[#C62828]" />
-                  <span className={`text-sm font-medium ${formData.vendor ? 'text-gray-800' : 'text-gray-400'}`}>
+                  <span
+                    className={`text-sm font-medium ${formData.vendor ? "text-gray-800" : "text-gray-400"}`}
+                  >
                     {formData.vendor || "Select PO to see vendor"}
                   </span>
                 </div>
@@ -1091,13 +1102,11 @@ export default function MaterialInForm({
                     value={formData.receiverPhone}
                     onChange={(e) => {
                       if (!/^\d*$/.test(e.target.value)) {
-                     
                         return;
                       }
                       if (Number(e.target.value.length) <= 10) {
                         handleInputChange("receiverPhone", e.target.value);
                       } else {
-                        ;
                       }
                     }}
                     className="w-full pl-10 pr-4 py-2.5 text-sm border-2 border-gray-200 rounded-xl focus:border-[#C62828] focus:ring-2 focus:ring-[#C62828]/20 outline-none transition-all duration-200 hover:border-gray-300"
@@ -1130,7 +1139,7 @@ export default function MaterialInForm({
                   </div>
                 </div>
               </div>
-              
+
               <div className="space-y-1.5">
                 <label className="block text-sm font-semibold text-gray-800 mb-1 flex items-center gap-2">
                   <FileText className="w-4 h-4 text-[#C62828]" />
@@ -1190,18 +1199,24 @@ export default function MaterialInForm({
                     </thead>
                     <tbody className="divide-y divide-gray-100">
                       {formData.items.map((item: any, index: number) => {
-                        const isComplete = parseFloat(item.quantity) === parseFloat(item.issued_quantity);
+                        const isComplete =
+                          parseFloat(item.quantity) ===
+                          parseFloat(item.issued_quantity);
                         return (
                           <tr
                             key={item.materialId}
                             className={`hover:bg-gray-50/50 transition-colors ${
-                              isComplete ? 'bg-green-50/50' : ''
+                              isComplete ? "bg-green-50/50" : ""
                             }`}
                           >
                             <td className="px-5 py-3">
                               <div className="flex items-center gap-3">
-                                <div className={`p-1.5 rounded-lg ${isComplete ? 'bg-green-100' : 'bg-blue-100'}`}>
-                                  <Package className={`w-4 h-4 ${isComplete ? 'text-green-600' : 'text-blue-600'}`} />
+                                <div
+                                  className={`p-1.5 rounded-lg ${isComplete ? "bg-green-100" : "bg-blue-100"}`}
+                                >
+                                  <Package
+                                    className={`w-4 h-4 ${isComplete ? "text-green-600" : "text-blue-600"}`}
+                                  />
                                 </div>
                                 <div>
                                   <div className="font-semibold text-gray-800">
@@ -1220,11 +1235,13 @@ export default function MaterialInForm({
                             </td>
                             <td className="px-5 py-3">
                               <div className="flex items-center gap-2">
-                                <div className={`px-3 py-1 rounded-full text-xs font-medium ${
-                                  parseFloat(item.issued_quantity) === 0 
-                                    ? 'bg-gray-100 text-gray-600' 
-                                    : 'bg-blue-100 text-blue-700'
-                                }`}>
+                                <div
+                                  className={`px-3 py-1 rounded-full text-xs font-medium ${
+                                    parseFloat(item.issued_quantity) === 0
+                                      ? "bg-gray-100 text-gray-600"
+                                      : "bg-blue-100 text-blue-700"
+                                  }`}
+                                >
                                   {item.issued_quantity}
                                 </div>
                                 {isComplete && (
@@ -1256,22 +1273,21 @@ export default function MaterialInForm({
 
                                     if (t < parseFloat(e.target.value)) {
                                       toast.error(
-                                        "Received Qty. is greater than pending Qty."
+                                        "Received Qty. is greater than pending Qty.",
                                       );
                                       return;
                                     }
                                     handleItemQuantityChange(
                                       item.id,
-                                      e.target.value
+                                      e.target.value,
                                     );
                                   }}
                                   className={`w-28 px-4 py-2 text-sm border-2 rounded-xl focus:ring-2 focus:ring-[#C62828]/20 outline-none transition-all duration-200 ${
                                     isComplete
-                                      ? 'bg-gray-100 border-gray-200 text-gray-400 cursor-not-allowed'
-                                      : 'border-gray-200 hover:border-gray-300 focus:border-[#C62828]'
+                                      ? "bg-gray-100 border-gray-200 text-gray-400 cursor-not-allowed"
+                                      : "border-gray-200 hover:border-gray-300 focus:border-[#C62828]"
                                   }`}
                                   placeholder="Enter Qty"
-
                                 />
                               </div>
                             </td>
@@ -1334,8 +1350,14 @@ export default function MaterialInForm({
             background: #b71c1c;
           }
           @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(10px); }
-            to { opacity: 1; transform: translateY(0); }
+            from {
+              opacity: 0;
+              transform: translateY(10px);
+            }
+            to {
+              opacity: 1;
+              transform: translateY(0);
+            }
           }
           .animate-fadeIn {
             animation: fadeIn 0.3s ease-out;
