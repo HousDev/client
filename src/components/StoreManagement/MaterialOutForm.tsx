@@ -1170,11 +1170,10 @@ export default function MaterialOutForm({
                       if (Number(e.target.value.length) <= 10) {
                         handleInputChange("receiver_phone", e.target.value);
                       } else {
-                        toast.warning("Only 10 digit mobile number allowed.", {
-                          description: "Please enter exactly 10 digits",
-                        });
+                        
+                        }
                       }
-                    }}
+                    }
                     className="w-full pl-10 pr-4 py-2.5 text-sm border border-gray-300 rounded-xl focus:border-[#b52124] focus:ring-2 focus:ring-[#b52124]/20 outline-none transition-all duration-200 hover:border-gray-400 bg-white/50 text-[#40423f] placeholder-gray-500"
                     placeholder="Enter phone number"
                     required

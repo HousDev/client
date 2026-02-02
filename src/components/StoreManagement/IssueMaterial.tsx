@@ -572,7 +572,6 @@ export default function IssueMaterial({
                       purpose: mr.work,
                       materials: materials,
                     });
-                    toast.success("Material request loaded successfully!");
                   }}
                   placeholder="Select Material Request"
                   required
