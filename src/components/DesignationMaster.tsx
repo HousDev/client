@@ -77,33 +77,31 @@ export default function DesignationMaster() {
     }
   }, [form.department_id]);
 
- const loadDesignations = async () => {
-  setLoading(true);
-  try {
-    const designationsData = await designationApi.getAll();
-    console.log("Designations loaded:", designationsData);
-    
-    // Always ensure it's an array
-    if (Array.isArray(designationsData)) {
-      setDesignations(designationsData);
-      console.log(`✅ Loaded ${designationsData.length} designations`);
+  const loadDesignations = async () => {
+    setLoading(true);
+    try {
+      const designationsData = await designationApi.getAll();
+      console.log("Designations loaded:", designationsData);
       
-      // Count active/inactive
-      const active = designationsData.filter(d => d.is_active).length;
-      const inactive = designationsData.filter(d => !d.is_active).length;
-      console.log(`Active: ${active}, Inactive: ${inactive}`);
-    } else {
-      console.warn("❌ Designations data is not an array:", designationsData);
+      if (Array.isArray(designationsData)) {
+        setDesignations(designationsData);
+        console.log(`✅ Loaded ${designationsData.length} designations`);
+        
+        const active = designationsData.filter(d => d.is_active).length;
+        const inactive = designationsData.filter(d => !d.is_active).length;
+        console.log(`Active: ${active}, Inactive: ${inactive}`);
+      } else {
+        console.warn("❌ Designations data is not an array:", designationsData);
+        setDesignations([]);
+      }
+    } catch (error: any) {
+      console.error("❌ Failed to load designations:", error);
+      toast.error(error.message || "Failed to load designations");
       setDesignations([]);
+    } finally {
+      setLoading(false);
     }
-  } catch (error: any) {
-    console.error("❌ Failed to load designations:", error);
-    toast.error(error.message || "Failed to load designations");
-    setDesignations([]);
-  } finally {
-    setLoading(false);
-  }
-};
+  };
 
   const loadDepartments = async () => {
     try {
@@ -184,7 +182,6 @@ export default function DesignationMaster() {
 
     try {
       if (editingDesignation) {
-        // Update existing designation
         await designationApi.update(editingDesignation.id, {
           name: form.name,
           hierarchy_level: form.hierarchy_level,
@@ -200,7 +197,6 @@ export default function DesignationMaster() {
         });
         
       } else {
-        // Create new designation
         await designationApi.create({
           name: form.name,
           department_id: form.department_id,
@@ -224,7 +220,6 @@ export default function DesignationMaster() {
     } catch (error: any) {
       console.error("Failed to save designation:", error);
       
-      // Show specific error message
       const errorMessage = error.response?.data?.error || error.message || "Failed to save designation";
       
       if (errorMessage.includes("role is not assigned")) {
@@ -235,10 +230,11 @@ export default function DesignationMaster() {
     }
   };
 
+  // ✅ FIXED: handleDelete now properly catches FK_CONSTRAINT_ERROR from backend
   const handleDelete = async (designation: Designation) => {
     const result = await MySwal.fire({
       title: "Are you sure?",
-      text: `You are about to delete "${designation.name}". This action cannot be undone!`,
+      text: `You are about to permanently delete "${designation.name}". This action cannot be undone!`,
       icon: "warning",
       showCancelButton: true,
       confirmButtonColor: "#d33",
@@ -253,7 +249,7 @@ export default function DesignationMaster() {
         
         await MySwal.fire({
           title: "Deleted!",
-          text: "Designation has been deleted.",
+          text: `"${designation.name}" has been permanently deleted.`,
           icon: "success",
           confirmButtonColor: "#3085d6",
           confirmButtonText: "OK"
@@ -263,13 +259,55 @@ export default function DesignationMaster() {
       } catch (error: any) {
         console.error("Failed to delete designation:", error);
         
-        await MySwal.fire({
-          title: "Error!",
-          text: error.message || "Failed to delete designation",
-          icon: "error",
-          confirmButtonColor: "#d33",
-          confirmButtonText: "OK"
-        });
+        // ✅ Get error details from the API response
+        const errorData = error.response?.data || {};
+        const errorMessage = errorData.error || error.message || "Failed to delete designation";
+        const errorCode = errorData.code || "";
+
+        // ✅ Check for FK constraint error (from our new controller code)
+        // Matches: FK_CONSTRAINT_ERROR code, or text keywords from MySQL error
+        const isFKError =
+          errorCode === "FK_CONSTRAINT_ERROR" ||
+          errorMessage.includes("being used") ||
+          errorMessage.includes("in use") ||
+          errorMessage.includes("Cannot delete") ||
+          errorMessage.includes("referenced") ||
+          errorMessage.includes("foreign key");
+
+        if (isFKError) {
+          // Show option to deactivate instead
+          const deactivateResult = await MySwal.fire({
+            title: "Cannot Delete",
+            text: `This designation is currently assigned to one or more employees and cannot be permanently deleted.\n\nWould you like to deactivate it instead?`,
+            icon: "warning",
+            showCancelButton: true,
+            confirmButtonColor: "#3085d6",
+            cancelButtonColor: "#d33",
+            confirmButtonText: "Yes, deactivate it",
+            cancelButtonText: "Cancel",
+            showCloseButton: true
+          });
+
+          if (deactivateResult.isConfirmed) {
+            try {
+              await designationApi.toggleActive(designation.id);
+              toast.success(`"${designation.name}" has been deactivated successfully`);
+              loadDesignations();
+            } catch (toggleError: any) {
+              console.error("Failed to deactivate:", toggleError);
+              toast.error(toggleError.message || "Failed to deactivate designation");
+            }
+          }
+        } else {
+          // Other unexpected error
+          await MySwal.fire({
+            title: "Error!",
+            text: errorMessage,
+            icon: "error",
+            confirmButtonColor: "#d33",
+            confirmButtonText: "OK"
+          });
+        }
       }
     }
   };
@@ -298,13 +336,8 @@ export default function DesignationMaster() {
 
     if (result.isConfirmed) {
       try {
-        // Call API to toggle active status
         await designationApi.toggleActive(designation.id);
-        
-        // Show success message
         toast.success(`Designation ${actionText} successfully`);
-        
-        // Reload designations
         loadDesignations();
         
       } catch (error: any) {
@@ -325,12 +358,10 @@ export default function DesignationMaster() {
     if (!Array.isArray(designations)) return [];
     
     return designations.filter(designation => {
-      // Apply active filter
       if (activeFilter !== null && designation.is_active !== activeFilter) {
         return false;
       }
       
-      // Apply search filter
       if (search) {
         const searchTerm = search.toLowerCase();
         return (
@@ -349,7 +380,6 @@ export default function DesignationMaster() {
     return levels[level] || `Level ${level}`;
   };
 
-  // Count active/inactive designations
   const activeCount = designations.filter(d => d.is_active).length;
   const inactiveCount = designations.filter(d => !d.is_active).length;
 

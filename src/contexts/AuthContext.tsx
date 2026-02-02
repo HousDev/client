@@ -99,102 +99,207 @@
   //   if (!ctx) throw new Error("useAuth must be used within AuthProvider");
   //   return ctx;
   // }
-  // src/contexts/AuthContext.tsx
+
+
+
+
+  // // src/contexts/AuthContext.tsx
+  // import React, { createContext, useContext, useEffect, useState } from "react";
+  // import { UsersApi, getToken as apiGetToken } from "../lib/Api";
+
+  // type User = any; // you can import UserProfile type
+
+  // interface AuthContextValue {
+  //   profile: User | null;
+  //   user: User | null;
+  //   token: string | null;
+  //   loading: boolean;
+  //   signIn: (email: string, password: string) => Promise<void>;
+  //   signOut: () => void;
+  //   refreshUser: () => Promise<void>;
+  // }
+
+  // const AuthContext = createContext<AuthContextValue | undefined>(undefined);
+
+  // export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
+  //   children,
+  // }) => {
+  //   const [user, setUser] = useState<User | null>(null);
+  //   const [profile, setProfile] = useState<User | null>(null);
+  //   const [token, setToken] = useState<string | null>(() => {
+  //     try {
+  //       return localStorage.getItem("auth_token");
+  //     } catch {
+  //       return null;
+  //     }
+  //   });
+  //   const [loading, setLoading] = useState(true);
+
+  //   useEffect(() => {
+  //     // if token exists, fetch /auth/me
+  //     async function init() {
+  //       if (!token) {
+  //         setLoading(false);
+  //         return;
+  //       }
+  //       try {
+  //         const data = await UsersApi.me();
+  //         setUser(data.user);
+  //         setProfile(data.user);
+  //       } catch (err) {
+  //         console.error("Auth init failed", err);
+  //         // invalid token -> clear
+  //         localStorage.removeItem("auth_token");
+  //         setToken(null);
+  //         setUser(null);
+  //         setProfile(null);
+  //       } finally {
+  //         setLoading(false);
+  //       }
+  //     }
+  //     init();
+  //   }, [token]);
+
+  //   const signIn = async (email: string, password: string) => {
+  //     try {
+  //       const { token: tkn, user: u } = await UsersApi.login(email, password);
+  //       setLoading(true);
+  //       localStorage.setItem("auth_token", tkn);
+  //       setToken(tkn);
+  //       setUser(u);
+  //       setProfile(u);
+  //       setLoading(false);
+  //     } catch (err) {
+  //       throw err;
+  //     }
+  //   };
+
+  //   const signOut = () => {
+  //     localStorage.removeItem("auth_token");
+  //     setToken(null);
+  //     setUser(null);
+  //     setProfile(null);
+  //   };
+
+  //   const refreshUser = async () => {
+  //     if (!apiGetToken()) return;
+  //     const data = await UsersApi.me();
+  //     setUser(data.user);
+  //     setProfile(data.user);
+  //   };
+
+  //   return (
+  //     <AuthContext.Provider
+  //       value={{ profile, user, token, loading, signIn, signOut, refreshUser }}
+  //     >
+  //       {children}
+  //     </AuthContext.Provider>
+  //   );
+  // };
+
+  // export function useAuth() {
+  //   const ctx = useContext(AuthContext);
+  //   if (!ctx) throw new Error("useAuth must be used inside AuthProvider");
+  //   return ctx;
+  // }
+
+
+
   import React, { createContext, useContext, useEffect, useState } from "react";
-  import { UsersApi, getToken as apiGetToken } from "../lib/Api";
+import { UsersApi, getToken as apiGetToken } from "../lib/Api";
 
-  type User = any; // you can import UserProfile type
+type User = any; // you can import UserProfile type
 
-  interface AuthContextValue {
-    profile: User | null;
-    user: User | null;
-    token: string | null;
-    loading: boolean;
-    signIn: (email: string, password: string) => Promise<void>;
-    signOut: () => void;
-    refreshUser: () => Promise<void>;
-  }
+interface AuthContextValue {
+  profile: User | null;
+  user: User | null;
+  token: string | null;
+  loading: boolean;
+  signIn: (identifier: string, password: string) => Promise<void>;
+  signOut: () => void;
+  refreshUser: () => Promise<void>;
+}
 
-  const AuthContext = createContext<AuthContextValue | undefined>(undefined);
+const AuthContext = createContext<AuthContextValue | undefined>(undefined);
 
-  export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
-    children,
-  }) => {
-    const [user, setUser] = useState<User | null>(null);
-    const [profile, setProfile] = useState<User | null>(null);
-    const [token, setToken] = useState<string | null>(() => {
-      try {
-        return localStorage.getItem("auth_token");
-      } catch {
-        return null;
-      }
-    });
-    const [loading, setLoading] = useState(true);
+export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
+  children,
+}) => {
+  const [user, setUser] = useState<User | null>(null);
+  const [profile, setProfile] = useState<User | null>(null);
+  const [token, setToken] = useState<string | null>(() => {
+    try {
+      return localStorage.getItem("auth_token");
+    } catch {
+      return null;
+    }
+  });
+  const [loading, setLoading] = useState(true);
 
-    useEffect(() => {
-      // if token exists, fetch /auth/me
-      async function init() {
-        if (!token) {
-          setLoading(false);
-          return;
-        }
-        try {
-          const data = await UsersApi.me();
-          setUser(data.user);
-          setProfile(data.user);
-        } catch (err) {
-          console.error("Auth init failed", err);
-          // invalid token -> clear
-          localStorage.removeItem("auth_token");
-          setToken(null);
-          setUser(null);
-          setProfile(null);
-        } finally {
-          setLoading(false);
-        }
-      }
-      init();
-    }, [token]);
-
-    const signIn = async (email: string, password: string) => {
-      try {
-        const { token: tkn, user: u } = await UsersApi.login(email, password);
-        setLoading(true);
-        localStorage.setItem("auth_token", tkn);
-        setToken(tkn);
-        setUser(u);
-        setProfile(u);
+  useEffect(() => {
+    // if token exists, fetch /auth/me
+    async function init() {
+      if (!token) {
         setLoading(false);
-      } catch (err) {
-        throw err;
+        return;
       }
-    };
+      try {
+        const data = await UsersApi.me();
+        setUser(data.user);
+        setProfile(data.user);
+      } catch (err) {
+        console.error("Auth init failed", err);
+        // invalid token -> clear
+        localStorage.removeItem("auth_token");
+        setToken(null);
+        setUser(null);
+        setProfile(null);
+      } finally {
+        setLoading(false);
+      }
+    }
+    init();
+  }, [token]);
 
-    const signOut = () => {
-      localStorage.removeItem("auth_token");
-      setToken(null);
-      setUser(null);
-      setProfile(null);
-    };
-
-    const refreshUser = async () => {
-      if (!apiGetToken()) return;
-      const data = await UsersApi.me();
-      setUser(data.user);
-      setProfile(data.user);
-    };
-
-    return (
-      <AuthContext.Provider
-        value={{ profile, user, token, loading, signIn, signOut, refreshUser }}
-      >
-        {children}
-      </AuthContext.Provider>
-    );
+  const signIn = async (identifier: string, password: string) => {
+    try {
+      const { token: tkn, user: u } = await UsersApi.login(identifier, password);
+      setLoading(true);
+      localStorage.setItem("auth_token", tkn);
+      setToken(tkn);
+      setUser(u);
+      setProfile(u);
+      setLoading(false);
+    } catch (err) {
+      throw err;
+    }
   };
 
-  export function useAuth() {
-    const ctx = useContext(AuthContext);
-    if (!ctx) throw new Error("useAuth must be used inside AuthProvider");
-    return ctx;
-  }
+  const signOut = () => {
+    localStorage.removeItem("auth_token");
+    setToken(null);
+    setUser(null);
+    setProfile(null);
+  };
+
+  const refreshUser = async () => {
+    if (!apiGetToken()) return;
+    const data = await UsersApi.me();
+    setUser(data.user);
+    setProfile(data.user);
+  };
+
+  return (
+    <AuthContext.Provider
+      value={{ profile, user, token, loading, signIn, signOut, refreshUser }}
+    >
+      {children}
+    </AuthContext.Provider>
+  );
+};
+
+export function useAuth() {
+  const ctx = useContext(AuthContext);
+  if (!ctx) throw new Error("useAuth must be used inside AuthProvider");
+  return ctx;
+}
