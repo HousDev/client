@@ -206,9 +206,6 @@
 
 
 
-
-
-
 // src/lib/employeeApi.ts
 import { api, unwrap } from "./Api";
 
@@ -216,6 +213,8 @@ import { api, unwrap } from "./Api";
  * Comprehensive Employee Type with all fields
  */
 export type HrmsEmployee = {
+  success: any;
+  message: string;
   id: number;
   employee_code: string;
   
@@ -342,7 +341,11 @@ export const HrmsEmployeesApi = {
         data: error.response?.data,
         config: error.config
       });
-      throw error;
+      if (error.response?.data?.message?.toLowerCase().includes('phone') ||
+        error.response?.data?.errors?.phone) {
+      throw new Error("Phone number already exists");
+    }
+    throw error;
     }
   },
 
@@ -403,6 +406,10 @@ export const HrmsEmployeesApi = {
         data: error.response?.data,
         config: error.config
       });
+      if (error.response?.data?.message?.toLowerCase().includes('phone') ||
+        error.response?.data?.errors?.phone) {
+      throw new Error("Phone number already exists");
+    }
       throw error;
     }
   },
@@ -436,20 +443,24 @@ export const HrmsEmployeesApi = {
    * Update employee status
    * PATCH /employees/:id/status
    */
-  updateEmployeeStatus: async (
-    id: number | string,
-    status: string
-  ): Promise<HrmsEmployee> => {
-    try {
-      console.log(`Updating status for employee ${id} to:`, status);
-      
-      const response = await api.patch(`/employees/${id}/status`, { employee_status: status });
-      return response.data;
-    } catch (error: any) {
-      console.error("Update employee status error:", error.message);
-      throw error;
-    }
-  },
+  // In employeeApi.ts
+updateEmployeeStatus: async (
+  id: number | string,
+  status: string
+): Promise<HrmsEmployee> => {
+  try {
+    console.log(`Updating status for employee ${id} to:`, status);
+    
+    // ✅ Send 'employee_status' as parameter name, not 'status'
+    const response = await api.patch(`/employees/${id}/status`, { 
+      employee_status: status 
+    });
+    return response.data;
+  } catch (error: any) {
+    console.error("Update employee status error:", error.message);
+    throw error;
+  }
+}, 
 
   /**
    * Delete employee
