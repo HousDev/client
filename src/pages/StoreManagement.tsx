@@ -968,7 +968,11 @@ export default function StoreManagement({
   const [searchRate, setSearchRate] = useState("");
   const [searchStockValue, setSearchStockValue] = useState("");
 
-  // Checkbox selection states
+  const [itemCategories, setItemCategories] = useState<string[]>([]);
+const [itemSubCategories, setItemSubCategories] = useState<string[]>([]);
+const [loadingCategories, setLoadingCategories] = useState(false);
+const [selectedCategory, setSelectedCategory] = useState("");
+const [filterSubCategory, setFilterSubCategory] = useState(""); // ✅ ADD THIS
   const [selectedItems, setSelectedItems] = useState<Set<number>>(new Set());
   const [selectAll, setSelectAll] = useState(false);
 
@@ -1109,6 +1113,8 @@ export default function StoreManagement({
       const items = await loadAllItems();
       const inventoryData = await loadInventory(items);
       await loadTransactions();
+      await loadCategories(); // ✅ ADD THIS LINE
+
 
       if (activeTab === "management") {
         setFilteredInventory(inventoryData);
@@ -1124,6 +1130,54 @@ export default function StoreManagement({
     }
   };
 
+ const loadCategories = async () => {
+  try {
+    setLoadingCategories(true);
+    
+    // Fetch categories
+    const categories = await ItemsApi.getItemCategories();
+    setItemCategories(categories);
+    
+    // Fetch all sub-categories initially
+    const subCategories = await ItemsApi.getItemSubCategories();
+    setItemSubCategories(subCategories);
+    
+  } catch (error) {
+    console.error("Error loading categories:", error);
+  } finally {
+    setLoadingCategories(false);
+  }
+};
+
+const handleCategoryChange = async (category: string) => {
+  setSelectedCategory(category);
+  setFilterSubCategory(""); // Reset sub-category when category changes
+  
+  if (!category) {
+    // If no category selected, show all sub-categories
+    try {
+      const subCategories = await ItemsApi.getItemSubCategories();
+      setItemSubCategories(subCategories);
+    } catch (error) {
+      console.error("Error loading all sub-categories:", error);
+    }
+    return;
+  }
+  
+  try {
+    // Fetch items in selected category
+    const itemsInCategory = await ItemsApi.getItemsByCategory(category);
+    
+    // Extract unique sub-categories from these items
+    const uniqueSubCategories = Array.from(
+      new Set(itemsInCategory.map(item => item.item_sub_category).filter(Boolean))
+    ) as string[];
+    
+    setItemSubCategories(uniqueSubCategories);
+  } catch (error) {
+    console.error(`Error loading sub-categories for ${category}:`, error);
+  }
+};
   // Initial load
   useEffect(() => {
     loadAllData();
@@ -1199,12 +1253,20 @@ export default function StoreManagement({
       }
 
       // Sidebar filters
+      console.log("before filtered", filtered)
       if (filterStatus) {
         filtered = filtered.filter((item) => item.status === filterStatus);
       }
 
       if (filterCategory) {
-        filtered = filtered.filter((item) => item.category === filterCategory);
+        filtered = filtered.filter((item:any) => item.item_category === filterCategory);
+        
+        console.log("filtered data",filtered)
+      }
+      if (filterSubCategory) {
+        filtered = filtered.filter((item:any) => item.item_sub_category === filterSubCategory);
+        
+        console.log("filtered data after subcategory",filtered)
       }
 
       if (filterLocation) {
@@ -1214,6 +1276,7 @@ export default function StoreManagement({
           ),
         );
       }
+      
 
       setFilteredInventory(filtered);
     } else {
@@ -1243,6 +1306,7 @@ export default function StoreManagement({
     searchStockValue,
     filterStatus,
     filterCategory,
+    filterSubCategory,
     filterLocation,
     searchTerm,
     inventory,
@@ -1389,7 +1453,11 @@ export default function StoreManagement({
   const resetFilters = () => {
     setFilterStatus("");
     setFilterCategory("");
+      setFilterSubCategory(""); // ✅ ADD THIS
+
     setFilterLocation("");
+      setSelectedCategory(""); // ✅ ADD THIS
+
     setSearchName("");
     setSearchItemCode("");
     setSearchStock("");
@@ -1553,432 +1621,442 @@ export default function StoreManagement({
       )}
       {/* Management Table */}
       {activeTab === "management" && (
-        <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden mx-0 md:mx-0">
-          {" "}
-          <div className="overflow-x-auto">
-            <table className="w-full min-w-[1000px]">
-              <thead className="bg-gray-200 border-b border-gray-200">
-                {/* Column Headers */}
-                <tr>
-                  <th className="px-2 md:px-4 py-2 text-center w-10">
-                    <input
-                      type="checkbox"
-                      checked={selectAll}
-                      onChange={handleSelectAll}
-                      className="w-3 h-3 md:w-4 md:h-4 text-[#C62828] border-gray-300 rounded focus:ring-[#C62828]"
-                    />
-                  </th>
-                  <th className="px-2 md:px-4 py-2 text-left w-40">
-                    <div className="text-[10px] md:text-xs font-semibold text-gray-700 uppercase tracking-wider">
-                      Material Details
-                    </div>
-                  </th>
-                  <th className="px-2 md:px-4 py-2 text-left">
-                    <div className="text-[10px] md:text-xs font-semibold text-gray-700 uppercase tracking-wider">
-                      Current Stock
-                    </div>
-                  </th>
-                  <th className="px-2 md:px-4 py-2 text-left">
-                    <div className="text-[10px] md:text-xs font-semibold text-gray-700 uppercase tracking-wider">
-                      Unit Rate
-                    </div>
-                  </th>
-                  <th className="px-2 md:px-4 py-2 text-left">
-                    <div className="text-[10px] md:text-xs font-semibold text-gray-700 uppercase tracking-wider">
-                      Stock Value
-                    </div>
-                  </th>
-                  <th className="px-2 md:px-4 py-2 text-left">
-                    <div className="text-[10px] md:text-xs font-semibold text-gray-700 uppercase tracking-wider">
-                      Location
-                    </div>
-                  </th>
-                  <th className="px-2 md:px-4 py-2 text-left">
-                    <div className="text-[10px] md:text-xs font-semibold text-gray-700 uppercase tracking-wider">
-                      Status
-                    </div>
-                  </th>
-                  <th className="px-2 md:px-4 py-2 text-center">
-                    <div className="text-[10px] md:text-xs font-semibold text-gray-700 uppercase tracking-wider">
-                      Actions
-                    </div>
-                  </th>
-                </tr>
+  <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden mx-0 md:mx-0">
+    <div className="overflow-x-auto">
+      <table className="w-full min-w-[1000px]">
+        <thead className="bg-gray-200 border-b border-gray-200">
+          {/* Column Headers */}
+          <tr>
+            <th className="px-2 md:px-4 py-2 text-left w-72">
+              <div className="text-[10px] md:text-xs font-semibold text-gray-700 uppercase tracking-wider">
+                Material Details
+              </div>
+            </th>
+            <th className="px-2 md:px-4 py-2 text-left">
+              <div className="text-[10px] md:text-xs font-semibold text-gray-700 uppercase tracking-wider">
+                Current Stock
+              </div>
+            </th>
+            <th className="px-2 md:px-4 py-2 text-left">
+              <div className="text-[10px] md:text-xs font-semibold text-gray-700 uppercase tracking-wider">
+                Unit Rate
+              </div>
+            </th>
+            <th className="px-2 md:px-4 py-2 text-left">
+              <div className="text-[10px] md:text-xs font-semibold text-gray-700 uppercase tracking-wider">
+                Stock Value
+              </div>
+            </th>
+            <th className="px-2 md:px-4 py-2 text-left">
+              <div className="text-[10px] md:text-xs font-semibold text-gray-700 uppercase tracking-wider">
+                Location
+              </div>
+            </th>
+            <th className="px-2 md:px-4 py-2 text-left">
+              <div className="text-[10px] md:text-xs font-semibold text-gray-700 uppercase tracking-wider">
+                Status
+              </div>
+            </th>
+            <th className="px-2 md:px-4 py-2 text-center">
+              <div className="text-[10px] md:text-xs font-semibold text-gray-700 uppercase tracking-wider">
+                Actions
+              </div>
+            </th>
+          </tr>
 
-                {/* Search Row - REDUCED HEIGHT (py-0.5 instead of py-1) */}
-                <tr className="bg-gray-50 border-b border-gray-200">
-                  <td className="px-2 md:px-4 py-0.5"></td>
+          {/* Search Row */}
+          <tr className="bg-gray-50 border-b border-gray-200">
+            {/* Material Details Column */}
+            <td className="px-2 md:px-4 py-0.5">
+              <input
+                type="text"
+                placeholder="Search material name..."
+                value={searchName}
+                onChange={(e) => setSearchName(e.target.value)}
+                className="w-full px-2 py-1 text-[10px] md:text-xs border border-gray-300 rounded focus:ring-1 focus:ring-[#C62828] focus:border-transparent"
+              />
+            </td>
 
-                  {/* Material Details Column - ONLY ONE search input (removed item_code search) */}
-                  <td className="px-2 md:px-4 py-0.5">
-                    <input
-                      type="text"
-                      placeholder="Search material name..."
-                      value={searchName}
-                      onChange={(e) => setSearchName(e.target.value)}
-                      className="w-full px-2 py-1 text-[10px] md:text-xs border border-gray-300 rounded focus:ring-1 focus:ring-[#C62828] focus:border-transparent"
-                    />
+            {/* Current Stock Column */}
+            <td className="px-2 md:px-4 py-0.5">
+              <input
+                type="text"
+                placeholder="Search stock quantity..."
+                value={searchStock}
+                onChange={(e) => setSearchStock(e.target.value)}
+                className="w-full px-2 py-1 text-[10px] md:text-xs border border-gray-300 rounded focus:ring-1 focus:ring-[#C62828] focus:border-transparent"
+              />
+            </td>
+
+            {/* Unit Rate Column */}
+            <td className="px-2 md:px-4 py-0.5">
+              <input
+                type="text"
+                placeholder="Search rate..."
+                value={searchRate}
+                onChange={(e) => setSearchRate(e.target.value)}
+                className="w-full px-2 py-1 text-[10px] md:text-xs border border-gray-300 rounded focus:ring-1 focus:ring-[#C62828] focus:border-transparent"
+              />
+            </td>
+
+            {/* Stock Value Column */}
+            <td className="px-2 md:px-4 py-0.5">
+              <input
+                type="text"
+                placeholder="Search value..."
+                value={searchStockValue}
+                onChange={(e) => setSearchStockValue(e.target.value)}
+                className="w-full px-2 py-1 text-[10px] md:text-xs border border-gray-300 rounded focus:ring-1 focus:ring-[#C62828] focus:border-transparent"
+              />
+            </td>
+
+            {/* Location Column */}
+            <td className="px-2 md:px-4 py-0.5">
+              <input
+                type="text"
+                placeholder="Location..."
+                value={searchLocation}
+                onChange={(e) => setSearchLocation(e.target.value)}
+                className="w-full px-2 py-1 text-[10px] md:text-xs border border-gray-300 rounded focus:ring-1 focus:ring-[#C62828] focus:border-transparent"
+              />
+            </td>
+
+            {/* Status Column */}
+            <td className="px-2 md:px-4 py-0.5">
+              <input
+                type="text"
+                placeholder="Status..."
+                value={searchStatus}
+                onChange={(e) => setSearchStatus(e.target.value)}
+                className="w-full px-2 py-1 text-[10px] md:text-xs border border-gray-300 rounded focus:ring-1 focus:ring-[#C62828] focus:border-transparent"
+              />
+            </td>
+
+            {/* Actions Column */}
+            <td className="px-2 md:px-4 py-0.5 text-center">
+              <button
+                onClick={() => setShowFilterSidebar(true)}
+                className="inline-flex items-center px-2 py-1 border border-gray-300 rounded hover:bg-gray-50 transition text-[10px] md:text-xs font-medium text-gray-700"
+                title="Advanced Filters"
+              >
+                <Filter className="w-2.5 h-2.5 md:w-3 md:h-3 mr-0.5" />
+                Filters
+              </button>
+            </td>
+          </tr>
+        </thead>
+
+        {/* Table Body */}
+        <tbody className="divide-y divide-gray-200">
+          {getCurrentPageItems().length === 0 ? (
+            <tr>
+              <td colSpan={7} className="px-4 py-8 text-center">
+                <Package className="w-12 h-12 md:w-16 md:h-16 text-gray-300 mx-auto mb-3" />
+                <p className="text-gray-600 text-sm md:text-lg font-medium">
+                  No inventory items found
+                </p>
+                <p className="text-gray-500 text-xs md:text-sm mt-1">
+                  Try adjusting your search or filters
+                </p>
+              </td>
+            </tr>
+          ) : (
+            getCurrentPageItems().map((item, index) => {
+              const totalValue = calculateTotalValue(item);
+              const isSelected = selectedItems.has(item.id);
+
+              return (
+                <tr
+                  key={item.id}
+                  className={`hover:bg-gray-50 transition ${
+                    index % 2 === 0 ? "bg-white" : "bg-gray-50/50"
+                  } ${isSelected ? "bg-blue-50" : ""}`}
+                >
+                  {/* Material Details Column */}
+                  <td className="px-2 md:px-4 py-2 w-72 text-wrap">
+                    <div className="flex items-start gap-1.5 md:gap-3 w-full">
+                      <div className="bg-[#C62828] w-6 h-6 md:w-8 md:h-8 rounded-full flex items-center justify-center text-white font-thin text-[10px] md:text-xs flex-shrink-0 mt-0.5">
+                        {(item.item_name || "U").charAt(0).toUpperCase()}
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <p
+                          className="font-semibold text-gray-900 text-xs md:text-sm leading-tight break-words"
+                          title={item.item_name || "Unknown"}
+                        >
+                          {item.item_name || "Unknown"}
+                        </p>
+                        <div className="mt-1 flex flex-wrap gap-1.5 items-center">
+                          <span className="inline-block px-1.5 py-0.5 bg-gray-100 text-gray-700 rounded text-[9px] md:text-xs font-medium">
+                            {item.item_code || "N/A"}
+                          </span>
+                          {item.category && (
+                            <span className="inline-block px-1.5 py-0.5 bg-blue-50 text-blue-700 rounded text-[9px] md:text-xs font-medium">
+                              {item.category}
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                    </div>
                   </td>
 
-                  {/* Current Stock Column - ONLY ONE search input (removed unit search) */}
-                  <td className="px-2 md:px-4 py-0.5">
-                    <input
-                      type="text"
-                      placeholder="Search stock quantity..."
-                      value={searchStock}
-                      onChange={(e) => setSearchStock(e.target.value)}
-                      className="w-full px-2 py-1 text-[10px] md:text-xs border border-gray-300 rounded focus:ring-1 focus:ring-[#C62828] focus:border-transparent"
-                    />
+                  {/* Current Stock */}
+                  <td className="px-2 md:px-4 py-2">
+                    <div className="font-semibold text-gray-800 text-xs md:text-sm">
+                      {item.quantity} {item.unit}
+                    </div>
+                    <div className="text-[10px] md:text-xs text-gray-500">
+                      Reorder: {item.reorder_qty}
+                    </div>
                   </td>
 
-                  {/* Unit Rate Column - Search input */}
-                  <td className="px-2 md:px-4 py-0.5">
-                    <input
-                      type="text"
-                      placeholder="Search rate..."
-                      value={searchRate}
-                      onChange={(e) => setSearchRate(e.target.value)}
-                      className="w-full px-2 py-1 text-[10px] md:text-xs border border-gray-300 rounded focus:ring-1 focus:ring-[#C62828] focus:border-transparent"
-                    />
+                  {/* Unit Rate */}
+                  <td className="px-2 md:px-4 py-2">
+                    <div className="text-xs text-gray-700 flex items-center">
+                      <IndianRupee
+                        size={10}
+                        className="text-green-600 mr-0.5 flex-shrink-0"
+                      />
+                      <span className="truncate">
+                        {item.rate?.toLocaleString("en-IN") || "0"}
+                      </span>
+                    </div>
                   </td>
 
-                  {/* Stock Value Column - Search input */}
-                  <td className="px-2 md:px-4 py-0.5">
-                    <input
-                      type="text"
-                      placeholder="Search value..."
-                      value={searchStockValue}
-                      onChange={(e) => setSearchStockValue(e.target.value)}
-                      className="w-full px-2 py-1 text-[10px] md:text-xs border border-gray-300 rounded focus:ring-1 focus:ring-[#C62828] focus:border-transparent"
-                    />
+                  {/* Stock Value */}
+                  <td className="px-2 md:px-4 py-2">
+                    <span className="font-medium text-gray-700 text-xs md:text-sm flex items-center">
+                      <IndianRupee
+                        size={10}
+                        className="text-green-600 mr-0.5 flex-shrink-0"
+                      />
+                      <span className="truncate">
+                        {totalValue.toLocaleString("en-IN")}
+                      </span>
+                    </span>
                   </td>
 
-                  {/* Location Column - Search input */}
-                  <td className="px-2 md:px-4 py-0.5">
-                    <input
-                      type="text"
-                      placeholder="Location..."
-                      value={searchLocation}
-                      onChange={(e) => setSearchLocation(e.target.value)}
-                      className="w-full px-2 py-1 text-[10px] md:text-xs border border-gray-300 rounded focus:ring-1 focus:ring-[#C62828] focus:border-transparent"
-                    />
-                  </td>
-
-                  {/* Status Column - Search input */}
-                  <td className="px-2 md:px-4 py-0.5">
-                    <input
-                      type="text"
-                      placeholder="Status..."
-                      value={searchStatus}
-                      onChange={(e) => setSearchStatus(e.target.value)}
-                      className="w-full px-2 py-1 text-[10px] md:text-xs border border-gray-300 rounded focus:ring-1 focus:ring-[#C62828] focus:border-transparent"
-                    />
-                  </td>
-
-                  {/* Actions Column - Filter button */}
-                  <td className="px-2 md:px-4 py-0.5 text-center">
-                    <button
-                      onClick={() => setShowFilterSidebar(true)}
-                      className="inline-flex items-center px-2 py-1 border border-gray-300 rounded hover:bg-gray-50 transition text-[10px] md:text-xs font-medium text-gray-700"
-                      title="Advanced Filters"
+                  {/* Location */}
+                  <td className="px-2 md:px-4 py-2 text-gray-700 text-xs md:text-sm">
+                    <span
+                      className="truncate block"
+                      title={item.location || "N/A"}
                     >
-                      <Filter className="w-2.5 h-2.5 md:w-3 md:h-3 mr-0.5" />
-                      Filters
-                    </button>
+                      {item.location || "N/A"}
+                    </span>
+                  </td>
+
+                  {/* Status */}
+                  <td className="px-2 md:px-4 py-2">
+                    <span
+                      className={`px-1.5 py-0.5 rounded-full text-[10px] font-medium ${getStatusColor(
+                        item.status,
+                      )} truncate`}
+                    >
+                      {item.status}
+                    </span>
+                    {item.status === "LOW STOCK" && (
+                      <div className="mt-0.5 flex items-center gap-0.5 text-[10px] text-yellow-600">
+                        <AlertTriangle className="w-2.5 h-2.5 flex-shrink-0" />
+                        <span className="truncate">Reorder needed</span>
+                      </div>
+                    )}
+                    {item.status === "OUT OF STOCK" && (
+                      <div className="mt-0.5 flex items-center gap-0.5 text-[10px] text-red-600">
+                        <AlertTriangle className="w-2.5 h-2.5 flex-shrink-0" />
+                        <span className="truncate">Out of stock</span>
+                      </div>
+                    )}
+                  </td>
+
+                  {/* Actions */}
+                  <td className="px-2 md:px-4 py-2">
+                    <div className="flex items-center justify-center gap-1 md:gap-2">
+                      <button
+                        onClick={() => reminder(item)}
+                        className="p-1 text-blue-600 hover:bg-blue-50 rounded-lg transition"
+                        title="Send Reminder"
+                      >
+                        <Bell className="w-2.5 h-2.5 md:w-3 md:h-3" />
+                      </button>
+                      {(can("update_inventory") || can("full_access")) && (
+                        <button
+                          onClick={() => handleEdit(item)}
+                          className="p-1 text-yellow-600 hover:bg-yellow-50 rounded-lg transition"
+                          title="Edit"
+                        >
+                          <Edit2 className="w-2.5 h-2.5 md:w-3 md:h-3" />
+                        </button>
+                      )}
+                    </div>
                   </td>
                 </tr>
-              </thead>
+              );
+            })
+          )}
+        </tbody>
+      </table>
+    </div>
 
-              {/* Table Body */}
-              <tbody className="divide-y divide-gray-200">
-                {getCurrentPageItems().length === 0 ? (
-                  <tr>
-                    <td colSpan={8} className="px-4 py-8 text-center">
-                      <Package className="w-12 h-12 md:w-16 md:h-16 text-gray-300 mx-auto mb-3" />
-                      <p className="text-gray-600 text-sm md:text-lg font-medium">
-                        No inventory items found
-                      </p>
-                      <p className="text-gray-500 text-xs md:text-sm mt-1">
-                        Try adjusting your search or filters
-                      </p>
-                    </td>
-                  </tr>
-                ) : (
-                    getCurrentPageItems().map((item, index) => {
-                    const totalValue = calculateTotalValue(item);
-                    const isSelected = selectedItems.has(item.id);
-
-                    return (
-                      <tr
-                        key={item.id}
-                        className={`hover:bg-gray-50 transition ${index % 2 === 0 ? "bg-white" : "bg-gray-50/50"
-                          } ${isSelected ? "bg-blue-50" : ""}`}
-                      >
-                        <td className="px-2 md:px-4 py-2 text-center">
-                          <input
-                            type="checkbox"
-                            checked={isSelected}
-                            onChange={() => handleSelectItem(item.id)}
-                            className="w-3 h-3 md:w-4 md:h-4 text-[#C62828] border-gray-300 rounded focus:ring-[#C62828]"
-                          />
-                        </td>
-                        <td className="px-2 md:px-4 py-2 w-40 text-wrap">
-                          <div className="flex items-center gap-1.5 md:gap-3 w-72 text-wrap">
-                            <div className="bg-[#C62828] w-6 h-6 md:w-8 md:h-8 rounded-full flex items-center justify-center text-white font-semibold text-[10px] md:text-xs flex-shrink-0">
-                              {(item.item_name || "U").charAt(0).toUpperCase()}
-                            </div>
-                            <div className="min-w-0">
-                              <p
-                                className="font-semibold text-gray-900 text-xs md:text-sm truncate"
-                                title={item.item_name || "Unknown"}
-                              >
-                                {item.item_name || "Unknown"}
-                              </p>
-                              <p className="text-[10px] md:text-xs text-gray-500 truncate">
-                                {item.item_code}
-                              </p>
-                              {item.category && (
-                                <p className="text-[10px] md:text-xs text-gray-400 truncate">
-                                  {item.category}
-                                </p>
-                              )}
-                            </div>
-                          </div>
-                        </td>
-                        <td className="px-2 md:px-4 py-2">
-                          <div className="font-semibold text-gray-800 text-xs md:text-sm">
-                            {item.quantity} {item.unit}
-                          </div>
-                          <div className="text-[10px] md:text-xs text-gray-500">
-                            Reorder: {item.reorder_qty}
-                          </div>
-                        </td>
-                        <td className="px-2 md:px-4 py-2">
-                          <div className="text-xs text-gray-700 flex items-center">
-                            <IndianRupee
-                              size={10}
-                              className="text-green-600 mr-0.5 flex-shrink-0"
-                            />
-                            <span className="truncate">
-                              {item.rate?.toLocaleString("en-IN") || "0"}
-                            </span>
-                          </div>
-                        </td>
-                        <td className="px-2 md:px-4 py-2">
-                          <span className="font-medium text-gray-700 text-xs md:text-sm flex items-center">
-                            <IndianRupee
-                              size={10}
-                              className="text-green-600 mr-0.5 flex-shrink-0"
-                            />
-                            <span className="truncate">
-                              {totalValue.toLocaleString("en-IN")}
-                            </span>
-                          </span>
-                        </td>
-                        <td className="px-2 md:px-4 py-2 text-gray-700 text-xs md:text-sm">
-                          <span
-                            className="truncate block"
-                            title={item.location || "N/A"}
-                          >
-                            {item.location || "N/A"}
-                          </span>
-                        </td>
-                        <td className="px-2 md:px-4 py-2">
-                          <span
-                            className={`px-1.5 py-0.5 rounded-full text-[10px] font-medium ${getStatusColor(
-                              item.status,
-                            )} truncate`}
-                          >
-                            {item.status}
-                          </span>
-                          {item.status === "LOW STOCK" && (
-                            <div className="mt-0.5 flex items-center gap-0.5 text-[10px] text-yellow-600">
-                              <AlertTriangle className="w-2.5 h-2.5 flex-shrink-0" />
-                              <span className="truncate">Reorder needed</span>
-                            </div>
-                          )}
-                          {item.status === "OUT OF STOCK" && (
-                            <div className="mt-0.5 flex items-center gap-0.5 text-[10px] text-red-600">
-                              <AlertTriangle className="w-2.5 h-2.5 flex-shrink-0" />
-                              <span className="truncate">Out of stock</span>
-                            </div>
-                          )}
-                        </td>
-                        <td className="px-2 md:px-4 py-2">
-                          <div className="flex items-center justify-center gap-1 md:gap-2">
-                            <button
-                              onClick={() => reminder(item)}
-                              className="p-1 text-blue-600 hover:bg-blue-50 rounded-lg transition"
-                              title="Send Reminder"
-                            >
-                              <Bell className="w-2.5 h-2.5 md:w-3 md:h-3" />
-                            </button>
-                            {can("update_inventory") && (
-                              <button
-                                onClick={() => handleEdit(item)}
-                                className="p-1 text-yellow-600 hover:bg-yellow-50 rounded-lg transition"
-                                title="Edit"
-                              >
-                                <Edit2 className="w-2.5 h-2.5 md:w-3 md:h-3" />
-                              </button>
-                            )}
-                          </div>
-                        </td>
-                      </tr>
-                    );
-                  })
-                )}
-              </tbody>
-            </table>
+    {/* Pagination Controls */}
+    {filteredInventory.length > 0 && (
+      <div className="border-t border-gray-200 bg-white p-3 md:p-4">
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-3 md:gap-4">
+          {/* Items per page selector */}
+          <div className="flex items-center gap-2">
+            <span className="text-xs md:text-sm text-gray-600">Show</span>
+            <select
+              onChange={(e) => handleItemsPerPageChange(e.target.value)}
+              className="border border-slate-400 px-3 py-1 rounded-lg"
+              value={itemsPerPage}
+            >
+              <option value={10}>10</option>
+              <option value={25}>25</option>
+              <option value={50}>50</option>
+              <option value={100}>100</option>
+            </select>
+            <span className="text-xs md:text-sm text-gray-600">
+              items per page
+            </span>
           </div>
 
-          {/* Pagination Controls */}
-          {filteredInventory.length > 0 && (
-            <div className="border-t border-gray-200 bg-white p-3 md:p-4">
-              <div className="flex flex-col md:flex-row md:items-center justify-between gap-3 md:gap-4">
-                {/* Items per page selector */}
-                <div className="flex items-center gap-2">
-                  <span className="text-xs md:text-sm text-gray-600">
-                    Show
-                  </span>
-                  {/* <input
-                    type="number"
-                    min="1"
-                    max="100"
-                    value={itemsPerPage}
-                    onChange={(e) => handleItemsPerPageChange(e.target.value)}
-                    className="w-16 px-2 py-1 text-xs md:text-sm border border-gray-300 rounded focus:ring-1 focus:ring-[#C62828] focus:border-transparent text-center"
-                  /> */}
-                  <select name="" onChange={(e) => handleItemsPerPageChange(e.target.value)} className="border border-slate-400 px-3 py-1 rounded-lg">
-                    <option value={10}>10</option>
-                    <option value={25}>25</option>
-                    <option value={50}>50</option>
-                    <option value={100}>100</option>
-                  </select>
-                  <span className="text-xs md:text-sm text-gray-600">
-                    items per page
-                  </span>
-                </div>
+          {/* Page info */}
+          <div className="text-xs md:text-sm text-gray-700">
+            Showing{" "}
+            <span className="font-semibold">
+              {Math.min((currentPage - 1) * itemsPerPage + 1, filteredInventory.length)}
+            </span>{" "}
+            to{" "}
+            <span className="font-semibold">
+              {Math.min(currentPage * itemsPerPage, filteredInventory.length)}
+            </span>{" "}
+            of{" "}
+            <span className="font-semibold">{filteredInventory.length}</span>{" "}
+            items
+          </div>
 
-                {/* Page info */}
-                <div className="text-xs md:text-sm text-gray-700">
-                  Showing{" "}
-                  <span className="font-semibold">
-                    {Math.min((currentPage - 1) * itemsPerPage + 1, filteredInventory.length)}
-                  </span>{" "}
-                  to{" "}
-                  <span className="font-semibold">
-                    {Math.min(currentPage * itemsPerPage, filteredInventory.length)}
-                  </span>{" "}
-                  of{" "}
-                  <span className="font-semibold">{filteredInventory.length}</span>{" "}
-                  items
-                </div>
+          {/* Pagination buttons */}
+          <div className="flex items-center gap-1 md:gap-2">
+            <button
+              onClick={() => goToPage(1)}
+              disabled={currentPage === 1}
+              className={`p-1.5 md:p-2 rounded border ${
+                currentPage === 1
+                  ? "border-gray-200 text-gray-400 cursor-not-allowed"
+                  : "border-gray-300 text-gray-700 hover:bg-gray-50"
+              }`}
+              title="First page"
+            >
+              <ChevronsLeft className="w-3.5 h-3.5 md:w-4 md:h-4" />
+            </button>
 
-                {/* Pagination buttons */}
-                <div className="flex items-center gap-1 md:gap-2">
+            <button
+              onClick={() => goToPage(currentPage - 1)}
+              disabled={currentPage === 1}
+              className={`p-1.5 md:p-2 rounded border ${
+                currentPage === 1
+                  ? "border-gray-200 text-gray-400 cursor-not-allowed"
+                  : "border-gray-300 text-gray-700 hover:bg-gray-50"
+              }`}
+              title="Previous page"
+            >
+              <ChevronLeft className="w-3.5 h-3.5 md:w-4 md:h-4" />
+            </button>
+
+            {/* Page numbers */}
+            <div className="flex items-center gap-1">
+              {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+                let pageNum;
+                if (totalPages <= 5) {
+                  pageNum = i + 1;
+                } else if (currentPage <= 3) {
+                  pageNum = i + 1;
+                } else if (currentPage >= totalPages - 2) {
+                  pageNum = totalPages - 4 + i;
+                } else {
+                  pageNum = currentPage - 2 + i;
+                }
+
+                return (
                   <button
-                    onClick={() => goToPage(1)}
-                    disabled={currentPage === 1}
-                    className={`p-1.5 md:p-2 rounded border ${currentPage === 1
-                      ? "border-gray-200 text-gray-400 cursor-not-allowed"
-                      : "border-gray-300 text-gray-700 hover:bg-gray-50"
-                      }`}
-                    title="First page"
+                    key={pageNum}
+                    onClick={() => goToPage(pageNum)}
+                    className={`w-7 h-7 md:w-8 md:h-8 rounded border text-xs md:text-sm font-medium ${
+                      currentPage === pageNum
+                        ? "bg-[#C62828] text-white border-[#C62828]"
+                        : "border-gray-300 text-gray-700 hover:bg-gray-50"
+                    }`}
                   >
-                    <ChevronsLeft className="w-3.5 h-3.5 md:w-4 md:h-4" />
+                    {pageNum}
                   </button>
-
-                  <button
-                    onClick={() => goToPage(currentPage - 1)}
-                    disabled={currentPage === 1}
-                    className={`p-1.5 md:p-2 rounded border ${currentPage === 1
-                      ? "border-gray-200 text-gray-400 cursor-not-allowed"
-                      : "border-gray-300 text-gray-700 hover:bg-gray-50"
-                      }`}
-                    title="Previous page"
-                  >
-                    <ChevronLeft className="w-3.5 h-3.5 md:w-4 md:h-4" />
-                  </button>
-
-                  {/* Page numbers */}
-                  <div className="flex items-center gap-1">
-                    {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
-                      let pageNum;
-                      if (totalPages <= 5) {
-                        pageNum = i + 1;
-                      } else if (currentPage <= 3) {
-                        pageNum = i + 1;
-                      } else if (currentPage >= totalPages - 2) {
-                        pageNum = totalPages - 4 + i;
-                      } else {
-                        pageNum = currentPage - 2 + i;
-                      }
-
-                      return (
-                        <button
-                          key={pageNum}
-                          onClick={() => goToPage(pageNum)}
-                          className={`w-7 h-7 md:w-8 md:h-8 rounded border text-xs md:text-sm font-medium ${currentPage === pageNum
-                            ? "bg-[#C62828] text-white border-[#C62828]"
-                            : "border-gray-300 text-gray-700 hover:bg-gray-50"
-                            }`}
-                        >
-                          {pageNum}
-                        </button>
-                      );
-                    })}
-                  </div>
-
-                  <button
-                    onClick={() => goToPage(currentPage + 1)}
-                    disabled={currentPage === totalPages}
-                    className={`p-1.5 md:p-2 rounded border ${currentPage === totalPages
-                      ? "border-gray-200 text-gray-400 cursor-not-allowed"
-                      : "border-gray-300 text-gray-700 hover:bg-gray-50"
-                      }`}
-                    title="Next page"
-                  >
-                    <ChevronRight className="w-3.5 h-3.5 md:w-4 md:h-4" />
-                  </button>
-
-                  <button
-                    onClick={() => goToPage(totalPages)}
-                    disabled={currentPage === totalPages}
-                    className={`p-1.5 md:p-2 rounded border ${currentPage === totalPages
-                      ? "border-gray-200 text-gray-400 cursor-not-allowed"
-                      : "border-gray-300 text-gray-700 hover:bg-gray-50"
-                      }`}
-                    title="Last page"
-                  >
-                    <ChevronsRight className="w-3.5 h-3.5 md:w-4 md:h-4" />
-                  </button>
-                </div>
-              </div>
+                );
+              })}
             </div>
-          )}
 
-          {/* Bulk Actions Bar */}
-          {selectedItems.size > 0 && (
-            <div className="border-t border-gray-200 bg-blue-50 p-2 md:p-3">
-              <div className="flex flex-col md:flex-row md:items-center justify-between gap-2">
-                <div className="text-xs md:text-sm text-gray-700 font-medium">
-                  <span className="text-blue-700">{selectedItems.size}</span>{" "}
-                  item(s) selected
-                </div>
-                <div className="flex flex-wrap gap-1 md:gap-2">
-                  <button
-                    onClick={() => setSelectedItems(new Set())}
-                    className="px-2 md:px-3 py-1 md:py-1.5 border border-gray-300 rounded hover:bg-gray-100 transition text-xs md:text-sm font-medium text-gray-700"
-                  >
-                    Clear
-                  </button>
-                </div>
-              </div>
-            </div>
-          )}
+            <button
+              onClick={() => goToPage(currentPage + 1)}
+              disabled={currentPage === totalPages}
+              className={`p-1.5 md:p-2 rounded border ${
+                currentPage === totalPages
+                  ? "border-gray-200 text-gray-400 cursor-not-allowed"
+                  : "border-gray-300 text-gray-700 hover:bg-gray-50"
+              }`}
+              title="Next page"
+            >
+              <ChevronRight className="w-3.5 h-3.5 md:w-4 md:h-4" />
+            </button>
+
+            <button
+              onClick={() => goToPage(totalPages)}
+              disabled={currentPage === totalPages}
+              className={`p-1.5 md:p-2 rounded border ${
+                currentPage === totalPages
+                  ? "border-gray-200 text-gray-400 cursor-not-allowed"
+                  : "border-gray-300 text-gray-700 hover:bg-gray-50"
+              }`}
+              title="Last page"
+            >
+              <ChevronsRight className="w-3.5 h-3.5 md:w-4 md:h-4" />
+            </button>
+          </div>
         </div>
-      )}
+      </div>
+    )}
+
+    {/* Bulk Actions Bar */}
+    {selectedItems.size > 0 && (
+      <div className="border-t border-gray-200 bg-blue-50 p-2 md:p-3">
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-2">
+          <div className="flex items-center gap-3">
+            <div className="flex items-center gap-2">
+              <input
+                type="checkbox"
+                checked={selectedItems.size === getCurrentPageItems().length}
+                onChange={handleSelectAll}
+                className="w-4 h-4 text-[#C62828] border-gray-300 rounded focus:ring-[#C62828]"
+              />
+              <span className="text-xs md:text-sm text-gray-700 font-medium">
+                Select all on this page
+              </span>
+            </div>
+            
+            <div className="text-xs md:text-sm text-gray-700 font-medium">
+              <span className="text-blue-700">{selectedItems.size}</span>{" "}
+              item(s) selected
+            </div>
+          </div>
+          <div className="flex flex-wrap gap-1 md:gap-2">
+            <button
+              onClick={() => setSelectedItems(new Set())}
+              className="px-2 md:px-3 py-1 md:py-1.5 border border-gray-300 rounded hover:bg-gray-100 transition text-xs md:text-sm font-medium text-gray-700"
+            >
+              Clear Selection
+            </button>
+          </div>
+        </div>
+      </div>
+    )}
+  </div>
+)}
       {showFilterSidebar && (
         <div className="fixed inset-0 z-50 overflow-hidden">
           {/* Overlay */}
@@ -2043,42 +2121,90 @@ export default function StoreManagement({
                 </select>
               </div>
 
-              <div>
-                <label className="block text-xs md:text-sm font-medium text-gray-700 mb-2">
-                  Category
-                </label>
-                <select
-                  value={filterCategory}
-                  onChange={(e) => setFilterCategory(e.target.value)}
-                  className="w-full px-3 py-2 text-xs md:text-sm border border-gray-300 rounded focus:ring-1 md:focus:ring-2 focus:ring-[#C62828]"
-                >
-                  <option value="">All Categories</option>
-                  {uniqueCategories.map((category) => (
-                    <option key={category} value={category}>
-                      {category}
-                    </option>
-                  ))}
-                </select>
-              </div>
+              {/* ✅ UPDATED: Category Filter with fetched categories */}
+      <div>
+        <label className="block text-xs md:text-sm font-medium text-gray-700 mb-2">
+          Item Category
+        </label>
+        <select
+          value={filterCategory}
+          onChange={(e) => {
+            setFilterCategory(e.target.value);
+            handleCategoryChange(e.target.value); // ✅ Call category change handler
+          }}
+          className="w-full px-3 py-2 text-xs md:text-sm border border-gray-300 rounded focus:ring-1 md:focus:ring-2 focus:ring-[#C62828]"
+          disabled={loadingCategories}
+        >
+          <option value="">All Categories</option>
+          {loadingCategories ? (
+            <option value="" disabled>Loading categories...</option>
+          ) : itemCategories.length > 0 ? (
+            itemCategories.map((category) => (
+              <option key={category} value={category}> 
+                {category}
+              </option>
+            ))
+          ) : (
+            <option value="" disabled>No categories available</option>
+          )}
+        </select>
+      </div>
 
-              <div>
-                <label className="block text-xs md:text-sm font-medium text-gray-700 mb-2">
-                  Location
-                </label>
-                <select
-                  value={filterLocation}
-                  onChange={(e) => setFilterLocation(e.target.value)}
-                  className="w-full px-3 py-2 text-xs md:text-sm border border-gray-300 rounded focus:ring-1 md:focus:ring-2 focus:ring-[#C62828]"
-                >
-                  <option value="">All Locations</option>
-                  {uniqueLocations.map((location) => (
-                    <option key={location} value={location}>
-                      {location}
-                    </option>
-                  ))}
-                </select>
-              </div>
-            </div>
+      {/* Sub-Category Filter - Disabled until category is selected */}
+      <div>
+        <label className="block text-xs md:text-sm font-medium text-gray-700 mb-2">
+          Item Sub-Category
+        </label>
+        <select
+          value={filterSubCategory}
+          onChange={(e) => setFilterSubCategory(e.target.value)}
+          className={`w-full px-3 py-2 text-xs md:text-sm border rounded focus:ring-1 md:focus:ring-2 focus:ring-[#C62828] ${
+            !filterCategory ? "border-gray-200 bg-gray-50" : "border-gray-300"
+          }`}
+          disabled={!filterCategory || loadingCategories}
+        >
+          <option value="">All Sub-Categories</option>
+          {!filterCategory ? (
+            <option value="" disabled>Select a category first</option>
+          ) : loadingCategories ? (
+            <option value="" disabled>Loading sub-categories...</option>
+          ) : itemSubCategories.length > 0 ? (
+            itemSubCategories.map((subCategory) => (
+              <option key={subCategory} value={subCategory}>
+                {subCategory}
+              </option>
+            ))
+          ) : (
+            <option value="" disabled>No sub-categories available for this category</option>
+          )}
+        </select>
+        {!filterCategory && (
+          <p className="text-xs text-gray-500 mt-1">
+            Please select a category first to see sub-categories
+          </p>
+        )}
+      </div>
+
+      {/* Location Filter */}
+      <div>
+        <label className="block text-xs md:text-sm font-medium text-gray-700 mb-2">
+          Location
+        </label>
+        <select
+          value={filterLocation}
+          onChange={(e) => setFilterLocation(e.target.value)}
+          className="w-full px-3 py-2 text-xs md:text-sm border border-gray-300 rounded focus:ring-1 md:focus:ring-2 focus:ring-[#C62828]"
+        >
+          <option value="">All Locations</option>
+          {uniqueLocations.map((location) => (
+            <option key={location} value={location}>
+              {location}
+            </option>
+          ))}
+        </select>
+      </div>
+    </div>
+
 
             {/* Footer */}
             <div className="border-t p-3 md:p-4 flex gap-2 md:gap-3">

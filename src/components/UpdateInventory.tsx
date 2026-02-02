@@ -292,6 +292,7 @@ import {
   IndianRupee,
 } from "lucide-react";
 import inventoryApi from "../lib/inventoryApi";
+import { toast } from 'sonner';
 
 interface InventoryFormData {
   id: number;
@@ -340,43 +341,51 @@ export default function UpdateInventoryForm({
     return colors[status] || "bg-gray-100 text-gray-700";
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+ // First, add these imports at the top
 
-    if (!formData.name.trim()) {
-      alert("Item name is required");
-      return;
-    }
+const handleSubmit = async (e: React.FormEvent) => {
+  e.preventDefault();
 
-    if (!formData.unit.trim()) {
-      alert("Unit is required");
-      return;
-    }
-    if (!formData.location.trim()) {
-      alert("Location is required");
-      return;
-    }
-    if (Number(formData.reorder_qty) < 0) {
-      alert("Reorder quantity cannot be negative");
-      return;
-    }
-    if (Number(formData.rate) < 0) {
-      alert("Reorder quantity cannot be negative");
-      return;
-    }
+  // Replace alert with toast.error
+  if (!formData.name.trim()) {
+    toast.error("Item name is required");
+    return;
+  }
 
-    try {
-      setLoading(true);
-      await inventoryApi.updateInventory(formData.id, formData);
-      alert("Inventory item updated successfully");
-      setShowEditModal(false);
-      loadAllData();
-    } catch (err) {
-      console.error("Update inventory failed:", err);
-    } finally {
-      setLoading(false);
-    }
-  };
+  if (!formData.unit.trim()) {
+    toast.error("Unit is required");
+    return;
+  }
+  if (!formData.location.trim()) {
+    toast.error("Location is required");
+    return;
+  }
+  if (Number(formData.reorder_qty) < 0) {
+    toast.error("Reorder quantity cannot be negative");
+    return;
+  }
+  if (Number(formData.rate) < 0) {
+    // Fixed the error message
+    toast.error("Rate cannot be negative");
+    return;
+  }
+
+  try {
+    setLoading(true);
+    await inventoryApi.updateInventory(formData.id, formData);
+    
+    // Replace success alert with toast.success
+    toast.success("Inventory item updated successfully");
+    
+    setShowEditModal(false);
+    loadAllData();
+  } catch (err) {
+    console.error("Update inventory failed:", err);
+    toast.error("Failed to update inventory item");
+  } finally {
+    setLoading(false);
+  }
+};
 
   /* ------------------ UI ------------------ */
   return (

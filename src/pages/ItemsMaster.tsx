@@ -1187,6 +1187,7 @@ export default function ItemsMaster(): JSX.Element {
       console.log("data", excelData);
 
       const res: any = await ItemsApi.addDataByImport(excelData);
+      loadItems();
       console.log(res);
     } catch (err: any) {
       toast.error(err);
