@@ -710,10 +710,8 @@
 //   );
 // }
 
-
-
 // src/components/MaterialOutForm.tsx
-import React, { SetStateAction, useEffect, useState ,useRef} from "react";
+import React, { SetStateAction, useEffect, useState, useRef } from "react";
 import {
   X,
   Package,
@@ -759,7 +757,6 @@ export default function ViewRequestMaterial({
     const checkMobile = () => {
       setIsMobile(window.innerWidth < 768);
     };
-    
 
     checkMobile();
     window.addEventListener("resize", checkMobile);
@@ -767,18 +764,21 @@ export default function ViewRequestMaterial({
   }, []);
 
   useEffect(() => {
-  const handleClickOutside = (event: MouseEvent) => {
-    if (modalRef.current && !modalRef.current.contains(event.target as Node)) {
-      setViewRequestMaterial(false);
-    }
-  };
+    const handleClickOutside = (event: MouseEvent) => {
+      if (
+        modalRef.current &&
+        !modalRef.current.contains(event.target as Node)
+      ) {
+        setViewRequestMaterial(false);
+      }
+    };
 
-  document.addEventListener("mousedown", handleClickOutside);
-  
-  return () => {
-    document.removeEventListener("mousedown", handleClickOutside);
-  };
-}, [setViewRequestMaterial]);
+    document.addEventListener("mousedown", handleClickOutside);
+
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, [setViewRequestMaterial]);
 
   const getStatusColor = (status: string) => {
     switch (status?.toLowerCase()) {
@@ -804,7 +804,6 @@ export default function ViewRequestMaterial({
         return "bg-gray-100 text-gray-800 border-gray-200";
     }
   };
-  
 
   const getStatusIcon = (status: string) => {
     switch (status?.toLowerCase()) {
@@ -839,7 +838,7 @@ export default function ViewRequestMaterial({
       const requestMaterialRes = await RequestMaterialApi.updateStatus(
         id,
         status,
-        user.id
+        user.id,
       );
       if (requestMaterialRes.success) {
         loadMaterialRequests();
@@ -871,9 +870,8 @@ export default function ViewRequestMaterial({
         toast.warning("Add approve quantity.");
         return;
       }
-      const approvedQuantityRes: any = await RequestMaterialApi.updateItems(
-        payload
-      );
+      const approvedQuantityRes: any =
+        await RequestMaterialApi.updateItems(payload);
       console.log(approvedQuantityRes);
 
       if (approvedQuantityRes.success) {
@@ -896,7 +894,7 @@ export default function ViewRequestMaterial({
       const i = materialRequest.items.filter(
         (item: any) =>
           item.stock_status === "OUT OF STOCK" ||
-          item.stock_status === "LOW STOCK"
+          item.stock_status === "LOW STOCK",
       );
       console.log(i);
       const items = i.map((material: any) => ({
@@ -916,11 +914,12 @@ export default function ViewRequestMaterial({
         start_date: materialRequest.start_date,
         remark: materialRequest.remark,
         materials: items,
-        previous_request_id: requestData.request_material_id
+        previous_request_id: requestData.request_material_id,
       };
       console.log(submissionData);
 
-      const response: any = await RequestMaterialApi.createPOMaterialRequest(submissionData);
+      const response: any =
+        await RequestMaterialApi.createPOMaterialRequest(submissionData);
 
       if (response.success) {
         loadMaterialRequests();
@@ -928,23 +927,27 @@ export default function ViewRequestMaterial({
       } else {
         toast.error(response.message || "Failed to create material request");
       }
-    } catch (error) {
-      console.error("Error creating material request:", error);
-      toast.error("Failed to create material request");
+    } catch (error: any) {
+      console.error(
+        "Error creating material request:",
+        error.response.data.message,
+      );
+      toast.error(error.response.data.message);
     }
   };
 
   return (
     <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-2 sm:p-4">
-      <div       ref={modalRef}
-
-      className="bg-gradient-to-br from-gray-50 to-white rounded-lg sm:rounded-xl shadow-2xl w-full max-w-2xl lg:max-w-3xl my-2 sm:my-4 mx-2 border border-gray-300/50">
+      <div
+        ref={modalRef}
+        className="bg-gradient-to-br from-gray-50 to-white rounded-lg sm:rounded-xl shadow-2xl w-full max-w-2xl lg:max-w-3xl my-2 sm:my-4 mx-2 border border-gray-300/50"
+      >
         {/* Header with updated color theme */}
         <div className="bg-gradient-to-r from-[#40423f] via-[#4a4c49] to-[#5a5d5a] px-3 sm:px-4 lg:px-6 py-2.5 sm:py-3 flex justify-between items-center rounded-t-lg sm:rounded-t-xl relative overflow-hidden">
           {/* Decorative elements */}
           <div className="absolute inset-0 bg-gradient-to-r from-gray-900/10 via-transparent to-gray-900/10"></div>
           <div className="absolute -right-10 top-0 bottom-0 w-40 bg-gradient-to-l from-[#b52124]/20 to-transparent -skew-x-12"></div>
-          
+
           <div className="flex items-center gap-2 sm:gap-3 relative z-10">
             <div className="p-1 sm:p-1.5 bg-white/10 backdrop-blur-sm rounded-md">
               <Package className="w-3 h-3 sm:w-4 sm:h-4 lg:w-5 lg:h-5 text-gray-100" />
@@ -982,7 +985,7 @@ export default function ViewRequestMaterial({
                 {getStatusIcon(materialRequest.status)}
                 <span
                   className={`px-2 py-0.5 sm:px-2.5 sm:py-1 rounded-full text-[10px] sm:text-xs font-medium border ${getStatusColor(
-                    materialRequest.status
+                    materialRequest.status,
                   )}`}
                 >
                   {materialRequest.status.toUpperCase()}
@@ -1085,7 +1088,9 @@ export default function ViewRequestMaterial({
                       <Building className="w-2.5 h-2.5 sm:w-3 sm:h-3 text-gray-600" />
                     </div>
                     <div className="flex-1 min-w-0">
-                      <p className="text-[10px] sm:text-xs text-gray-500">Building</p>
+                      <p className="text-[10px] sm:text-xs text-gray-500">
+                        Building
+                      </p>
                       <p className="font-medium text-xs sm:text-sm truncate">
                         {materialRequest.building_name}
                       </p>
@@ -1096,7 +1101,9 @@ export default function ViewRequestMaterial({
                       <Layers className="w-2.5 h-2.5 sm:w-3 sm:h-3 text-gray-600" />
                     </div>
                     <div className="flex-1 min-w-0">
-                      <p className="text-[10px] sm:text-xs text-gray-500">Floor</p>
+                      <p className="text-[10px] sm:text-xs text-gray-500">
+                        Floor
+                      </p>
                       <p className="font-medium text-xs sm:text-sm truncate">
                         {materialRequest.floor_name}
                       </p>
@@ -1108,7 +1115,9 @@ export default function ViewRequestMaterial({
                         <Home className="w-2.5 h-2.5 sm:w-3 sm:h-3 text-gray-600" />
                       </div>
                       <div className="flex-1 min-w-0">
-                        <p className="text-[10px] sm:text-xs text-gray-500">Flat</p>
+                        <p className="text-[10px] sm:text-xs text-gray-500">
+                          Flat
+                        </p>
                         <p className="font-medium text-xs sm:text-sm truncate">
                           {materialRequest.flat_name}
                         </p>
@@ -1120,7 +1129,9 @@ export default function ViewRequestMaterial({
                         <DoorOpen className="w-2.5 h-2.5 sm:w-3 sm:h-3 text-gray-600" />
                       </div>
                       <div className="flex-1 min-w-0">
-                        <p className="text-[10px] sm:text-xs text-gray-500">Common Area</p>
+                        <p className="text-[10px] sm:text-xs text-gray-500">
+                          Common Area
+                        </p>
                         <p className="font-medium text-xs sm:text-sm truncate">
                           {materialRequest.common_area_name}
                         </p>
@@ -1183,15 +1194,15 @@ export default function ViewRequestMaterial({
                             item.stock_status === "IN STOCK"
                               ? "bg-green-100 text-green-600"
                               : item.stock_status === "OUT OF STOCK"
-                              ? "bg-red-100 text-red-600"
-                              : "bg-orange-100 text-orange-600"
+                                ? "bg-red-100 text-red-600"
+                                : "bg-orange-100 text-orange-600"
                           }`}
                         >
                           {item.stock_status}
                         </span>
                       </div>
                     </div>
-                    
+
                     <div className="grid grid-cols-2 gap-1.5 text-[10px]">
                       <div>
                         <div className="text-gray-600 mb-0.5">Required:</div>
@@ -1246,7 +1257,7 @@ export default function ViewRequestMaterial({
                                   i.request_material_item_id ===
                                   item.request_material_item_id
                                     ? { ...i, approveQuantity: "" }
-                                    : i
+                                    : i,
                                 ),
                               }));
                               return;
@@ -1256,14 +1267,14 @@ export default function ViewRequestMaterial({
                             if (!Number.isNaN(numericValue)) {
                               if (numericValue > item.required_quantity) {
                                 toast.warning(
-                                  "Entered value greater than required quantity."
+                                  "Entered value greater than required quantity.",
                                 );
                                 return;
                               } else if (
                                 numericValue > Number(item.stock_quantity)
                               ) {
                                 toast.warning(
-                                  "Entered value greater than stock quantity."
+                                  "Entered value greater than stock quantity.",
                                 );
                                 return;
                               }
@@ -1274,7 +1285,7 @@ export default function ViewRequestMaterial({
                                 i.request_material_item_id ===
                                 item.request_material_item_id
                                   ? { ...i, approveQuantity: value }
-                                  : i
+                                  : i,
                               ),
                             }));
                           }}
@@ -1359,7 +1370,8 @@ export default function ViewRequestMaterial({
                               value={item.approveQuantity ?? ""}
                               disabled={
                                 item.stock_quantity === 0 ||
-                                item.required_quantity === item.approved_quantity
+                                item.required_quantity ===
+                                  item.approved_quantity
                               }
                               placeholder="Qty"
                               onChange={(e) => {
@@ -1371,7 +1383,7 @@ export default function ViewRequestMaterial({
                                       i.request_material_item_id ===
                                       item.request_material_item_id
                                         ? { ...i, approveQuantity: "" }
-                                        : i
+                                        : i,
                                     ),
                                   }));
                                   return;
@@ -1381,14 +1393,14 @@ export default function ViewRequestMaterial({
                                 if (!Number.isNaN(numericValue)) {
                                   if (numericValue > item.required_quantity) {
                                     toast.warning(
-                                      "Entered value greater than required quantity."
+                                      "Entered value greater than required quantity.",
                                     );
                                     return;
                                   } else if (
                                     numericValue > Number(item.stock_quantity)
                                   ) {
                                     toast.warning(
-                                      "Entered value greater than stock quantity."
+                                      "Entered value greater than stock quantity.",
                                     );
                                     return;
                                   }
@@ -1399,7 +1411,7 @@ export default function ViewRequestMaterial({
                                     i.request_material_item_id ===
                                     item.request_material_item_id
                                       ? { ...i, approveQuantity: value }
-                                      : i
+                                      : i,
                                   ),
                                 }));
                               }}
@@ -1409,7 +1421,7 @@ export default function ViewRequestMaterial({
                           <td className="px-2 sm:px-3 py-1.5">
                             <div
                               className={`text-[10px] sm:text-xs px-1.5 py-0.5 rounded font-medium ${getStatusColor(
-                                item.stock_status
+                                item.stock_status,
                               )}`}
                             >
                               {item.stock_status}
@@ -1442,15 +1454,16 @@ export default function ViewRequestMaterial({
             {requestData.items?.some(
               (i: any) =>
                 i.stock_status === "OUT OF STOCK" ||
-                i.stock_status === "LOW STOCK"
-            ) && !requestData.previous_request_id && (
-              <button
-                onClick={handleSubmit}
-                className="flex-1 bg-gradient-to-r from-[#b52124] to-[#d43538] text-white py-1.5 px-4 rounded-lg hover:from-[#d43538] hover:to-[#b52124] transition-all font-medium text-xs sm:text-sm shadow-sm active:scale-[0.98]"
-              >
-                Request Material
-              </button>
-            )}
+                i.stock_status === "LOW STOCK",
+            ) &&
+              !requestData.previous_request_id && (
+                <button
+                  onClick={handleSubmit}
+                  className="flex-1 bg-gradient-to-r from-[#b52124] to-[#d43538] text-white py-1.5 px-4 rounded-lg hover:from-[#d43538] hover:to-[#b52124] transition-all font-medium text-xs sm:text-sm shadow-sm active:scale-[0.98]"
+                >
+                  Request Material
+                </button>
+              )}
             <div className="flex gap-2">
               <button
                 onClick={approveQuantity}
@@ -1462,7 +1475,7 @@ export default function ViewRequestMaterial({
                 onClick={() => {
                   rejectRequestMaterial(
                     requestData.request_material_id,
-                    "rejected"
+                    "rejected",
                   );
                 }}
                 className="flex-1 border border-red-300 text-red-600 py-1.5 px-4 rounded-lg hover:bg-red-50 transition-all font-medium text-xs sm:text-sm shadow-sm active:scale-[0.98]"
@@ -1472,9 +1485,9 @@ export default function ViewRequestMaterial({
             </div>
           </div>
         )}
-        
+
         {/* Custom scrollbar styles */}
-        <style >{`
+        <style>{`
           .custom-scrollbar::-webkit-scrollbar {
             width: 4px;
             height: 4px;

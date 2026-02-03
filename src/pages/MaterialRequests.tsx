@@ -1430,11 +1430,11 @@ export default function MaterialRequests() {
     try {
       // Note: You'll need to implement a bulk delete API endpoint
       // For now, we'll delete one by one
-      const deletePromises = Array.from(selectedRequests).map((requestNo) =>
-        RequestMaterialApi.deleteRequest(requestNo),
-      );
+      // const deletePromises = Array.from(selectedRequests).map((requestNo) =>
+      //   RequestMaterialApi.deleteRequest(requestNo),
+      // );
 
-      await Promise.all(deletePromises);
+      // await Promise.all(deletePromises);
       toast.success(
         `${selectedRequests.size} request(s) deleted successfully!`,
       );
