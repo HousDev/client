@@ -1869,6 +1869,74 @@ export default function VendorsEnhanced(): JSX.Element {
   const isCategoryService = (cat?: string) =>
     (cat || "").toLowerCase().includes("service");
 
+  const handlePhoneCheck = ()=>{
+    const existingOne:any=vendors.find((v:any)=>v.contact_person_phone===formData.contact_person_phone);
+
+    if(existingOne && !editingId){
+      toast.error("Contact Person Phone Number Already Exists.")
+    }
+    if(Number(existingOne.id)!==Number(editingId)){
+      toast.error("Contact Person Phone Number Already Exists.")
+    }
+  }
+  const handleEmailCheck = () => {
+  const existingOne: any = vendors.find(
+    (v: any) =>
+      v.contact_person_email === formData.contact_person_email
+  );
+
+  // while creating
+  if (existingOne && !editingId) {
+    toast.error("Contact Person Email Already Exists.");
+    return;
+  }
+
+  // while editing (ignore same record)
+  if (existingOne && Number(existingOne.id) !== Number(editingId)) {
+    toast.error("Contact Person Email Already Exists.");
+  }
+};
+const handleCompanyPhoneCheck = () => {
+  if (!formData.company_phone) return;
+
+  const existingOne: any = vendors.find(
+    (v: any) => v.company_phone === formData.company_phone
+  );
+
+  // create mode
+  if (existingOne && !editingId) {
+    toast.error("Company Phone Number Already Exists.");
+    return;
+  }
+
+  // edit mode
+  if (existingOne && Number(existingOne.id) !== Number(editingId)) {
+    toast.error("Company Phone Number Already Exists.");
+  }
+};
+
+const handleCompanyEmailCheck = () => {
+  if (!formData.company_email) return;
+
+  const existingOne: any = vendors.find(
+    (v: any) => v.company_email === formData.company_email
+  );
+
+  // create mode
+  if (existingOne && !editingId) {
+    toast.error("Company Email Already Exists.");
+    return;
+  }
+
+  // edit mode
+  if (existingOne && Number(existingOne.id) !== Number(editingId)) {
+    toast.error("Company Email Already Exists.");
+  }
+};
+
+
+
+
   return (
     <div className="p-0 px-0 bg-gray-50 min-h-screen">
       <div className="mb-2">
@@ -2780,6 +2848,7 @@ export default function VendorsEnhanced(): JSX.Element {
                               <input
                                 type="tel"
                                 value={formData.contact_person_phone}
+                                onBlur={()=>{handlePhoneCheck()}}
                                 onChange={(e) => {
                                   if (!/^\d*$/.test(e.target.value)) {
                                     return;
@@ -2819,24 +2888,25 @@ export default function VendorsEnhanced(): JSX.Element {
                               <div className="absolute inset-y-0 left-0 pl-2.5 flex items-center pointer-events-none">
                                 <Mail className="h-3 w-3 text-gray-400" />
                               </div>
-                              <input
-                                type="email"
-                                value={formData.contact_person_email}
-                                onChange={(e) =>
-                                  setFormData({
-                                    ...formData,
-                                    contact_person_email:
-                                      e.target.value.toLowerCase(),
-                                  })
-                                }
-                                className={`w-full pl-8 pr-2 py-1.5 text-xs border rounded focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 transition-all duration-150 ${
-                                  errors.contact_person_email
-                                    ? "border-red-300 bg-red-50"
-                                    : "border-gray-300 hover:border-gray-400"
-                                }`}
-                                placeholder="john@example.com"
-                                required
-                              />
+                             <input
+  type="email"
+  value={formData.contact_person_email}
+  onBlur={handleEmailCheck}
+  onChange={(e) =>
+    setFormData({
+      ...formData,
+      contact_person_email: e.target.value.toLowerCase(),
+    })
+  }
+  className={`w-full pl-8 pr-2 py-1.5 text-xs border rounded focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 transition-all duration-150 ${
+    errors.contact_person_email
+      ? "border-red-300 bg-red-50"
+      : "border-gray-300 hover:border-gray-400"
+  }`}
+  placeholder="john@example.com"
+  required
+/>
+
                             </div>
                             {errors.contact_person_email && (
                               <p className="text-[10px] text-red-600 flex items-center gap-1 mt-0.5">
@@ -2858,35 +2928,33 @@ export default function VendorsEnhanced(): JSX.Element {
                               <div className="absolute inset-y-0 left-0 pl-2.5 flex items-center pointer-events-none">
                                 <Phone className="h-3 w-3 text-gray-400" />
                               </div>
-                              <input
-                                type="tel"
-                                value={formData.company_phone}
-                                onChange={(e) => {
-                                  if (!/^\d*$/.test(e.target.value)) {
-                                    toast.warning("Enter Valid Phone Number.");
-                                    return;
-                                  }
-                                  if (e.target.value.length > 10) {
-                                    toast.warning(
-                                      "Mobile number must be 10 digit.",
-                                    );
-                                    return;
-                                  }
-                                  setFormData({
-                                    ...formData,
-                                    company_phone: validators.formatPhone(
-                                      e.target.value,
-                                    ),
-                                  });
-                                }}
-                                className={`w-full pl-8 pr-2 py-1.5 text-xs border rounded focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 transition-all duration-150 ${
-                                  errors.company_phone
-                                    ? "border-red-300 bg-red-50"
-                                    : "border-gray-300 hover:border-gray-400"
-                                }`}
-                                placeholder="9876543210"
-                                maxLength={10}
-                              />
+                             <input
+  type="tel"
+  value={formData.company_phone}
+  onBlur={handleCompanyPhoneCheck}
+  onChange={(e) => {
+    if (!/^\d*$/.test(e.target.value)) {
+      toast.warning("Enter Valid Phone Number.");
+      return;
+    }
+    if (e.target.value.length > 10) {
+      toast.warning("Mobile number must be 10 digit.");
+      return;
+    }
+    setFormData({
+      ...formData,
+      company_phone: validators.formatPhone(e.target.value),
+    });
+  }}
+  className={`w-full pl-8 pr-2 py-1.5 text-xs border rounded focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 transition-all duration-150 ${
+    errors.company_phone
+      ? "border-red-300 bg-red-50"
+      : "border-gray-300 hover:border-gray-400"
+  }`}
+  placeholder="9876543210"
+  maxLength={10}
+/>
+
                             </div>
                           </div>
 
@@ -2899,22 +2967,24 @@ export default function VendorsEnhanced(): JSX.Element {
                               <div className="absolute inset-y-0 left-0 pl-2.5 flex items-center pointer-events-none">
                                 <Mail className="h-3 w-3 text-gray-400" />
                               </div>
-                              <input
-                                type="email"
-                                value={formData.company_email}
-                                onChange={(e) =>
-                                  setFormData({
-                                    ...formData,
-                                    company_email: e.target.value.toLowerCase(),
-                                  })
-                                }
-                                className={`w-full pl-8 pr-2 py-1.5 text-xs border rounded focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 transition-all duration-150 ${
-                                  errors.company_email
-                                    ? "border-red-300 bg-red-50"
-                                    : "border-gray-300 hover:border-gray-400"
-                                }`}
-                                placeholder="info@company.com"
-                              />
+                             <input
+  type="email"
+  value={formData.company_email}
+  onBlur={handleCompanyEmailCheck}
+  onChange={(e) =>
+    setFormData({
+      ...formData,
+      company_email: e.target.value.toLowerCase(),
+    })
+  }
+  className={`w-full pl-8 pr-2 py-1.5 text-xs border rounded focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 transition-all duration-150 ${
+    errors.company_email
+      ? "border-red-300 bg-red-50"
+      : "border-gray-300 hover:border-gray-400"
+  }`}
+  placeholder="info@company.com"
+/>
+
                             </div>
                           </div>
                         </div>
