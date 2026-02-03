@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
   // import { createContext, useContext, useState, useEffect, ReactNode } from "react";
 
   // interface User {
@@ -203,12 +204,117 @@
   //   return ctx;
   // }
 
+/*----------------------3-2-26------------------*/
+
+//   import React, { createContext, useContext, useEffect, useState } from "react";
+// import { UsersApi, getToken as apiGetToken } from "../lib/Api";
+
+// type User = any; // you can import UserProfile type
+
+// interface AuthContextValue {
+//   profile: User | null;
+//   user: User | null;
+//   token: string | null;
+//   loading: boolean;
+//   signIn: (identifier: string, password: string) => Promise<void>;
+//   signOut: () => void;
+//   refreshUser: () => Promise<void>;
+// }
+
+// const AuthContext = createContext<AuthContextValue | undefined>(undefined);
+
+// export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
+//   children,
+// }) => {
+//   const [user, setUser] = useState<User | null>(null);
+//   const [profile, setProfile] = useState<User | null>(null);
+//   const [token, setToken] = useState<string | null>(() => {
+//     try {
+//       return localStorage.getItem("auth_token");
+//     } catch {
+//       return null;
+//     }
+//   });
+//   const [loading, setLoading] = useState(true);
+
+//   useEffect(() => {
+//     // if token exists, fetch /auth/me
+//     async function init() {
+//       if (!token) {
+//         setLoading(false);
+//         return;
+//       }
+//       try {
+//         const data = await UsersApi.me();
+//         setUser(data.user);
+//         setProfile(data.user);
+//       } catch (err) {
+//         console.error("Auth init failed", err);
+//         // invalid token -> clear
+//         localStorage.removeItem("auth_token");
+//         setToken(null);
+//         setUser(null);
+//         setProfile(null);
+//       } finally {
+//         setLoading(false);
+//       }
+//     }
+//     init();
+//   }, [token]);
+
+//   const signIn = async (identifier: string, password: string) => {
+//     try {
+//       const { token: tkn, user: u } = await UsersApi.login(identifier, password);
+//       setLoading(true);
+//       localStorage.setItem("auth_token", tkn);
+//       setToken(tkn);
+//       setUser(u);
+//       setProfile(u);
+//       setLoading(false);
+//     } catch (err) {
+//       throw err;
+//     }
+//   };
+
+//   const signOut = () => {
+//     localStorage.removeItem("auth_token");
+//     setToken(null);
+//     setUser(null);
+//     setProfile(null);
+//   };
+
+//   const refreshUser = async () => {
+//     if (!apiGetToken()) return;
+//     const data = await UsersApi.me();
+//     setUser(data.user);
+//     setProfile(data.user);
+//   };
+
+//   return (
+//     <AuthContext.Provider
+//       value={{ profile, user, token, loading, signIn, signOut, refreshUser }}
+//     >
+//       {children}
+//     </AuthContext.Provider>
+//   );
+// };
+
+// export function useAuth() {
+//   const ctx = useContext(AuthContext);
+//   if (!ctx) throw new Error("useAuth must be used inside AuthProvider");
+//   return ctx;
+// }
 
 
-  import React, { createContext, useContext, useEffect, useState } from "react";
+
+
+// src/contexts/AuthContext.tsx
+import React, { createContext, useContext, useEffect, useState } from "react";
 import { UsersApi, getToken as apiGetToken } from "../lib/Api";
+import { SettingsApi } from "../lib/settingsApi"; // Add this import
 
-type User = any; // you can import UserProfile type
+type User = any;
+type SystemSettings = any; // Add type for system settings
 
 interface AuthContextValue {
   profile: User | null;
@@ -218,6 +324,11 @@ interface AuthContextValue {
   signIn: (identifier: string, password: string) => Promise<void>;
   signOut: () => void;
   refreshUser: () => Promise<void>;
+  updateProfileLocally: (patch: Partial<User>) => void;
+  // ── NEW: System settings ──────────────────────────────────────────────
+  systemSettings: SystemSettings | null;
+  updateSystemSettingsLocally: (patch: Partial<SystemSettings>) => void;
+  refreshSystemSettings: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextValue | undefined>(undefined);
@@ -235,9 +346,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
     }
   });
   const [loading, setLoading] = useState(true);
+  // ── NEW: System settings state ────────────────────────────────────────
+  const [systemSettings, setSystemSettings] = useState<SystemSettings | null>(null);
 
   useEffect(() => {
-    // if token exists, fetch /auth/me
     async function init() {
       if (!token) {
         setLoading(false);
@@ -247,13 +359,21 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
         const data = await UsersApi.me();
         setUser(data.user);
         setProfile(data.user);
+        
+        // ── NEW: Load system settings when user logs in ───────────────
+        try {
+          const sysData = await SettingsApi.getSystemSettings();
+          setSystemSettings(sysData);
+        } catch (sysErr) {
+          console.error("Failed to load system settings:", sysErr);
+        }
       } catch (err) {
         console.error("Auth init failed", err);
-        // invalid token -> clear
         localStorage.removeItem("auth_token");
         setToken(null);
         setUser(null);
         setProfile(null);
+        setSystemSettings(null); // Clear system settings on logout
       } finally {
         setLoading(false);
       }
@@ -269,6 +389,15 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
       setToken(tkn);
       setUser(u);
       setProfile(u);
+      
+      // ── NEW: Load system settings after login ──────────────────────
+      try {
+        const sysData = await SettingsApi.getSystemSettings();
+        setSystemSettings(sysData);
+      } catch (sysErr) {
+        console.error("Failed to load system settings after login:", sysErr);
+      }
+      
       setLoading(false);
     } catch (err) {
       throw err;
@@ -280,6 +409,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
     setToken(null);
     setUser(null);
     setProfile(null);
+    setSystemSettings(null); // Clear system settings
   };
 
   const refreshUser = async () => {
@@ -289,9 +419,43 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
     setProfile(data.user);
   };
 
+  // ── NEW: Refresh system settings ──────────────────────────────────────
+  const refreshSystemSettings = async () => {
+    if (!apiGetToken()) return;
+    try {
+      const sysData = await SettingsApi.getSystemSettings();
+      setSystemSettings(sysData);
+    } catch (error) {
+      console.error("Failed to refresh system settings:", error);
+    }
+  };
+
+  const updateProfileLocally = (patch: Partial<User>) => {
+    setUser((prev) => (prev ? { ...prev, ...patch } : prev));
+    setProfile((prev: any) => (prev ? { ...prev, ...patch } : prev));
+  };
+
+  // ── NEW: Update system settings locally ───────────────────────────────
+  const updateSystemSettingsLocally = (patch: Partial<SystemSettings>) => {
+    setSystemSettings((prev) => (prev ? { ...prev, ...patch } : prev));
+  };
+
   return (
     <AuthContext.Provider
-      value={{ profile, user, token, loading, signIn, signOut, refreshUser }}
+      value={{
+        profile,
+        user,
+        token,
+        loading,
+        signIn,
+        signOut,
+        refreshUser,
+        updateProfileLocally,
+        // ── NEW: Expose system settings ──────────────────────────────
+        systemSettings,
+        updateSystemSettingsLocally,
+        refreshSystemSettings,
+      }}
     >
       {children}
     </AuthContext.Provider>
