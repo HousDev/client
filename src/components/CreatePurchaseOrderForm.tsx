@@ -252,12 +252,12 @@ export default function CreatePurchaseOrderForm({
   const [loading, setLoading] = useState(true);
   const [showItemSelector, setShowItemSelector] = useState(false);
   const [showTermsConditions, setShowTermsConditions] = useState(false);
-  const [newTermsAndCondition, setNewTermsAndConditions] = useState("");
   const [showAddPaymentTerm, setShowAddPaymentTerm] = useState<Boolean>(false);
   const [selectedPaymentTermId, setSelectedPaymentTermId] = useState<any>("");
   const [selectedPaymentTerm, setSelectedPaymentTerm] = useState<any>("");
   const [poPaymentTerms, setPoPaymentTerms] = useState<any[]>([]);
   const [showTermDropdown, setShowTermDropdown] = useState(false);
+  const [displayTerms, setDisplayTerms] = useState<any>([]);
 
   const [selectedPaymentTermData, setSelectedPaymentTermData] =
     useState<any>("");
@@ -427,14 +427,17 @@ export default function CreatePurchaseOrderForm({
             is_default: Boolean(item.is_default),
             term_id: item.id,
           });
-          acc[key].isActive = false;
+          const status = acc[key].content.find((c: any) => !c.is_default);
+
+          acc[key].isActive = status ? false : true;
 
           return acc;
         }, {}),
       );
-      console.log(result);
+      console.log("", result);
 
       setTerms(Array.isArray(result) ? result : []);
+      setDisplayTerms(Array.isArray(result) ? result : []);
     } catch (err) {
       console.warn("loadTerms failed, fallback to empty", err);
       setTerms([]);
@@ -764,6 +767,14 @@ export default function CreatePurchaseOrderForm({
           terms_and_conditionsData.push(tc);
         }
       });
+
+      if (
+        selected_terms_idsData.length === 0 ||
+        terms_and_conditionsData.length === 0
+      ) {
+        toast.error("Select Terms & Conditions For Purchase Order.");
+        return;
+      }
 
       const payload = {
         po_number: poNumber,
@@ -1384,7 +1395,7 @@ export default function CreatePurchaseOrderForm({
                     </h4>
                   </div>
                   <div className="bg-gradient-to-b from-gray-50/30 to-white/30 p-4 rounded-xl border border-gray-300">
-                    <div className="space-y-4">
+                    {/* <div className="space-y-4">
                       {terms.map((d, indx: number) => {
                         const extraTCData =
                           extraTerms.filter(
@@ -1436,6 +1447,34 @@ export default function CreatePurchaseOrderForm({
                         }
                         return null;
                       })}
+                    </div> */}
+                    <div className="space-y-4">
+                      {displayTerms.map((d: any, indx: number) => (
+                        <div key={indx} className="space-y-2">
+                          {d.content.find((t: any) => t.is_default) && (
+                            <h5 className="text-xs font-semibold text-gray-700">
+                              {d.category.charAt(0).toUpperCase() +
+                                d.category.slice(1)}
+                            </h5>
+                          )}
+                          <ul className="space-y-1.5 ml-3">
+                            {d.content.map(
+                              (term: any, idx: number) =>
+                                term.is_default && (
+                                  <li
+                                    key={idx}
+                                    className="flex items-start gap-2"
+                                  >
+                                    <div className="w-1.5 h-1.5 bg-amber-500 rounded-full mt-1 flex-shrink-0"></div>
+                                    <p className="text-xs text-gray-700 flex-1">
+                                      {term.content}
+                                    </p>
+                                  </li>
+                                ),
+                            )}
+                          </ul>
+                        </div>
+                      ))}
                     </div>
                   </div>
                 </div>
@@ -1889,19 +1928,7 @@ export default function CreatePurchaseOrderForm({
                 <div className="relative">
                   <div className="absolute inset-0 bg-gradient-to-r from-[#b52124] to-[#d43538] blur-lg opacity-40 rounded-full"></div>
                   <div className="relative p-3 bg-gradient-to-br from-gray-800 to-gray-900 rounded-2xl border border-gray-700/50 shadow-lg">
-                    <svg
-                      className="w-5 h-5 md:w-6 md:h-6 text-white"
-                      fill="none"
-                      viewBox="0 0 24 24"
-                      stroke="currentColor"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
-                      />
-                    </svg>
+                    <ClipboardCheck className="w-4 h-4 md:w-5 md:h-5 text-gray-100" />
                   </div>
                 </div>
                 <div>
@@ -1910,7 +1937,7 @@ export default function CreatePurchaseOrderForm({
                   </h3>
                   <p className="text-xs text-gray-300/70 mt-1 flex items-center gap-2">
                     <span className="w-1 h-1 bg-gradient-to-r from-[#b52124] to-[#d43538] rounded-full"></span>
-                    Configure payment schedule and conditions
+                    Add Payment Terms & Conditions For Purchase Order.
                   </p>
                 </div>
               </div>
@@ -2422,8 +2449,8 @@ export default function CreatePurchaseOrderForm({
               </div>
             </div>
 
-            <div className="p-4 overflow-y-auto flex-grow">
-              <ul className="space-y-3">
+            <div className="p-4 overflow-y-scroll flex-grow min-h-32 max-h-96">
+              {/* <ul className="space-y-3">
                 {terms.map((d, indx: number) => {
                   const extraTCData =
                     extraTerms.filter(
@@ -2444,6 +2471,21 @@ export default function CreatePurchaseOrderForm({
                             setTerms((prev) =>
                               prev.map((tc) =>
                                 tc.id === d.id
+                                  ? {
+                                      ...tc,
+                                      isActive: isActive,
+                                      content: tc.content.map((i: any) => ({
+                                        ...i,
+                                        is_default: isActive,
+                                      })),
+                                    }
+                                  : tc,
+                              ),
+                            );
+
+                            setDisplayTerms((prev: any) =>
+                              prev.map((tc: any) =>
+                                tc.category === d.category
                                   ? {
                                       ...tc,
                                       isActive: isActive,
@@ -2544,6 +2586,136 @@ export default function CreatePurchaseOrderForm({
                     </li>
                   );
                 })}
+              </ul> */}
+
+              <ul className="space-y-3">
+                {displayTerms.map((d: any, indx: number) => (
+                  <li
+                    key={indx}
+                    className="border border-gray-300 rounded-xl p-3"
+                  >
+                    <div className="flex items-start gap-2 mb-2">
+                      <input
+                        type="checkbox"
+                        onChange={() => {
+                          const isActive = !d.isActive;
+
+                          setTerms((prev) =>
+                            prev.map((tc) =>
+                              tc.id === d.id
+                                ? {
+                                    ...tc,
+                                    isActive: isActive,
+                                    content: tc.content.map((i: any) => ({
+                                      ...i,
+                                      is_default: isActive,
+                                    })),
+                                  }
+                                : tc,
+                            ),
+                          );
+
+                          setDisplayTerms((prev: any) =>
+                            prev.map((tc: any) =>
+                              tc.category === d.category
+                                ? {
+                                    ...tc,
+                                    isActive: isActive,
+                                    content: tc.content.map((i: any) => ({
+                                      ...i,
+                                      is_default: isActive,
+                                    })),
+                                  }
+                                : tc,
+                            ),
+                          );
+
+                          setExtraTerms((prev) =>
+                            prev.map((tc) =>
+                              tc.category === d.category
+                                ? {
+                                    ...tc,
+                                    is_default: isActive,
+                                  }
+                                : tc,
+                            ),
+                          );
+                        }}
+                        checked={
+                          d.isActive ||
+                          d.content.filter((ftc: any) => ftc.is_default)
+                            .length === d.content.length
+                        }
+                        className="w-4 h-4 accent-[#b52124] cursor-pointer mt-0.5"
+                      />
+                      <h4 className="font-semibold text-sm text-[#40423f]">
+                        {d.category.charAt(0).toUpperCase() +
+                          d.category.slice(1) || ""}
+                      </h4>
+                    </div>
+
+                    <ul className="ml-6 space-y-2">
+                      {d.content.map((term: any, idx: number) => (
+                        <li key={idx} className="flex items-start gap-2">
+                          <input
+                            type="checkbox"
+                            checked={term.is_default}
+                            onChange={() => {
+                              setTerms((prev) =>
+                                prev.map((tc) =>
+                                  tc.id === d.id
+                                    ? {
+                                        ...tc,
+                                        content: tc.content.map((i: any) =>
+                                          i.term_id === term.term_id
+                                            ? {
+                                                ...i,
+                                                is_default: !i.is_default,
+                                              }
+                                            : i,
+                                        ),
+                                      }
+                                    : tc,
+                                ),
+                              );
+                              setDisplayTerms((prev: any) =>
+                                prev.map((tc: any) =>
+                                  tc.category === d.category
+                                    ? {
+                                        ...tc,
+                                        content: tc.content.map((i: any) =>
+                                          i.content === term.content
+                                            ? {
+                                                ...i,
+                                                is_default: !i.is_default,
+                                              }
+                                            : i,
+                                        ),
+                                      }
+                                    : tc,
+                                ),
+                              );
+                              setExtraTerms((prev) =>
+                                prev.map((etci) =>
+                                  etci.content === term.content
+                                    ? {
+                                        ...etci,
+                                        is_default: !etci.is_default,
+                                      }
+                                    : etci,
+                                ),
+                              );
+                            }}
+                            className="w-3.5 h-3.5 accent-[#b52124] cursor-pointer mt-0.5"
+                          />
+                          <span className="text-xs text-[#5a5d5a]">
+                            {term.content}
+                          </span>
+                        </li>
+                      ))}
+                    </ul>
+                  </li>
+                ))}
               </ul>
             </div>
           </div>
@@ -2646,6 +2818,28 @@ export default function CreatePurchaseOrderForm({
                       content: "",
                       is_default: false,
                     });
+
+                    const correntTerms = displayTerms;
+                    const categoryIndex = correntTerms.findIndex(
+                      (t: any) => t.category === extraTermData.category,
+                    );
+
+                    if (categoryIndex !== -1) {
+                      // Category exists → add term
+                      correntTerms[categoryIndex].content.push({
+                        content: extraTermData.content,
+                        is_default: true,
+                      });
+                    } else {
+                      // Category does not exist → create it
+                      correntTerms.push({
+                        category: extraTermData.category,
+                        content: [
+                          { content: extraTermData.content, is_default: true },
+                        ],
+                      });
+                    }
+                    setDisplayTerms(correntTerms);
 
                     // Close modal
                     setShowAddTerm(false);

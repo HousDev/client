@@ -311,15 +311,32 @@ api.interceptors.request.use(
 );
 
 // handle 401
+// api.interceptors.response.use(
+//   (res) => res,
+//   (error: AxiosError) => {
+//     if (error.response) {
+//       if (error.response.status === 401) {
+//         setToken(null);
+//         window.location.href = "/login";
+//       }
+//     }
+//     return Promise.reject(error);
+//   },
+// );
+
 api.interceptors.response.use(
   (res) => res,
   (error: AxiosError) => {
-    if (error.response) {
-      if (error.response.status === 401) {
-        setToken(null);
-        window.location.href = "/login";
-      }
+    const status = error.response?.status;
+    const url = error.config?.url || "";
+    console.log(url);
+
+    // redirect ONLY if auth truly failed
+    if (status === 401 && !url.includes("/auth/login")) {
+      setToken(null);
+      window.location.replace("/login"); // safer than href
     }
+
     return Promise.reject(error);
   },
 );

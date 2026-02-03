@@ -247,17 +247,11 @@ export default function UpdatePurchaseOrderForm({
   const [poTypes, setPOTypes] = useState<any[]>([]);
   const [poTypesLoading, setPOTypesLoading] = useState<boolean>(false);
   const [items, setItems] = useState<any[]>([]);
-  const [terms, setTerms] = useState<any[]>([]);
   const [paymentTerms, setPaymentTerms] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
-  const [searchTerm, setSearchTerm] = useState("");
-  const [showModal, setShowModal] = useState(false);
-  const [selectedPOS, setSelectedPOS] = useState<any>(null);
   const [showItemSelector, setShowItemSelector] = useState(false);
-  const [newTermsAndCondition, setNewTermsAndConditions] = useState("");
 
   const [showAddTerm, setShowAddTerm] = useState<boolean>(false);
-  const [extraTerms, setExtraTerms] = useState<addTermType[]>([]);
   const [extraTermData, setExtraTermData] = useState<addTermType>({
     category: "",
     content: "",
@@ -671,6 +665,14 @@ export default function UpdatePurchaseOrderForm({
           }
         });
       });
+
+      if (
+        selected_terms_idsData.length === 0 ||
+        terms_and_conditionsData.length === 0
+      ) {
+        toast.error("Select Terms & Conditions For Purchase Order.");
+        return;
+      }
 
       const payload = {
         po_number: formData.po_number,
@@ -1341,8 +1343,8 @@ export default function UpdatePurchaseOrderForm({
                 </button>
               </div>
             </div>
-            <div className="p-4 overflow-y-auto flex-grow">
-              <ul className="space-y-3">
+            <div className="p-4 overflow-y-auto flex-grow min-h-32 max-h-96">
+              <ul className="space-y-3 ">
                 {formData.terms_and_conditions.map((d, indx: number) => (
                   <li
                     key={indx}
@@ -1506,28 +1508,61 @@ export default function UpdatePurchaseOrderForm({
                       toast.error("All input fields required.");
                       return;
                     }
-                    setFormData((prev) => ({
-                      ...prev,
-                      terms_and_conditions: prev.terms_and_conditions.map(
-                        (tc: any) => {
-                          if (tc.category === extraTermData.category) {
-                            return {
-                              ...tc,
-                              content: [
-                                ...tc.content,
-                                {
-                                  category: extraTermData.category,
-                                  content: extraTermData.content,
-                                  is_default: true,
-                                },
-                              ],
-                            };
-                          } else {
-                            return tc;
-                          }
-                        },
-                      ),
-                    }));
+                    console.log("T&C", formData.terms_and_conditions);
+
+                    const correntTerms = formData.terms_and_conditions;
+                    const categoryIndex = correntTerms.findIndex(
+                      (t: any) => t.category === extraTermData.category,
+                    );
+
+                    if (categoryIndex !== -1) {
+                      // Category exists → add term
+                      correntTerms[categoryIndex].content.push({
+                        category: extraTermData.category,
+                        content: extraTermData.content,
+                        is_default: true,
+                      });
+                    } else {
+                      // Category does not exist → create it
+                      correntTerms.push({
+                        category: extraTermData.category,
+                        content: [
+                          {
+                            category: extraTermData.category,
+                            content: extraTermData.content,
+                            is_default: true,
+                          },
+                        ],
+                      });
+                    }
+
+                    setFormData({
+                      ...formData,
+                      terms_and_conditions: correntTerms,
+                    });
+
+                    // setFormData((prev) => ({
+                    //   ...prev,
+                    //   terms_and_conditions: prev.terms_and_conditions.map(
+                    //     (tc: any) => {
+                    //       if (tc.category === extraTermData.category) {
+                    //         return {
+                    //           ...tc,
+                    //           content: [
+                    //             ...tc.content,
+                    //             {
+                    //               category: extraTermData.category,
+                    //               content: extraTermData.content,
+                    //               is_default: true,
+                    //             },
+                    //           ],
+                    //         };
+                    //       } else {
+                    //         return tc;
+                    //       }
+                    //     },
+                    //   ),
+                    // }));
                     setExtraTermData({
                       category: "",
                       content: "",

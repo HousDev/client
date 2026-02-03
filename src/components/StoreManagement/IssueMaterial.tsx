@@ -65,6 +65,8 @@ export default function IssueMaterial({
   const [allProjects, setAllProjects] = useState<any[]>([]);
   const [allServiceVendors, setAllServiceVendors] = useState<any>([]);
   const [allMaterialRequest, setAllMaterialRequest] = useState<any>([]);
+  const [selectedMaterialRequestData, setSelectedMaterialRequestData] =
+    useState<any>();
   const formRef = useRef<HTMLDivElement>(null);
 
   const [formData, setFormData] = useState<any>({
@@ -535,6 +537,7 @@ export default function IssueMaterial({
                     const mr = allMaterialRequest.find(
                       (d: any) => d.request_material_id === id,
                     );
+                    setSelectedMaterialRequestData(mr);
                     const materials = [];
                     for (const i of mr.items) {
                       for (const inventoryItem of allInventory) {
@@ -599,6 +602,7 @@ export default function IssueMaterial({
                     onChange={(e: any) =>
                       loadProjectDetails(Number(e.target.value))
                     }
+                    disabled={formData.requestId}
                     className="w-full pl-10 pr-10 py-2.5 text-sm border-2 border-gray-200 rounded-xl focus:border-[#C62828] focus:ring-2 focus:ring-[#C62828]/20 bg-white outline-none transition-all duration-200 appearance-none hover:border-gray-300"
                   >
                     <option value="" className="text-gray-400">
@@ -630,7 +634,7 @@ export default function IssueMaterial({
                     onChange={(e: any) =>
                       handleBuildingChange(Number(e.target.value))
                     }
-                    disabled={!selectedProject}
+                    disabled={!selectedProject || formData.requestId}
                     className="w-full pl-10 pr-10 py-2.5 text-sm border-2 border-gray-200 rounded-xl focus:border-[#C62828] focus:ring-2 focus:ring-[#C62828]/20 bg-white outline-none transition-all duration-200 appearance-none hover:border-gray-300 disabled:bg-gray-100 disabled:cursor-not-allowed"
                   >
                     <option value="" className="text-gray-400">
@@ -662,7 +666,7 @@ export default function IssueMaterial({
                     onChange={(e: any) =>
                       handleFloorChange(Number(e.target.value))
                     }
-                    disabled={!selectedBuilding}
+                    disabled={!selectedBuilding || formData.requestId}
                     className="w-full pl-10 pr-10 py-2.5 text-sm border-2 border-gray-200 rounded-xl focus:border-[#C62828] focus:ring-2 focus:ring-[#C62828]/20 bg-white outline-none transition-all duration-200 appearance-none hover:border-gray-300 disabled:bg-gray-100 disabled:cursor-not-allowed"
                   >
                     <option value="" className="text-gray-400">
@@ -697,7 +701,11 @@ export default function IssueMaterial({
                     onChange={(e: any) =>
                       handleFlatChange(Number(e.target.value))
                     }
-                    disabled={!selectedFloor || formData.commonAreaId}
+                    disabled={
+                      !selectedFloor ||
+                      formData.commonAreaId ||
+                      formData.requestId
+                    }
                     className="w-full pl-10 pr-10 py-2.5 text-sm border-2 border-gray-200 rounded-xl focus:border-[#C62828] focus:ring-2 focus:ring-[#C62828]/20 bg-white outline-none transition-all duration-200 appearance-none hover:border-gray-300 disabled:bg-gray-100 disabled:cursor-not-allowed"
                   >
                     <option value="" className="text-gray-400">
@@ -729,7 +737,9 @@ export default function IssueMaterial({
                     onChange={(e: any) =>
                       handleCommonAreaChange(Number(e.target.value))
                     }
-                    disabled={!selectedFloor || formData.flatId}
+                    disabled={
+                      !selectedFloor || formData.flatId || formData.requestId
+                    }
                     className="w-full pl-10 pr-10 py-2.5 text-sm border-2 border-gray-200 rounded-xl focus:border-[#C62828] focus:ring-2 focus:ring-[#C62828]/20 bg-white outline-none transition-all duration-200 appearance-none hover:border-gray-300 disabled:bg-gray-100 disabled:cursor-not-allowed"
                   >
                     <option value="" className="text-gray-400">
@@ -799,6 +809,7 @@ export default function IssueMaterial({
                       }
                       handleInputChange("receiverName", e.target.value);
                     }}
+                    disabled={formData.requestId}
                     className="w-full pl-10 pr-4 py-2.5 text-sm border-2 border-gray-200 rounded-xl focus:border-[#C62828] focus:ring-2 focus:ring-[#C62828]/20 outline-none transition-all duration-200 hover:border-gray-300"
                     placeholder="Receiver Name"
                     required
@@ -818,6 +829,7 @@ export default function IssueMaterial({
                   <input
                     type="tel"
                     value={formData.receiverNumber}
+                    disabled={formData.requestId}
                     onChange={(e) => {
                       if (!/^\d*$/.test(e.target.value)) {
                         return;
@@ -872,6 +884,7 @@ export default function IssueMaterial({
                     onChange={(e) =>
                       handleInputChange("purpose", e.target.value)
                     }
+                    disabled={formData.requestId}
                     className="w-full pl-10 pr-4 py-2.5 text-sm border-2 border-gray-200 rounded-xl focus:border-[#C62828] focus:ring-2 focus:ring-[#C62828]/20 outline-none transition-all duration-200 hover:border-gray-300"
                     placeholder="Purpose"
                   />
@@ -972,7 +985,7 @@ export default function IssueMaterial({
                             <button
                               type="button"
                               onClick={() => removeMaterial(material.id)}
-                              className="p-2 text-red-600 hover:bg-red-50 rounded-xl transition-all duration-200 hover:scale-105"
+                              className={`p-2 text-red-600 hover:bg-red-50 rounded-xl transition-all duration-200 hover:scale-105 ${formData.requestId && selectedMaterialRequestData.items.find((mtr: any) => mtr.item_name === material.materialName) ? "hidden" : ""}`}
                             >
                               <Trash2 className="w-4 h-4" />
                             </button>
