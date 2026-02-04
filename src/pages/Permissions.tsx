@@ -1,380 +1,9 @@
-import { useState, useEffect } from "react";
-import { Shield, Users, Key, Save, CheckCircle } from "lucide-react";
-import { toast } from "sonner";
-import rolesApi from "../lib/rolesApi";
-import { UsersApi } from "../lib/Api";
-
-type Role = {
-  id: string;
-  name: string;
-  description?: string;
-  permissions?: Record<string, boolean>;
-};
-type User = {
-  id: string;
-  full_name: string;
-  email: string;
-  role?: string;
-  permissions?: Record<string, boolean>;
-};
-
-export default function Permissions() {
-  const [activeTab, setActiveTab] = useState<
-    "role-permissions" | "user-permissions"
-  >("role-permissions");
-  const [roles, setRoles] = useState<Role[]>([]);
-  const [users, setUsers] = useState<User[]>([]);
-  const [selectedRole, setSelectedRole] = useState<string>("");
-  const [selectedUser, setSelectedUser] = useState<string>("");
-  const [rolePermissions, setRolePermissions] = useState<
-    Record<string, boolean>
-  >({});
-  const [userPermissions, setUserPermissions] = useState<
-    Record<string, boolean>
-  >({});
-  const [loading, setLoading] = useState(true);
-
-  // STATIC permission list
-  const permissionsList = [
-    { action: "full_access", label: "Full Access", module: "Full Access" },
-    { action: "view_dashboard", label: "View Dashboard", module: "Dashboard" },
-    { action: "view_vendors", label: "View Vendors", module: "Vendors" },
-    { action: "create_vendors", label: "Create Vendors", module: "Vendors" },
-    { action: "edit_vendors", label: "Edit Vendors", module: "Vendors" },
-    { action: "delete_vendors", label: "Delete Vendors", module: "Vendors" },
-    {
-      action: "view_pos",
-      label: "View Purchase Orders",
-      module: "Purchase Orders",
-    },
-    {
-      action: "create_pos",
-      label: "Create Purchase Orders",
-      module: "Purchase Orders",
-    },
-    {
-      action: "edit_pos",
-      label: "Edit Purchase Orders",
-      module: "Purchase Orders",
-    },
-    {
-      action: "delete_pos",
-      label: "Delete Purchase Orders",
-      module: "Purchase Orders",
-    },
-    {
-      action: "approve_pos",
-      label: "Approve Purchase Orders",
-      module: "Purchase Orders",
-    },
-    { action: "view_materials", label: "View Materials", module: "Materials" },
-    {
-      action: "receive_materials",
-      label: "Receive Materials",
-      module: "Materials",
-    },
-    { action: "view_payments", label: "View Payments", module: "Payments" },
-    { action: "make_payments", label: "Make Payments", module: "Payments" },
-    { action: "verify_payments", label: "Verify Payments", module: "Payments" },
-    { action: "view_reports", label: "View Reports", module: "Reports" },
-    { action: "export_reports", label: "Export Reports", module: "Reports" },
-    { action: "manage_users", label: "Manage Users", module: "Users" },
-    { action: "manage_roles", label: "Manage Roles", module: "Roles" },
-    {
-      action: "manage_permissions",
-      label: "Manage Permissions",
-      module: "Permissions",
-    },
-    {
-      action: "create_notifications",
-      label: "Create Notifications",
-      module: "Notifications",
-    },
-    {
-      action: "view_notifications",
-      label: "View Notifications",
-      module: "Notifications",
-    },
-    {
-      action: "update_notifications",
-      label: "Update Notifications",
-      module: "Notifications",
-    },
-    {
-      action: "delete_notifications",
-      label: "Delete Notifications",
-      module: "Notifications",
-    },
-  ];
-
-  const loadUsers = async () => {
-    try {
-      const usersRes: any = await UsersApi.list();
-
-      setSelectedUser(Array.isArray(usersRes) ? usersRes[0].id : {});
-      setUserPermissions(
-        Array.isArray(usersRes) ? usersRes[0].permissions : {},
-      );
-      setUsers(Array.isArray(usersRes) ? usersRes : []);
-      console.log("users", usersRes);
-    } catch (error) {
-      toast.error("Something went wrong while loading roles");
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const loadRoles = async () => {
-    try {
-      const rolesRes: any = await rolesApi.getAllRoles();
-      setSelectedRole(Array.isArray(rolesRes) ? rolesRes[0].id : {});
-      setRolePermissions(
-        Array.isArray(rolesRes) ? rolesRes[0].permissions : {},
-      );
-      setRoles(Array.isArray(rolesRes) ? rolesRes : []);
-      console.log("roles", rolesRes);
-    } catch (error) {
-      toast.error("Something went wrong while loading roles");
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    loadRoles();
-    loadUsers();
-  }, []);
-
-  const groupedPermissions = permissionsList.reduce((acc: any, p) => {
-    if (!acc[p.module]) acc[p.module] = [];
-    acc[p.module].push(p);
-    return acc;
-  }, {});
-
-  const handleRolePermissionChange = (action: string, value: boolean) => {
-    setRolePermissions((prev) => ({ ...prev, [action]: value }));
-  };
-
-  const handleUserPermissionChange = (action: string, value: boolean) => {
-    setUserPermissions((prev) => ({ ...prev, [action]: value }));
-  };
-
-  const updateRolePermissions = async () => {
-    try {
-      console.log(rolePermissions, "dfasjdhfkh");
-      const rolePermissionRes = await rolesApi.updateRolePermissions(
-        selectedRole,
-        rolePermissions,
-      );
-      if (rolePermissionRes.success) {
-        loadRoles();
-        toast.success("Role Permssions Updated Successfully.");
-      }
-      console.log(rolePermissionRes);
-    } catch (error) {
-      toast.error("Something went wrong while updating role permissions.");
-    }
-  };
-
-  const saveUserPermissions = async () => {
-    try {
-      console.log("this is permissions for testing", userPermissions);
-      const userPermissionsRes: any = await UsersApi.updateUserPermissions(
-        selectedUser,
-        userPermissions,
-      );
-
-      if (userPermissionsRes.success) {
-        loadUsers();
-        toast.success("User Permissions Updated Successfully.");
-      }
-    } catch (e) {
-      toast.error("Something went wrong while updating user permissions.");
-    }
-  };
-
-  if (loading)
-    return (
-      <div className="flex items-center justify-center h-96">
-        <div className="animate-spin h-12 w-12 border-b-2 border-blue-500 rounded-full"></div>
-      </div>
-    );
-
-  return (
-    <div className="space-y-6">
-      <h1 className="text-3xl font-bold text-gray-800">Permissions</h1>
-
-      {/* Tabs */}
-      <div className="bg-white rounded-xl shadow-sm border">
-        <div className="flex border-b">
-          <button
-            onClick={() => setActiveTab("role-permissions")}
-            className={`flex-1 py-4 text-center ${activeTab === "role-permissions" ? "bg-blue-50 text-blue-600 border-b-2 border-blue-600" : ""}`}
-          >
-            <Shield className="w-5 h-5 inline-block mr-2" />
-            Role Permissions
-          </button>
-
-          <button
-            onClick={() => {
-              setActiveTab("user-permissions");
-              console.log(users[0].id, users[0]?.permissions);
-              setSelectedUser(users[0].id);
-              setUserPermissions(users[0]?.permissions || {});
-            }}
-            className={`flex-1 py-4 text-center ${activeTab === "user-permissions" ? "bg-blue-50 text-blue-600 border-b-2 border-blue-600" : ""}`}
-          >
-            <Users className="w-5 h-5 inline-block mr-2" />
-            User Permissions
-          </button>
-        </div>
-
-        <div className="p-6">
-          {/* ---------- ROLE PERMISSIONS TAB ---------- */}
-          {activeTab === "role-permissions" && (
-            <div className="space-y-6">
-              <select
-                value={selectedRole}
-                onChange={(e) => {
-                  const newRole = e.target.value;
-                  setSelectedRole(newRole);
-                  console.log(roles, newRole);
-                  const r = roles.find((x: any) => x.id === Number(newRole));
-                  console.log(r);
-                  setRolePermissions(r?.permissions ?? {});
-                }}
-                className="border p-3 rounded-lg"
-              >
-                {roles.map((r) => (
-                  <option key={r.id} value={r.id}>
-                    {r.name}
-                  </option>
-                ))}
-              </select>
-
-              {Object.entries(groupedPermissions).map(
-                ([module, perms]: [any, any]) => (
-                  <div key={module} className="border p-4 rounded-lg">
-                    <h3 className="font-semibold mb-3">{module}</h3>
-                    <div className="grid grid-cols-3">
-                      {perms.map((perm: any) => (
-                        <label key={perm.action} className="block py-1">
-                          <input
-                            type="checkbox"
-                            checked={!!rolePermissions[perm.action]}
-                            onChange={(e) =>
-                              handleRolePermissionChange(
-                                perm.action,
-                                e.target.checked,
-                              )
-                            }
-                            className="mr-2"
-                          />
-                          {perm.label}
-                        </label>
-                      ))}
-                    </div>
-                  </div>
-                ),
-              )}
-              <button
-                onClick={updateRolePermissions}
-                className="px-6 py-3 bg-blue-600 text-white rounded-lg flex items-center gap-2"
-              >
-                <Save className="w-5 h-5" /> Save
-              </button>
-            </div>
-          )}
-
-          {/* ---------- USER PERMISSIONS TAB ---------- */}
-          {activeTab === "user-permissions" && (
-            <div className="space-y-6">
-              <select
-                value={selectedUser}
-                onChange={(e) => {
-                  const uid = e.target.value;
-                  setSelectedUser(uid);
-                  const u = users.find((x) => x.id === uid);
-                  setUserPermissions(u?.permissions ?? {});
-                  if (u?.role) {
-                    setSelectedRole(u.role);
-                    const r = roles.find(
-                      (x) =>
-                        x.name.toLowerCase() === (u.role ?? "").toLowerCase() ||
-                        x.id === u.role,
-                    );
-                    setRolePermissions(r?.permissions ?? {});
-                  }
-                }}
-                className="border p-3 rounded-lg"
-              >
-                {users.map((u) => (
-                  <option key={u.id} value={u.id}>
-                    {u.full_name} ({u.role ?? "No role"})
-                  </option>
-                ))}
-              </select>
-
-              {Object.entries(groupedPermissions).map(
-                ([module, perms]: [any, any]) => (
-                  <div key={module} className="border p-4 rounded-lg">
-                    <h3 className="font-semibold mb-3">{module}</h3>
-                    <div className="grid grid-cols-3">
-                      {perms.map((perm: any) => (
-                        <label key={perm.action} className="block py-1">
-                          <input
-                            type="checkbox"
-                            checked={!!userPermissions[perm.action]}
-                            onChange={(e) =>
-                              handleUserPermissionChange(
-                                perm.action,
-                                e.target.checked,
-                              )
-                            }
-                            className="mr-2"
-                          />
-                          {perm.label}
-                        </label>
-                      ))}
-                    </div>
-                  </div>
-                ),
-              )}
-
-              <button
-                onClick={saveUserPermissions}
-                className="px-6 py-3 bg-blue-600 text-white rounded-lg flex items-center gap-2"
-              >
-                <Save className="w-5 h-5" /> Save
-              </button>
-            </div>
-          )}
-        </div>
-      </div>
-
-      <div className="p-4 bg-green-50 border border-green-200 rounded-lg flex gap-3">
-        <CheckCircle className="text-green-600 w-5 h-5" />
-        <p className="text-green-800 text-sm">
-          This is a static demo page. No real permission enforcement is applied.
-          If an admin user exists in localStorage it was auto-selected.
-        </p>
-      </div>
-    </div>
-  );
-}
-
-// src/pages/Permissions.tsx
-// import React, { useEffect, useState } from "react";
-// import {
-//   Shield,
-//   Users,
-//   Key,
-//   Save,
-//   CheckCircle,
-//   AlertCircle,
-// } from "lucide-react";
-// import { useAuth } from "../contexts/AuthContext";
-// import { api, unwrap, UsersApi } from "../lib/Api";
+// /* eslint-disable @typescript-eslint/no-explicit-any */
+// import { useState, useEffect } from "react";
+// import { Shield, Users, Key, Save, CheckCircle } from "lucide-react";
+// import { toast } from "sonner";
+// import rolesApi from "../lib/rolesApi";
+// import { UsersApi } from "../lib/Api";
 
 // type Role = {
 //   id: string;
@@ -384,36 +13,67 @@ export default function Permissions() {
 // };
 // type User = {
 //   id: string;
-//   full_name?: string;
-//   email?: string;
-//   role?: string | number;
+//   full_name: string;
+//   email: string;
+//   role?: string;
 //   permissions?: Record<string, boolean>;
 // };
 
 // export default function Permissions() {
-//   const [activeTab, setActiveTab] = useState<"role-permissions" | "user-permissions">("role-permissions");
+//   const [activeTab, setActiveTab] = useState<
+//     "role-permissions" | "user-permissions"
+//   >("role-permissions");
 //   const [roles, setRoles] = useState<Role[]>([]);
 //   const [users, setUsers] = useState<User[]>([]);
 //   const [selectedRole, setSelectedRole] = useState<string>("");
 //   const [selectedUser, setSelectedUser] = useState<string>("");
-//   const [rolePermissions, setRolePermissions] = useState<Record<string, boolean>>({});
-//   const [userPermissions, setUserPermissions] = useState<Record<string, boolean>>({});
+//   const [rolePermissions, setRolePermissions] = useState<
+//     Record<string, boolean>
+//   >({});
+//   const [userPermissions, setUserPermissions] = useState<
+//     Record<string, boolean>
+//   >({});
 //   const [loading, setLoading] = useState(true);
 
 //   // STATIC permission list
 //   const permissionsList = [
+//     { action: "full_access", label: "Full Access", module: "Full Access" },
 //     { action: "view_dashboard", label: "View Dashboard", module: "Dashboard" },
 //     { action: "view_vendors", label: "View Vendors", module: "Vendors" },
 //     { action: "create_vendors", label: "Create Vendors", module: "Vendors" },
 //     { action: "edit_vendors", label: "Edit Vendors", module: "Vendors" },
 //     { action: "delete_vendors", label: "Delete Vendors", module: "Vendors" },
-//     { action: "view_pos", label: "View Purchase Orders", module: "Purchase Orders" },
-//     { action: "create_pos", label: "Create Purchase Orders", module: "Purchase Orders" },
-//     { action: "edit_pos", label: "Edit Purchase Orders", module: "Purchase Orders" },
-//     { action: "delete_pos", label: "Delete Purchase Orders", module: "Purchase Orders" },
-//     { action: "approve_pos", label: "Approve Purchase Orders", module: "Purchase Orders" },
+//     {
+//       action: "view_pos",
+//       label: "View Purchase Orders",
+//       module: "Purchase Orders",
+//     },
+//     {
+//       action: "create_pos",
+//       label: "Create Purchase Orders",
+//       module: "Purchase Orders",
+//     },
+//     {
+//       action: "edit_pos",
+//       label: "Edit Purchase Orders",
+//       module: "Purchase Orders",
+//     },
+//     {
+//       action: "delete_pos",
+//       label: "Delete Purchase Orders",
+//       module: "Purchase Orders",
+//     },
+//     {
+//       action: "approve_pos",
+//       label: "Approve Purchase Orders",
+//       module: "Purchase Orders",
+//     },
 //     { action: "view_materials", label: "View Materials", module: "Materials" },
-//     { action: "receive_materials", label: "Receive Materials", module: "Materials" },
+//     {
+//       action: "receive_materials",
+//       label: "Receive Materials",
+//       module: "Materials",
+//     },
 //     { action: "view_payments", label: "View Payments", module: "Payments" },
 //     { action: "make_payments", label: "Make Payments", module: "Payments" },
 //     { action: "verify_payments", label: "Verify Payments", module: "Payments" },
@@ -421,8 +81,70 @@ export default function Permissions() {
 //     { action: "export_reports", label: "Export Reports", module: "Reports" },
 //     { action: "manage_users", label: "Manage Users", module: "Users" },
 //     { action: "manage_roles", label: "Manage Roles", module: "Roles" },
-//     { action: "manage_permissions", label: "Manage Permissions", module: "Permissions" },
+//     {
+//       action: "manage_permissions",
+//       label: "Manage Permissions",
+//       module: "Permissions",
+//     },
+//     {
+//       action: "create_notifications",
+//       label: "Create Notifications",
+//       module: "Notifications",
+//     },
+//     {
+//       action: "view_notifications",
+//       label: "View Notifications",
+//       module: "Notifications",
+//     },
+//     {
+//       action: "update_notifications",
+//       label: "Update Notifications",
+//       module: "Notifications",
+//     },
+//     {
+//       action: "delete_notifications",
+//       label: "Delete Notifications",
+//       module: "Notifications",
+//     },
 //   ];
+
+//   const loadUsers = async () => {
+//     try {
+//       const usersRes: any = await UsersApi.list();
+
+//       setSelectedUser(Array.isArray(usersRes) ? usersRes[0].id : {});
+//       setUserPermissions(
+//         Array.isArray(usersRes) ? usersRes[0].permissions : {},
+//       );
+//       setUsers(Array.isArray(usersRes) ? usersRes : []);
+//       console.log("users", usersRes);
+//     } catch (error) {
+//       toast.error("Something went wrong while loading roles");
+//     } finally {
+//       setLoading(false);
+//     }
+//   };
+
+//   const loadRoles = async () => {
+//     try {
+//       const rolesRes: any = await rolesApi.getAllRoles();
+//       setSelectedRole(Array.isArray(rolesRes) ? rolesRes[0].id : {});
+//       setRolePermissions(
+//         Array.isArray(rolesRes) ? rolesRes[0].permissions : {},
+//       );
+//       setRoles(Array.isArray(rolesRes) ? rolesRes : []);
+//       console.log("roles", rolesRes);
+//     } catch (error) {
+//       toast.error("Something went wrong while loading roles");
+//     } finally {
+//       setLoading(false);
+//     }
+//   };
+
+//   useEffect(() => {
+//     loadRoles();
+//     loadUsers();
+//   }, []);
 
 //   const groupedPermissions = permissionsList.reduce((acc: any, p) => {
 //     if (!acc[p.module]) acc[p.module] = [];
@@ -430,199 +152,45 @@ export default function Permissions() {
 //     return acc;
 //   }, {});
 
-//   // Default static roles
-//   const defaultRoles: Role[] = [
-//     { id: "admin", name: "admin", description: "Full Access", permissions: Object.fromEntries(permissionsList.map(p => [p.action, true])) },
-//     { id: "manager", name: "manager", description: "Manager Role", permissions: {} },
-//     { id: "staff", name: "staff", description: "Staff Role", permissions: {} }
-//   ];
-
-//   // Default static users
-//   const defaultUsers: User[] = [
-//     { id: "1", full_name: "Alice Admin", email: "alice@example.com", role: "admin", permissions: {} },
-//     { id: "2", full_name: "Bob Manager", email: "bob@example.com", role: "manager", permissions: {} },
-//     { id: "3", full_name: "Charlie Staff", email: "charlie@example.com", role: "staff", permissions: {} },
-//   ];
-
-//   // Try to read known localStorage keys to find your actual users (and pick admin if present)
-//   const loadUsersFromLocalStorage = (): User[] | null => {
-//     const keysToTry = ["users_master_data_v1", "mock_users_v1", "MOCK_USERS_KEY", "mock_users_v1"];
-//     for (const key of keysToTry) {
-//       try {
-//         const raw = localStorage.getItem(key);
-//         if (!raw) continue;
-//         const parsed = JSON.parse(raw);
-//         if (Array.isArray(parsed) && parsed.length > 0) {
-//           // normalize items that might have different property names
-//           const normalized: User[] = parsed.map((p: any, idx: number) => ({
-//             id: p.id ?? p.user_id ?? String(idx + 1),
-//             full_name: p.full_name ?? p.name ?? p.fullName ?? p.username ?? `User ${idx + 1}`,
-//             email: p.email ?? p.username ?? "",
-//             role: p.role ?? p.role_name ?? p.roleName ?? undefined,
-//             permissions: p.permissions ?? {},
-//           }));
-//           return normalized;
-//         }
-//       } catch (e) {
-//         // ignore parse errors and continue to next key
-//       }
-//     }
-//     return null;
+//   const handleRolePermissionChange = (action: string, value: boolean) => {
+//     setRolePermissions((prev) => ({ ...prev, [action]: value }));
 //   };
-
-//   useEffect(() => {
-//     setLoading(true);
-
-//         // try common shapes (priority)
-//         if (Array.isArray(raw?.data)) rolesArray = raw.data;
-//         else if (Array.isArray(raw?.data?.roles)) rolesArray = raw.data.roles;
-//         else if (Array.isArray(raw?.data?.data)) rolesArray = raw.data.data;
-//         else if (Array.isArray(raw)) rolesArray = raw;
-//         // else if (Array.isArray(raw?.roles)) rolesArray = raw.roles; //updated by sachin paithane commented this line
-//         else if (raw?.data && typeof raw.data === "object") {
-//           // find first array in data
-//           const firstArr = Object.values(raw.data).find((v) =>
-//             Array.isArray(v),
-//           );
-//           if (Array.isArray(firstArr)) rolesArray = firstArr as any[];
-//         }
-//       } else {
-//         setSelectedUser(useUsers[0]?.id ?? "");
-//         setSelectedRole(defaultRoles[0].id);
-//         setRolePermissions(defaultRoles[0].permissions ?? {});
-//       }
-
-//       setLoading(false);
-//     }
-//   }
-
-//   // load role permissions: prefer /roles/:id/permissions, else read from roles[] normalized
-//   async function loadRolePermissions(roleId: string) {
-//     try {
-//       const res = await api
-//         .get(`/roles/${encodeURIComponent(roleId)}/permissions`)
-//         .catch(() => null);
-//       if (res && res.data && typeof res.data.permissions === "object") {
-//         const normalized: Record<string, boolean> = {};
-//         Object.keys(res.data.permissions).forEach(
-//           (k) => (normalized[k] = !!res.data.permissions[k]),
-//         );
-//         setRolePermissions(normalized);
-//         return;
-//       }
-
-//       const r = roles.find((x) => String(x.id) === String(roleId));
-//       if (r && r.permissions && typeof r.permissions === "object") {
-//         const normalized: Record<string, boolean> = {};
-//         Object.keys(r.permissions).forEach(
-//           (k) => (normalized[k] = !!(r.permissions as any)[k]),
-//         );
-//         setRolePermissions(normalized);
-//         return;
-//       }
-
-//       setRolePermissions({});
-//     } catch (err) {
-//       console.error("loadRolePermissions error:", err);
-//       setRolePermissions({});
-//     }
-//   }
-
-//   async function handleRolePermissionChange(action: string, granted: boolean) {
-//     if (!selectedRole) return;
-//     setRolePermissions((prev) => ({ ...prev, [action]: granted }));
-//     setSavingRole(true);
-//     try {
-//       const payload = {
-//         permissions: { ...(rolePermissions || {}), [action]: granted },
-//       };
-//       console.log(payload, "from handlechagne");
-//       await unwrap(
-//         api.put(
-//           `/roles/${encodeURIComponent(selectedRole)}/permissions`,
-//           payload,
-//         ),
-//       );
-//     } catch (err) {
-//       console.error("Failed saving role permission:", err);
-//       alert("Failed to save role permission — reloading server value.");
-//       await loadRolePermissions(selectedRole);
-//     } finally {
-//       setSavingRole(false);
-//     }
-//   }
-
-//   // load user permissions (try /users/:id/permissions, fallback to users[].permissions, fallback to role)
-//   async function loadUserPermissions(userId: string) {
-//     try {
-//       const res = await api
-//         .get(`/users/${encodeURIComponent(userId)}/permissions`)
-//         .catch(() => null);
-//       if (res && res.data && typeof res.data.permissions === "object") {
-//         const normalized: Record<string, boolean> = {};
-//         Object.keys(res.data.permissions).forEach(
-//           (k) => (normalized[k] = !!res.data.permissions[k]),
-//         );
-//         setUserPermissions(normalized);
-//         return;
-//       }
-
-//       const u = users.find((x) => String(x.id) === String(userId));
-//       if (u && u.permissions && typeof u.permissions === "object") {
-//         const normalized: Record<string, boolean> = {};
-//         Object.keys(u.permissions).forEach(
-//           (k) => (normalized[k] = !!(u.permissions as any)[k]),
-//         );
-//         setUserPermissions(normalized);
-//         return;
-//       }
-
-//       if (u && u.role) {
-//         const roleObj = roles.find(
-//           (r) =>
-//             String(r.id) === String(u.role) ||
-//             String(r.name).toLowerCase() === String(u.role).toLowerCase(),
-//         );
-//         if (roleObj && roleObj.permissions) {
-//           const normalized: Record<string, boolean> = {};
-//           Object.keys(roleObj.permissions).forEach(
-//             (k) => (normalized[k] = !!(roleObj.permissions as any)[k]),
-//           );
-//           setUserPermissions(normalized);
-//           return;
-//         }
-//       }
 
 //   const handleUserPermissionChange = (action: string, value: boolean) => {
-//     setUserPermissions(prev => ({ ...prev, [action]: value }));
+//     setUserPermissions((prev) => ({ ...prev, [action]: value }));
 //   };
 
-//   const saveUserPermissions = () => {
-//     // Static demo: show alert and mirror into local state (no backend)
-//     alert("Saved (static demo)");
-//     // optionally persist to localStorage 'mock_users_v1' so next load remembers
+//   const updateRolePermissions = async () => {
 //     try {
-//       const payload = { permissions: userPermissions };
-//       await unwrap(
-//         api.put(
-//           `/users/${encodeURIComponent(selectedUser)}/permissions`,
-//           payload,
-//         ),
+//       console.log(rolePermissions, "dfasjdhfkh");
+//       const rolePermissionRes = await rolesApi.updateRolePermissions(
+//         selectedRole,
+//         rolePermissions,
 //       );
-//       setUsers((prev) =>
-//         prev.map((u) =>
-//           String(u.id) === String(selectedUser)
-//             ? { ...u, permissions: userPermissions }
-//             : u,
-//         ),
+//       if (rolePermissionRes.success) {
+//         loadRoles();
+//         toast.success("Role Permssions Updated Successfully.");
+//       }
+//       console.log(rolePermissionRes);
+//     } catch (error) {
+//       toast.error("Something went wrong while updating role permissions.");
+//     }
+//   };
+
+//   const saveUserPermissions = async () => {
+//     try {
+//       console.log("this is permissions for testing", userPermissions);
+//       const userPermissionsRes: any = await UsersApi.updateUserPermissions(
+//         selectedUser,
+//         userPermissions,
 //       );
-//       alert("User permissions saved successfully!");
-//     } catch (err) {
-//       console.error("saveUserPermissions error:", err);
-//       alert("Failed to save user permissions.");
-//       await loadUserPermissions(selectedUser);
-//     } finally {
-//       setSavingUser(false);
+
+//       if (userPermissionsRes.success) {
+//         loadUsers();
+//         toast.success("User Permissions Updated Successfully.");
+//       }
+//     } catch (e) {
+//       toast.error("Something went wrong while updating user permissions.");
 //     }
 //   };
 
@@ -634,9 +202,12 @@ export default function Permissions() {
 //     );
 
 //   return (
-//     <div className="space-y-6 p-6">
-//       <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
-//         <div className="flex border-b border-gray-200">
+//     <div className="space-y-6">
+//       <h1 className="text-3xl font-bold text-gray-800">Permissions</h1>
+
+//       {/* Tabs */}
+//       <div className="bg-white rounded-xl shadow-sm border">
+//         <div className="flex border-b">
 //           <button
 //             onClick={() => setActiveTab("role-permissions")}
 //             className={`flex-1 py-4 text-center ${activeTab === "role-permissions" ? "bg-blue-50 text-blue-600 border-b-2 border-blue-600" : ""}`}
@@ -646,7 +217,12 @@ export default function Permissions() {
 //           </button>
 
 //           <button
-//             onClick={() => setActiveTab("user-permissions")}
+//             onClick={() => {
+//               setActiveTab("user-permissions");
+//               console.log(users[0].id, users[0]?.permissions);
+//               setSelectedUser(users[0].id);
+//               setUserPermissions(users[0]?.permissions || {});
+//             }}
 //             className={`flex-1 py-4 text-center ${activeTab === "user-permissions" ? "bg-blue-50 text-blue-600 border-b-2 border-blue-600" : ""}`}
 //           >
 //             <Users className="w-5 h-5 inline-block mr-2" />
@@ -663,75 +239,51 @@ export default function Permissions() {
 //                 onChange={(e) => {
 //                   const newRole = e.target.value;
 //                   setSelectedRole(newRole);
-//                   const r = roles.find(x => x.id === newRole || x.name === newRole);
+//                   console.log(roles, newRole);
+//                   const r = roles.find((x: any) => x.id === Number(newRole));
+//                   console.log(r);
 //                   setRolePermissions(r?.permissions ?? {});
 //                 }}
 //                 className="border p-3 rounded-lg"
 //               >
-//                 {roles.map(r => <option key={r.id} value={r.id}>{r.name}</option>)}
+//                 {roles.map((r) => (
+//                   <option key={r.id} value={r.id}>
+//                     {r.name}
+//                   </option>
+//                 ))}
 //               </select>
 
-//               {Object.entries(groupedPermissions).map(([module, perms]:[any,any]) => (
-//                 <div key={module} className="border p-4 rounded-lg">
-//                   <h3 className="font-semibold mb-3">{module}</h3>
-//                   {perms.map((perm: any) => (
-//                     <label key={perm.action} className="block py-1">
-//                       <input
-//                         type="checkbox"
-//                         checked={!!rolePermissions[perm.action]}
-//                         onChange={(e) => handleRolePermissionChange(perm.action, e.target.checked)}
-//                         className="mr-2"
-//                       />
-//                       {perm.label}
-//                     </label>
-//                   ))}
-//                 </select>
-//               </div>
-
-//               <div className="space-y-6">
-//                 {Object.entries(groupedPermissions).map(
-//                   ([module, perms]: [string, any]) => (
-//                     <div
-//                       key={module}
-//                       className="border border-gray-200 rounded-lg p-4"
-//                     >
-//                       <h3 className="text-lg font-semibold text-gray-800 mb-4 flex items-center gap-2">
-//                         <Key className="w-5 h-5 text-blue-600" />
-//                         {module}
-//                       </h3>
-//                       <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-//                         {perms.map((perm: any) => (
-//                           <label
-//                             key={perm.action}
-//                             className="flex items-center gap-3 p-3 rounded-lg hover:bg-gray-50 cursor-pointer transition"
-//                           >
-//                             <input
-//                               type="checkbox"
-//                               checked={rolePermissions[perm.action] === true}
-//                               onChange={(e) =>
-//                                 handleRolePermissionChange(
-//                                   perm.action,
-//                                   e.target.checked,
-//                                 )
-//                               }
-//                               className="w-5 h-5 text-blue-600 rounded focus:ring-2 focus:ring-blue-500"
-//                             />
-//                             <span className="text-sm font-medium text-gray-700">
-//                               {perm.label}
-//                             </span>
-//                           </label>
-//                         ))}
-//                       </div>
+//               {Object.entries(groupedPermissions).map(
+//                 ([module, perms]: [any, any]) => (
+//                   <div key={module} className="border p-4 rounded-lg">
+//                     <h3 className="font-semibold mb-3">{module}</h3>
+//                     <div className="grid grid-cols-3">
+//                       {perms.map((perm: any) => (
+//                         <label key={perm.action} className="block py-1">
+//                           <input
+//                             type="checkbox"
+//                             checked={!!rolePermissions[perm.action]}
+//                             onChange={(e) =>
+//                               handleRolePermissionChange(
+//                                 perm.action,
+//                                 e.target.checked,
+//                               )
+//                             }
+//                             className="mr-2"
+//                           />
+//                           {perm.label}
+//                         </label>
+//                       ))}
 //                     </div>
-//                   ),
-//                 )}
-//               </div>
-
-//               {savingRole && (
-//                 <div className="text-sm text-gray-500">
-//                   Saving role changes...
-//                 </div>
-//               ))}
+//                   </div>
+//                 ),
+//               )}
+//               <button
+//                 onClick={updateRolePermissions}
+//                 className="px-6 py-3 bg-blue-600 text-white rounded-lg flex items-center gap-2"
+//               >
+//                 <Save className="w-5 h-5" /> Save
+//               </button>
 //             </div>
 //           )}
 
@@ -743,97 +295,59 @@ export default function Permissions() {
 //                 onChange={(e) => {
 //                   const uid = e.target.value;
 //                   setSelectedUser(uid);
-//                   const u = users.find(x => x.id === uid);
+//                   const u = users.find((x) => x.id === uid);
 //                   setUserPermissions(u?.permissions ?? {});
 //                   if (u?.role) {
 //                     setSelectedRole(u.role);
-//                     const r = roles.find(x => x.name.toLowerCase() === (u.role ?? "").toLowerCase() || x.id === u.role);
+//                     const r = roles.find(
+//                       (x) =>
+//                         x.name.toLowerCase() === (u.role ?? "").toLowerCase() ||
+//                         x.id === u.role,
+//                     );
 //                     setRolePermissions(r?.permissions ?? {});
 //                   }
 //                 }}
 //                 className="border p-3 rounded-lg"
 //               >
-//                 {users.map(u => <option key={u.id} value={u.id}>{u.full_name} ({u.role ?? "No role"})</option>)}
+//                 {users.map((u) => (
+//                   <option key={u.id} value={u.id}>
+//                     {u.full_name} ({u.role ?? "No role"})
+//                   </option>
+//                 ))}
 //               </select>
 
-//               {Object.entries(groupedPermissions).map(([module, perms]:[any,any]) => (
-//                 <div key={module} className="border p-4 rounded-lg">
-//                   <h3 className="font-semibold mb-3">{module}</h3>
-//                   {perms.map((perm: any) => (
-//                     <label key={perm.action} className="block py-1">
-//                       <input
-//                         type="checkbox"
-//                         checked={!!userPermissions[perm.action]}
-//                         onChange={(e) => handleUserPermissionChange(perm.action, e.target.checked)}
-//                         className="mr-2"
-//                       />
-//                       {perm.label}
-//                     </label>
-//                   ))}
-//                 </select>
-//               </div>
-
-//               {selectedUser && (
-//                 <>
-//                   <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-//                     <p className="text-sm text-blue-800">
-//                       <strong>Note:</strong> User-specific permissions override
-//                       role permissions.
-//                     </p>
+//               {Object.entries(groupedPermissions).map(
+//                 ([module, perms]: [any, any]) => (
+//                   <div key={module} className="border p-4 rounded-lg">
+//                     <h3 className="font-semibold mb-3">{module}</h3>
+//                     <div className="grid grid-cols-3">
+//                       {perms.map((perm: any) => (
+//                         <label key={perm.action} className="block py-1">
+//                           <input
+//                             type="checkbox"
+//                             checked={!!userPermissions[perm.action]}
+//                             onChange={(e) =>
+//                               handleUserPermissionChange(
+//                                 perm.action,
+//                                 e.target.checked,
+//                               )
+//                             }
+//                             className="mr-2"
+//                           />
+//                           {perm.label}
+//                         </label>
+//                       ))}
+//                     </div>
 //                   </div>
-
-//                   <div className="space-y-6">
-//                     {Object.entries(groupedPermissions).map(
-//                       ([module, perms]: [string, any]) => (
-//                         <div
-//                           key={module}
-//                           className="border border-gray-200 rounded-lg p-4"
-//                         >
-//                           <h3 className="text-lg font-semibold text-gray-800 mb-4 flex items-center gap-2">
-//                             <Key className="w-5 h-5 text-blue-600" />
-//                             {module}
-//                           </h3>
-//                           <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-//                             {perms.map((perm: any) => (
-//                               <label
-//                                 key={perm.action}
-//                                 className="flex items-center gap-3 p-3 rounded-lg hover:bg-gray-50 cursor-pointer transition"
-//                               >
-//                                 <input
-//                                   type="checkbox"
-//                                   checked={
-//                                     userPermissions[perm.action] === true
-//                                   }
-//                                   onChange={(e) =>
-//                                     setUserPermissions({
-//                                       ...userPermissions,
-//                                       [perm.action]: e.target.checked,
-//                                     })
-//                                   }
-//                                   className="w-5 h-5 text-blue-600 rounded focus:ring-2 focus:ring-blue-500"
-//                                 />
-//                                 <span className="text-sm font-medium text-gray-700">
-//                                   {perm.label}
-//                                 </span>
-//                               </label>
-//                             ))}
-//                           </div>
-//                         </div>
-//                       ),
-//                     )}
-//                   </div>
-
-//                   <div className="flex gap-3 pt-6 border-t">
-//                     <button
-//                       onClick={saveUserPermissions}
-//                       className="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition font-medium flex items-center gap-2 shadow-sm"
-//                     >
-//                       <Save className="w-5 h-5" />
-//                       {savingUser ? "Saving..." : "Save User Permissions"}
-//                     </button>
-//                   </div>
-//                 </>
+//                 ),
 //               )}
+
+//               <button
+//                 onClick={saveUserPermissions}
+//                 className="px-6 py-3 bg-blue-600 text-white rounded-lg flex items-center gap-2"
+//               >
+//                 <Save className="w-5 h-5" /> Save
+//               </button>
 //             </div>
 //           )}
 //         </div>
@@ -842,414 +356,856 @@ export default function Permissions() {
 //       <div className="p-4 bg-green-50 border border-green-200 rounded-lg flex gap-3">
 //         <CheckCircle className="text-green-600 w-5 h-5" />
 //         <p className="text-green-800 text-sm">
-//           This is a static demo page. No real permission enforcement is applied. If an admin user exists in localStorage it was auto-selected.
+//           This is a static demo page. No real permission enforcement is applied.
+//           If an admin user exists in localStorage it was auto-selected.
 //         </p>
 //       </div>
 //     </div>
 //   );
-// }
+// // }
+// import { useState, useEffect } from "react";
+// import { 
+//   Shield, 
+//   Users, 
+//   Save, 
+//   CheckCircle, 
+//   CheckSquare,
+//   Square
+// } from "lucide-react";
+// import { toast } from "sonner";
+// import rolesApi from "../lib/rolesApi";
+// import { UsersApi } from "../lib/Api";
 
-// import { useState, useEffect } from 'react';
-// import { Shield, Check, X, Edit2, Save, XCircle } from 'lucide-react';
-// import Card from '../components/ui/Card';
-// import Button from '../components/ui/Button';
-
-// interface Permission {
-//   [key: string]: boolean | { [key: string]: boolean };
-// }
-
-// interface RoleData {
+// type Role = {
 //   id: string;
 //   name: string;
-//   permissions: Record<string, any>;
-// }
+//   description?: string;
+//   permissions?: Record<string, boolean>;
+// };
 
-// interface Module {
-//   name: string;
-//   label: string;
-//   permissions: { key: string; label: string }[];
-// }
+// type User = {
+//   id: string;
+//   full_name: string;
+//   email: string;
+//   role?: string;
+//   permissions?: Record<string, boolean>;
+// };
 
-// const MODULES: Module[] = [
-//   {
-//     name: 'employees',
-//     label: 'Employee Management',
-//     permissions: [
-//       { key: 'view', label: 'View' },
-//       { key: 'create', label: 'Create' },
-//       { key: 'edit', label: 'Edit' },
-//       { key: 'delete', label: 'Delete' },
-//       { key: 'export', label: 'Export' },
-//       { key: 'bulk_actions', label: 'Bulk Actions' },
-//     ],
-//   },
-//   {
-//     name: 'attendance',
-//     label: 'Attendance',
-//     permissions: [
-//       { key: 'view', label: 'View' },
-//       { key: 'mark', label: 'Mark Attendance' },
-//       { key: 'regularize', label: 'Regularize' },
-//       { key: 'approve', label: 'Approve' },
-//       { key: 'geolocation_track', label: 'Geolocation Tracking' },
-//       { key: 'auto_logout', label: 'Auto Logout Config' },
-//       { key: 'export', label: 'Export' },
-//     ],
-//   },
-//   {
-//     name: 'leaves',
-//     label: 'Leave Management',
-//     permissions: [
-//       { key: 'view', label: 'View' },
-//       { key: 'apply', label: 'Apply Leave' },
-//       { key: 'approve', label: 'Approve' },
-//       { key: 'configure', label: 'Configure' },
-//       { key: 'view_all_balances', label: 'View All Balances' },
-//       { key: 'export', label: 'Export' },
-//     ],
-//   },
-//   {
-//     name: 'payroll',
-//     label: 'Payroll',
-//     permissions: [
-//       { key: 'view', label: 'View' },
-//       { key: 'create', label: 'Create' },
-//       { key: 'process', label: 'Process' },
-//       { key: 'approve', label: 'Approve' },
-//       { key: 'export', label: 'Export' },
-//       { key: 'configure', label: 'Configure' },
-//     ],
-//   },
-//   {
-//     name: 'expenses',
-//     label: 'Expense Management',
-//     permissions: [
-//       { key: 'view', label: 'View' },
-//       { key: 'submit', label: 'Submit' },
-//       { key: 'approve', label: 'Approve' },
-//       { key: 'reject', label: 'Reject' },
-//       { key: 'export', label: 'Export' },
-//     ],
-//   },
-//   {
-//     name: 'recruitment',
-//     label: 'Recruitment',
-//     permissions: [
-//       { key: 'view', label: 'View' },
-//       { key: 'create', label: 'Create' },
-//       { key: 'manage', label: 'Manage' },
-//       { key: 'export', label: 'Export' },
-//     ],
-//   },
-//   {
-//     name: 'tickets',
-//     label: 'Ticketing System',
-//     permissions: [
-//       { key: 'view', label: 'View' },
-//       { key: 'create', label: 'Create' },
-//       { key: 'assign', label: 'Assign' },
-//       { key: 'resolve', label: 'Resolve' },
-//       { key: 'escalate', label: 'Escalate' },
-//       { key: 'export', label: 'Export' },
-//     ],
-//   },
-//   {
-//     name: 'documents',
-//     label: 'Document Management',
-//     permissions: [
-//       { key: 'view', label: 'View' },
-//       { key: 'generate', label: 'Generate' },
-//       { key: 'approve', label: 'Approve' },
-//       { key: 'export', label: 'Export' },
-//     ],
-//   },
-//   {
-//     name: 'reports',
-//     label: 'Reports & Analytics',
-//     permissions: [
-//       { key: 'view', label: 'View' },
-//       { key: 'create', label: 'Create' },
-//       { key: 'schedule', label: 'Schedule' },
-//       { key: 'export', label: 'Export' },
-//     ],
-//   },
-//   {
-//     name: 'settings',
-//     label: 'System Settings',
-//     permissions: [
-//       { key: 'organization', label: 'Organization' },
-//       { key: 'locations', label: 'Locations' },
-//       { key: 'security', label: 'Security' },
-//       { key: 'roles', label: 'Roles & Permissions' },
-//       { key: 'integrations', label: 'Integrations' },
-//     ],
-//   },
-// ];
+// export default function Permissions() {
+//   const [activeTab, setActiveTab] = useState<"role-permissions" | "user-permissions">("role-permissions");
+//   const [roles, setRoles] = useState<Role[]>([]);
+//   const [users, setUsers] = useState<User[]>([]);
+//   const [selectedRole, setSelectedRole] = useState<string>("");
+//   const [selectedUser, setSelectedUser] = useState<string>("");
+//   const [rolePermissions, setRolePermissions] = useState<Record<string, boolean>>({});
+//   const [userPermissions, setUserPermissions] = useState<Record<string, boolean>>({});
+//   const [loading, setLoading] = useState(true);
 
-// export default function Roles() {
-//   const [roles, setRoles] = useState<RoleData[]>([]);
-//   const [loading, setLoading] = useState(false);
-//   const [editingRole, setEditingRole] = useState<string | null>(null);
-//   const [editedPermissions, setEditedPermissions] = useState<Record<string, any>>({});
+//   // COMPLETE PERMISSIONS LIST
+//   const permissionsList = [
+//     // Global
+//     { action: "full_access", label: "Full Access", module: "Global" },
+    
+//     // Dashboard
+//     { action: "view_dashboard", label: "View Dashboard", module: "Dashboard" },
+    
+//     // Vendors
+//     { action: "view_vendors", label: "View Vendors", module: "Vendors" },
+//     { action: "create_vendors", label: "Create Vendors", module: "Vendors" },
+//     { action: "edit_vendors", label: "Edit Vendors", module: "Vendors" },
+//     { action: "delete_vendors", label: "Delete Vendors", module: "Vendors" },
+    
 
-//   useEffect(() => {
-//     loadRoles();
-//   }, []);
+
+//     // Purchase Orders
+//     { action: "view_pos", label: "View Purchase Orders", module: "Purchase Orders" },
+//     { action: "create_pos", label: "Create Purchase Orders", module: "Purchase Orders" },
+//     { action: "edit_pos", label: "Edit Purchase Orders", module: "Purchase Orders" },
+//     { action: "delete_pos", label: "Delete Purchase Orders", module: "Purchase Orders" },
+//     { action: "approve_pos", label: "Approve Purchase Orders", module: "Purchase Orders" },
+//     { action: "reject_pos", label: "Reject Purchase Orders", module: "Purchase Orders" },
+//     { action: "authorize_pos", label: "Authorize Purchase Orders", module: "Purchase Orders" },
+//     { action: "reject_authorize_pos", label: "Reject Authorization", module: "Purchase Orders" },
+//     { action: "download_pdf_pos", label: "Download PO PDF", module: "Purchase Orders" },
+//     { action: "view_pdf_pos", label: "View PO PDF", module: "Purchase Orders" },
+//     { action: "make_payment_pos", label: "Make Payment", module: "Purchase Orders" },
+    
+//     // Service Orders
+//   { action: "view_service_orders", label: "View Service Orders", module: "Service Orders" },
+//   { action: "create_service_orders", label: "Create Service Orders", module: "Service Orders" },
+//   { action: "edit_service_orders", label: "Edit Service Orders", module: "Service Orders" },
+//   { action: "delete_service_orders", label: "Delete Service Orders", module: "Service Orders" },
+//     // Material Request
+//     { action: "view_material_request", label: "View Material Request", module: "Material Request" },
+//     { action: "create_material_request", label: "Create Material Request", module: "Material Request" },
+//     { action: "edit_material_request", label: "Edit Material Request", module: "Material Request" },
+//     { action: "delete_material_request", label: "Delete Material Request", module: "Material Request" },
+//     { action: "approve_material_request", label: "Approve Material Request", module: "Material Request" },
+//     { action: "reject_material_request", label: "Reject Material Request", module: "Material Request" },
+    
+//     // Store Management
+//     { action: "view_inventory", label: "View Inventory", module: "Store Management" },
+//     { action: "edit_inventory", label: "Edit Inventory", module: "Store Management" },
+//     { action: "view_reminders", label: "View Reminders", module: "Store Management" },
+//     { action: "view_challan", label: "View Challan", module: "Store Management" },
+//     { action: "material_in", label: "Material In", module: "Store Management" },
+//     { action: "material_out", label: "Material Out", module: "Store Management" },
+//     { action: "material_issue", label: "Material Issue", module: "Store Management" },
+    
+//     // Materials
+//     { action: "view_materials", label: "View Materials", module: "Materials" },
+//     { action: "receive_materials", label: "Receive Materials", module: "Materials" },
+    
+//     // Payments
+//     { action: "view_payments", label: "View Payments", module: "Payments" },
+//     { action: "make_payments", label: "Make Payments", module: "Payments" },
+//     { action: "verify_payments", label: "Verify Payments", module: "Payments" },
+//     { action: "update_payment_status", label: "Update Payment Status", module: "Payments" },
+    
+//     // Projects
+//     { action: "view_projects", label: "View Projects", module: "Projects" },
+//     { action: "create_projects", label: "Create Projects", module: "Projects" },
+//     { action: "edit_projects", label: "Edit Projects", module: "Projects" },
+//     { action: "delete_projects", label: "Delete Projects", module: "Projects" },
+    
+//     // Task Management
+//     { action: "view_tasks", label: "View Tasks", module: "Task Management" },
+//     { action: "create_tasks", label: "Create Tasks", module: "Task Management" },
+//     { action: "edit_tasks", label: "Update Tasks", module: "Task Management" },
+//     { action: "delete_tasks", label: "Delete Tasks", module: "Task Management" },
+//     { action: "assign_tasks", label: "Assign Tasks", module: "Task Management" }, // ✅ ADDED
+    
+//     // Master Data
+//     { action: "view_master", label: "View Master", module: "Master Data" },
+//     { action: "create_master", label: "Create Master", module: "Master Data" },
+//     { action: "update_master", label: "Update Master", module: "Master Data" },
+//     { action: "delete_master", label: "Delete Master", module: "Master Data" },
+//     { action: "bulk_import_master", label: "Bulk Import", module: "Master Data" },
+//     { action: "bulk_download_master", label: "Bulk Download", module: "Master Data" },
+    
+//     // HRMS
+//     { action: "view_hrms", label: "View Employees", module: "HRMS" },
+//     { action: "edit_hrms", label: "Manage Payroll", module: "HRMS" },
+//     { action: "delete_hrms", label: "Delete HRMS", module: "HRMS" },
+    
+//     // Reports
+//     { action: "view_reports", label: "View Reports", module: "Reports" },
+//     { action: "export_reports", label: "Export Reports", module: "Reports" },
+    
+//     // Users
+//     { action: "view_users", label: "Manage Users", module: "Users" },
+//     { action: "create_users", label: "Create Users", module: "Users" },
+//     { action: "edit_users", label: "Edit Users", module: "Users" },
+//     { action: "delete_users", label: "Delete Users", module: "Users" },
+    
+//     // Roles
+//     { action: "manage_roles", label: "Manage Roles", module: "Roles" },
+    
+//     // Permissions
+//     { action: "manage_permissions", label: "Manage Permissions", module: "Permissions" },
+    
+//     // Notifications
+//     { action: "create_notifications", label: "Create Notifications", module: "Notifications" },
+//     { action: "view_notifications", label: "View Notifications", module: "Notifications" },
+//     { action: "update_notifications", label: "Update Notifications", module: "Notifications" },
+//     { action: "delete_notifications", label: "Delete Notifications", module: "Notifications" },
+//   ];
+
+//   const loadUsers = async () => {
+//     try {
+//       const usersRes: any = await UsersApi.list();
+//       setSelectedUser(Array.isArray(usersRes) ? usersRes[0]?.id : "");
+//       setUserPermissions(Array.isArray(usersRes) ? usersRes[0]?.permissions || {} : {});
+//       setUsers(Array.isArray(usersRes) ? usersRes : []);
+//     } catch (error) {
+//       toast.error("Failed to load users");
+//     }
+//   };
 
 //   const loadRoles = async () => {
-//     setLoading(true);
 //     try {
-//       const defaultRoles: RoleData[] = [
-//         {
-//           id: '1',
-//           name: 'Admin',
-//           permissions: {}
-//         },
-//         {
-//           id: '2',
-//           name: 'HR Manager',
-//           permissions: {}
-//         },
-//         {
-//           id: '3',
-//           name: 'Attendance Manager',
-//           permissions: {}
-//         },
-//         {
-//           id: '4',
-//           name: 'Accountant',
-//           permissions: {}
-//         },
-//         {
-//           id: '5',
-//           name: 'Employee',
-//           permissions: {}
-//         },
-//       ];
-//       setRoles(defaultRoles);
+//       const rolesRes: any = await rolesApi.getAllRoles();
+//       setSelectedRole(Array.isArray(rolesRes) ? rolesRes[0]?.id : "");
+//       setRolePermissions(Array.isArray(rolesRes) ? rolesRes[0]?.permissions || {} : {});
+//       setRoles(Array.isArray(rolesRes) ? rolesRes : []);
 //     } catch (error) {
-//       console.error('Error loading roles:', error);
+//       toast.error("Failed to load roles");
 //     } finally {
 //       setLoading(false);
 //     }
 //   };
 
-//   const startEdit = (role: RoleData) => {
-//     setEditingRole(role.id);
-//     setEditedPermissions({ ...role.permissions });
+//   useEffect(() => {
+//     loadRoles();
+//     loadUsers();
+//   }, []);
+
+//   const groupedPermissions = permissionsList.reduce((acc: any, p) => {
+//     if (!acc[p.module]) acc[p.module] = [];
+//     acc[p.module].push(p);
+//     return acc;
+//   }, {});
+
+//   const handlePermissionChange = (action: string, value: boolean) => {
+//     if (activeTab === "role-permissions") {
+//       setRolePermissions((prev) => ({ ...prev, [action]: value }));
+//     } else {
+//       setUserPermissions((prev) => ({ ...prev, [action]: value }));
+//     }
 //   };
 
-//   const cancelEdit = () => {
-//     setEditingRole(null);
-//     setEditedPermissions({});
+//   const handleSelectAll = () => {
+//     const allPermissions = permissionsList.reduce((acc, perm) => {
+//       acc[perm.action] = true;
+//       return acc;
+//     }, {} as Record<string, boolean>);
+    
+//     if (activeTab === "role-permissions") {
+//       setRolePermissions(allPermissions);
+//     } else {
+//       setUserPermissions(allPermissions);
+//     }
 //   };
 
-//   const saveRole = async (roleId: string) => {
+//   const handleDeselectAll = () => {
+//     if (activeTab === "role-permissions") {
+//       setRolePermissions({});
+//     } else {
+//       setUserPermissions({});
+//     }
+//   };
+
+//   // ✅ Module-level Select All (Toggle)
+//   const handleModuleSelectAll = (perms: any[]) => {
+//     const currentPermissions = activeTab === "role-permissions" ? rolePermissions : userPermissions;
+//     const moduleAllChecked = perms.every(perm => currentPermissions[perm.action]);
+    
+//     const newPermissions = { ...currentPermissions };
+//     perms.forEach(perm => {
+//       newPermissions[perm.action] = !moduleAllChecked;
+//     });
+    
+//     if (activeTab === "role-permissions") {
+//       setRolePermissions(newPermissions);
+//     } else {
+//       setUserPermissions(newPermissions);
+//     }
+//   };
+
+//   const updateRolePermissions = async () => {
 //     try {
-//       alert('Role permissions updated successfully!');
-//       setEditingRole(null);
-//       loadRoles();
-//     } catch (error: any) {
-//       console.error('Error updating role:', error);
-//       alert(error.message || 'Failed to update role');
-//     }
-//   };
-
-//   const togglePermission = (module: string, permission: string, value: boolean) => {
-//     setEditedPermissions((prev) => ({
-//       ...prev,
-//       [module]: {
-//         ...prev[module],
-//         [permission]: value,
-//       },
-//     }));
-//   };
-
-//   const getModulePermissions = (permissions: any, moduleName: string) => {
-//     if (!permissions) return {};
-//     const modulePerms = permissions[moduleName];
-//     if (!modulePerms) {
-//       const module = MODULES.find(m => m.name === moduleName);
-//       if (module) {
-//         const defaultPerms: Record<string, boolean> = {};
-//         module.permissions.forEach(perm => {
-//           defaultPerms[perm.key] = true;
-//         });
-//         return defaultPerms;
+//       const rolePermissionRes = await rolesApi.updateRolePermissions(
+//         selectedRole,
+//         rolePermissions
+//       );
+//       if (rolePermissionRes.success) {
+//         loadRoles();
+//         toast.success("Role permissions updated successfully");
 //       }
-//       return {};
-//     }
-//     if (typeof modulePerms === 'object') return modulePerms;
-//     return {};
-//   };
-
-//   const getRoleColor = (roleName: string) => {
-//     switch (roleName) {
-//       case 'Admin':
-//         return 'bg-red-50 border-red-200';
-//       case 'HR Manager':
-//         return 'bg-blue-50 border-blue-200';
-//       case 'Attendance Manager':
-//         return 'bg-green-50 border-green-200';
-//       case 'Accountant':
-//         return 'bg-amber-50 border-amber-200';
-//       case 'Employee':
-//         return 'bg-slate-50 border-slate-200';
-//       default:
-//         return 'bg-slate-50 border-slate-200';
+//     } catch (error) {
+//       toast.error("Failed to update role permissions");
 //     }
 //   };
 
-//   const getRoleIcon = (roleName: string) => {
-//     switch (roleName) {
-//       case 'Admin':
-//         return '👑';
-//       case 'HR Manager':
-//         return '👔';
-//       case 'Attendance Manager':
-//         return '📋';
-//       case 'Accountant':
-//         return '💰';
-//       case 'Employee':
-//         return '👤';
-//       default:
-//         return '👥';
+//   const saveUserPermissions = async () => {
+//     try {
+//       const userPermissionsRes: any = await UsersApi.updateUserPermissions(
+//         selectedUser,
+//         userPermissions
+//       );
+//       if (userPermissionsRes.success) {
+//         loadUsers();
+//         toast.success("User permissions updated successfully");
+//       }
+//     } catch (e) {
+//       toast.error("Failed to update user permissions");
 //     }
 //   };
 
 //   if (loading) {
 //     return (
-//       <div className="flex items-center justify-center min-h-screen">
-//         <p className="text-slate-600">Loading roles...</p>
+//       <div className="flex items-center justify-center h-96">
+//         <div className="animate-spin h-12 w-12 border-b-2 border-blue-500 rounded-full"></div>
 //       </div>
 //     );
 //   }
 
+//   const currentPermissions = activeTab === "role-permissions" ? rolePermissions : userPermissions;
+
 //   return (
-//     <div className="space-y-6">
-//       <div className="flex items-center justify-between">
+//     <div className="space-y-4 p-4 bg-gray-50 min-h-screen">
+//       {/* Compact Header */}
+//       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
 //         <div>
-//           <h1 className="text-3xl font-bold text-slate-900">Roles & Permissions</h1>
-//           <p className="text-slate-600 mt-1">Manage HRMS module access and permissions</p>
+//           <h1 className="text-xl font-bold text-gray-800">Permissions Management</h1>
+//           <p className="text-gray-600 text-xs mt-0.5">Manage role-based and user-specific permissions</p>
 //         </div>
-//         <Shield className="h-8 w-8 text-blue-600" />
+        
+//         <div className="flex gap-2">
+//           <button
+//             onClick={handleSelectAll}
+//             className="px-3 py-1.5 text-xs bg-blue-50 text-blue-600 rounded-lg hover:bg-blue-100 transition-colors flex items-center gap-1.5"
+//           >
+//             <CheckSquare className="w-3.5 h-3.5" />
+//             Select All
+//           </button>
+//           <button
+//             onClick={handleDeselectAll}
+//             className="px-3 py-1.5 text-xs bg-gray-100 text-gray-600 rounded-lg hover:bg-gray-200 transition-colors flex items-center gap-1.5"
+//           >
+//             <Square className="w-3.5 h-3.5" />
+//             Deselect All
+//           </button>
+//         </div>
 //       </div>
 
-//       <div className="space-y-4">
-//         {roles.map((role) => {
-//           const isEditing = editingRole === role.id;
-//           const displayPerms = isEditing ? editedPermissions : role.permissions;
+//       {/* Compact Tabs */}
+//       <div className="bg-white rounded-lg shadow-sm border">
+//         <div className="flex border-b">
+//           <button
+//             onClick={() => setActiveTab("role-permissions")}
+//             className={`flex-1 py-2.5 text-center text-sm font-medium transition-colors ${activeTab === "role-permissions" 
+//               ? "bg-blue-50 text-blue-600 border-b-2 border-blue-600" 
+//               : "text-gray-600 hover:bg-gray-50"}`}
+//           >
+//             <Shield className="w-4 h-4 inline-block mr-1.5" />
+//             Role Permissions
+//           </button>
 
-//           return (
-//             <Card key={role.id} className={`border-2 ${getRoleColor(role.name)} transition-all`}>
-//               <div className="p-6">
-//                 <div className="flex items-center justify-between mb-6">
-//                   <div className="flex items-center gap-3">
-//                     <span className="text-3xl">{getRoleIcon(role.name)}</span>
-//                     <div>
-//                       <h2 className="text-xl font-bold text-slate-900">{role.name}</h2>
-//                       <p className="text-sm text-slate-600">
-//                         {isEditing ? 'Editing permissions...' : 'Click edit to modify permissions'}
-//                       </p>
+//           <button
+//             onClick={() => {
+//               setActiveTab("user-permissions");
+//               if (users.length > 0) {
+//                 setSelectedUser(users[0].id);
+//                 setUserPermissions(users[0]?.permissions || {});
+//               }
+//             }}
+//             className={`flex-1 py-2.5 text-center text-sm font-medium transition-colors ${activeTab === "user-permissions" 
+//               ? "bg-blue-50 text-blue-600 border-b-2 border-blue-600" 
+//               : "text-gray-600 hover:bg-gray-50"}`}
+//           >
+//             <Users className="w-4 h-4 inline-block mr-1.5" />
+//             User Permissions
+//           </button>
+//         </div>
+
+//         <div className="p-4">
+//           {/* Compact Selection */}
+//           <div className="mb-4">
+//             <label className="block text-xs font-medium text-gray-700 mb-1.5">
+//               {activeTab === "role-permissions" ? "Select Role" : "Select User"}
+//             </label>
+//             <select
+//               value={activeTab === "role-permissions" ? selectedRole : selectedUser}
+//               onChange={(e) => {
+//                 if (activeTab === "role-permissions") {
+//                   const newRole = e.target.value;
+//                   setSelectedRole(newRole);
+//                   const r = roles.find((x: any) => x.id === Number(newRole));
+//                   setRolePermissions(r?.permissions || {});
+//                 } else {
+//                   const uid = e.target.value;
+//                   setSelectedUser(uid);
+//                   const u = users.find((x) => x.id === uid);
+//                   setUserPermissions(u?.permissions || {});
+//                 }
+//               }}
+//               className="w-full max-w-sm border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white"
+//             >
+//               {activeTab === "role-permissions"
+//                 ? roles.map((r) => (
+//                     <option key={r.id} value={r.id}>
+//                       {r.name}
+//                     </option>
+//                   ))
+//                 : users.map((u) => (
+//                     <option key={u.id} value={u.id}>
+//                       {u.full_name} ({u.role || "No role"})
+//                     </option>
+//                   ))}
+//             </select>
+//           </div>
+
+//           {/* ✅ Updated: Module Cards with Select All Button */}
+//           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+//             {Object.entries(groupedPermissions).map(([module, perms]: [any, any]) => {
+//               const currentPermissions = activeTab === "role-permissions" ? rolePermissions : userPermissions;
+//               const moduleAllChecked = perms.every((perm: any) => currentPermissions[perm.action]);
+              
+//               return (
+//                 <div key={module} className="border border-gray-200 rounded-lg overflow-hidden bg-white hover:shadow-md transition-shadow">
+//                   {/* ✅ Module Header with SELECT ALL Button */}
+//                   <div className="bg-gradient-to-r from-gray-50 to-gray-100 px-3 py-2.5 border-b flex items-center justify-between">
+//                     <div className="flex-1">
+//                       <h3 className="font-semibold text-gray-800 text-sm">{module}</h3>
+//                       <p className="text-xs text-gray-500 mt-0.5">{perms.length} {perms.length === 1 ? 'Action' : 'Actions'}</p>
+//                     </div>
+                    
+//                     {/* ✅ SELECT ALL Button (like your image) */}
+//                     <button
+//                       onClick={() => handleModuleSelectAll(perms)}
+//                       className="px-2.5 py-1 text-xs font-medium text-blue-600 hover:text-blue-700 hover:bg-blue-50 rounded transition-colors uppercase tracking-wide"
+//                     >
+//                       {moduleAllChecked ? 'DESELECT ALL' : 'SELECT ALL'}
+//                     </button>
+//                   </div>
+                  
+//                   {/* Permissions List */}
+//                   <div className="p-3">
+//                     <div className="space-y-2">
+//                       {perms.map((perm: any) => (
+//                         <label
+//                           key={perm.action}
+//                           className="flex items-center justify-between cursor-pointer hover:bg-gray-50 p-1.5 rounded transition-colors group"
+//                         >
+//                           <span className="text-sm text-gray-700 flex-1">{perm.label}</span>
+//                           <input
+//                             type="checkbox"
+//                             checked={!!currentPermissions[perm.action]}
+//                             onChange={(e) => handlePermissionChange(perm.action, e.target.checked)}
+//                             className="h-4 w-4 text-blue-600 rounded border-gray-300 focus:ring-blue-500 focus:ring-2 ml-2 cursor-pointer"
+//                           />
+//                         </label>
+//                       ))}
 //                     </div>
 //                   </div>
-//                   <div className="flex gap-2">
-//                     {isEditing ? (
-//                       <>
-//                         <Button
-//                           size="sm"
-//                           onClick={() => saveRole(role.id)}
-//                           disabled={loading}
-//                         >
-//                           <Save className="h-4 w-4 mr-1" />
-//                           Save
-//                         </Button>
-//                         <Button size="sm" variant="secondary" onClick={cancelEdit}>
-//                           <XCircle className="h-4 w-4 mr-1" />
-//                           Cancel
-//                         </Button>
-//                       </>
-//                     ) : (
-//                       <Button
-//                         size="sm"
-//                         variant="secondary"
-//                         onClick={() => startEdit(role)}
-//                       >
-//                         <Edit2 className="h-4 w-4 mr-1" />
-//                         Edit
-//                       </Button>
-//                     )}
-//                   </div>
 //                 </div>
+//               );
+//             })}
+//           </div>
 
-//                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-//                   {MODULES.map((module) => {
-//                     const modulePerms = getModulePermissions(displayPerms, module.name);
-
-//                     return (
-//                       <div key={module.name} className="border border-slate-200 rounded-lg p-4">
-//                         <h3 className="font-semibold text-slate-900 mb-3 text-sm">{module.label}</h3>
-//                         <div className="space-y-2">
-//                           {module.permissions.map((perm) => {
-//                             const isEnabled = modulePerms[perm.key];
-
-//                             return (
-//                               <label
-//                                 key={perm.key}
-//                                 className={`flex items-center gap-3 p-2 rounded cursor-pointer transition-colors ${isEditing
-//                                     ? isEnabled
-//                                       ? 'bg-blue-50'
-//                                       : 'hover:bg-slate-50'
-//                                     : isEnabled
-//                                       ? 'bg-blue-50'
-//                                       : ''
-//                                   }`}
-//                               >
-//                                 {isEditing ? (
-//                                   <input
-//                                     type="checkbox"
-//                                     checked={isEnabled || false}
-//                                     onChange={(e) =>
-//                                       togglePermission(module.name, perm.key, e.target.checked)
-//                                     }
-//                                     className="w-4 h-4 rounded border-slate-300 text-blue-600 focus:ring-blue-500"
-//                                   />
-//                                 ) : isEnabled ? (
-//                                   <Check className="h-4 w-4 text-green-600 flex-shrink-0" />
-//                                 ) : (
-//                                   <X className="h-4 w-4 text-slate-400 flex-shrink-0" />
-//                                 )}
-//                                 <span
-//                                   className={`text-sm ${isEnabled ? 'text-slate-900 font-medium' : 'text-slate-500'
-//                                     }`}
-//                                 >
-//                                   {perm.label}
-//                                 </span>
-//                               </label>
-//                             );
-//                           })}
-//                         </div>
-//                       </div>
-//                     );
-//                   })}
-//                 </div>
-//               </div>
-//             </Card>
-//           );
-//         })}
-//       </div>
-
-//       <Card className="bg-blue-50 border-blue-200 p-6">
-//         <div className="flex gap-3">
-//           <Shield className="h-5 w-5 text-blue-600 flex-shrink-0 mt-0.5" />
-//           <div>
-//             <h3 className="font-semibold text-blue-900">Permission Management</h3>
-//             <p className="text-sm text-blue-800 mt-1">
-//               Role permissions control module access for all users assigned to that role. Use the Edit button to modify permissions for each role. Changes apply immediately to all users with that role.
-//             </p>
+//           {/* Compact Save Button */}
+//           <div className="mt-4 pt-4 border-t flex items-center gap-3">
+//             <button
+//               onClick={activeTab === "role-permissions" ? updateRolePermissions : saveUserPermissions}
+//               className="px-6 py-2 bg-gradient-to-r from-blue-600 to-blue-700 text-white text-sm rounded-lg flex items-center gap-2 hover:from-blue-700 hover:to-blue-800 transition-all shadow-sm"
+//             >
+//               <Save className="w-4 h-4" />
+//               Save Permissions
+//             </button>
+            
+//             <div className="flex items-center gap-2 text-xs text-gray-600">
+//               <CheckCircle className="w-4 h-4 text-blue-600" />
+//               Changes take effect immediately
+//             </div>
 //           </div>
 //         </div>
-//       </Card>
+//       </div>
 //     </div>
 //   );
 // }
+
+import { useState, useEffect } from "react";
+import { Shield, Users, Search } from "lucide-react";
+import { toast } from "sonner";
+import rolesApi from "../lib/rolesApi";
+import { UsersApi } from "../lib/Api";
+
+type Role = {
+  id: string;
+  name: string;
+  description?: string;
+  permissions?: Record<string, boolean>;
+};
+
+type User = {
+  id: string;
+  full_name: string;
+  email: string;
+  role?: string;
+  permissions?: Record<string, boolean>;
+};
+
+export default function Permissions() {
+  const [activeTab, setActiveTab] = useState<"role-permissions" | "user-permissions">("role-permissions");
+  const [roles, setRoles] = useState<Role[]>([]);
+  const [users, setUsers] = useState<User[]>([]);
+  const [selectedRole, setSelectedRole] = useState<string>("");
+  const [selectedUser, setSelectedUser] = useState<string>("");
+  const [rolePermissions, setRolePermissions] = useState<Record<string, boolean>>({});
+  const [userPermissions, setUserPermissions] = useState<Record<string, boolean>>({});
+  const [loading, setLoading] = useState(true);
+  const [searchQuery, setSearchQuery] = useState("");
+
+  // COMPLETE PERMISSIONS LIST
+  const permissionsList = [
+    // Settings
+    { action: "full_access", label: "Full Access", module: "Settings" },
+    { action: "view_settings", label: "View Settings", module: "Settings" },
+    { action: "edit_settings", label: "Edit Settings", module: "Settings" },
+    
+    // Dashboard
+    { action: "view_dashboard", label: "View Dashboard", module: "Dashboard" },
+    
+    // Vendors
+    { action: "view_vendors", label: "View Vendors", module: "Vendors" },
+    { action: "create_vendors", label: "Create Vendors", module: "Vendors" },
+    { action: "edit_vendors", label: "Edit Vendors", module: "Vendors" },
+    { action: "delete_vendors", label: "Delete Vendors", module: "Vendors" },
+    
+    // Purchase Orders
+    { action: "view_pos", label: "View Purchase Orders", module: "Purchase Orders" },
+    { action: "create_pos", label: "Create Purchase Orders", module: "Purchase Orders" },
+    { action: "edit_pos", label: "Edit Purchase Orders", module: "Purchase Orders" },
+    { action: "delete_pos", label: "Delete Purchase Orders", module: "Purchase Orders" },
+    { action: "approve_pos", label: "Approve Purchase Orders", module: "Purchase Orders" },
+    { action: "reject_pos", label: "Reject Purchase Orders", module: "Purchase Orders" },
+    { action: "authorize_pos", label: "Authorize Purchase Orders", module: "Purchase Orders" },
+    { action: "reject_authorize_pos", label: "Reject Authorization", module: "Purchase Orders" },
+    { action: "download_pdf_pos", label: "Download PO PDF", module: "Purchase Orders" },
+    { action: "view_pdf_pos", label: "View PO PDF", module: "Purchase Orders" },
+    { action: "make_payment_pos", label: "Make Payment", module: "Purchase Orders" },
+    
+    // Service Orders
+    { action: "view_service_orders", label: "View Service Orders", module: "Service Orders" },
+    { action: "create_service_orders", label: "Create Service Orders", module: "Service Orders" },
+    { action: "edit_service_orders", label: "Edit Service Orders", module: "Service Orders" },
+    { action: "delete_service_orders", label: "Delete Service Orders", module: "Service Orders" },
+    
+    // Store Management
+    { action: "view_inventory", label: "View Inventory", module: "Store Management" },
+    { action: "create_inventory", label: "Create Inventory", module: "Store Management" },
+    { action: "edit_inventory", label: "Edit Inventory", module: "Store Management" },
+    { action: "delete_inventory", label: "Delete Inventory", module: "Store Management" },
+    { action: "make_reminders", label: "Make Reminders", module: "Store Management" },
+    { action: "view_challan", label: "View Challan", module: "Store Management" },
+    { action: "material_in", label: "Material In", module: "Store Management" },
+    { action: "material_out", label: "Material Out", module: "Store Management" },
+    { action: "material_issue", label: "Material Issue", module: "Store Management" },
+    
+    // Material Tracking
+    { action: "view_materials", label: "View Materials", module: "Material Tracking" },
+    { action: "receive_materials", label: "Receive Materials", module: "Material Tracking" },
+    
+    // Material Requests
+    { action: "view_material_requests", label: "View Material Requests", module: "Material Requests" },
+    { action: "update_material_requests", label: "Update Material Requests", module: "Material Requests" },
+    { action: "delete_material_requests", label: "Delete Material Requests", module: "Material Requests" },
+
+    // Payments
+    { action: "view_payments", label: "View Payments", module: "Payments" },
+    { action: "make_payments", label: "Make Payments", module: "Payments" },
+    { action: "verify_payments", label: "Verify Payments", module: "Payments" },
+
+    // Task Management
+    { action: "view_tasks", label: "View Tasks", module: "Task Management" },
+    { action: "create_task", label: "Create Task", module: "Task Management" },
+    { action: "update_task", label: "Update Task", module: "Task Management" },
+    { action: "delete_task", label: "Delete Task", module: "Task Management" },
+    { action: "assign_task", label: "Assign Task", module: "Task Management" },
+    
+    // Projects
+    { action: "view_projects", label: "View Projects", module: "Projects" },
+    { action: "create_project", label: "Create Project", module: "Projects" },
+    { action: "update_project", label: "Update Project", module: "Projects" },
+    { action: "delete_project", label: "Delete Project", module: "Projects" },
+    
+    // HRMS
+    { action: "view_hrms", label: "View HRMS", module: "HRMS" },
+    { action: "create_hrms", label: "Create HRMS", module: "HRMS" },
+    { action: "update_hrms", label: "Update HRMS", module: "HRMS" },
+    { action: "delete_hrms", label: "Delete HRMS", module: "HRMS" },
+    
+    // Notifications
+    { action: "view_notifications", label: "View Notifications", module: "Notifications" },
+    { action: "create_notifications", label: "Create Notifications", module: "Notifications" },
+    { action: "update_notifications", label: "Update Notifications", module: "Notifications" },
+    { action: "delete_notifications", label: "Delete Notifications", module: "Notifications" },
+    
+    // Administration
+    { action: "manage_users", label: "Manage Users", module: "Administration" },
+    { action: "manage_roles", label: "Manage Roles", module: "Administration" },
+    { action: "manage_permissions", label: "Manage Permissions", module: "Administration" },
+    { action: "view_users_list", label: "View Users List", module: "Administration" },
+    { action: "create_new_users", label: "Create New Users", module: "Administration" },
+    { action: "edit_users", label: "Edit Users", module: "Administration" },
+    { action: "delete_users", label: "Delete Users", module: "Administration" },
+    
+    // Reports
+    { action: "view_reports", label: "View Reports", module: "Reports" },
+    { action: "export_reports", label: "Export Reports", module: "Reports" },
+  ];
+
+  const loadUsers = async () => {
+    try {
+      const usersRes: any = await UsersApi.list();
+      setSelectedUser(Array.isArray(usersRes) ? usersRes[0]?.id : "");
+      setUserPermissions(Array.isArray(usersRes) ? usersRes[0]?.permissions || {} : {});
+      setUsers(Array.isArray(usersRes) ? usersRes : []);
+    } catch (error) {
+      toast.error("Failed to load users");
+    }
+  };
+
+  const loadRoles = async () => {
+    try {
+      const rolesRes: any = await rolesApi.getAllRoles();
+      setSelectedRole(Array.isArray(rolesRes) ? rolesRes[0]?.id : "");
+      setRolePermissions(Array.isArray(rolesRes) ? rolesRes[0]?.permissions || {} : {});
+      setRoles(Array.isArray(rolesRes) ? rolesRes : []);
+    } catch (error) {
+      toast.error("Failed to load roles");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    loadRoles();
+    loadUsers();
+  }, []);
+
+  const groupedPermissions = permissionsList.reduce((acc: any, p) => {
+    if (!acc[p.module]) acc[p.module] = [];
+    acc[p.module].push(p);
+    return acc;
+  }, {});
+
+  const handlePermissionChange = (action: string, value: boolean) => {
+    if (activeTab === "role-permissions") {
+      setRolePermissions((prev) => ({ ...prev, [action]: value }));
+    } else {
+      setUserPermissions((prev) => ({ ...prev, [action]: value }));
+    }
+  };
+
+  const handleModuleSelectAll = (perms: any[]) => {
+    const currentPermissions = activeTab === "role-permissions" ? rolePermissions : userPermissions;
+    const moduleAllChecked = perms.every(perm => currentPermissions[perm.action]);
+    
+    const newPermissions = { ...currentPermissions };
+    perms.forEach(perm => {
+      newPermissions[perm.action] = !moduleAllChecked;
+    });
+    
+    if (activeTab === "role-permissions") {
+      setRolePermissions(newPermissions);
+    } else {
+      setUserPermissions(newPermissions);
+    }
+  };
+
+  const updateRolePermissions = async () => {
+    try {
+      const rolePermissionRes = await rolesApi.updateRolePermissions(
+        selectedRole,
+        rolePermissions
+      );
+      if (rolePermissionRes.success) {
+        loadRoles();
+        toast.success("Role permissions updated successfully");
+      }
+    } catch (error) {
+      toast.error("Failed to update role permissions");
+    }
+  };
+
+  const saveUserPermissions = async () => {
+    try {
+      const userPermissionsRes: any = await UsersApi.updateUserPermissions(
+        selectedUser,
+        userPermissions
+      );
+      if (userPermissionsRes.success) {
+        loadUsers();
+        toast.success("User permissions updated successfully");
+      }
+    } catch (e) {
+      toast.error("Failed to update user permissions");
+    }
+  };
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center h-96">
+        <div className="animate-spin h-12 w-12 border-b-2 border-blue-500 rounded-full"></div>
+      </div>
+    );
+  }
+
+  const currentPermissions = activeTab === "role-permissions" ? rolePermissions : userPermissions;
+
+  return (
+    <div className="min-h-screen bg-gray-50 p-4 md:p-6 lg:p-8">
+      {/* Header */}
+      {/* <div className="mb-6">
+        <h1 className="text-2xl md:text-3xl font-bold text-gray-900">Access Control</h1>
+        <p className="text-sm text-gray-600 mt-1">Manage hierarchical roles and granular user-specific permissions.</p>
+      </div> */}
+
+      {/* Search Bar */}
+      {/* <div className="mb-6">
+        <div className="relative max-w-md">
+          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
+          <input
+            type="text"
+            placeholder="Search permissions..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="w-full pl-10 pr-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+          />
+        </div>
+      </div> */}
+
+      {/* Tabs */}
+      <div className="bg-white rounded-t-lg border-b">
+        <div className="flex">
+          <button
+            onClick={() => setActiveTab("role-permissions")}
+            className={`flex-1 md:flex-none px-6 py-4 text-sm font-medium transition-colors border-b-2 ${
+              activeTab === "role-permissions"
+                ? "text-blue-600 border-blue-600"
+                : "text-gray-600 border-transparent hover:text-gray-900"
+            }`}
+          >
+            <Shield className="w-4 h-4 inline-block mr-2" />
+            Role Permissions
+          </button>
+
+          <button
+            onClick={() => {
+              setActiveTab("user-permissions");
+              if (users.length > 0) {
+                setSelectedUser(users[0].id);
+                setUserPermissions(users[0]?.permissions || {});
+              }
+            }}
+            className={`flex-1 md:flex-none px-6 py-4 text-sm font-medium transition-colors border-b-2 ${
+              activeTab === "user-permissions"
+                ? "text-blue-600 border-blue-600"
+                : "text-gray-600 border-transparent hover:text-gray-900"
+            }`}
+          >
+            <Users className="w-4 h-4 inline-block mr-2" />
+            Direct User Overrides
+          </button>
+        </div>
+      </div>
+
+      {/* Content */}
+      <div className="bg-white rounded-b-lg shadow-sm p-6">
+        {/* Role/User Selection */}
+        <div className="mb-8">
+          <label className="block text-xs font-semibold text-gray-700 mb-2 uppercase tracking-wider">
+            TARGET ROLE
+          </label>
+          <select
+            value={activeTab === "role-permissions" ? selectedRole : selectedUser}
+            onChange={(e) => {
+              if (activeTab === "role-permissions") {
+                const newRole = e.target.value;
+                setSelectedRole(newRole);
+                const r = roles.find((x: any) => x.id === Number(newRole));
+                setRolePermissions(r?.permissions || {});
+              } else {
+                const uid = e.target.value;
+                setSelectedUser(uid);
+                const u = users.find((x) => x.id === uid);
+                setUserPermissions(u?.permissions || {});
+              }
+            }}
+            className="w-full max-w-md border-2 border-blue-500 rounded-lg px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white"
+          >
+            {activeTab === "role-permissions"
+              ? roles.map((r) => (
+                  <option key={r.id} value={r.id}>
+                    {r.name}
+                  </option>
+                ))
+              : users.map((u) => (
+                  <option key={u.id} value={u.id}>
+                    {u.full_name}
+                  </option>
+                ))}
+          </select>
+        </div>
+
+        {/* ✅ Permissions Grid - VERTICAL CARDS LIKE IMAGE */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {Object.entries(groupedPermissions).map(([module, perms]: [any, any]) => {
+            const moduleAllChecked = perms.every((perm: any) => currentPermissions[perm.action]);
+            const actionsCount = perms.length;
+            
+            return (
+              <div
+                key={module}
+                className="border border-gray-200 rounded-xl overflow-hidden bg-white hover:shadow-lg transition-all"
+              >
+                {/* ✅ Module Header - Horizontal layout with SELECT ALL */}
+                <div className="bg-white px-4 py-3 border-b border-gray-200 flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <h3 className="font-semibold text-gray-900 text-sm">{module}</h3>
+                    <span className="text-xs text-gray-500 bg-gray-100 px-2 py-0.5 rounded-full">
+                      {actionsCount} {actionsCount === 1 ? 'Action' : 'Actions'}
+                    </span>
+                  </div>
+                  
+                  {/* ✅ SELECT ALL with Checkbox (like image) */}
+                  <label className="flex items-center gap-2 cursor-pointer">
+                    <span className="text-xs font-semibold text-blue-600 uppercase">
+                      SELECT ALL
+                    </span>
+                    <input
+                      type="checkbox"
+                      checked={moduleAllChecked}
+                      onChange={() => handleModuleSelectAll(perms)}
+                      className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500 cursor-pointer"
+                    />
+                  </label>
+                </div>
+
+                {/* ✅ Permissions List - VERTICAL with checkboxes on RIGHT */}
+                <div className="p-4 bg-gray-50">
+                  <div className="space-y-0 divide-y divide-gray-100">
+                    {perms.map((perm: any) => {
+                      const isChecked = !!currentPermissions[perm.action];
+                      return (
+                        <label
+                          key={perm.action}
+                          className="flex items-center justify-between py-3 cursor-pointer hover:bg-white px-2 rounded transition-colors group"
+                        >
+                          <span className="text-sm text-gray-700">{perm.label}</span>
+                          
+                          {/* ✅ Checkbox on RIGHT (custom styled like image) */}
+                          <div className="relative">
+                            <input
+                              type="checkbox"
+                              checked={isChecked}
+                              onChange={(e) => handlePermissionChange(perm.action, e.target.checked)}
+                              className="sr-only peer"
+                            />
+                            <div className={`w-5 h-5 rounded border-2 flex items-center justify-center transition-all cursor-pointer ${
+                              isChecked 
+                                ? 'bg-blue-600 border-blue-600' 
+                                : 'border-gray-300 bg-white group-hover:border-blue-400'
+                            }`}>
+                              {isChecked && (
+                                <svg className="w-3.5 h-3.5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
+                                </svg>
+                              )}
+                            </div>
+                          </div>
+                        </label>
+                      );
+                    })}
+                  </div>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+
+        {/* Save Button */}
+        <div className="mt-8 pt-6 border-t border-gray-200">
+          <button
+            onClick={activeTab === "role-permissions" ? updateRolePermissions : saveUserPermissions}
+            className="px-8 py-3 bg-blue-600 text-white text-sm font-semibold rounded-lg hover:bg-blue-700 transition-colors shadow-sm"
+          >
+            Save Changes
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
