@@ -135,34 +135,16 @@ export default function Layout({
   const materialActionsRef = useRef<HTMLDivElement>(null);
 
   // ✅ Update favicon dynamically when it changes
-  // useEffect(() => {
-  //   if (faviconUrl) {
-  //     // Update existing favicon or create new one
-  //     let link = document.querySelector("link[rel~='icon']") as HTMLLinkElement;
-  //     if (!link) {
-  //       link = document.createElement('link');
-  //       link.rel = 'icon';
-  //       document.head.appendChild(link);
-  //     }
-  //     link.href = faviconUrl;
-  //   }
-  // }, [faviconUrl]);
-
-
-
   useEffect(() => {
     if (faviconUrl) {
-      let link = document.querySelector("link[rel*='icon']") as HTMLLinkElement;
-
+      // Update existing favicon or create new one
+      let link = document.querySelector("link[rel~='icon']") as HTMLLinkElement;
       if (!link) {
-        link = document.createElement("link");
-        link.rel = "icon";
-        link.type = "image/png"; // ✅ FIX 1
+        link = document.createElement('link');
+        link.rel = 'icon';
         document.head.appendChild(link);
       }
-
-      // ✅ FIX 2 (SERVER CACHE ISSUE)
-      link.href = `${faviconUrl}?v=${Date.now()}`;
+      link.href = faviconUrl;
     }
   }, [faviconUrl]);
 

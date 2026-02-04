@@ -1,477 +1,3 @@
-// import { useState, useEffect } from 'react';
-// import { Wallet, Plus, Search, Download, IndianRupee, TrendingUp } from 'lucide-react';
-// import Card from '../components/ui/Card';
-// import Button from '../components/ui/Button';
-// import Input from '../components/ui/Input';
-// import Badge from '../components/ui/Badge';
-// import Modal from '../components/ui/Modal';
-// import Select from '../components/ui/Select';
-// import { formatters } from '../utils/formatters';
-
-// interface Employee {
-//     id: string;
-//     employee_code: string;
-//     first_name: string;
-//     last_name: string;
-// }
-
-// interface EmployeeSalary {
-//     employee_id: string;
-//     monthly_gross: number;
-// }
-
-// interface Payslip {
-//     id: string;
-//     employee_id: string;
-//     period_month: string;
-//     period_year: number;
-//     gross_earnings: number;
-//     total_deductions: number;
-//     net_salary: number;
-//     payment_status: string;
-// }
-
-// // Mock data
-// const mockEmployees: Employee[] = [
-//     { id: '1', employee_code: 'EMP001', first_name: 'John', last_name: 'Doe' },
-//     { id: '2', employee_code: 'EMP002', first_name: 'Jane', last_name: 'Smith' },
-//     { id: '3', employee_code: 'EMP003', first_name: 'Robert', last_name: 'Johnson' },
-//     { id: '4', employee_code: 'EMP004', first_name: 'Sarah', last_name: 'Williams' },
-//     { id: '5', employee_code: 'EMP005', first_name: 'Michael', last_name: 'Brown' },
-// ];
-
-// const mockSalaries: Record<string, EmployeeSalary> = {
-//     '1': { employee_id: '1', monthly_gross: 75000 },
-//     '2': { employee_id: '2', monthly_gross: 85000 },
-//     '3': { employee_id: '3', monthly_gross: 65000 },
-//     '4': { employee_id: '4', monthly_gross: 95000 },
-//     '5': { employee_id: '5', monthly_gross: 55000 },
-// };
-
-// const mockPayslips: Payslip[] = [
-//     {
-//         id: '1',
-//         employee_id: '1',
-//         period_month: '01',
-//         period_year: 2024,
-//         gross_earnings: 75000,
-//         total_deductions: 15000,
-//         net_salary: 60000,
-//         payment_status: 'paid'
-//     },
-//     {
-//         id: '2',
-//         employee_id: '2',
-//         period_month: '01',
-//         period_year: 2024,
-//         gross_earnings: 85000,
-//         total_deductions: 17000,
-//         net_salary: 68000,
-//         payment_status: 'paid'
-//     },
-// ];
-
-// export default function Payroll() {
-//     const [searchTerm, setSearchTerm] = useState('');
-//     const [statusFilter, setStatusFilter] = useState<string>('');
-//     const [employees, setEmployees] = useState<Employee[]>(mockEmployees);
-//     const [salaries, setSalaries] = useState<Record<string, EmployeeSalary>>(mockSalaries);
-//     const [payslips, setPayslips] = useState<Payslip[]>(mockPayslips);
-//     const [loading, setLoading] = useState(false);
-//     const [showProcessModal, setShowProcessModal] = useState(false);
-//     const [selectedMonth, setSelectedMonth] = useState(() => {
-//         const now = new Date();
-//         return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
-//     });
-//     const [selectedEmployees, setSelectedEmployees] = useState<string[]>([]);
-//     const [processing, setProcessing] = useState(false);
-
-//     useEffect(() => {
-//         fetchData();
-//     }, [selectedMonth]);
-
-//     const fetchData = async () => {
-//         setLoading(true);
-//         try {
-//             // Mock data loading with timeout
-//             await new Promise(resolve => setTimeout(resolve, 500));
-
-//             // Filter payslips based on selected month
-//             const [year, month] = selectedMonth.split('-');
-//             const filteredPayslips = mockPayslips.filter(p =>
-//                 p.period_month === month && p.period_year === parseInt(year)
-//             );
-
-//             setEmployees(mockEmployees);
-//             setSalaries(mockSalaries);
-//             setPayslips(filteredPayslips);
-//         } catch (error) {
-//             console.error('Error fetching data:', error);
-//         } finally {
-//             setLoading(false);
-//         }
-//     };
-
-//     const handleProcessPayroll = async () => {
-//         if (selectedEmployees.length === 0) {
-//             alert('Please select at least one employee');
-//             return;
-//         }
-
-//         setProcessing(true);
-//         try {
-//             // Mock processing with timeout
-//             await new Promise(resolve => setTimeout(resolve, 2000));
-
-//             const [year, month] = selectedMonth.split('-');
-
-//             // Generate new payslips for selected employees
-//             const newPayslips: Payslip[] = selectedEmployees.map(employeeId => {
-//                 const salary = salaries[employeeId];
-//                 const gross = salary?.monthly_gross || 50000;
-//                 const deductions = gross * 0.2; // 20% deductions
-//                 const net = gross - deductions;
-
-//                 return {
-//                     id: `payslip_${employeeId}_${Date.now()}`,
-//                     employee_id: employeeId,
-//                     period_month: month,
-//                     period_year: parseInt(year),
-//                     gross_earnings: gross,
-//                     total_deductions: deductions,
-//                     net_salary: net,
-//                     payment_status: 'paid',
-//                 };
-//             });
-
-//             // Add new payslips to existing ones
-//             setPayslips(prev => [...prev, ...newPayslips]);
-
-//             alert(`Payroll processed successfully for ${selectedEmployees.length} employee(s)!`);
-//             setShowProcessModal(false);
-//             setSelectedEmployees([]);
-
-//             // Refresh data
-//             fetchData();
-//         } catch (error) {
-//             console.error('Error processing payroll:', error);
-//             alert('Failed to process payroll');
-//         } finally {
-//             setProcessing(false);
-//         }
-//     };
-
-//     const toggleEmployeeSelection = (employeeId: string) => {
-//         setSelectedEmployees(prev =>
-//             prev.includes(employeeId)
-//                 ? prev.filter(id => id !== employeeId)
-//                 : [...prev, employeeId]
-//         );
-//     };
-
-//     const selectAllEmployees = () => {
-//         const unprocessedEmployees = employees
-//             .filter(emp => !payslips.some(p => p.employee_id === emp.id))
-//             .map(emp => emp.id);
-//         setSelectedEmployees(unprocessedEmployees);
-//     };
-
-//     const payrollRecords = employees.map(emp => {
-//         const salary = salaries[emp.id];
-//         const payslip = payslips.find(p => p.employee_id === emp.id);
-
-//         return {
-//             id: emp.id,
-//             employee: `${emp.first_name} ${emp.last_name}`,
-//             code: emp.employee_code,
-//             salary: salary?.monthly_gross || 0,
-//             deductions: payslip?.total_deductions || 0,
-//             net: payslip?.net_salary || (salary?.monthly_gross || 0) * 0.8, // 20% deductions if no payslip
-//             status: payslip?.payment_status || 'pending',
-//             payslipId: payslip?.id,
-//         };
-//     });
-
-//     const filteredRecords = payrollRecords.filter(record => {
-//         const matchesSearch = record.employee.toLowerCase().includes(searchTerm.toLowerCase()) ||
-//             record.code.toLowerCase().includes(searchTerm.toLowerCase());
-//         const matchesStatus = !statusFilter || record.status === statusFilter;
-//         return matchesSearch && matchesStatus;
-//     });
-
-//     const totalSalary = payrollRecords.reduce((sum, record) => sum + record.salary, 0);
-//     const totalNet = payrollRecords.reduce((sum, record) => sum + record.net, 0);
-//     const totalDeductions = payrollRecords.reduce((sum, record) => sum + record.deductions, 0);
-//     const processedCount = payrollRecords.filter(r => r.status === 'paid').length;
-
-//     const monthOptions = [];
-//     for (let i = 0; i < 12; i++) {
-//         const date = new Date();
-//         date.setMonth(date.getMonth() - i);
-//         const value = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
-//         const label = date.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
-//         monthOptions.push({ value, label });
-//     }
-
-//     return (
-//         <div className="space-y-6">
-//             <div className="flex items-center justify-between">
-//                 <Button onClick={() => setShowProcessModal(true)}>
-//                     <Plus className="h-4 w-4 mr-2" />
-//                     Process Payroll
-//                 </Button>
-//             </div>
-
-//             <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-//                 <Card className="p-6">
-//                     <div className="flex items-center justify-between">
-//                         <div>
-//                             <p className="text-sm text-slate-600">Total Payroll</p>
-//                             <p className="text-3xl font-bold text-slate-900 mt-2">₹{(totalSalary / 1000).toFixed(0)}K</p>
-//                             <p className="text-xs text-slate-500 mt-1">This month</p>
-//                         </div>
-//                         <div className="w-12 h-12 bg-red-100 rounded-lg flex items-center justify-center">
-//                             <Wallet className="h-6 w-6 text-red-600" />
-//                         </div>
-//                     </div>
-//                 </Card>
-
-//                 <Card className="p-6">
-//                     <div className="flex items-center justify-between">
-//                         <div>
-//                             <p className="text-sm text-slate-600">Net Payable</p>
-//                             <p className="text-3xl font-bold text-green-600 mt-2">₹{(totalNet / 1000).toFixed(0)}K</p>
-//                             <p className="text-xs text-slate-500 mt-1">After deductions</p>
-//                         </div>
-//                         <div className="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center">
-//                             <IndianRupee className="h-6 w-6 text-green-600" />
-//                         </div>
-//                     </div>
-//                 </Card>
-
-//                 <Card className="p-6">
-//                     <div className="flex items-center justify-between">
-//                         <div>
-//                             <p className="text-sm text-slate-600">Deductions</p>
-//                             <p className="text-3xl font-bold text-red-600 mt-2">₹{(totalDeductions / 1000).toFixed(0)}K</p>
-//                             <p className="text-xs text-slate-500 mt-1">Tax + Other</p>
-//                         </div>
-//                         <div className="w-12 h-12 bg-red-100 rounded-lg flex items-center justify-center">
-//                             <TrendingUp className="h-6 w-6 text-red-600" />
-//                         </div>
-//                     </div>
-//                 </Card>
-
-//                 <Card className="p-6">
-//                     <div className="flex items-center justify-between">
-//                         <div>
-//                             <p className="text-sm text-slate-600">Processed</p>
-//                             <p className="text-3xl font-bold text-purple-600 mt-2">{processedCount}</p>
-//                             <p className="text-xs text-slate-500 mt-1">of {employees.length} employees</p>
-//                         </div>
-//                         <div className="w-12 h-12 bg-purple-100 rounded-lg flex items-center justify-center">
-//                             <Wallet className="h-6 w-6 text-purple-600" />
-//                         </div>
-//                     </div>
-//                 </Card>
-//             </div>
-
-//             <Card>
-//                 <div className="p-6 border-b border-slate-200">
-//                     <div className="flex items-center justify-between mb-4">
-//                         <h2 className="text-xl font-semibold text-slate-900">Payroll Records</h2>
-//                         <Select
-//                             value={selectedMonth}
-//                             onChange={(e) => setSelectedMonth(e.target.value)}
-//                             options={monthOptions}
-//                             className="w-64"
-//                         />
-//                     </div>
-//                     <div className="flex items-center justify-between gap-4">
-//                         <div className="flex-1 max-w-md">
-//                             <div className="relative">
-//                                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-slate-400" />
-//                                 <Input
-//                                     type="text"
-//                                     placeholder="Search employees..."
-//                                     value={searchTerm}
-//                                     onChange={(e) => setSearchTerm(e.target.value)}
-//                                     className="pl-10"
-//                                 />
-//                             </div>
-//                         </div>
-//                         <div className="flex gap-2">
-//                             <select
-//                                 value={statusFilter}
-//                                 onChange={(e) => setStatusFilter(e.target.value)}
-//                                 className="px-4 py-2 border border-slate-300 rounded-lg text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
-//                             >
-//                                 <option value="">All Status</option>
-//                                 <option value="pending">Pending</option>
-//                                 <option value="paid">Paid</option>
-//                                 <option value="failed">Failed</option>
-//                             </select>
-//                             <Button variant="secondary" onClick={() => alert('Export functionality would download CSV in real app')}>
-//                                 <Download className="h-4 w-4 mr-2" />
-//                                 Export
-//                             </Button>
-//                         </div>
-//                     </div>
-//                 </div>
-
-//                 <div className="overflow-x-auto">
-//                     {loading ? (
-//                         <div className="flex items-center justify-center py-12">
-//                             <div className="text-slate-500">Loading...</div>
-//                         </div>
-//                     ) : (
-//                         <table className="w-full">
-//                             <thead className="bg-slate-50 border-b border-slate-200">
-//                                 <tr>
-//                                     <th className="text-left px-6 py-4 text-sm font-semibold text-slate-900">Employee</th>
-//                                     <th className="text-right px-6 py-4 text-sm font-semibold text-slate-900">Gross Salary</th>
-//                                     <th className="text-right px-6 py-4 text-sm font-semibold text-slate-900">Deductions</th>
-//                                     <th className="text-right px-6 py-4 text-sm font-semibold text-slate-900">Net Salary</th>
-//                                     <th className="text-left px-6 py-4 text-sm font-semibold text-slate-900">Status</th>
-//                                     <th className="text-right px-6 py-4 text-sm font-semibold text-slate-900">Actions</th>
-//                                 </tr>
-//                             </thead>
-//                             <tbody className="divide-y divide-slate-200">
-//                                 {filteredRecords.map((record) => (
-//                                     <tr key={record.id} className="hover:bg-slate-50 transition-colors">
-//                                         <td className="px-6 py-4">
-//                                             <div>
-//                                                 <p className="font-medium text-slate-900">{record.employee}</p>
-//                                                 <p className="text-sm text-slate-600">{record.code}</p>
-//                                             </div>
-//                                         </td>
-//                                         <td className="px-6 py-4 text-right">
-//                                             <span className="text-sm text-slate-900">{formatters.currency(record.salary)}</span>
-//                                         </td>
-//                                         <td className="px-6 py-4 text-right">
-//                                             <span className="text-sm text-red-600">{formatters.currency(record.deductions)}</span>
-//                                         </td>
-//                                         <td className="px-6 py-4 text-right">
-//                                             <span className="text-sm font-semibold text-green-600">{formatters.currency(record.net)}</span>
-//                                         </td>
-//                                         <td className="px-6 py-4">
-//                                             <Badge variant={record.status === 'paid' ? 'success' : record.status === 'pending' ? 'warning' : 'default'}>
-//                                                 {record.status}
-//                                             </Badge>
-//                                         </td>
-//                                         <td className="px-6 py-4">
-//                                             <div className="flex items-center justify-end gap-2">
-//                                                 {record.payslipId && (
-//                                                     <Button variant="secondary" size="sm" onClick={() => alert('Viewing payslip in real app would open PDF')}>
-//                                                         View Slip
-//                                                     </Button>
-//                                                 )}
-//                                                 {record.status === 'pending' && (
-//                                                     <Button size="sm" onClick={() => {
-//                                                         setSelectedEmployees([record.id]);
-//                                                         setShowProcessModal(true);
-//                                                     }}>
-//                                                         Process
-//                                                     </Button>
-//                                                 )}
-//                                             </div>
-//                                         </td>
-//                                     </tr>
-//                                 ))}
-//                             </tbody>
-//                         </table>
-//                     )}
-//                 </div>
-//             </Card>
-
-//             <Modal
-//                 isOpen={showProcessModal}
-//                 onClose={() => setShowProcessModal(false)}
-//                 title="Process Payroll"
-//                 size="lg"
-//                 footer={
-//                     <>
-//                         <Button variant="secondary" onClick={() => setShowProcessModal(false)} disabled={processing}>
-//                             Cancel
-//                         </Button>
-//                         <Button onClick={handleProcessPayroll} loading={processing} disabled={selectedEmployees.length === 0}>
-//                             Process {selectedEmployees.length} Employee{selectedEmployees.length !== 1 ? 's' : ''}
-//                         </Button>
-//                     </>
-//                 }
-//             >
-//                 <div className="space-y-4">
-//                     <div>
-//                         <label className="block text-sm font-medium text-slate-700 mb-2">
-//                             Select Month
-//                         </label>
-//                         <Select
-//                             value={selectedMonth}
-//                             onChange={(e) => setSelectedMonth(e.target.value)}
-//                             options={monthOptions}
-//                         />
-//                     </div>
-
-//                     <div>
-//                         <div className="flex items-center justify-between mb-2">
-//                             <label className="block text-sm font-medium text-slate-700">
-//                                 Select Employees
-//                             </label>
-//                             <Button variant="ghost" size="sm" onClick={selectAllEmployees} disabled={processing}>
-//                                 Select All Unprocessed
-//                             </Button>
-//                         </div>
-//                         <div className="border border-slate-300 rounded-lg max-h-96 overflow-y-auto">
-//                             {employees.map(emp => {
-//                                 const payslip = payslips.find(p => p.employee_id === emp.id);
-//                                 const isPaid = payslip?.payment_status === 'paid';
-//                                 const isSelected = selectedEmployees.includes(emp.id);
-//                                 const salary = salaries[emp.id]?.monthly_gross || 0;
-
-//                                 return (
-//                                     <label
-//                                         key={emp.id}
-//                                         className={`flex items-center gap-3 px-4 py-3 border-b border-slate-200 last:border-b-0 cursor-pointer hover:bg-slate-50 transition-colors ${isPaid ? 'opacity-50 cursor-not-allowed' : ''
-//                                             }`}
-//                                     >
-//                                         <input
-//                                             type="checkbox"
-//                                             checked={isSelected}
-//                                             onChange={() => toggleEmployeeSelection(emp.id)}
-//                                             disabled={isPaid || processing}
-//                                             className="w-4 h-4 text-red-600 border-slate-300 rounded focus:ring-red-500"
-//                                         />
-//                                         <div className="flex-1">
-//                                             <p className="font-medium text-slate-900">{emp.first_name} {emp.last_name}</p>
-//                                             <div className="flex items-center gap-4 text-sm text-slate-600">
-//                                                 <span>{emp.employee_code}</span>
-//                                                 <span className="text-slate-900">Salary: {formatters.currency(salary)}</span>
-//                                             </div>
-//                                         </div>
-//                                         {isPaid && (
-//                                             <Badge variant="success">Paid</Badge>
-//                                         )}
-//                                     </label>
-//                                 );
-//                             })}
-//                         </div>
-//                     </div>
-
-//                     {selectedEmployees.length > 0 && (
-//                         <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-//                             <p className="text-sm text-blue-900">
-//                                 <strong>{selectedEmployees.length}</strong> employee{selectedEmployees.length !== 1 ? 's' : ''} selected for payroll processing.
-//                                 <br />
-//                                 Payroll will be calculated based on attendance, leaves, and salary structure.
-//                             </p>
-//                         </div>
-//                     )}
-//                 </div>
-//             </Modal>
-//         </div>
-//     );
-// }
-
 import { useState, useEffect } from 'react';
 import { Wallet, Plus, Search, Filter, Download, IndianRupee, TrendingUp } from 'lucide-react';
 import Card from '../components/ui/Card';
@@ -481,13 +7,14 @@ import Badge from '../components/ui/Badge';
 import Modal from '../components/ui/Modal';
 import Select from '../components/ui/Select';
 import { formatters } from '../utils/formatters';
-// import { payrollAPI } from '../api/payroll.api';
+import { HrmsEmployeesApi, HrmsEmployee } from '../lib/employeeApi'; // ✅ Employee API import
 
-interface Employee {
+interface PayrollEmployee {
     id: string;
     employee_code: string;
     first_name: string;
     last_name: string;
+    employee_status: string;
 }
 
 interface EmployeeSalary {
@@ -509,7 +36,7 @@ interface Payslip {
 export default function Payroll() {
     const [searchTerm, setSearchTerm] = useState('');
     const [statusFilter, setStatusFilter] = useState<string>('');
-    const [employees, setEmployees] = useState<Employee[]>([]);
+    const [allEmployees, setAllEmployees] = useState<PayrollEmployee[]>([]);
     const [salaries, setSalaries] = useState<Record<string, EmployeeSalary>>({});
     const [payslips, setPayslips] = useState<Payslip[]>([]);
     const [loading, setLoading] = useState(true);
@@ -521,24 +48,87 @@ export default function Payroll() {
     const [selectedEmployees, setSelectedEmployees] = useState<string[]>([]);
     const [processing, setProcessing] = useState(false);
 
+    // ✅ Fetch all employees on component mount
     useEffect(() => {
-        fetchData();
+        fetchAllEmployees();
+    }, []);
+
+    // ✅ Fetch payroll data when month changes
+    useEffect(() => {
+        if (selectedMonth) {
+            fetchPayrollData();
+        }
     }, [selectedMonth]);
 
-    const fetchData = async () => {
+    // ✅ Function to fetch all employees
+    const fetchAllEmployees = async () => {
+        try {
+            console.log("Fetching all employees for dropdown...");
+            const employees = await HrmsEmployeesApi.getEmployees();
+
+            // Transform to PayrollEmployee format
+            const payrollEmployees: PayrollEmployee[] = employees.map(emp => ({
+                id: emp.id.toString(),
+                employee_code: emp.employee_code,
+                first_name: emp.first_name,
+                last_name: emp.last_name,
+                employee_status: emp.employee_status
+            }));
+
+            console.log("Fetched employees:", payrollEmployees.length);
+            setAllEmployees(payrollEmployees);
+        } catch (error) {
+            console.error("Error fetching employees:", error);
+            // Fallback to empty array
+            setAllEmployees([]);
+        }
+    };
+
+    // ✅ Function to fetch payroll data
+    const fetchPayrollData = async () => {
         setLoading(true);
         try {
-            const data = await payrollAPI.getPayrollData(selectedMonth);
-            setEmployees(data.employees || []);
-            setSalaries(data.salaries || {});
-            setPayslips(data.payslips || []);
+            // Here you would call your payroll API
+            // For now, we'll use the employees data
+            console.log("Fetching payroll data for month:", selectedMonth);
+
+            // Mock data - replace with actual API call
+            const mockSalaries: Record<string, EmployeeSalary> = {};
+            const mockPayslips: Payslip[] = [];
+
+            // Create mock data for each employee
+            allEmployees.forEach(emp => {
+                mockSalaries[emp.id] = {
+                    employee_id: emp.id,
+                    monthly_gross: Math.floor(Math.random() * 50000) + 30000
+                };
+
+                // Some employees have payslips
+                if (Math.random() > 0.5) {
+                    mockPayslips.push({
+                        id: `payslip-${emp.id}`,
+                        employee_id: emp.id,
+                        period_month: selectedMonth.split('-')[1],
+                        period_year: parseInt(selectedMonth.split('-')[0]),
+                        gross_earnings: Math.floor(Math.random() * 50000) + 30000,
+                        total_deductions: Math.floor(Math.random() * 10000),
+                        net_salary: Math.floor(Math.random() * 45000) + 25000,
+                        payment_status: Math.random() > 0.3 ? 'paid' : 'pending'
+                    });
+                }
+            });
+
+            setSalaries(mockSalaries);
+            setPayslips(mockPayslips);
+
         } catch (error) {
-            console.error('Error fetching data:', error);
+            console.error('Error fetching payroll data:', error);
         } finally {
             setLoading(false);
         }
     };
 
+    // ✅ Handle process payroll
     const handleProcessPayroll = async () => {
         if (selectedEmployees.length === 0) {
             alert('Please select at least one employee');
@@ -547,11 +137,19 @@ export default function Payroll() {
 
         setProcessing(true);
         try {
-            await payrollAPI.processPayroll(selectedMonth, selectedEmployees);
+            // Here you would call your payroll processing API
+            console.log('Processing payroll for:', {
+                month: selectedMonth,
+                employees: selectedEmployees
+            });
+
+            // Mock API call delay
+            await new Promise(resolve => setTimeout(resolve, 1500));
+
             alert('Payroll processed successfully!');
             setShowProcessModal(false);
             setSelectedEmployees([]);
-            fetchData();
+            fetchPayrollData(); // Refresh data
         } catch (error) {
             console.error('Error processing payroll:', error);
             alert('Failed to process payroll');
@@ -560,6 +158,7 @@ export default function Payroll() {
         }
     };
 
+    // ✅ Toggle employee selection
     const toggleEmployeeSelection = (employeeId: string) => {
         setSelectedEmployees(prev =>
             prev.includes(employeeId)
@@ -568,14 +167,19 @@ export default function Payroll() {
         );
     };
 
+    // ✅ Select all unprocessed employees
     const selectAllEmployees = () => {
-        const unprocessedEmployees = employees
-            .filter(emp => !payslips.some(p => p.employee_id === emp.id && p.payment_status === 'paid'))
+        const unprocessedEmployees = allEmployees
+            .filter(emp => {
+                const payslip = payslips.find(p => p.employee_id === emp.id);
+                return !payslip || payslip.payment_status !== 'paid';
+            })
             .map(emp => emp.id);
         setSelectedEmployees(unprocessedEmployees);
     };
 
-    const payrollRecords = employees.map(emp => {
+    // ✅ Prepare payroll records for table
+    const payrollRecords = allEmployees.map(emp => {
         const salary = salaries[emp.id];
         const payslip = payslips.find(p => p.employee_id === emp.id);
 
@@ -591,6 +195,7 @@ export default function Payroll() {
         };
     });
 
+    // ✅ Filter records for search
     const filteredRecords = payrollRecords.filter(record => {
         const matchesSearch = record.employee.toLowerCase().includes(searchTerm.toLowerCase()) ||
             record.code.toLowerCase().includes(searchTerm.toLowerCase());
@@ -598,11 +203,13 @@ export default function Payroll() {
         return matchesSearch && matchesStatus;
     });
 
+    // ✅ Calculate totals
     const totalSalary = payrollRecords.reduce((sum, record) => sum + record.salary, 0);
     const totalNet = payrollRecords.reduce((sum, record) => sum + record.net, 0);
     const totalDeductions = payrollRecords.reduce((sum, record) => sum + record.deductions, 0);
     const processedCount = payrollRecords.filter(r => r.status === 'paid').length;
 
+    // ✅ Month options for dropdown
     const monthOptions = [];
     for (let i = 0; i < 12; i++) {
         const date = new Date();
@@ -625,6 +232,7 @@ export default function Payroll() {
                 </Button>
             </div>
 
+            {/* Stats Cards */}
             <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
                 <Card className="p-6">
                     <div className="flex items-center justify-between">
@@ -670,7 +278,7 @@ export default function Payroll() {
                         <div>
                             <p className="text-sm text-slate-600">Processed</p>
                             <p className="text-3xl font-bold text-purple-600 mt-2">{processedCount}</p>
-                            <p className="text-xs text-slate-500 mt-1">of {employees.length} employees</p>
+                            <p className="text-xs text-slate-500 mt-1">of {allEmployees.length} employees</p>
                         </div>
                         <div className="w-12 h-12 bg-purple-100 rounded-lg flex items-center justify-center">
                             <Wallet className="h-6 w-6 text-purple-600" />
@@ -679,6 +287,7 @@ export default function Payroll() {
                 </Card>
             </div>
 
+            {/* Payroll Table */}
             <Card>
                 <div className="p-6 border-b border-slate-200">
                     <div className="flex items-center justify-between mb-4">
@@ -725,7 +334,7 @@ export default function Payroll() {
                 <div className="overflow-x-auto">
                     {loading ? (
                         <div className="flex items-center justify-center py-12">
-                            <div className="text-slate-500">Loading...</div>
+                            <div className="text-slate-500">Loading payroll data...</div>
                         </div>
                     ) : (
                         <table className="w-full">
@@ -787,6 +396,7 @@ export default function Payroll() {
                 </div>
             </Card>
 
+            {/* Process Payroll Modal */}
             <Modal
                 isOpen={showProcessModal}
                 onClose={() => setShowProcessModal(false)}
@@ -825,7 +435,7 @@ export default function Payroll() {
                             </Button>
                         </div>
                         <div className="border border-slate-300 rounded-lg max-h-96 overflow-y-auto">
-                            {employees.map(emp => {
+                            {allEmployees.map(emp => {
                                 const payslip = payslips.find(p => p.employee_id === emp.id);
                                 const isPaid = payslip?.payment_status === 'paid';
                                 const isSelected = selectedEmployees.includes(emp.id);
@@ -846,6 +456,7 @@ export default function Payroll() {
                                         <div className="flex-1">
                                             <p className="font-medium text-slate-900">{emp.first_name} {emp.last_name}</p>
                                             <p className="text-sm text-slate-600">{emp.employee_code}</p>
+                                            <p className="text-xs text-slate-500">Status: {emp.employee_status}</p>
                                         </div>
                                         {isPaid && (
                                             <Badge variant="success">Paid</Badge>
