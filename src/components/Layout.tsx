@@ -110,7 +110,7 @@ export default function Layout({
     loading: authLoading,
     systemSettings // ✅ Get system settings from context
   } = useAuth();
-
+  console.log(user)
   // ✅ Use logo/favicon from systemSettings, fallback to defaults
   const logoUrl = systemSettings?.logo || DefaultLogo;
   const faviconUrl = systemSettings?.favicon;
@@ -133,6 +133,8 @@ export default function Layout({
   const profileRef = useRef<HTMLDivElement>(null);
   const notifRef = useRef<HTMLDivElement>(null);
   const materialActionsRef = useRef<HTMLDivElement>(null);
+
+
 
   // ✅ Update favicon dynamically when it changes
   useEffect(() => {
@@ -416,7 +418,7 @@ export default function Layout({
             <div className="flex items-center justify-between gap-3 px-3 py-2 bg-[#3D3D3D] rounded-lg">
               <div className="flex items-center gap-3">
                 {avatarUrl ? (
-                  <img src={avatarUrl} alt="avatar" className="w-10 h-10 rounded-full object-cover border-2 border-[#C62828]" />
+                  <img src={`${import.meta.env.VITE_API_URL + user.profile_picture}`} alt="avatar" className="w-10 h-10 rounded-full object-cover border-2 border-[#C62828]" />
                 ) : (
                   <div className="w-10 h-10 bg-[#C62828] rounded-full flex items-center justify-center shadow-sm">
                     <span className="text-white font-semibold text-sm">{initials}</span>
@@ -717,7 +719,7 @@ export default function Layout({
                     className="flex items-center gap-2 p-1 rounded-lg hover:bg-gray-100 transition"
                   >
                     {avatarUrl ? (
-<img src={avatarUrl} alt="avatar" className="w-9 h-9 rounded-full object-cover border-2 border-[#C62828]" />                    ) : (
+                      <img src={`${import.meta.env.VITE_API_URL + user.profile_picture}`} alt="avatar" className="w-9 h-9 rounded-full object-cover border-2 border-[#C62828]" />) : (
                       <div className="w-9 h-9 bg-[#C62828] rounded-full flex items-center justify-center shadow-sm">
                         <span className="text-white font-semibold text-sm">{initials}</span>
                       </div>
@@ -734,7 +736,7 @@ export default function Layout({
                       <div className="p-4 bg-[#2D2D2D] border-b border-gray-700">
                         <div className="flex items-center gap-3">
                           {avatarUrl ? (
-                            <img src={avatarUrl} alt="avatar" className="w-10 h-10 rounded-full object-cover border-2 border-[#C62828] shadow" />
+                            <img src={`${import.meta.env.VITE_API_URL + user.profile_picture}`} alt="avatar" className="w-10 h-10 rounded-full object-cover border-2 border-[#C62828] shadow" />
                           ) : (
                             <div className="w-10 h-10 bg-[#C62828] rounded-full flex items-center justify-center shadow">
                               <span className="text-white font-semibold text-sm">{initials}</span>
