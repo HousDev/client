@@ -404,11 +404,34 @@
 //   );
 // }
 
-import { useState, useEffect } from 'react';
-import { Plus, Edit2, Trash2, CreditCard, X, Search, CheckSquare, Square, Loader2, XCircle } from 'lucide-react';
-import { toast } from 'sonner';
+import { useState, useEffect } from "react";
+import {
+  Plus,
+  Edit2,
+  Trash2,
+  CreditCard,
+  X,
+  Search,
+  CheckSquare,
+  Square,
+  Loader2,
+  XCircle,
+  ReceiptText,
+  Percent,
+  CalendarDays,
+} from "lucide-react";
+import { toast } from "sonner";
+import PaymentMastersApi from "../lib/paymentMasterApi";
 
 interface PaymentTermFormData {
+  trigger: string;
+  paymentPercent: string;
+  firstText: string;
+  materialPercent: string;
+  secondText: string;
+  gracePeriod: string;
+  thirdText: string;
+
   name: string;
   days: number;
   description: string;
@@ -420,24 +443,30 @@ type PaymentTerm = PaymentTermFormData & { id: string };
 
 export default function PaymentTermsMaster() {
   const [paymentTerms, setPaymentTerms] = useState<PaymentTerm[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [showModal, setShowModal] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
-  
-  // Search states for each column
-  const [searchName, setSearchName] = useState('');
-  const [searchDays, setSearchDays] = useState('');
-  const [searchDescription, setSearchDescription] = useState('');
-  const [searchAdvance, setSearchAdvance] = useState('');
-const [searchStatus, setSearchStatus] = useState('');
 
-  
+  // Search states for each column
+  const [searchStatus, setSearchStatus] = useState("");
+  const [searchTrigger, setSearchTrigger] = useState("");
+  const [searchTermContent, setSearchTermContent] = useState("");
+
+  const [enableGracePeriod, setEnableGracePeriod] = useState(false);
+
   // Bulk selection
   const [selectedTerms, setSelectedTerms] = useState<Set<string>>(new Set());
   const [selectAll, setSelectAll] = useState(false);
-  
+
   const [formData, setFormData] = useState<PaymentTermFormData>({
+    trigger: "",
+    paymentPercent: "",
+    firstText: "",
+    materialPercent: "",
+    secondText: "",
+    gracePeriod: "",
+    thirdText: "",
     name: "",
     days: 0,
     description: "",
@@ -445,70 +474,31 @@ const [searchStatus, setSearchStatus] = useState('');
     is_active: true,
   });
 
-  const KEY_TERMS = "mock_payment_terms_master_v1";
+  const loadPaymentTerms = async () => {
+    try {
+      const paymentTermsRes: any = await PaymentMastersApi.getPaymentMasters();
+      console.log("this is payment terms : ", paymentTermsRes);
 
-  const defaultTerms: PaymentTerm[] = [
-    {
-      id: "pt_30",
-      name: "30 Days Credit",
-      days: 30,
-      description: "Payment within 30 days from invoice date",
-      advance_percentage: 0,
-      is_active: true,
-    },
-    {
-      id: "pt_50_adv",
-      name: "50% Advance",
-      days: 0,
-      description: "50% advance on order, balance on delivery",
-      advance_percentage: 50,
-      is_active: true,
-    },
-    {
-      id: "pt_immediate",
-      name: "Immediate",
-      days: 0,
-      description: "Immediate payment on delivery",
-      advance_percentage: 0,
-      is_active: false,
-    },
-  ];
+      setPaymentTerms(paymentTermsRes.data);
+    } catch (error: any) {
+      console.log(error);
+      toast.error(error.response.data.message);
+    }
+  };
 
   useEffect(() => {
     loadPaymentTerms();
   }, []);
 
-  const loadPaymentTerms = () => {
-    setLoading(true);
-    setTimeout(() => {
-      try {
-        const raw = localStorage.getItem(KEY_TERMS);
-        let parsed: PaymentTerm[] = raw ? JSON.parse(raw) : [];
-        if (!raw || !Array.isArray(parsed) || parsed.length === 0) {
-          parsed = defaultTerms;
-          localStorage.setItem(KEY_TERMS, JSON.stringify(parsed));
-        }
-        parsed.sort((a, b) => (a.name || "").localeCompare(b.name || ""));
-        setPaymentTerms(parsed);
-       
-      } catch (err) {
-        console.error("Error loading payment terms from storage:", err);
-        setPaymentTerms([]);
-     
-      } finally {
-        setLoading(false);
-      }
-    }, 120);
-  };
-
-  const persistTerms = (terms: PaymentTerm[]) => {
-    localStorage.setItem(KEY_TERMS, JSON.stringify(terms));
-    terms.sort((a, b) => (a.name || "").localeCompare(b.name || ""));
-    setPaymentTerms(terms);
-  };
-
   const resetForm = () => {
     setFormData({
+      trigger: "",
+      paymentPercent: "",
+      firstText: "",
+      materialPercent: "",
+      secondText: "",
+      gracePeriod: "",
+      thirdText: "",
       name: "",
       days: 0,
       description: "",
@@ -518,50 +508,73 @@ const [searchStatus, setSearchStatus] = useState('');
     setEditingId(null);
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (!formData.name.trim()) {
-      toast.error('Please enter a name for the payment term.');
-      return;
-    }
-    if (formData.advance_percentage < 0 || formData.advance_percentage > 100) {
-      toast.error('Advance percentage must be between 0 and 100.');
+    if (
+      formData.trigger.length === 0 ||
+      formData.paymentPercent.length === 0 ||
+      formData.firstText.length === 0
+    ) {
+      toast.error("Fill required fields.");
       return;
     }
 
     try {
       if (editingId) {
-        const updated = paymentTerms.map((t) =>
-          t.id === editingId ? { ...t, ...formData, name: formData.name.trim() } : t
-        );
-        persistTerms(updated);
-        toast.success('Payment terms updated successfully!');
-      } else {
-        const id = `pt_${Date.now().toString(36)}`;
-        const newTerm: PaymentTerm = {
-          id,
-          name: formData.name.trim(),
-          days: Number(formData.days || 0),
-          description: formData.description || '',
-          advance_percentage: Number(formData.advance_percentage || 0),
-          is_active: formData.is_active ?? true,
+        const payload = {
+          event_trigger: formData.trigger,
+          percentPayment: formData.paymentPercent,
+          firstText: formData.firstText,
+          materialPercent: formData.materialPercent,
+          secondText: formData.secondText,
+          gracePeriod: formData.gracePeriod,
+          thirdText: formData.thirdText,
         };
-        persistTerms([...paymentTerms, newTerm]);
-        toast.success('Payment terms created successfully!');
+
+        const paymentMasterRes: any =
+          await PaymentMastersApi.updatePaymentMaster(editingId, payload);
+
+        if (paymentMasterRes.success) {
+          toast.success(paymentMasterRes.message);
+        }
+      } else {
+        const payload = {
+          event_trigger: formData.trigger,
+          percentPayment: formData.paymentPercent,
+          firstText: formData.firstText,
+          materialPercent: formData.materialPercent,
+          secondText: formData.secondText,
+          gracePeriod: formData.gracePeriod,
+          thirdText: formData.thirdText,
+        };
+
+        const paymentMasterRes: any =
+          await PaymentMastersApi.createPaymentMaster(payload);
+
+        if (paymentMasterRes.success) {
+          toast.success(paymentMasterRes.message);
+        }
       }
+      loadPaymentTerms();
 
       setShowModal(false);
       resetForm();
-    } catch (error) {
-      console.error('Error saving payment term:', error);
-      toast.error('Failed to save payment term.');
+    } catch (error: any) {
+      toast.error("Error : ", error.response.data.message);
     }
   };
 
-  const handleEdit = (term: PaymentTerm) => {
+  const handleEdit = (term: any) => {
     setEditingId(term.id);
     setFormData({
+      trigger: term.event_trigger,
+      paymentPercent: formatPercent(term.percentPayment),
+      firstText: term.firstText,
+      materialPercent: formatPercent(term.materialPercent),
+      secondText: term.secondText,
+      gracePeriod: term.gracePeriod,
+      thirdText: term.thirdText,
       name: term.name,
       days: term.days,
       description: term.description || "",
@@ -571,79 +584,51 @@ const [searchStatus, setSearchStatus] = useState('');
     setShowModal(true);
   };
 
-  const handleDelete = (id: string) => {
-    if (!window.confirm('Are you sure you want to delete this payment term?')) return;
-    
-    try {
-      const updated = paymentTerms.filter((t) => t.id !== id);
-      persistTerms(updated);
-      // Remove from selected items if it was selected
-      setSelectedTerms(prev => {
-        const newSet = new Set(prev);
-        newSet.delete(id);
-        return newSet;
-      });
-      toast.success('Payment terms deleted successfully!');
-    } catch (error) {
-      console.error('Error deleting payment term:', error);
-      toast.error('Failed to delete payment term.');
-    }
-  };
-
   // Bulk delete terms
-  const handleBulkDelete = () => {
-    if (selectedTerms.size === 0) {
-      toast.error('Please select at least one payment term to delete.');
-      return;
-    }
-
-    if (!window.confirm(`Are you sure you want to delete ${selectedTerms.size} payment term(s)?`)) return;
-
-    setSubmitting(true);
+  const handleBulkDelete = async () => {
     try {
-      const updated = paymentTerms.filter((t) => !selectedTerms.has(t.id));
-      persistTerms(updated);
-      setSelectedTerms(new Set());
-      setSelectAll(false);
-      toast.success(`Successfully deleted ${selectedTerms.size} payment term(s)!`);
-    } catch (error) {
-      console.error('Error in bulk delete:', error);
-      toast.error('Failed to delete payment terms.');
-    } finally {
-      setSubmitting(false);
+      const ids = Array.from(selectedTerms);
+      const paymentTermRes =
+        await PaymentMastersApi.bulkDeletePaymentMasters(ids);
+      if (paymentTermRes.success) {
+        loadPaymentTerms();
+        toast.success(paymentTermRes.message);
+      } else {
+        toast.error(paymentTermRes.message);
+      }
+    } catch (error: any) {
+      toast.error(error.response.data.message);
     }
   };
 
-  const toggleActive = (id: string, currentStatus?: boolean) => {
+  const toggleActive = async (id: string) => {
     try {
-      const updated = paymentTerms.map((t) => (t.id === id ? { ...t, is_active: !currentStatus } : t));
-      persistTerms(updated);
-      toast.success(`Payment term ${!currentStatus ? "activated" : "deactivated"}!`);
-    } catch (error) {
-      console.error('Error toggling status:', error);
-      toast.error('Failed to toggle status.');
+      const paymentTermsRes = await PaymentMastersApi.toggleActive(id);
+      if (paymentTermsRes.success) {
+        toast.success(paymentTermsRes.message);
+        loadPaymentTerms();
+      } else {
+        toast.success(paymentTermsRes.message);
+      }
+    } catch (error: any) {
+      toast.error(error.response.data.message);
     }
   };
 
   // Bulk toggle active status
-  const handleBulkToggleActive = (activate: boolean) => {
-    if (selectedTerms.size === 0) {
-      toast.error('Please select at least one payment term.');
-      return;
-    }
+  const handleBulkToggleActive = async () => {
+    const ids = Array.from(selectedTerms);
 
-    setSubmitting(true);
     try {
-      const updated = paymentTerms.map((t) =>
-        selectedTerms.has(t.id) ? { ...t, is_active: activate } : t
-      );
-      persistTerms(updated);
-      toast.success(`${selectedTerms.size} payment term(s) ${activate ? 'activated' : 'deactivated'} successfully!`);
-    } catch (error) {
-      console.error('Error in bulk toggle:', error);
-      toast.error('Failed to update payment terms.');
-    } finally {
-      setSubmitting(false);
+      const paymentTermRes = await PaymentMastersApi.bulkToggleActive(ids);
+      if (paymentTermRes.success) {
+        toast.success(paymentTermRes.message);
+        loadPaymentTerms();
+      } else {
+        toast.error(paymentTermRes.message);
+      }
+    } catch (error: any) {
+      toast.error(error.response.data.message);
     }
   };
 
@@ -664,32 +649,67 @@ const [searchStatus, setSearchStatus] = useState('');
     if (selectAll) {
       setSelectedTerms(new Set());
     } else {
-      const allIds = new Set(filteredTerms.map(term => term.id));
+      const allIds = new Set(filteredTerms.map((term) => term.id));
       setSelectedTerms(allIds);
     }
     setSelectAll(!selectAll);
   };
 
- const filteredTerms = paymentTerms.filter((term) => {
-  const matchesName = !searchName || 
-    (term.name || '').toLowerCase().includes(searchName.toLowerCase());
-  
-  const matchesDays = !searchDays || 
-    String(term.days || '').includes(searchDays);
-  
-  const matchesDescription = !searchDescription || 
-    (term.description || '').toLowerCase().includes(searchDescription.toLowerCase());
-  
-  // NEW: Advance % search
-  const matchesAdvance = !searchAdvance || 
-    String(term.advance_percentage || '').includes(searchAdvance);
-  
-  // NEW: Status search
-  const matchesStatus = !searchStatus || 
-    (term.is_active ? "active" : "inactive").includes(searchStatus.toLowerCase());
-  
-  return matchesName && matchesDays && matchesDescription && matchesAdvance && matchesStatus;
-});
+  const filteredTerms = paymentTerms.filter((term: any) => {
+    const trigger =
+      !searchTrigger ||
+      (term.event_trigger || "")
+        .toLowerCase()
+        .includes(searchTrigger.toLowerCase());
+    const concatinatedTerm = [
+      term.percentPayment != null
+        ? `${Number(term.percentPayment).toFixed(2)}`
+        : "",
+
+      term.firstText ?? "",
+
+      term.materialPercent != null
+        ? `${Number(term.materialPercent).toFixed(2)}`
+        : "",
+
+      term.secondText ?? "",
+
+      term.gracePeriod != null ? (term.thirdText ?? "") : "",
+    ]
+      .filter(Boolean)
+      .join(" ");
+
+    const termContent =
+      !searchTermContent ||
+      (concatinatedTerm || "")
+        .toLowerCase()
+        .includes(searchTermContent.toLowerCase());
+
+    // NEW: Status search
+    const matchesStatus =
+      !searchStatus ||
+      (term.is_active ? "active" : "inactive") ===
+        searchStatus.trim().toLowerCase();
+
+    return trigger && termContent && matchesStatus;
+  });
+
+  const formatPercent = (value?: number | string) =>
+    value != null ? Number(value).toFixed(2) : "";
+
+  const deleteTerm = async (id: number) => {
+    try {
+      const paymentTermRes = await PaymentMastersApi.deletePaymentMaster(id);
+      if (paymentTermRes.success) {
+        toast.success(paymentTermRes.message);
+        loadPaymentTerms();
+      } else {
+        toast.success(paymentTermRes.message);
+      }
+    } catch (error: any) {
+      toast.error(error.response.data.message);
+    }
+  };
 
   if (loading) {
     return (
@@ -707,11 +727,12 @@ const [searchStatus, setSearchStatus] = useState('');
       {/* Header with Bulk Actions and Add Button in one line */}
       <div className="mt-0 mb-0 px-2 py-1 md:p-4 flex flex-col md:flex-row md:items-center justify-between gap-1 md:gap-3">
         <div></div>
-        
+
         <div className="flex items-center gap-1 md:gap-2 flex-nowrap md:flex-wrap w-full md:w-auto">
           {/* Bulk Actions */}
           {selectedTerms.size > 0 && (
-            <div className="
+            <div
+              className="
               flex items-center gap-0.5
               bg-gradient-to-r from-red-50 to-rose-50
               border border-red-200
@@ -720,7 +741,8 @@ const [searchStatus, setSearchStatus] = useState('');
               px-1.5 py-0.5
               md:px-2 md:py-2
               whitespace-nowrap px-0
-            ">
+            "
+            >
               {/* Selected Count */}
               <div className="flex items-center gap-0.5">
                 <div className="bg-red-100 p-0.5 rounded">
@@ -734,19 +756,13 @@ const [searchStatus, setSearchStatus] = useState('');
               {/* Actions */}
               <div className="flex items-center gap-0.5">
                 <button
-                  onClick={() => handleBulkToggleActive(true)}
+                  onClick={() => handleBulkToggleActive()}
                   disabled={submitting}
                   className="bg-green-600 text-white px-1.5 py-0.5 rounded text-[9px] md:text-xs disabled:opacity-50"
                 >
-                  Activate
+                  Toggle Status
                 </button>
-                <button
-                  onClick={() => handleBulkToggleActive(false)}
-                  disabled={submitting}
-                  className="bg-yellow-600 text-white px-1.5 py-0.5 rounded text-[9px] md:text-xs disabled:opacity-50"
-                >
-                  Deactivate
-                </button>
+
                 <button
                   onClick={handleBulkDelete}
                   disabled={submitting}
@@ -786,7 +802,7 @@ const [searchStatus, setSearchStatus] = useState('');
             "
           >
             <Plus className="w-3 h-3 md:w-4 md:h-4" />
-            Add Payment Terms 
+            Add Payment Terms
           </button>
         </div>
       </div>
@@ -800,27 +816,17 @@ const [searchStatus, setSearchStatus] = useState('');
               <tr>
                 <th className="px-3 md:px-4 py-2 text-center w-12">
                   <div className="text-[10px] md:text-xs font-semibold text-gray-700 uppercase tracking-wider">
-                    Select
+                    #
                   </div>
                 </th>
                 <th className="px-3 md:px-4 py-2 text-left">
                   <div className="text-[10px] md:text-xs font-semibold text-gray-700 uppercase tracking-wider">
-                    Name
+                    Trigger
                   </div>
                 </th>
                 <th className="px-3 md:px-4 py-2 text-left">
                   <div className="text-[10px] md:text-xs font-semibold text-gray-700 uppercase tracking-wider">
-                    Credit Days
-                  </div>
-                </th>
-                <th className="px-3 md:px-4 py-2 text-left">
-                  <div className="text-[10px] md:text-xs font-semibold text-gray-700 uppercase tracking-wider">
-                    Description
-                  </div>
-                </th>
-                <th className="px-3 md:px-4 py-2 text-left">
-                  <div className="text-[10px] md:text-xs font-semibold text-gray-700 uppercase tracking-wider">
-                    Advance %
+                    Payment Term
                   </div>
                 </th>
                 <th className="px-3 md:px-4 py-2 text-left">
@@ -834,7 +840,7 @@ const [searchStatus, setSearchStatus] = useState('');
                   </div>
                 </th>
               </tr>
-              
+
               {/* Search Row - Below header */}
               <tr className="bg-gray-50 border-b border-gray-200">
                 <td className="px-3 md:px-4 py-1 text-center">
@@ -845,77 +851,55 @@ const [searchStatus, setSearchStatus] = useState('');
                     className="w-3.5 h-3.5 md:w-4 md:h-4 text-[#C62828] border-gray-300 rounded focus:ring-[#C62828]"
                   />
                 </td>
-                
-                {/* Name Search */}
+
                 <td className="px-3 md:px-4 py-1">
                   <input
                     type="text"
                     placeholder="Search name..."
-                    value={searchName}
-                    onChange={(e) => setSearchName(e.target.value)}
+                    value={searchTrigger}
+                    onChange={(e) => setSearchTrigger(e.target.value)}
                     className="w-full px-2 py-1 text-[9px] md:text-xs border border-gray-300 rounded focus:ring-1 focus:ring-blue-500 focus:border-transparent"
                   />
                 </td>
-                
-                {/* Days Search */}
+
                 <td className="px-3 md:px-4 py-1">
                   <input
                     type="text"
                     placeholder="Search days..."
-                    value={searchDays}
-                    onChange={(e) => setSearchDays(e.target.value)}
+                    value={searchTermContent}
+                    onChange={(e) => setSearchTermContent(e.target.value)}
                     className="w-full px-2 py-1 text-[9px] md:text-xs border border-gray-300 rounded focus:ring-1 focus:ring-blue-500 focus:border-transparent"
                   />
                 </td>
-                
-                {/* Description Search */}
+
                 <td className="px-3 md:px-4 py-1">
-                  <input
+                  {/* <input
                     type="text"
                     placeholder="Search description..."
-                    value={searchDescription}
-                    onChange={(e) => setSearchDescription(e.target.value)}
+                    value={searchStatus}
+                    onChange={(e) => setSearchStatus(e.target.value)}
                     className="w-full px-2 py-1 text-[9px] md:text-xs border border-gray-300 rounded focus:ring-1 focus:ring-blue-500 focus:border-transparent"
-                  />
+                  /> */}
+                  <select
+                    onChange={(e) => setSearchStatus(e.target.value)}
+                    className="w-full px-2 py-1 text-[9px] md:text-xs border border-gray-300 rounded focus:ring-1 focus:ring-blue-500"
+                  >
+                    <option value={""}>Select Filter</option>
+                    <option value={"active"}>Active</option>
+                    <option value={"inactive"}>Inactive</option>
+                  </select>
                 </td>
-                
-                {/* Advance % Search */}
-               {/* Advance % Search - FIXED */}
-<td className="px-3 md:px-4 py-1">
-  <input
-    type="text"
-    placeholder="Search advance %..."
-    value={searchAdvance}  // CHANGE THIS
-    onChange={(e) => setSearchAdvance(e.target.value)}  // ADD THIS
-    className="w-full px-2 py-1 text-[9px] md:text-xs border border-gray-300 rounded focus:ring-1 focus:ring-blue-500 focus:border-transparent"
-  />
-</td>
-                
-                {/* Status Search */}
-                {/* Status Search - FIXED */}
-<td className="px-3 md:px-4 py-1">
-  <input
-    type="text"
-    placeholder="Search status..."
-    value={searchStatus}  // CHANGE THIS
-    onChange={(e) => setSearchStatus(e.target.value)}  // ADD THIS
-    className="w-full px-2 py-1 text-[9px] md:text-xs border border-gray-300 rounded focus:ring-1 focus:ring-blue-500 focus:border-transparent"
-  />
-</td>
-                
-                {/* Actions - Clear Filter Button */}
+
                 <td className="px-3 md:px-4 py-1 text-center">
                   <button
-  onClick={() => {
-    setSearchName('');
-    setSearchDays('');
-    setSearchDescription('');
-    setSearchAdvance('');  // ADD THIS
-    setSearchStatus('');   // ADD THIS
-  }}
-  className="inline-flex items-center px-2 py-1 border border-gray-300 rounded hover:bg-gray-50 transition text-[9px] md:text-xs font-medium text-gray-700"
-  title="Clear Filters"
->
+                    onClick={() => {
+                      setSearchStatus(""); // ADD THIS
+                      setSearchTrigger("");
+                      setSearchTermContent("");
+                    }}
+                    className="inline-flex items-center px-2 py-1 border border-gray-300 rounded hover:bg-gray-50 transition text-[9px] md:text-xs font-medium text-gray-700"
+                    title="Clear Filters"
+                  >
                     <XCircle className="w-2.5 h-2.5 md:w-3 md:h-3 mr-0.5" />
                     Clear
                   </button>
@@ -923,12 +907,32 @@ const [searchStatus, setSearchStatus] = useState('');
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-200">
-              {filteredTerms.map((term) => {
+              {filteredTerms.map((term: any) => {
                 const isSelected = selectedTerms.has(term.id);
+
+                const concatinatedTerm = [
+                  term.percentPayment != null
+                    ? `${formatPercent(term.percentPayment)}`
+                    : "",
+
+                  term.firstText ?? "",
+
+                  term.materialPercent != null
+                    ? `${formatPercent(term.materialPercent)}%`
+                    : "",
+
+                  term.secondText ?? "",
+                  term.gracePeriod != null ? term.gracePeriod : "",
+                  ,
+                  term.gracePeriod != null ? (term.thirdText ?? "") : "",
+                ]
+                  .filter(Boolean)
+                  .join(" ");
+
                 return (
-                  <tr 
-                    key={term.id} 
-                    className={`hover:bg-gray-50 transition ${isSelected ? 'bg-blue-50' : ''}`}
+                  <tr
+                    key={term.id}
+                    className={`hover:bg-gray-50 transition ${isSelected ? "bg-blue-50" : ""}`}
                   >
                     <td className="px-3 md:px-4 py-3 text-center">
                       <input
@@ -940,31 +944,25 @@ const [searchStatus, setSearchStatus] = useState('');
                     </td>
                     <td className="px-3 md:px-4 py-3">
                       <div className="flex items-center gap-2">
-                        <CreditCard className="w-4 h-4 text-blue-600" />
-                        <span className="font-medium text-gray-800 text-xs md:text-sm">{term.name}</span>
+                        <span className="font-medium text-gray-800 text-xs md:text-sm">
+                          {term.event_trigger}
+                        </span>
                       </div>
                     </td>
                     <td className="px-3 md:px-4 py-3 text-gray-700 text-xs md:text-sm">
-                      {term.days > 0 ? `${term.days} days` : 'Immediate'}
+                      {concatinatedTerm}
                     </td>
-                    <td className="px-3 md:px-4 py-3 text-gray-700 text-xs md:text-sm">{term.description || '-'}</td>
-                    <td className="px-3 md:px-4 py-3">
-                      {term.advance_percentage > 0 ? (
-                        <span className="font-medium text-orange-600 text-xs md:text-sm">{term.advance_percentage}%</span>
-                      ) : (
-                        <span className="text-gray-500 text-xs md:text-sm">0%</span>
-                      )}
-                    </td>
+
                     <td className="px-3 md:px-4 py-3">
                       <button
-                        onClick={() => toggleActive(term.id, term.is_active)}
+                        onClick={() => toggleActive(term.id)}
                         className={`px-2 py-0.5 md:px-3 md:py-1 rounded-full text-[10px] md:text-xs font-medium ${
-                          term.is_active 
-                            ? 'bg-green-100 text-green-700' 
-                            : 'bg-red-100 text-red-700'
+                          term.is_active
+                            ? "bg-green-100 text-green-700"
+                            : "bg-red-100 text-red-700"
                         }`}
                       >
-                        {term.is_active ? 'ACTIVE' : 'INACTIVE'}
+                        {term.is_active ? "ACTIVE" : "INACTIVE"}
                       </button>
                     </td>
                     <td className="px-3 md:px-4 py-3">
@@ -977,7 +975,7 @@ const [searchStatus, setSearchStatus] = useState('');
                           <Edit2 className="w-3.5 h-3.5 md:w-4 md:h-4" />
                         </button>
                         <button
-                          onClick={() => handleDelete(term.id)}
+                          onClick={() => deleteTerm(term.id)}
                           className="p-1.5 md:p-2 text-red-600 hover:bg-red-50 rounded-lg transition"
                           title="Delete"
                         >
@@ -988,17 +986,19 @@ const [searchStatus, setSearchStatus] = useState('');
                   </tr>
                 );
               })}
-              
+
               {filteredTerms.length === 0 && (
                 <tr>
                   <td colSpan={7} className="px-4 py-8 text-center">
                     <CreditCard className="w-12 h-12 md:w-16 md:h-16 text-gray-300 mx-auto mb-3" />
-                    <p className="text-gray-600 text-sm md:text-lg font-medium">No Payment Terms Found</p>
+                    <p className="text-gray-600 text-sm md:text-lg font-medium">
+                      No Payment Terms Found
+                    </p>
                     <p className="text-gray-500 text-xs md:text-sm mt-1">
-  {searchName || searchDays || searchDescription || searchAdvance || searchStatus
-    ? "Try a different search term"
-    : "No payment terms available"}
-</p>
+                      {searchTermContent || searchTrigger || searchStatus
+                        ? "Try a different search term"
+                        : "No payment terms available"}
+                    </p>
                   </td>
                 </tr>
               )}
@@ -1019,10 +1019,12 @@ const [searchStatus, setSearchStatus] = useState('');
                 </div>
                 <div>
                   <h2 className="text-base font-bold text-white flex items-center gap-1.5">
-                    {editingId ? 'Edit Payment Terms' : 'Add Payment Terms'}
+                    {editingId ? "Edit Payment Terms" : "Add Payment Terms"}
                   </h2>
                   <p className="text-xs text-white/90 font-medium mt-0.5">
-                    {editingId ? 'Update payment terms details' : 'Add new payment terms'}
+                    {editingId
+                      ? "Update payment terms details"
+                      : "Add new payment terms"}
                   </p>
                 </div>
               </div>
@@ -1038,101 +1040,228 @@ const [searchStatus, setSearchStatus] = useState('');
             </div>
 
             <form onSubmit={handleSubmit} className="p-4">
-              <div className="space-y-3 mb-4">
+              <div className=" mb-4 grid grid-cols-1 md:grid-cols-2 gap-3">
                 {/* Name */}
-                <div className="space-y-1">
+                <div className="col-span-1 sm:col-span-2">
                   <label className="block text-xs font-semibold text-gray-800 mb-1">
-                    Name <span className="text-red-500">*</span>
+                    Trigger <span className="text-red-500">*</span>
                   </label>
                   <div className="relative group">
                     <div className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 group-focus-within:text-[#C62828] transition-colors">
-                      <CreditCard className="w-3.5 h-3.5" />
+                      <ReceiptText className="w-3.5 h-3.5" />
                     </div>
-                    <input
-                      type="text"
-                      value={formData.name}
-                      onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                      className="w-full pl-9 pr-3 py-2 text-sm border-2 border-gray-200 rounded-xl focus:border-[#C62828] focus:ring-2 focus:ring-[#C62828]/20 outline-none transition-all duration-200 hover:border-gray-300"
-                      placeholder="30 Days Credit"
-                      required
-                    />
+                    <select
+                      value={formData.trigger}
+                      onChange={(e) => {
+                        setFormData({ ...formData, trigger: e.target.value });
+                      }}
+                      className="w-full px-8 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#C62828]/30 text-xs"
+                    >
+                      <option value="">Select Trigger</option>
+                      {[
+                        "Order Confirmation",
+                        "Before Delivery",
+                        "On Delivery",
+                        "After Delivery",
+                        "Matterial Received",
+                      ].map((trigger) => (
+                        <option key={trigger} value={trigger}>
+                          {trigger}
+                        </option>
+                      ))}
+                    </select>
                   </div>
                 </div>
 
                 {/* Credit Days & Advance Percentage */}
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                  <div className="space-y-1">
-                    <label className="block text-xs font-semibold text-gray-800 mb-1">
-                      Credit Days
-                    </label>
-                    <div className="relative group">
-                      <div className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 group-focus-within:text-[#C62828] transition-colors">
-                        <CreditCard className="w-3.5 h-3.5" />
-                      </div>
-                      <input
-                        type="number"
-                        value={formData.days}
-                        onChange={(e) => setFormData({ ...formData, days: parseInt(e.target.value) || 0 })}
-                        className="w-full pl-9 pr-3 py-2 text-sm border-2 border-gray-200 rounded-xl focus:border-[#C62828] focus:ring-2 focus:ring-[#C62828]/20 outline-none transition-all duration-200 hover:border-gray-300"
-                        placeholder="30"
-                        min="0"
-                      />
-                    </div>
-                    <p className="text-xs text-gray-500 mt-1">0 = Immediate payment</p>
-                  </div>
-
-                  <div className="space-y-1">
-                    <label className="block text-xs font-semibold text-gray-800 mb-1">
-                      Advance Percentage
-                    </label>
-                    <div className="relative group">
-                      <div className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 group-focus-within:text-[#C62828] transition-colors">
-                        <CreditCard className="w-3.5 h-3.5" />
-                      </div>
-                      <input
-                        type="number"
-                        value={formData.advance_percentage}
-                        onChange={(e) =>
-                          setFormData({ ...formData, advance_percentage: parseFloat(e.target.value) || 0 })
-                        }
-                        className="w-full pl-9 pr-3 py-2 text-sm border-2 border-gray-200 rounded-xl focus:border-[#C62828] focus:ring-2 focus:ring-[#C62828]/20 outline-none transition-all duration-200 hover:border-gray-300"
-                        placeholder="50"
-                        min="0"
-                        max="100"
-                        step="0.01"
-                      />
-                    </div>
-                    <p className="text-xs text-gray-500 mt-1">0-100%</p>
-                  </div>
-                </div>
-
-                {/* Description */}
-                <div className="space-y-1">
+                <div>
                   <label className="block text-xs font-semibold text-gray-800 mb-1">
-                    Description
+                    Enter Payment Percent{" "}
+                    <span className="text-red-500">*</span>
                   </label>
                   <div className="relative group">
-                    <div className="absolute left-3 top-3 text-gray-500 group-focus-within:text-[#C62828] transition-colors">
-                      <CreditCard className="w-3.5 h-3.5" />
+                    <div className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 group-focus-within:text-[#C62828] transition-colors">
+                      <Percent className="w-3.5 h-3.5" />
                     </div>
-                    <textarea
-                      value={formData.description}
-                      onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                      className="w-full pl-9 pr-3 py-2 text-sm border-2 border-gray-200 rounded-xl focus:border-[#C62828] focus:ring-2 focus:ring-[#C62828]/20 outline-none transition-all duration-200 hover:border-gray-300 min-h-[80px] resize-vertical"
-                      rows={2}
-                      placeholder="Payment within 30 days from invoice date"
+                    <input
+                      type="text"
+                      value={formData.paymentPercent}
+                      onChange={(e) =>
+                        setFormData({
+                          ...formData,
+                          paymentPercent: e.target.value,
+                        })
+                      }
+                      className="w-full pl-9 pr-3 py-2 text-sm border-2 border-gray-200 rounded-xl focus:border-[#C62828] focus:ring-2 focus:ring-[#C62828]/20 outline-none transition-all duration-200 hover:border-gray-300"
+                      placeholder="30"
+                      min="0"
                     />
                   </div>
                 </div>
 
-                {formData.advance_percentage > 0 && (
-                  <div className="bg-orange-50 border border-orange-200 rounded-lg p-3">
-                    <p className="text-xs font-medium text-orange-800">
-                      Advance Payment Required: {formData.advance_percentage}%
-                    </p>
-                    <p className="text-xs text-orange-600 mt-1">
-                      This percentage will be auto-calculated from PO total
-                    </p>
+                <div className="space-y-1">
+                  <label className="block text-xs font-semibold text-gray-800 mb-1">
+                    Enter Term <span className="text-red-500">*</span>
+                  </label>
+                  <div className="relative group">
+                    <div className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 group-focus-within:text-[#C62828] transition-colors">
+                      <ReceiptText className="w-3.5 h-3.5" />
+                    </div>
+                    <input
+                      type="text"
+                      value={formData.firstText}
+                      onChange={(e) =>
+                        setFormData({
+                          ...formData,
+                          firstText: e.target.value,
+                        })
+                      }
+                      className="w-full pl-9 pr-3 py-2 text-sm border-2 border-gray-200 rounded-xl focus:border-[#C62828] focus:ring-2 focus:ring-[#C62828]/20 outline-none transition-all duration-200 hover:border-gray-300"
+                      placeholder="% Advance Payment"
+                    />
+                  </div>
+                </div>
+
+                <div className="space-y-1">
+                  <label className="block text-xs font-semibold text-gray-800 mb-1">
+                    Material Percent
+                  </label>
+                  <div className="relative group">
+                    <div className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 group-focus-within:text-[#C62828] transition-colors">
+                      <Percent className="w-3.5 h-3.5" />
+                    </div>
+                    <input
+                      type="text"
+                      value={formData.materialPercent}
+                      onChange={(e) =>
+                        setFormData({
+                          ...formData,
+                          materialPercent: e.target.value,
+                        })
+                      }
+                      className="w-full pl-9 pr-3 py-2 text-sm border-2 border-gray-200 rounded-xl focus:border-[#C62828] focus:ring-2 focus:ring-[#C62828]/20 outline-none transition-all duration-200 hover:border-gray-300"
+                      placeholder="50"
+                    />
+                  </div>
+                </div>
+
+                <div className="space-y-1">
+                  <label className="block text-xs font-semibold text-gray-800 mb-1">
+                    Enter Term
+                  </label>
+                  <div className="relative group">
+                    <div className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 group-focus-within:text-[#C62828] transition-colors">
+                      <ReceiptText className="w-3.5 h-3.5" />
+                    </div>
+                    <input
+                      type="text"
+                      value={formData.secondText}
+                      onChange={(e) =>
+                        setFormData({
+                          ...formData,
+                          secondText: e.target.value,
+                        })
+                      }
+                      className="w-full pl-9 pr-3 py-2 text-sm border-2 border-gray-200 rounded-xl focus:border-[#C62828] focus:ring-2 focus:ring-[#C62828]/20 outline-none transition-all duration-200 hover:border-gray-300"
+                      placeholder="% Material"
+                    />
+                  </div>
+                </div>
+
+                <div className="col-span-1 sm:col-span-2 flex justify-start items-center w-fit ml-3">
+                  <input
+                    type="checkbox"
+                    checked={enableGracePeriod}
+                    onChange={(e) => {
+                      setEnableGracePeriod(e.target.checked);
+                      if (!e.target.checked) {
+                        setFormData({
+                          ...formData,
+                          gracePeriod: "",
+                          thirdText: "",
+                        });
+                      }
+                    }}
+                    className="w-4 h-4 mr-2 text-sm border-2 border-gray-200 rounded-xl focus:border-[#C62828] focus:ring-2 focus:ring-[#C62828]/20 outline-none transition-all duration-200 hover:border-gray-300"
+                  />
+                  <span className="text-sm">Add grace period.</span>
+                </div>
+
+                {enableGracePeriod && (
+                  <div className="space-y-1">
+                    <label className="block text-xs font-semibold text-gray-800 mb-1">
+                      Grace Period
+                    </label>
+                    <div className="relative group">
+                      <div className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 group-focus-within:text-[#C62828] transition-colors">
+                        <CalendarDays className="w-3.5 h-3.5" />
+                      </div>
+                      <input
+                        type="text"
+                        value={formData.gracePeriod}
+                        onChange={(e) =>
+                          setFormData({
+                            ...formData,
+                            gracePeriod: e.target.value,
+                          })
+                        }
+                        className="w-full pl-9 pr-3 py-2 text-sm border-2 border-gray-200 rounded-xl focus:border-[#C62828] focus:ring-2 focus:ring-[#C62828]/20 outline-none transition-all duration-200 hover:border-gray-300"
+                        placeholder="10"
+                      />
+                    </div>
+                  </div>
+                )}
+                {enableGracePeriod && (
+                  <div className="space-y-1">
+                    <label className="block text-xs font-semibold text-gray-800 mb-1">
+                      Enter Term
+                    </label>
+                    <div className="relative group">
+                      <div className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 group-focus-within:text-[#C62828] transition-colors">
+                        <ReceiptText className="w-3.5 h-3.5" />
+                      </div>
+                      <input
+                        type="text"
+                        value={formData.thirdText}
+                        onChange={(e) =>
+                          setFormData({
+                            ...formData,
+                            thirdText: e.target.value,
+                          })
+                        }
+                        className="w-full pl-9 pr-3 py-2 text-sm border-2 border-gray-200 rounded-xl focus:border-[#C62828] focus:ring-2 focus:ring-[#C62828]/20 outline-none transition-all duration-200 hover:border-gray-300"
+                        placeholder="Days of grace period."
+                      />
+                    </div>
+                  </div>
+                )}
+
+                {(formData.paymentPercent ||
+                  formData.firstText ||
+                  formData.materialPercent ||
+                  formData.secondText ||
+                  formData.gracePeriod ||
+                  formData.thirdText) && (
+                  <div className="col-span-1 sm:col-span-2 border border-orange-600 px-3 py-2 rounded-lg">
+                    <label className="block text-xs font-semibold text-gray-800 mb-1">
+                      Preview of Term
+                    </label>
+                    <div className="relative group flex items-center">
+                      <div className="w-2 h-2 bg-orange-600 rounded-full mr-2"></div>
+                      <p className="text-gray-700 text-sm">
+                        {formData.paymentPercent +
+                          " " +
+                          formData.firstText +
+                          " " +
+                          formData.materialPercent +
+                          " " +
+                          formData.secondText +
+                          " " +
+                          formData.gracePeriod +
+                          " " +
+                          formData.thirdText}
+                      </p>
+                    </div>
                   </div>
                 )}
               </div>
@@ -1144,7 +1273,7 @@ const [searchStatus, setSearchStatus] = useState('');
                   className="flex-1 bg-gradient-to-r from-[#C62828] to-red-600 text-white py-2.5 px-4 rounded-xl hover:from-red-600 hover:to-red-700 transition-all duration-200 font-semibold shadow-lg hover:shadow-xl flex items-center justify-center gap-2 group transform hover:-translate-y-0.5 active:translate-y-0"
                 >
                   <Plus className="w-4 h-4 group-hover:scale-110 transition-transform" />
-                  {editingId ? 'Update Payment Terms' : 'Add Payment Terms'}
+                  {editingId ? "Update Payment Terms" : "Add Payment Terms"}
                 </button>
                 <button
                   type="button"
@@ -1160,7 +1289,7 @@ const [searchStatus, setSearchStatus] = useState('');
             </form>
 
             {/* Custom scrollbar */}
-            <style jsx>{`
+            <style>{`
               @keyframes fadeIn {
                 from { opacity: 0; transform: translateY(10px); }
                 to { opacity: 1; transform: translateY(0); }

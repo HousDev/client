@@ -27,6 +27,7 @@ import poTypeApi from "../lib/poTypeApi";
 import TermsConditionsApi from "../lib/termsConditionsApi";
 import { toast } from "sonner";
 import classifiedPaymentTerms from "../data/paymentTerms";
+import PaymentMastersApi from "../lib/paymentMasterApi";
 
 /* --- types (updated to include individual GST rates) --- */
 interface POItem {
@@ -253,6 +254,7 @@ export default function CreatePurchaseOrderForm({
   const [showItemSelector, setShowItemSelector] = useState(false);
   const [showTermsConditions, setShowTermsConditions] = useState(false);
   const [showAddPaymentTerm, setShowAddPaymentTerm] = useState<Boolean>(false);
+  const [allPayments, setAllPayments] = useState<any>([]);
   const [selectedPaymentTermId, setSelectedPaymentTermId] = useState<any>("");
   const [selectedPaymentTerm, setSelectedPaymentTerm] = useState<any>("");
   const [poPaymentTerms, setPoPaymentTerms] = useState<any[]>([]);
@@ -299,7 +301,17 @@ export default function CreatePurchaseOrderForm({
     notes: "",
   });
 
+  const loadPaymentTermsAndConditions = async () => {
+    try {
+      const paymentRes: any = await PaymentMastersApi.getPaymentMasters();
+      setAllPayments(Array.isArray(paymentRes.data) ? paymentRes.data : []);
+    } catch (error: any) {
+      toast.error(error.response.data.message);
+    }
+  };
+
   useEffect(() => {
+    loadPaymentTermsAndConditions();
     loadData();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -1958,371 +1970,66 @@ export default function CreatePurchaseOrderForm({
             {/* Content */}
             <div className="relative flex-grow overflow-y-auto">
               <div className="relative p-5 md:p-7 space-y-6">
-                {/* Category Selection */}
-                <div className="group">
-                  <div className="flex items-center justify-between mb-3">
-                    <label className="block text-sm font-semibold text-[#2a2c2a]">
-                      Payment Term Category
-                    </label>
-                    <span className="text-xs px-2.5 py-1 bg-gradient-to-r from-[#b52124]/10 to-[#d43538]/10 text-[#b52124] rounded-full font-medium">
-                      Required
-                    </span>
-                  </div>
-                  <div className="relative">
-                    <div className="absolute -inset-0.5 bg-gradient-to-r from-[#b52124]/20 to-transparent rounded-xl blur opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
-                    <select
-                      value={selectedPaymentTermId}
-                      onChange={(e) => {
-                        setSelectedPaymentTermData("");
-                        setSelectedPaymentTermId(e.target.value);
-                      }}
-                      className="relative w-full px-4 py-3.5 text-sm border-2 border-gray-300/80 rounded-xl focus:border-[#b52124] focus:ring-4 focus:ring-[#b52124]/15 outline-none transition-all duration-300 hover:border-gray-400 bg-white/80 backdrop-blur-sm text-[#2a2c2a] font-medium appearance-none cursor-pointer"
-                      required
-                    >
-                      <option value={""} className="text-gray-400">
-                        Select Category
-                      </option>
-                      {classifiedPaymentTerms.map((d: any) => (
-                        <option
-                          key={d.category}
-                          value={d.category}
-                          className="py-2 hover:bg-[#b52124]/5 transition-colors"
-                        >
-                          {d.category.replaceAll("_", " ")}
-                        </option>
-                      ))}
-                    </select>
-                    <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none">
-                      <ChevronDown className="w-5 h-5 text-gray-500" />
-                    </div>
-                  </div>
+                {/* Custom Payment Term Select */}
+                <div className="animate-fade-up">
+                  <label className="block text-sm font-semibold text-[#2a2c2a] mb-3">
+                    Select Payment Term
+                  </label>
+                  <SearchableSelect
+                    options={allPayments.map((term: any) => {
+                      const concatinatedTerm = [
+                        term.percentPayment != null
+                          ? `${Number(term.percentPayment).toFixed(2)}`
+                          : "",
+
+                        term.firstText ?? "",
+
+                        term.materialPercent != null
+                          ? `${Number(term.materialPercent).toFixed(2)}`
+                          : "",
+
+                        term.secondText ?? "",
+
+                        term.gracePeriod != null ? (term.thirdText ?? "") : "",
+                      ]
+                        .filter(Boolean)
+                        .join(" ");
+                      return {
+                        id: term.id,
+                        name: concatinatedTerm || "",
+                      };
+                    })}
+                    value={selectedPaymentTermData.id}
+                    onChange={(id) => {
+                      const findedData = allPayments.find(
+                        (d: any) => Number(d.id) === Number(id),
+                      );
+                      setSelectedPaymentTermData(findedData);
+                    }}
+                    placeholder="Select Vendor"
+                    required
+                  />
                 </div>
 
-                {/* Custom Payment Term Select */}
-                {selectedPaymentTermId && (
-                  <div className="animate-fade-up">
-                    <label className="block text-sm font-semibold text-[#2a2c2a] mb-3">
-                      Select Payment Term
-                    </label>
-
-                    <div className="relative">
-                      {/* Selected Value Button */}
-                      <button
-                        type="button"
-                        className="group w-full text-left px-4 py-3.5 border-2 border-gray-300/80 rounded-xl bg-white/80 backdrop-blur-sm hover:border-gray-400 focus:ring-4 focus:ring-[#b52124]/15 focus:border-[#b52124] transition-all duration-300 flex items-center justify-between"
-                        onClick={() => setShowTermDropdown((prev) => !prev)}
-                      >
-                        <span
-                          className={`font-medium ${selectedPaymentTermData?.displayContent ? "text-[#2a2c2a]" : "text-gray-400"}`}
-                        >
-                          {selectedPaymentTermData?.displayContent ||
-                            "Choose payment term"}
-                        </span>
-                        <div className="flex items-center gap-2">
-                          {selectedPaymentTermData?.displayContent && (
-                            <div className="w-2 h-2 bg-gradient-to-r from-[#b52124] to-[#d43538] rounded-full animate-pulse"></div>
-                          )}
-                          <ChevronDown
-                            className={`w-4 h-4 text-gray-500 transition-transform duration-300 ${showTermDropdown ? "rotate-180" : ""}`}
-                          />
-                        </div>
-                      </button>
-
-                      {/* Dropdown */}
-                      {showTermDropdown && (
-                        <div className="absolute z-50 mt-2 w-full max-h-72 overflow-y-auto bg-white/95 backdrop-blur-xl border border-gray-300/50 rounded-xl shadow-2xl shadow-gray-900/10 animate-scale-in">
-                          <div className="p-2">
-                            <div
-                              onClick={() => {
-                                setSelectedPaymentTermData("");
-                                setShowTermDropdown(false);
-                              }}
-                              className="px-4 py-3 text-sm text-gray-600 hover:text-[#b52124] cursor-pointer hover:bg-gradient-to-r hover:from-[#b52124]/5 hover:to-transparent rounded-lg transition-all duration-200 flex items-center gap-3 group"
-                            >
-                              <div className="w-2 h-2 rounded-full bg-gray-300 group-hover:bg-[#b52124]"></div>
-                              Select Payment Term
-                            </div>
-
-                            <div className="h-px bg-gradient-to-r from-transparent via-gray-300/50 to-transparent my-2"></div>
-
-                            {classifiedPaymentTerms
-                              .find(
-                                (d: any) =>
-                                  d.category === selectedPaymentTermId,
-                              )
-                              ?.details.filter(
-                                (dtc: any) =>
-                                  !(
-                                    dtc.id === 1 &&
-                                    poPaymentTerms.some(
-                                      (dttc: any) => dttc.id === 1,
-                                    )
-                                  ) ||
-                                  !(
-                                    dtc.id === 2 &&
-                                    poPaymentTerms.some(
-                                      (dttc: any) => dttc.id === 2,
-                                    )
-                                  ),
-                              )
-                              .map((t: any, index: number) => (
-                                <div
-                                  key={t.id}
-                                  onClick={() => {
-                                    setSelectedPaymentTermData(t);
-                                    setShowTermDropdown(false);
-                                  }}
-                                  className="px-4 py-3 text-sm text-[#2a2c2a] cursor-pointer hover:bg-gradient-to-r hover:from-[#b52124]/5 hover:to-transparent rounded-lg transition-all duration-200 group border-b border-gray-100 last:border-b-0 animate-fade-up"
-                                  style={{ animationDelay: `${index * 50}ms` }}
-                                >
-                                  <div className="flex items-center justify-between">
-                                    <span className="font-medium group-hover:text-[#b52124] transition-colors">
-                                      {t.displayContent}
-                                    </span>
-                                    <div className="opacity-0 group-hover:opacity-100 transition-opacity">
-                                      <div className="w-1.5 h-1.5 rounded-full bg-gradient-to-r from-[#b52124] to-[#d43538]"></div>
-                                    </div>
-                                  </div>
-                                </div>
-                              ))}
-                          </div>
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                )}
-
                 {/* Dynamic Form Sections with all original logic */}
-                {selectedPaymentTermData.id === 1 && (
+                {selectedPaymentTermData && (
                   <div className="p-5 bg-gradient-to-br from-blue-50/50 to-white border border-blue-200/50 rounded-xl animate-fade-up">
-                    <div className="flex items-center gap-3 mb-4">
-                      <div className="p-2 bg-gradient-to-r from-blue-500 to-blue-600 rounded-lg">
-                        <svg
-                          className="w-4 h-4 text-white"
-                          fill="none"
-                          viewBox="0 0 24 24"
-                          stroke="currentColor"
-                        >
-                          <path
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            strokeWidth={2}
-                            d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"
-                          />
-                        </svg>
-                      </div>
-                      <h4 className="font-semibold text-blue-900">
-                        Advance Payment Configuration
-                      </h4>
-                    </div>
-
                     <div className="flex flex-wrap items-center gap-3 p-4 bg-white/50 rounded-lg border border-blue-100">
-                      <div className="relative">
+                      <div className="relative flex items-center">
                         <input
                           type="text"
-                          value={selectedPaymentTermData.percent}
+                          value={selectedPaymentTermData.percentPayment}
                           onChange={(e) => {
-                            const totalPercent = poPaymentTerms.reduce(
-                              (acc, term) => acc + Number(term.percent),
-                              0,
-                            );
-                            if (totalPercent + Number(e.target.value) > 100) {
-                              toast.error(
-                                "You have already entered payment percent of " +
-                                  totalPercent +
-                                  "% You can not exceed 100%",
-                              );
-                              return;
-                            }
-                            setSelectedPaymentTermData((prev: any) => ({
-                              ...prev,
-                              percent: Number(e.target.value),
-                            }));
+                            setSelectedPaymentTermData({
+                              ...selectedPaymentTermData,
+                              percentPayment: e.target.value,
+                            });
                           }}
-                          className="w-20 px-3 py-2 text-center border-2 border-blue-300 rounded-lg focus:ring-4 focus:ring-blue-500/20 focus:border-blue-500 outline-none font-bold text-blue-900 bg-white shadow-inner"
+                          className="w-20 px-3 py-1 text-center border-2 border-blue-300 rounded-lg focus:ring-4 focus:ring-blue-500/20 focus:border-blue-500 outline-none font-bold text-blue-900 bg-white shadow-inner"
                         />
-                        <div className="absolute -top-2 left-1/2 -translate-x-1/2 bg-gradient-to-r from-blue-500 to-blue-600 text-white text-xs px-2 py-0.5 rounded-full whitespace-nowrap">
-                          %
-                        </div>
-                      </div>
-                      <span className="text-blue-900 font-medium">
-                        % advance payment payable after order confirmation.
-                      </span>
-                    </div>
-                  </div>
-                )}
-
-                {selectedPaymentTermData.id === 2 && (
-                  <div className="p-5 bg-gradient-to-br from-green-50/50 to-white border border-green-200/50 rounded-xl animate-fade-up">
-                    <div className="flex items-center gap-3 mb-4">
-                      <div className="p-2 bg-gradient-to-r from-green-500 to-green-600 rounded-lg">
-                        <svg
-                          className="w-4 h-4 text-white"
-                          fill="none"
-                          viewBox="0 0 24 24"
-                          stroke="currentColor"
-                        >
-                          <path
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            strokeWidth={2}
-                            d="M5 13l4 4L19 7"
-                          />
-                        </svg>
-                      </div>
-                      <h4 className="font-semibold text-green-900">
-                        Dispatch Payment Configuration
-                      </h4>
-                    </div>
-
-                    <div className="flex flex-wrap items-center gap-3 p-4 bg-white/50 rounded-lg border border-green-100">
-                      <div className="relative">
-                        <input
-                          type="text"
-                          value={selectedPaymentTermData.percent}
-                          onChange={(e) => {
-                            const totalPercent = poPaymentTerms.reduce(
-                              (acc, term) => acc + Number(term.percent),
-                              0,
-                            );
-                            if (totalPercent + Number(e.target.value) > 100) {
-                              toast.error(
-                                "You have already entered payment percent of " +
-                                  totalPercent +
-                                  "% You can not exceed 100%",
-                              );
-                              return;
-                            }
-                            setSelectedPaymentTermData((prev: any) => ({
-                              ...prev,
-                              percent: Number(e.target.value),
-                            }));
-                          }}
-                          className="w-20 px-3 py-2 text-center border-2 border-green-300 rounded-lg focus:ring-4 focus:ring-green-500/20 focus:border-green-500 outline-none font-bold text-green-900 bg-white shadow-inner"
-                        />
-                        <div className="absolute -top-2 left-1/2 -translate-x-1/2 bg-gradient-to-r from-green-500 to-green-600 text-white text-xs px-2 py-0.5 rounded-full whitespace-nowrap">
-                          %
-                        </div>
-                      </div>
-                      <span className="text-green-900 font-medium">
-                        % payment before dispatch of material.
-                      </span>
-                    </div>
-                  </div>
-                )}
-
-                {selectedPaymentTermData.id === 3 && (
-                  <div className="p-5 bg-gradient-to-br from-purple-50/50 to-white border border-purple-200/50 rounded-xl animate-fade-up">
-                    <div className="flex items-center gap-3 mb-4">
-                      <div className="p-2 bg-gradient-to-r from-purple-500 to-purple-600 rounded-lg">
-                        <svg
-                          className="w-4 h-4 text-white"
-                          fill="none"
-                          viewBox="0 0 24 24"
-                          stroke="currentColor"
-                        >
-                          <path
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            strokeWidth={2}
-                            d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
-                          />
-                        </svg>
-                      </div>
-                      <h4 className="font-semibold text-purple-900">
-                        Receiving Payment Configuration
-                      </h4>
-                    </div>
-
-                    <div className="space-y-4 p-4 bg-white/50 rounded-lg border border-purple-100">
-                      <div className="flex flex-wrap items-center gap-3">
-                        <div className="relative">
-                          <input
-                            type="text"
-                            value={selectedPaymentTermData.percent}
-                            onChange={(e) => {
-                              const totalPercent = poPaymentTerms.reduce(
-                                (acc, term) => acc + Number(term.percent),
-                                0,
-                              );
-                              if (totalPercent + Number(e.target.value) > 100) {
-                                toast.error(
-                                  "You have already entered payment percent of " +
-                                    totalPercent +
-                                    "% You can not exceed 100%",
-                                );
-                                return;
-                              }
-                              setSelectedPaymentTermData((prev: any) => ({
-                                ...prev,
-                                percent: Number(e.target.value),
-                              }));
-                            }}
-                            className="w-20 px-3 py-2 text-center border-2 border-purple-300 rounded-lg focus:ring-4 focus:ring-purple-500/20 focus:border-purple-500 outline-none font-bold text-purple-900 bg-white shadow-inner"
-                          />
-                          <div className="absolute -top-2 left-1/2 -translate-x-1/2 bg-gradient-to-r from-purple-500 to-purple-600 text-white text-xs px-2 py-0.5 rounded-full whitespace-nowrap">
-                            Payment %
-                          </div>
-                        </div>
-                        <span className="text-purple-900 font-medium">
-                          % payment after receiving
-                        </span>
-                        <div className="relative">
-                          <input
-                            type="text"
-                            value={selectedPaymentTermData.materialPercent}
-                            onChange={(e) => {
-                              const totalMaterialPercent =
-                                poPaymentTerms.reduce(
-                                  (acc, term) =>
-                                    acc + Number(term.materialPercent),
-                                  0,
-                                );
-
-                              if (
-                                totalMaterialPercent + Number(e.target.value) >
-                                100
-                              ) {
-                                toast.error(
-                                  "You have already entered material percent of " +
-                                    totalMaterialPercent +
-                                    "% You can not exceed 100%",
-                                );
-                                return;
-                              }
-                              setSelectedPaymentTermData((prev: any) => ({
-                                ...prev,
-                                materialPercent: Number(e.target.value),
-                              }));
-                            }}
-                            className="w-20 px-3 py-2 text-center border-2 border-purple-300 rounded-lg focus:ring-4 focus:ring-purple-500/20 focus:border-purple-500 outline-none font-bold text-purple-900 bg-white shadow-inner"
-                          />
-                          <div className="absolute -top-2 left-1/2 -translate-x-1/2 bg-gradient-to-r from-purple-500 to-purple-600 text-white text-xs px-2 py-0.5 rounded-full whitespace-nowrap">
-                            Material %
-                          </div>
-                        </div>
-                        <span className="text-purple-900 font-medium">
-                          % material within
-                        </span>
-                        <div className="relative">
-                          <input
-                            type="text"
-                            value={selectedPaymentTermData.days}
-                            onChange={(e) =>
-                              setSelectedPaymentTermData((prev: any) => ({
-                                ...prev,
-                                days: e.target.value,
-                              }))
-                            }
-                            className="w-20 px-3 py-2 text-center border-2 border-purple-300 rounded-lg focus:ring-4 focus:ring-purple-500/20 focus:border-purple-500 outline-none font-bold text-purple-900 bg-white shadow-inner"
-                          />
-                          <div className="absolute -top-2 left-1/2 -translate-x-1/2 bg-gradient-to-r from-purple-500 to-purple-600 text-white text-xs px-2 py-0.5 rounded-full whitespace-nowrap">
-                            Days
-                          </div>
-                        </div>
-                        <span className="text-purple-900 font-medium">
-                          days.
-                        </span>
+                        <p className="text-sm text-slate-800">
+                          {selectedPaymentTermData.firstText}
+                        </p>
                       </div>
                     </div>
                   </div>
