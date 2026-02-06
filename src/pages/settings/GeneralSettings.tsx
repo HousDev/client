@@ -75,7 +75,13 @@ interface SystemSettings {
 
 // ═══════════════════════════════════════════════════════════════════════════
 const GeneralSettings: React.FC = () => {
-  const { user, profile, updateProfileLocally, updateSystemSettingsLocally, refreshSystemSettings } = useAuth();
+  const {
+    user,
+    profile,
+    updateProfileLocally,
+    updateSystemSettingsLocally,
+    refreshSystemSettings,
+  } = useAuth();
 
   const [activeTab, setActiveTab] = useState<string>("profile");
   const [loading, setLoading] = useState<boolean>(true);
@@ -307,74 +313,90 @@ const GeneralSettings: React.FC = () => {
   };
 
   // ═══ SYSTEM SETTINGS – Logo/Favicon uploads ═══════════════════════════════
- // In the handleLogoFileChange function in GeneralSettings.tsx
-const handleLogoFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
-  const file = e.target.files?.[0];
-  if (!file) return;
+  // In the handleLogoFileChange function in GeneralSettings.tsx
+  const handleLogoFileChange = async (
+    e: React.ChangeEvent<HTMLInputElement>,
+  ) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
 
-  if (file.size > 5 * 1024 * 1024) {
-    toast.error("Logo must be under 5 MB");
-    return;
-  }
-  if (!["image/png", "image/jpeg", "image/jpg", "image/svg+xml"].includes(file.type)) {
-    toast.error("Only PNG, JPG or SVG allowed");
-    return;
-  }
+    if (file.size > 5 * 1024 * 1024) {
+      toast.error("Logo must be under 5 MB");
+      return;
+    }
+    if (
+      !["image/png", "image/jpeg", "image/jpg", "image/svg+xml"].includes(
+        file.type,
+      )
+    ) {
+      toast.error("Only PNG, JPG or SVG allowed");
+      return;
+    }
 
-  try {
-    const result = await SettingsApi.uploadLogo(file);
-    
-    // ✅ Update local state FIRST with the response
-    setSystem(result);
-    
-    // ✅ Update AuthContext so Layout sees the change
-    updateSystemSettingsLocally(result);
-    
-    toast.success("Logo uploaded successfully");
-    
-    // Force re-render for immediate preview update
-    setTimeout(() => {
-      if (logoInputRef.current) logoInputRef.current.value = "";
-    }, 100);
-  } catch (error: any) {
-    console.error("Logo upload error:", error);
-    toast.error(error?.response?.data?.message || "Failed to upload logo");
-  }
-};
+    try {
+      const result = await SettingsApi.uploadLogo(file);
 
- const handleFaviconFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
-  const file = e.target.files?.[0];
-  if (!file) return;
+      // ✅ Update local state FIRST with the response
+      setSystem(result);
 
-  if (file.size > 1 * 1024 * 1024) {
-    toast.error("Favicon must be under 1 MB");
-    return;
-  }
-  if (!["image/png", "image/jpeg", "image/jpg", "image/svg+xml", "image/x-icon"].includes(file.type)) {
-    toast.error("Only PNG, JPG, SVG or ICO allowed");
-    return;
-  }
+      // ✅ Update AuthContext so Layout sees the change
+      updateSystemSettingsLocally(result);
 
-  try {
-    const result = await SettingsApi.uploadFavicon(file);
-    
-    // ✅ Update local state FIRST with the response
-    setSystem(result);
-    
-    // ✅ Update AuthContext so Layout sees the change
-    updateSystemSettingsLocally(result);
-    
-    toast.success("Favicon uploaded successfully");
-    
-    // Force re-render for immediate preview update
-    setTimeout(() => {
-      if (faviconInputRef.current) faviconInputRef.current.value = "";
-    }, 100);
-  } catch (error: any) {
-    console.error("Favicon upload error:", error);
-    toast.error(error?.response?.data?.message || "Failed to upload favicon");
-  }
-};
+      toast.success("Logo uploaded successfully");
+
+      // Force re-render for immediate preview update
+      setTimeout(() => {
+        if (logoInputRef.current) logoInputRef.current.value = "";
+      }, 100);
+    } catch (error: any) {
+      console.error("Logo upload error:", error);
+      toast.error(error?.response?.data?.message || "Failed to upload logo");
+    }
+  };
+
+  const handleFaviconFileChange = async (
+    e: React.ChangeEvent<HTMLInputElement>,
+  ) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (file.size > 1 * 1024 * 1024) {
+      toast.error("Favicon must be under 1 MB");
+      return;
+    }
+    if (
+      ![
+        "image/png",
+        "image/jpeg",
+        "image/jpg",
+        "image/svg+xml",
+        "image/x-icon",
+      ].includes(file.type)
+    ) {
+      toast.error("Only PNG, JPG, SVG or ICO allowed");
+      return;
+    }
+
+    try {
+      const result = await SettingsApi.uploadFavicon(file);
+
+      // ✅ Update local state FIRST with the response
+      setSystem(result);
+
+      // ✅ Update AuthContext so Layout sees the change
+      updateSystemSettingsLocally(result);
+
+      toast.success("Favicon uploaded successfully");
+
+      // Force re-render for immediate preview update
+      setTimeout(() => {
+        if (faviconInputRef.current) faviconInputRef.current.value = "";
+      }, 100);
+    } catch (error: any) {
+      console.error("Favicon upload error:", error);
+      toast.error(error?.response?.data?.message || "Failed to upload favicon");
+    }
+  };
 
   const handleClearLogo = async () => {
     try {
@@ -409,10 +431,10 @@ const handleLogoFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
         dateFormat: system.dateFormat,
         language: system.language,
       });
-      
+
       updateSystemSettingsLocally(result);
       await refreshSystemSettings();
-      
+
       toast.success("System settings saved");
     } catch {
       toast.error("Failed to save system settings");
@@ -449,7 +471,6 @@ const handleLogoFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
       </div>
     );
   }
-
 
   // ═══ RENDER ═══════════════════════════════════════════════════════════════
   return (
@@ -576,9 +597,9 @@ const handleLogoFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
                     {/* Avatar */}
                     <div className="relative">
                       <div className="w-40 h-40 rounded-full border-8 border-white shadow-xl overflow-hidden bg-gradient-to-br from-gray-100 to-gray-200">
-                        {userProfile.avatar ? (
+                        {user.profile_picture ? (
                           <img
-                            src={userProfile.avatar}
+                            src={`${import.meta.env.VITE_API_URL + user.profile_picture}`}
                             alt="Profile"
                             className="w-full h-full object-cover"
                           />
@@ -1380,29 +1401,33 @@ const handleLogoFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
                                   <p className="text-xs text-gray-600 mb-2">
                                     Preview:
                                   </p>
-                                 {/* Logo Preview in GeneralSettings.tsx */}
-<div className="border border-gray-100 rounded-lg p-3 bg-gray-50">
-  {system.logo ? (
-    <img
-      src={`${system.logo}?t=${Date.now()}`}
-      alt="Logo Preview"
-      className="h-16 mx-auto object-contain"
-      key={system.logo} // Add key to force re-render
-      onError={(e) => {
-        // Show fallback if image fails to load
-        (e.target as HTMLImageElement).style.display = 'none';
-      }}
-    />
-  ) : (
-    <div className="text-center py-4">
-      <ImageIcon className="w-8 h-8 text-gray-300 mx-auto mb-2" />
-      <p className="text-sm text-gray-500">No logo selected</p>
-    </div>
-  )}
-</div>
+                                  {/* Logo Preview in GeneralSettings.tsx */}
+                                  <div className="border border-gray-100 rounded-lg p-3 bg-gray-50">
+                                    {system.logo ? (
+                                      <img
+                                        src={`${system.logo}?t=${Date.now()}`}
+                                        alt="Logo Preview"
+                                        className="h-16 mx-auto object-contain"
+                                        key={system.logo} // Add key to force re-render
+                                        onError={(e) => {
+                                          // Show fallback if image fails to load
+                                          (
+                                            e.target as HTMLImageElement
+                                          ).style.display = "none";
+                                        }}
+                                      />
+                                    ) : (
+                                      <div className="text-center py-4">
+                                        <ImageIcon className="w-8 h-8 text-gray-300 mx-auto mb-2" />
+                                        <p className="text-sm text-gray-500">
+                                          No logo selected
+                                        </p>
+                                      </div>
+                                    )}
+                                  </div>
 
-{/* Favicon Preview */}
-{/* <div className="border border-gray-100 rounded-lg p-3 bg-gray-50 flex items-center justify-center">
+                                  {/* Favicon Preview */}
+                                  {/* <div className="border border-gray-100 rounded-lg p-3 bg-gray-50 flex items-center justify-center">
   <img
     src={system.favicon ? `${system.favicon}?t=${Date.now()}` : ""}
     alt="Favicon Preview"
@@ -1472,17 +1497,23 @@ const handleLogoFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
                                   <p className="text-xs text-gray-600 mb-2">
                                     Preview (16×16):
                                   </p>
-                                 <div className="border border-gray-100 rounded-lg p-3 bg-gray-50 flex items-center justify-center">
-  <img
-    src={system.favicon ? `${system.favicon}?t=${Date.now()}` : ""}
-    alt="Favicon Preview"
-    className="h-12 w-12 mx-auto object-contain"
-    key={system.favicon} // Add key to force re-render
-    onError={(e) => {
-      (e.target as HTMLImageElement).style.display = 'none';
-    }}
-  />
-</div>
+                                  <div className="border border-gray-100 rounded-lg p-3 bg-gray-50 flex items-center justify-center">
+                                    <img
+                                      src={
+                                        system.favicon
+                                          ? `${system.favicon}?t=${Date.now()}`
+                                          : ""
+                                      }
+                                      alt="Favicon Preview"
+                                      className="h-12 w-12 mx-auto object-contain"
+                                      key={system.favicon} // Add key to force re-render
+                                      onError={(e) => {
+                                        (
+                                          e.target as HTMLImageElement
+                                        ).style.display = "none";
+                                      }}
+                                    />
+                                  </div>
                                 </div>
                               ) : (
                                 <div className="text-center py-4 border-2 border-dashed border-gray-200 rounded-lg bg-gray-50">
