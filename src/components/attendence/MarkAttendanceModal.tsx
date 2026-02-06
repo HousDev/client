@@ -336,7 +336,6 @@ const AttendanceTracker: React.FC<AttendanceTrackerProps> = ({
   const [showCamera, setShowCamera] = useState(true);
   const [facingMode, setFacingMode] = useState<FacingMode>("user");
   const { user } = useAuth();
-  console.log(user);
   const checkLocation = useCallback(() => {
     if (!navigator.geolocation) return;
     navigator.geolocation.getCurrentPosition(
@@ -385,7 +384,7 @@ const AttendanceTracker: React.FC<AttendanceTrackerProps> = ({
 
     setLoading(true);
     try {
-      const type = currentStatus === PunchStatus.OUT ? "in" : "out";
+      const type = currentStatus === PunchStatus.IN ? "in" : "out";
 
       const payload = {
         user_id: user.id,
@@ -394,8 +393,13 @@ const AttendanceTracker: React.FC<AttendanceTrackerProps> = ({
         selfie: selfie, // base64 string
       };
 
-      const result: any = await attendanceApi.punchIn(payload);
-
+      console.log("this is my payload : ", payload);
+      let result: any;
+      if (type === "in") {
+        result = await attendanceApi.punchIn(payload);
+      } else {
+        result = await attendanceApi.punchOut(payload);
+      }
       // const result = await attendanceService.markAttendance(
       //   {
       //     user_id: 101,
@@ -477,12 +481,12 @@ const AttendanceTracker: React.FC<AttendanceTrackerProps> = ({
           onClick={handleSubmit}
           disabled={loading || (!selfie && currentStatus === PunchStatus.OUT)}
           className={`w-full py-5 text-white font-black text-xl shadow-lg transition-all active:scale-[0.98] rounded-2xl ${
-            currentStatus === PunchStatus.OUT ? "bg-[#12e5b1]" : "bg-[#f14641]"
+            currentStatus === PunchStatus.IN ? "bg-[#12e5b1]" : "bg-[#f14641]"
           } disabled:opacity-50`}
         >
           {loading ? (
             <Loader2 className="animate-spin mx-auto" />
-          ) : currentStatus === PunchStatus.OUT ? (
+          ) : currentStatus === PunchStatus.IN ? (
             "Punch In"
           ) : (
             "Punch Out"
@@ -517,6 +521,7 @@ const MarkAttendanceModal: React.FC<MarkAttendanceModalProps> = ({
   userId,
 }) => {
   const [records, setRecords] = useState<AttendanceRecord[]>([]);
+  const [lastUserAttendance, setLastUserAttendance] = useState<any>();
   const [currentStatus, setCurrentStatus] = useState<PunchStatus>(
     PunchStatus.OUT,
   );
@@ -525,27 +530,13 @@ const MarkAttendanceModal: React.FC<MarkAttendanceModalProps> = ({
   const loadData = async () => {
     setIsLoading(true);
     try {
-      const [status, history] = await Promise.all([
-        attendanceService.getStatus(userId),
-        attendanceService.getHistory(userId),
-      ]);
+      const lastAttendance: any =
+        await attendanceApi.getUserLastAttendance(userId);
 
       setCurrentStatus(
-        status.current_cycle === "in" ? PunchStatus.IN : PunchStatus.OUT,
+        lastAttendance.punch_out_time ? PunchStatus.IN : PunchStatus.OUT,
       );
-
-      const formattedHistory: AttendanceRecord[] = history.map((item: any) => ({
-        id: item.id,
-        timestamp: new Date(item.timestamp),
-        type: item.type === "in" ? PunchStatus.IN : PunchStatus.OUT,
-        location: { latitude: item.latitude, longitude: item.longitude },
-        address: item.address,
-        selfie: item.selfie,
-        workType: item.work_type,
-        shiftInfo: item.shift_info,
-      }));
-
-      setRecords(formattedHistory);
+      setLastUserAttendance(lastAttendance);
     } catch (err) {
       console.error("Data loading failed", err);
     } finally {
