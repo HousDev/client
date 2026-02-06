@@ -413,7 +413,7 @@ export default function Layout({
         </div>
 
         {/* Mobile Profile Section */}
-        {sidebarOpen && (
+        {/* {sidebarOpen && (
           <div className="p-4 border-b border-gray-700 lg:hidden">
             <div className="flex items-center justify-between gap-3 px-3 py-2 bg-[#3D3D3D] rounded-lg">
               <div className="flex items-center gap-3">
@@ -443,7 +443,7 @@ export default function Layout({
               </button>
             </div>
           </div>
-        )}
+        )} */}
 
         {/* Navigation */}
         <nav className="flex-1 overflow-y-auto py-4 px-3 scrollbar-thin scrollbar-thumb-gray-600 scrollbar-track-transparent">

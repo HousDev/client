@@ -1353,24 +1353,50 @@ export default function MaterialRequests() {
     }
 
     // Date filters (from-to range)
-    if (!ignoreDate) {
-      if (filterFromDate) {
-        filtered = filtered.filter((request) => {
-          const requestDate = new Date(request.start_date);
-          const fromDate = new Date(filterFromDate);
-          return requestDate >= fromDate;
-        });
-      }
+    // Date filters (from-to range)
+if (!ignoreDate) {
+  if (filterFromDate) {
+    filtered = filtered.filter((request) => {
+      const requestDate = new Date(request.start_date);
+      const fromDate = new Date(filterFromDate);
+      
+      // Reset times to compare only dates
+      const requestDateOnly = new Date(
+        requestDate.getFullYear(),
+        requestDate.getMonth(),
+        requestDate.getDate()
+      );
+      const fromDateOnly = new Date(
+        fromDate.getFullYear(),
+        fromDate.getMonth(),
+        fromDate.getDate()
+      );
+      
+      return requestDateOnly >= fromDateOnly;
+    });
+  }
 
-      if (filterToDate) {
-        filtered = filtered.filter((request) => {
-          const requestDate = new Date(request.start_date);
-          const toDate = new Date(filterToDate);
-          toDate.setHours(23, 59, 59, 999);
-          return requestDate <= toDate;
-        });
-      }
-    }
+  if (filterToDate) {
+    filtered = filtered.filter((request) => {
+      const requestDate = new Date(request.start_date);
+      const toDate = new Date(filterToDate);
+      
+      // Reset times to compare only dates
+      const requestDateOnly = new Date(
+        requestDate.getFullYear(),
+        requestDate.getMonth(),
+        requestDate.getDate()
+      );
+      const toDateOnly = new Date(
+        toDate.getFullYear(),
+        toDate.getMonth(),
+        toDate.getDate()
+      );
+      
+      return requestDateOnly <= toDateOnly;
+    });
+  }
+}
 
     setFilteredRequests(filtered);
     // Reset select all when filtered results change
@@ -1491,13 +1517,21 @@ export default function MaterialRequests() {
   };
 
   const resetFilters = () => {
-    setFilterFromDate("");
-    setFilterToDate("");
-    setIgnoreDate(false);
-  };
+  setFilterFromDate("");
+  setFilterToDate("");
+  setIgnoreDate(false);
+  setSearchRequestNo("");
+  setSearchRequester("");
+  setSearchProject("");
+  setSearchWorkType("");
+  setSearchStatus("");
+  setSearchDate("");
+  setSearchItems("");
+  setShowFilterSidebar(false);
+};
 
-  const applyFilters = () => {
-    setShowFilterSidebar(false);
+ const applyFilters = () => {
+  setShowFilterSidebar(false);
   };
 
   if (loading) {
@@ -1512,7 +1546,7 @@ export default function MaterialRequests() {
   }
 
   return (
-    <div className="p-4 px-0 md:px-0 md:p-4 -mt-5 bg-gray-50 min-h-screen">
+    <div className="p-4 px-0 md:px-0 md:p-4 -mt-5 bg-gray-50 ">
       {/* Delete Button (Appears when checkboxes are selected) */}
       {/* {selectedRequests.size > 0 && (
         <div className="mb-4">
@@ -1545,10 +1579,10 @@ export default function MaterialRequests() {
       )} */}
 
       {/* Desktop View - Table */}
-      <div className="hidden md:block bg-white rounded-xl shadow-sm border border-gray-200  px-0 overflow-hidden">
-        <div className="overflow-x-auto">
-          <table className="w-full min-w-[1200px]">
-            <thead className="bg-gray-200 border-b border-gray-200">
+      <div className="hidden md:block bg-white rounded-xl shadow-sm border border-gray-200  px-0 ">
+<div className="overflow-x-auto h-[calc(100vh-160px)]">     
+          <table className="w-full min-w-[800px]">
+            <thead className="sticky top-0 z-10 rounded-xl bg-gray-200 border-b border-gray-200">
               <tr>
                 <th className="px-3 py-2 text-left">
                   <div className="text-xs font-semibold text-gray-700 uppercase tracking-wider">
@@ -1597,8 +1631,7 @@ export default function MaterialRequests() {
               </tr>
 
               {/* Search Row */}
-              <tr className="bg-gray-50 border-b border-gray-200">
-                <td className="px-3 py-1.5">
+<tr className="sticky top-[40px] z-10 bg-gray-50 border-b border-gray-200">                <td className="px-3 py-1.5">
                   <input
                     type="text"
                     placeholder="Search..."
@@ -1802,10 +1835,8 @@ export default function MaterialRequests() {
 
       {/* Mobile View - Table Layout (Not Cards) */}
       <div className="md:hidden bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
-        <div className="overflow-x-auto">
-          <table className="w-full min-w-[768px]">
-            <thead className="bg-gray-200 border-b border-gray-200">
-              <tr>
+<div className="overflow-x-auto h-[calc(100vh-160px)]">          <table className="w-full min-w-[768px]">
+<thead className="sticky top-0 z-10 bg-gray-200 border-b border-gray-200">              <tr>
                 <th className="px-3 py-2 text-center w-6">
                   <div className="flex items-center justify-center">
                     <button
@@ -2078,104 +2109,127 @@ export default function MaterialRequests() {
       </div>
 
       {/* Filter Sidebar - Fixed position for mobile */}
-      {showFilterSidebar && (
-        <div className="fixed inset-0 z-50 overflow-hidden">
-          <div
-            className={`absolute inset-0 bg-black bg-opacity-50 transition-opacity ${
-              showFilterSidebar ? "opacity-100" : "opacity-0"
-            }`}
-            onClick={() => setShowFilterSidebar(false)}
-          ></div>
-          <div
-            className={`absolute inset-y-0 right-0 bg-white shadow-2xl flex flex-col transition-transform duration-300 ${
-              showFilterSidebar ? "translate-x-0" : "translate-x-full"
-            } md:max-w-md w-full md:w-96`}
+{/* Filter Sidebar */}
+{showFilterSidebar && (
+  <div className="fixed inset-0 z-50 overflow-hidden">
+    <div
+      className="absolute inset-0 bg-black bg-opacity-50 transition-opacity"
+      onClick={() => setShowFilterSidebar(false)}
+    ></div>
+    <div className="absolute inset-y-0 right-0 bg-white shadow-2xl flex flex-col w-full md:w-96">
+      <div className="bg-red-600 px-4 py-3 flex justify-between items-center">
+        <h2 className="text-lg font-bold text-white">Filters</h2>
+        <div className="flex items-center gap-3">
+          <button
+            onClick={resetFilters}
+            className="text-white text-sm hover:bg-white hover:bg-opacity-20 px-3 py-1.5 rounded transition"
           >
-            <div className="bg-red-600 px-4 py-3 flex justify-between items-center">
-              <h2 className="text-lg font-bold text-white">Filters</h2>
-              <div className="flex items-center gap-3">
-                <button
-                  onClick={resetFilters}
-                  className="text-white text-xs md:text-sm hover:bg-white hover:bg-opacity-20 px-2 md:px-3 py-1 md:py-1.5 rounded transition"
-                >
-                  Reset
-                </button>
-                <button
-                  onClick={() => setShowFilterSidebar(false)}
-                  className="text-white hover:bg-white hover:bg-opacity-20 rounded-lg p-1 transition"
-                >
-                  <X className="w-4 h-4 md:w-5 md:h-5" />
-                </button>
-              </div>
+            Clear All
+          </button>
+          <button
+            onClick={() => setShowFilterSidebar(false)}
+            className="text-white hover:bg-white hover:bg-opacity-20 rounded-lg p-1 transition"
+          >
+            <X className="w-5 h-5" />
+          </button>
+        </div>
+      </div>
+
+      <div className="flex-1 overflow-y-auto p-6 space-y-6">
+        <div>
+          <h3 className="font-medium text-gray-700 mb-4">Date Range</h3>
+          <div className="space-y-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                From Date
+              </label>
+              <input
+                type="date"
+                value={filterFromDate}
+                onChange={(e) => setFilterFromDate(e.target.value)}
+                disabled={ignoreDate}
+                className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:bg-gray-100 disabled:cursor-not-allowed"
+              />
             </div>
 
-            <div className="flex-1 overflow-y-auto p-4 md:p-6 space-y-4 md:space-y-6">
-              <div className="border-t pt-4">
-                <label className="block text-xs md:text-sm font-medium text-gray-700 mb-2">
-                  From Date
-                </label>
-                <input
-                  type="date"
-                  value={filterFromDate}
-                  onChange={(e) => setFilterFromDate(e.target.value)}
-                  disabled={ignoreDate}
-                  className="w-full px-3 py-2 text-xs md:text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:bg-gray-100 disabled:cursor-not-allowed"
-                />
-              </div>
-
-              <div>
-                <label className="block text-xs md:text-sm font-medium text-gray-700 mb-2">
-                  To Date
-                </label>
-                <input
-                  type="date"
-                  value={filterToDate}
-                  onChange={(e) => setFilterToDate(e.target.value)}
-                  disabled={ignoreDate}
-                  className="w-full px-3 py-2 text-xs md:text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:bg-gray-100 disabled:cursor-not-allowed"
-                />
-              </div>
-
-              <div className="flex items-center gap-2">
-                <input
-                  type="checkbox"
-                  id="ignoreDate"
-                  checked={ignoreDate}
-                  onChange={(e) => {
-                    setIgnoreDate(e.target.checked);
-                    if (e.target.checked) {
-                      setFilterFromDate("");
-                      setFilterToDate("");
-                    }
-                  }}
-                  className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
-                />
-                <label
-                  htmlFor="ignoreDate"
-                  className="text-xs md:text-sm text-gray-700 cursor-pointer"
-                >
-                  Ignore Date
-                </label>
-              </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                To Date
+              </label>
+              <input
+                type="date"
+                value={filterToDate}
+                onChange={(e) => setFilterToDate(e.target.value)}
+                disabled={ignoreDate}
+                className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:bg-gray-100 disabled:cursor-not-allowed"
+              />
             </div>
 
-            <div className="border-t p-4 flex gap-3">
-              <button
-                onClick={resetFilters}
-                className="flex-1 px-4 py-2 text-xs md:text-sm border border-gray-300 rounded-lg hover:bg-gray-50 transition font-medium text-gray-700"
+            <div className="flex items-center gap-2 pt-2">
+              <input
+                type="checkbox"
+                id="ignoreDate"
+                checked={ignoreDate}
+                onChange={(e) => {
+                  setIgnoreDate(e.target.checked);
+                  if (e.target.checked) {
+                    setFilterFromDate("");
+                    setFilterToDate("");
+                  }
+                }}
+                className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+              />
+              <label
+                htmlFor="ignoreDate"
+                className="text-sm text-gray-700 cursor-pointer"
               >
-                Reset
-              </button>
-              <button
-                onClick={applyFilters}
-                className="flex-1 bg-red-600 text-white px-4 py-2 text-xs md:text-sm rounded-lg hover:shadow-lg transition font-medium"
-              >
-                Apply
-              </button>
+                Show all dates (ignore date filter)
+              </label>
             </div>
           </div>
         </div>
-      )}
+
+        <div className="border-t pt-6">
+          <h3 className="font-medium text-gray-700 mb-4">Quick Filters</h3>
+          <div className="space-y-3">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Status
+              </label>
+              <select
+                value={searchStatus}
+                onChange={(e) => setSearchStatus(e.target.value)}
+                className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              >
+                <option value="">All Status</option>
+                <option value="pending">Pending</option>
+                <option value="approved">Approved</option>
+                <option value="rejected">Rejected</option>
+                <option value="processing">Processing</option>
+                <option value="completed">Completed</option>
+              </select>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div className="border-t p-4 flex gap-3">
+        <button
+          onClick={resetFilters}
+          className="flex-1 px-4 py-2 text-sm border border-gray-300 rounded-lg hover:bg-gray-50 transition font-medium text-gray-700"
+        >
+          Clear All
+        </button>
+        <button
+          onClick={() => setShowFilterSidebar(false)}
+          className="flex-1 bg-red-600 text-white px-4 py-2 text-sm rounded-lg hover:bg-red-700 transition font-medium"
+        >
+          Apply Filters
+        </button>
+      </div>
+    </div>
+  </div>
+)}
 
       {showViewRequestMaterial && selectedRequest && (
         <ViewRequestMaterial

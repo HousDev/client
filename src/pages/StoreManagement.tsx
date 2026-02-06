@@ -1522,7 +1522,7 @@ const handleCategoryChange = async (category: string) => {
         />
       )}
       {/* Main Tabs */}
-      <div className="mt-12 md:mt-2 flex bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden mb-4 md:mb-6 mx-0 md:mx-0">
+      <div className=" sticky top-20 z-10 mt-12 md:mt-2 flex bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden mb-4 md:mb-6 mx-0 md:mx-0">
         {" "}
         <button
           onClick={() => setActiveTab("tracking")}
@@ -1553,7 +1553,7 @@ const handleCategoryChange = async (category: string) => {
       </div>
       {/* Sub Tabs for Tracking */}
       {activeTab === "tracking" && (
-        <div className="flex bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden mb-4 md:mb-6 mx-4 md:mx-0">
+        <div className=" sticky top-36 z-10 flex bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden mb-4 md:mb-6 mx-4 md:mx-0">
           <button
             onClick={() => setSubTabs("MaterialIn")}
             className={`flex-1 px-2 md:px-4 py-2 font-medium transition-all duration-200
@@ -1620,11 +1620,13 @@ const handleCategoryChange = async (category: string) => {
         <MaterialIssueTransactions loadTableData={loadTableData} />
       )}
       {/* Management Table */}
-      {activeTab === "management" && (
-  <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden mx-0 md:mx-0">
-    <div className="overflow-x-auto">
-      <table className="w-full min-w-[1000px]">
-        <thead className="bg-gray-200 border-b border-gray-200">
+     {activeTab === "management" && (
+  <div className="   sticky top-40 z-10 bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden mx-0 md:mx-0">
+    {/* Change 1: Updated container with max height */}
+    <div className="overflow-y-auto max-h-[calc(100vh-250px)]">
+      <table className=" sticky top-48 z-10 w-full min-w-[1000px]">
+        {/* Change 2: Added sticky to thead */}
+        <thead className="sticky top-0 z-10 bg-gray-200 border-b border-gray-200">
           {/* Column Headers */}
           <tr>
             <th className="px-2 md:px-4 py-2 text-left w-72">
@@ -1664,8 +1666,8 @@ const handleCategoryChange = async (category: string) => {
             </th>
           </tr>
 
-          {/* Search Row */}
-          <tr className="bg-gray-50 border-b border-gray-200">
+          {/* Change 3: Added sticky to search row */}
+          <tr className="sticky top-[40px] z-10 bg-gray-50 border-b border-gray-200">
             {/* Material Details Column */}
             <td className="px-2 md:px-4 py-0.5">
               <input

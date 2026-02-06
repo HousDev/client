@@ -2607,6 +2607,13 @@ export default function MaterialsEnhanced() {
     setSelectAll(!selectAll);
   };
 
+  const formatCurrency = (amount?: number) => {
+    return new Intl.NumberFormat("en-IN", {
+      style: "currency",
+      currency: "INR",
+    }).format(amount || 0);
+  };
+
   // Filter function
   // Update the filter function
   const filteredPOs = poData.filter((po) => {
@@ -2712,12 +2719,7 @@ export default function MaterialsEnhanced() {
     }
   };
 
-  const formatCurrency = (amount?: number) => {
-    return new Intl.NumberFormat("en-IN", {
-      style: "currency",
-      currency: "INR",
-    }).format(amount || 0);
-  };
+  
 
   if (loading) {
     return (
@@ -2731,7 +2733,7 @@ export default function MaterialsEnhanced() {
   }
 
   return (
-    <div className="p-3 px-0 md:p-0 -mt-3.5 bg-gray-50 min-h-screen">
+    <div className="p-3 px-0 md:p-0 -mt-3.5 bg-gray-50 ">
       {/* Delete Button (Appears when checkboxes are selected) */}
       {selectedPOs.length > 0 && (
         <div className="mb-4">
@@ -2774,11 +2776,11 @@ export default function MaterialsEnhanced() {
       )}
 
       {/* Summary Cards - Responsive */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-2 mb-2 mx-0">
+      <div className="sticky top-20 z-10  mt-2 grid grid-cols-2 md:grid-cols-4 gap-2 mb-2 mx-0">
         {/* Total POs */}
         <div className="bg-white px-2.5 py-2 rounded-lg border border-gray-200 flex items-center justify-between">
           <div>
-            <p className="text-[11px] text-gray-500 leading-none">Total POs</p>
+            <p className="text-[11px] text-gray-500 leading-none">Total PO</p>
             <p className="text-sm font-semibold text-gray-800">
               {poData.length}
             </p>
@@ -2822,9 +2824,9 @@ export default function MaterialsEnhanced() {
 
       {/* Table */}
       <div className="bg-white rounded-xl px-0 shadow-sm border border-gray-200 overflow-hidden">
-        <div className="overflow-x-auto">
-          <table className="w-full min-w-[1000px]">
-            <thead className="bg-gray-200 border-b border-gray-200">
+<div className="overflow-x-auto h-[calc(100vh-160px)]">     
+          <table className=" w-full min-w-[800px]">
+<thead className="sticky top-0 z-10 bg-gray-200 border-b border-gray-200">                {/* Header Row */}
               <tr>
                 <th className="px-3 py-2 text-center w-6">
                   <div className="flex items-center justify-center">
