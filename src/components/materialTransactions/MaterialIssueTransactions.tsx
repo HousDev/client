@@ -462,12 +462,12 @@ const MaterialIssueTransactions = (loadTableData: any) => {
   };
 
   return (
-    <div className="p-3 md:p-4 bg-gray-50 min-h-screen">
+    <div className="  p-3 md:p-4 bg-gray-50 min-h-screen">
   {/* Main Table */}
-  <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
-    <div className="overflow-x-auto">
-      <table className="w-full min-w-[1000px]">
-        <thead className="bg-gray-200 border-b border-gray-200">
+  <div className=" sticky top-52 z-10 bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+<div className="overflow-y-auto max-h-[calc(100vh-240px)]">           
+      <table className=" sticky top-48 z-10 w-full min-w-[1000px]">
+        <thead className="sticky top-0 z-10 bg-gray-200 border-b border-gray-200">
           <tr>
             <th className="px-2 md:px-4 py-2 text-left">
               <div className="text-[10px] md:text-xs font-semibold text-gray-700 uppercase tracking-wider">

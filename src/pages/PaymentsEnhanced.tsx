@@ -1273,6 +1273,8 @@ const STATUS_FILTERS = [
   { value: "completed", name: "Completed" },
   { value: "partial", name: "Partial" },
   { value: "overdue", name: "Overdue" },
+    { value: "success", name: "Success" }, // Changed from "completed"
+
 ];
 
 const PAYMENT_METHODS = [
@@ -1513,76 +1515,141 @@ export default function PaymentsEnhanced() {
   };
 
   const getFilteredHistory = () => {
-    return paymentHistorys.filter((payment: any) => {
-      if (searchTerm) {
-        const searchLower = searchTerm.toLowerCase();
-        const matches =
-          payment.purchase_order?.po_number
-            ?.toLowerCase()
-            .includes(searchLower) ||
-          payment.purchase_order?.vendors?.name
-            ?.toLowerCase()
-            .includes(searchLower) ||
-          payment.payment_method?.toLowerCase().includes(searchLower) ||
-          payment.status?.toLowerCase().includes(searchLower);
-        if (!matches) return false;
-      }
-
-      if (
-        paymentMethodFilter !== "all" &&
-        paymentMethodFilter !== payment.payment_method
-      ) {
-        return false;
-      }
-
-      if (
-        searchReference &&
-        !payment.payment_reference_no
+  return paymentHistorys.filter((payment: any) => {
+    const paymentMethod = (payment.payment_method || "").toLowerCase();
+    const paymentStatus = (payment.status || "").toLowerCase();
+    
+    // General search term across multiple fields
+    if (searchTerm) {
+      const searchLower = searchTerm.toLowerCase();
+      const matches =
+        payment.purchase_order?.po_number
           ?.toLowerCase()
-          .includes(searchReference.toLowerCase())
-      ) {
+          .includes(searchLower) ||
+        payment.purchase_order?.vendors?.name
+          ?.toLowerCase()
+          .includes(searchLower) ||
+        paymentMethod.includes(searchLower) ||
+        paymentStatus.includes(searchLower) ||
+        payment.payment_reference_no
+          ?.toLowerCase()
+          .includes(searchLower);
+      if (!matches) return false;
+    }
+
+    // PO Number specific search
+    if (
+      searchPONumber &&
+      !payment.purchase_order?.po_number
+        ?.toLowerCase()
+        .includes(searchPONumber.toLowerCase())
+    ) {
+      return false;
+    }
+
+    // Vendor specific search
+    if (
+      searchVendor &&
+      !payment.purchase_order?.vendors?.name
+        ?.toLowerCase()
+        .includes(searchVendor.toLowerCase())
+    ) {
+      return false;
+    }
+
+    // Amount specific search
+    if (
+      searchAmount &&
+      !String(payment.amount_paid || 0).includes(searchAmount)
+    ) {
+      return false;
+    }
+
+    // Payment method filter - handle both lowercase and uppercase
+    if (paymentMethodFilter !== "all") {
+      const filterMethod = paymentMethodFilter.toLowerCase();
+      if (paymentMethod !== filterMethod) {
         return false;
       }
+    }
 
-      if (searchAmount && !String(payment.amount_paid).includes(searchAmount)) {
+    // Reference number search
+    if (
+      searchReference &&
+      !payment.payment_reference_no
+        ?.toLowerCase()
+        .includes(searchReference.toLowerCase())
+    ) {
+      return false;
+    }
+
+    // Date search
+    if (
+      searchDate &&
+      payment.payment_date &&
+      !payment.payment_date.includes(searchDate)
+    ) {
+      return false;
+    }
+
+    // Status filter - handle both lowercase and uppercase
+    if (statusFilter !== "all") {
+      const filterStatus = statusFilter.toLowerCase();
+      if (paymentStatus !== filterStatus) {
         return false;
       }
+    }
 
-      if (
-        searchDate &&
-        payment.payment_date &&
-        !payment.payment_date.includes(searchDate)
-      ) {
+    return true;
+  });
+};
+ const getFilteredReminders = () => {
+  return paymentReminders.filter((reminder) => {
+    // Status filter - handle case sensitivity
+    if (statusFilter !== "all") {
+      const reminderStatus = (reminder.status || "").toLowerCase();
+      const filterStatus = statusFilter.toLowerCase();
+      if (reminderStatus !== filterStatus) {
         return false;
       }
+    }
 
-      return true;
-    });
-  };
+    // PO Number search
+    if (
+      searchPONumber &&
+      !reminder.po_number?.toLowerCase().includes(searchPONumber.toLowerCase())
+    ) {
+      return false;
+    }
 
-  const getFilteredReminders = () => {
-    return paymentReminders.filter((reminder) => {
-      if (searchTerm) {
-        const searchLower = searchTerm.toLowerCase();
-        const matches =
-          reminder.po_number?.toLowerCase().includes(searchLower) ||
-          reminder.vendor?.toLowerCase().includes(searchLower) ||
-          reminder.status?.toLowerCase().includes(searchLower);
-        if (!matches) return false;
-      }
+    // Vendor search
+    if (
+      searchVendor &&
+      !reminder.vendor?.toLowerCase().includes(searchVendor.toLowerCase())
+    ) {
+      return false;
+    }
 
-      if (
-        searchDate &&
-        reminder.due_date &&
-        !reminder.due_date.includes(searchDate)
-      ) {
-        return false;
-      }
+    // Amount search
+    if (
+      searchAmount &&
+      !String(reminder.balance_amount || 0).includes(searchAmount)
+    ) {
+      return false;
+    }
 
-      return true;
-    });
-  };
+    // Date search
+    if (
+      searchDate &&
+      reminder.due_date &&
+      !reminder.due_date.includes(searchDate)
+    ) {
+      return false;
+    }
 
+    return true;
+  });
+};
   // Selection handlers
   const handleSelectAll = () => {
     const filtered = getFilteredPOs();
@@ -1810,11 +1877,11 @@ export default function PaymentsEnhanced() {
   }
 
   return (
-    <div className="p-3 md:p-4 px-0 md:px-0 -mt-5 bg-gray-50 min-h-screen">
+    <div className="p-3 md:p-4 px-0 md:px-0 -mt-5 bg-gray-50 ">
       {/* Header */}
-      <div className="mb-0">
+      <div className="sticky top-20 z-10 mb-0">
         {/* Compact Stats Cards */}
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-2 md:gap-3 mb-4">
+        <div className="  grid grid-cols-2 lg:grid-cols-4 gap-2 md:gap-3 mb-4">
           {/* Total Paid */}
           <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-2.5 sm:p-3 hover:border-green-500 transition-all duration-200 min-w-0">
             <div className="flex items-start justify-between gap-2">
@@ -1890,7 +1957,7 @@ export default function PaymentsEnhanced() {
         </div>
 
         {/* Tabs */}
-        <div className="bg-white rounded-xl shadow-sm border border-gray-200 mb-4 overflow-hidden">
+        <div className="sticky top-24 z-10 bg-white rounded-xl shadow-sm border border-gray-200 mb-4 ">
           <div className="flex flex-row w-full overflow-x-auto scrollbar-hide">
             <button
               onClick={() => setActiveTab("payments")}
@@ -1966,10 +2033,10 @@ export default function PaymentsEnhanced() {
 
       {/* Payments Tab */}
       {activeTab === "payments" && (
-        <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
-          <div className="overflow-x-auto">
-            <table className="w-full min-w-[820px] lg:min-w-full">
-              <thead className="bg-gray-200 border-b border-gray-200">
+        <div className="sticky top-56 z-10 bg-white rounded-xl shadow-sm border border-gray-200 ">
+<div className="overflow-y-auto max-h-[calc(100vh-270px)]">           
+            <table className="sticky top-48 z-10 w-full min-w-[820px] lg:min-w-full">
+              <thead className="sticky top-0 z-10 bg-gray-200 border-b border-gray-200">
                 <tr>
                   <th className="px-2 md:px-4 py-2 text-center w-10">
                     <input
@@ -2228,236 +2295,255 @@ export default function PaymentsEnhanced() {
       )}
 
       {/* History Tab */}
-      {activeTab === "history" && (
-        <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
-          <div className="overflow-x-auto">
-            <table className="w-full min-w-[1000px]">
-              <thead className="bg-gray-200 border-b border-gray-200">
-                <tr>
-                  <th className="px-2 md:px-4 py-2 text-left">
-                    <div className="text-[10px] md:text-xs font-semibold text-gray-700 uppercase tracking-wider">
-                      PO NUMBER
-                    </div>
-                  </th>
-                  <th className="px-2 md:px-4 py-2 text-left">
-                    <div className="text-[10px] md:text-xs font-semibold text-gray-700 uppercase tracking-wider">
-                      VENDOR
-                    </div>
-                  </th>
-                  <th className="px-2 md:px-4 py-2 text-left">
-                    <div className="text-[10px] md:text-xs font-semibold text-gray-700 uppercase tracking-wider">
-                      AMOUNT
-                    </div>
-                  </th>
-                  <th className="px-2 md:px-4 py-2 text-left">
-                    <div className="text-[10px] md:text-xs font-semibold text-gray-700 uppercase tracking-wider">
-                      METHOD
-                    </div>
-                  </th>
-                  <th className="px-2 md:px-4 py-2 text-left">
-                    <div className="text-[10px] md:text-xs font-semibold text-gray-700 uppercase tracking-wider">
-                      REFERENCE
-                    </div>
-                  </th>
-                  <th className="px-2 md:px-4 py-2 text-left">
-                    <div className="text-[10px] md:text-xs font-semibold text-gray-700 uppercase tracking-wider">
-                      DATE
-                    </div>
-                  </th>
-                  <th className="px-2 md:px-4 py-2 text-left">
-                    <div className="text-[10px] md:text-xs font-semibold text-gray-700 uppercase tracking-wider">
-                      STATUS
-                    </div>
-                  </th>
-                  <th className="px-2 md:px-4 py-2 text-left">
-                    <div className="text-[10px] md:text-xs font-semibold text-gray-700 uppercase tracking-wider">
-                      Proof
-                    </div>
-                  </th>
-                </tr>
+     {activeTab === "history" && (
+  <div className="sticky top-56 z-10 bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+    <div className="overflow-y-auto max-h-[calc(100vh-270px)]">           
+      <table className="sticky top-48 z-10 w-full min-w-[800px]">
+        <thead className="sticky top-0 z-10 bg-gray-200 border-b border-gray-200">
+          <tr>
+            <th className="px-2 md:px-4 py-2 text-left">
+              <div className="text-[10px] md:text-xs font-semibold text-gray-700 uppercase tracking-wider">
+                PO NUMBER
+              </div>
+            </th>
+            <th className="px-2 md:px-4 py-2 text-left">
+              <div className="text-[10px] md:text-xs font-semibold text-gray-700 uppercase tracking-wider">
+                VENDOR
+              </div>
+            </th>
+            <th className="px-2 md:px-4 py-2 text-left">
+              <div className="text-[10px] md:text-xs font-semibold text-gray-700 uppercase tracking-wider">
+                AMOUNT
+              </div>
+            </th>
+            <th className="px-2 md:px-4 py-2 text-left">
+              <div className="text-[10px] md:text-xs font-semibold text-gray-700 uppercase tracking-wider">
+                METHOD
+              </div>
+            </th>
+            <th className="px-2 md:px-4 py-2 text-left">
+              <div className="text-[10px] md:text-xs font-semibold text-gray-700 uppercase tracking-wider">
+                REFERENCE
+              </div>
+            </th>
+            <th className="px-2 md:px-4 py-2 text-left">
+              <div className="text-[10px] md:text-xs font-semibold text-gray-700 uppercase tracking-wider">
+                DATE
+              </div>
+            </th>
+            <th className="px-2 md:px-4 py-2 text-left">
+              <div className="text-[10px] md:text-xs font-semibold text-gray-700 uppercase tracking-wider">
+                STATUS
+              </div>
+            </th>
+            <th className="px-2 md:px-4 py-2 text-left">
+              <div className="text-[10px] md:text-xs font-semibold text-gray-700 uppercase tracking-wider">
+                PROOF
+              </div>
+            </th>
+          </tr>
 
-                {/* Search Row */}
-                <tr className="bg-gray-50 border-b border-gray-200">
-                  <td className="px-2 md:px-4 py-1">
-                    <div className="relative">
-                      <div className="absolute left-2 top-1/2 -translate-y-1/2">
-                        <Search className="w-3 h-3 text-gray-400" />
-                      </div>
-                      <input
-                        type="text"
-                        placeholder="Search..."
-                        value={searchPONumber}
-                        onChange={(e) => setSearchPONumber(e.target.value)}
-                        className="w-full pl-7 pr-2 py-1 text-[10px] md:text-xs border border-gray-300 rounded focus:ring-1 focus:ring-blue-500 focus:border-transparent"
-                      />
-                    </div>
-                  </td>
+          {/* Search Row */}
+          <tr className="bg-gray-50 border-b border-gray-200">
+            <td className="px-2 md:px-4 py-1">
+              <div className="relative">
+                <div className="absolute left-2 top-1/2 -translate-y-1/2">
+                  <Search className="w-3 h-3 text-gray-400" />
+                </div>
+                <input
+                  type="text"
+                  placeholder="PO #..."
+                  value={searchPONumber}
+                  onChange={(e) => setSearchPONumber(e.target.value)}
+                  className="w-full pl-7 pr-2 py-1 text-[10px] md:text-xs border border-gray-300 rounded focus:ring-1 focus:ring-blue-500 focus:border-transparent"
+                />
+              </div>
+            </td>
 
-                  <td className="px-2 md:px-4 py-1">
-                    <div className="relative">
-                      <div className="absolute left-2 top-1/2 -translate-y-1/2">
-                        <User className="w-3 h-3 text-gray-400" />
-                      </div>
-                      <input
-                        type="text"
-                        placeholder="Search..."
-                        value={searchVendor}
-                        onChange={(e) => setSearchVendor(e.target.value)}
-                        className="w-full pl-7 pr-2 py-1 text-[10px] md:text-xs border border-gray-300 rounded focus:ring-1 focus:ring-blue-500 focus:border-transparent"
-                      />
-                    </div>
-                  </td>
+            <td className="px-2 md:px-4 py-1">
+              <div className="relative">
+                <div className="absolute left-2 top-1/2 -translate-y-1/2">
+                  <User className="w-3 h-3 text-gray-400" />
+                </div>
+                <input
+                  type="text"
+                  placeholder="Vendor..."
+                  value={searchVendor}
+                  onChange={(e) => setSearchVendor(e.target.value)}
+                  className="w-full pl-7 pr-2 py-1 text-[10px] md:text-xs border border-gray-300 rounded focus:ring-1 focus:ring-blue-500 focus:border-transparent"
+                />
+              </div>
+            </td>
 
-                  <td className="px-2 md:px-4 py-1">
-                    <div className="relative">
-                      <div className="absolute left-2 top-1/2 -translate-y-1/2">
-                        <IndianRupee className="w-3 h-3 text-gray-400" />
-                      </div>
-                      <input
-                        type="text"
-                        placeholder="Search..."
-                        value={searchAmount}
-                        onChange={(e) => setSearchAmount(e.target.value)}
-                        className="w-full pl-7 pr-2 py-1 text-[10px] md:text-xs border border-gray-300 rounded focus:ring-1 focus:ring-blue-500 focus:border-transparent"
-                      />
-                    </div>
-                  </td>
+            <td className="px-2 md:px-4 py-1">
+              <div className="relative">
+                <div className="absolute left-2 top-1/2 -translate-y-1/2">
+                  <IndianRupee className="w-3 h-3 text-gray-400" />
+                </div>
+                <input
+                  type="text"
+                  placeholder="Amount..."
+                  value={searchAmount}
+                  onChange={(e) => setSearchAmount(e.target.value)}
+                  className="w-full pl-7 pr-2 py-1 text-[10px] md:text-xs border border-gray-300 rounded focus:ring-1 focus:ring-blue-500 focus:border-transparent"
+                />
+              </div>
+            </td>
 
-                  <td className="px-2 md:px-4 py-1">
-                    <select
-                      value={paymentMethodFilter}
-                      onChange={(e) => setPaymentMethodFilter(e.target.value)}
-                      className="w-full px-2 py-1 text-[10px] md:text-xs border border-gray-300 rounded focus:ring-1 focus:ring-blue-500 focus:border-transparent"
-                    >
-                      <option value="all">All Methods</option>
-                      <option value="bank_transfer">Bank Transfer</option>
-                      <option value="cheque">Cheque</option>
-                      <option value="cash">Cash</option>
-                      <option value="online">Online</option>
-                    </select>
-                  </td>
+            <td className="px-2 md:px-4 py-1">
+              <select
+                value={paymentMethodFilter}
+                onChange={(e) => setPaymentMethodFilter(e.target.value)}
+                className="w-full px-2 py-1 text-[10px] md:text-xs border border-gray-300 rounded focus:ring-1 focus:ring-blue-500 focus:border-transparent"
+              >
+                <option value="all">All Methods</option>
+                <option value="bank_transfer">Bank Transfer</option>
+                <option value="cheque">Cheque</option>
+                <option value="cash">Cash</option>
+                <option value="online">Online</option>
+              </select>
+            </td>
 
-                  <td className="px-2 md:px-4 py-1">
-                    <div className="relative">
-                      <div className="absolute left-2 top-1/2 -translate-y-1/2">
-                        <FileText className="w-3 h-3 text-gray-400" />
-                      </div>
-                      <input
-                        type="text"
-                        placeholder="Search..."
-                        value={searchReference}
-                        onChange={(e) => setSearchReference(e.target.value)}
-                        className="w-full pl-7 pr-2 py-1 text-[10px] md:text-xs border border-gray-300 rounded focus:ring-1 focus:ring-blue-500 focus:border-transparent"
-                      />
-                    </div>
-                  </td>
+            <td className="px-2 md:px-4 py-1">
+              <div className="relative">
+                <div className="absolute left-2 top-1/2 -translate-y-1/2">
+                  <FileText className="w-3 h-3 text-gray-400" />
+                </div>
+                <input
+                  type="text"
+                  placeholder="Ref #..."
+                  value={searchReference}
+                  onChange={(e) => setSearchReference(e.target.value)}
+                  className="w-full pl-7 pr-2 py-1 text-[10px] md:text-xs border border-gray-300 rounded focus:ring-1 focus:ring-blue-500 focus:border-transparent"
+                />
+              </div>
+            </td>
 
-                  <td className="px-2 md:px-4 py-1">
-                    <div className="relative">
-                      <div className="absolute left-2 top-1/2 -translate-y-1/2">
-                        <Calendar className="w-3 h-3 text-gray-400" />
-                      </div>
-                      <input
-                        type="date"
-                        value={searchDate}
-                        onChange={(e) => setSearchDate(e.target.value)}
-                        className="w-full pl-7 pr-2 py-1 text-[10px] md:text-xs border border-gray-300 rounded focus:ring-1 focus:ring-blue-500 focus:border-transparent"
-                      />
-                    </div>
-                  </td>
+            <td className="px-2 md:px-4 py-1">
+              <div className="relative">
+                <div className="absolute left-2 top-1/2 -translate-y-1/2">
+                  <Calendar className="w-3 h-3 text-gray-400" />
+                </div>
+                <input
+                  type="date"
+                  value={searchDate}
+                  onChange={(e) => setSearchDate(e.target.value)}
+                  className="w-full pl-7 pr-2 py-1 text-[10px] md:text-xs border border-gray-300 rounded focus:ring-1 focus:ring-blue-500 focus:border-transparent"
+                />
+              </div>
+            </td>
 
-                  <td className="px-2 md:px-4 py-1">
-                    <select
-                      value={statusFilter}
-                      onChange={(e) => setStatusFilter(e.target.value)}
-                      className="w-full px-2 py-1 text-[10px] md:text-xs border border-gray-300 rounded focus:ring-1 focus:ring-blue-500 focus:border-transparent"
-                    >
-                      <option value="all">All Status</option>
-                      <option value="completed">Completed</option>
-                      <option value="pending">Pending</option>
-                      <option value="failed">Failed</option>
-                    </select>
-                  </td>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-200">
-                {filteredHistory.map((payment: any) => (
-                  <tr key={payment.id} className="hover:bg-gray-50 transition">
-                    <td className="px-2 md:px-4 py-2">
-                      <div className="font-bold text-blue-600 text-xs md:text-sm">
-                        {payment.purchase_order?.po_number || payment.po_id}
-                      </div>
-                    </td>
-                    <td className="px-2 md:px-4 py-2">
-                      <div className="text-gray-800 text-xs md:text-sm truncate max-w-[120px]">
-                        {payment.purchase_order?.vendors?.name || "-"}
-                      </div>
-                    </td>
-                    <td className="px-2 md:px-4 py-2">
-                      <div className="font-semibold text-green-600 text-xs md:text-sm">
-                        {formatCurrency(payment.amount_paid || 0)}
-                      </div>
-                    </td>
-                    <td className="px-2 md:px-4 py-2">
-                      <div className="text-gray-800 text-xs md:text-sm">
-                        {(payment.payment_method || "")
-                          .replace("_", " ")
-                          .toUpperCase() || "-"}
-                      </div>
-                    </td>
-                    <td className="px-2 md:px-4 py-2">
-                      <div className="text-gray-800 text-xs md:text-sm font-mono">
-                        {payment.payment_reference_no || "-"}
-                      </div>
-                    </td>
-                    <td className="px-2 md:px-4 py-2">
-                      <div className="text-gray-800 text-xs md:text-sm">
-                        {payment.payment_date
-                          ? new Date(payment.payment_date).toLocaleDateString()
-                          : "-"}
-                      </div>
-                    </td>
-                    <td className="px-2 md:px-4 py-2">
-                      <span
-                        className={`px-2 py-1 rounded-full text-[10px] md:text-xs font-medium ${getStatusColor(payment.status || "")}`}
-                      >
-                        {(payment.status || "pending").toUpperCase()}
-                      </span>
-                    </td>
-                    <td className="px-2 md:px-4 py-2">
-                      <button
-                        onClick={() => {
-                          setShowPaymentProofModal(true);
-                          setPaymentProofUrl(payment.payment_proof);
-                        }}
-                        className={`px-2 py-1 rounded-full text-[10px] md:text-xs font-medium  cursor-pointer text-blue-600`}
-                      >
-                        <Eye className="w-4 h-4" />
-                      </button>
-                    </td>
-                  </tr>
-                ))}
+            <td className="px-2 md:px-4 py-1">
+              <select
+                value={statusFilter}
+                onChange={(e) => setStatusFilter(e.target.value)}
+                className="w-full px-2 py-1 text-[10px] md:text-xs border border-gray-300 rounded focus:ring-1 focus:ring-blue-500 focus:border-transparent"
+              >
+                <option value="all">All Status</option>
+                <option value="pending">Pending</option>
+                <option value="success">Success</option>
+                <option value="failed">Failed</option>
+                <option value="cancelled">Cancelled</option>
+                <option value="completed">Completed</option>
+              </select>
+            </td>
+            
+            <td className="px-2 md:px-4 py-1">
+              <div className="flex gap-1">
+                <button
+                  onClick={() => setShowFilters(!showFilters)}
+                  className="inline-flex items-center px-2 py-1 border border-gray-300 rounded hover:bg-gray-50 transition text-[10px] md:text-xs font-medium text-gray-700"
+                  title="Advanced Filters"
+                >
+                  <Filter className="w-3 h-3 mr-1" />
+                  Filters
+                </button>
+              </div>
+            </td>
+          </tr>
+        </thead>
+        <tbody className="divide-y divide-gray-200">
+          {filteredHistory.map((payment: any) => (
+            <tr key={payment.id} className="hover:bg-gray-50 transition">
+              <td className="px-2 md:px-4 py-2">
+                <div className="font-bold text-blue-600 text-xs md:text-sm">
+                  {payment.purchase_order?.po_number || payment.po_id}
+                </div>
+              </td>
+              <td className="px-2 md:px-4 py-2">
+                <div className="text-gray-800 text-xs md:text-sm truncate max-w-[120px]">
+                  {payment.purchase_order?.vendors?.name || "-"}
+                </div>
+              </td>
+              <td className="px-2 md:px-4 py-2">
+                <div className="font-semibold text-green-600 text-xs md:text-sm">
+                  {formatCurrency(payment.amount_paid || 0)}
+                </div>
+              </td>
+              <td className="px-2 md:px-4 py-2">
+                <div className="text-gray-800 text-xs md:text-sm">
+                  {(payment.payment_method || "")
+                    .replace("_", " ")
+                    .toUpperCase() || "-"}
+                </div>
+              </td>
+              <td className="px-2 md:px-4 py-2">
+                <div className="text-gray-800 text-xs md:text-sm font-mono">
+                  {payment.payment_reference_no || "-"}
+                </div>
+              </td>
+              <td className="px-2 md:px-4 py-2">
+                <div className="text-gray-800 text-xs md:text-sm">
+                  {payment.payment_date
+                    ? new Date(payment.payment_date).toLocaleDateString()
+                    : "-"}
+                </div>
+              </td>
+              <td className="px-2 md:px-4 py-2">
+                <span
+                  className={`px-2 py-1 rounded-full text-[10px] md:text-xs font-medium ${getStatusColor(payment.status || "")}`}
+                >
+                  {(payment.status || "pending").toUpperCase()}
+                </span>
+              </td>
+              <td className="px-2 md:px-4 py-2">
+                <button
+                  onClick={() => {
+                    setShowPaymentProofModal(true);
+                    setPaymentProofUrl(payment.payment_proof);
+                  }}
+                  className={`px-2 py-1 rounded-full text-[10px] md:text-xs font-medium cursor-pointer text-blue-600 hover:bg-blue-50 transition`}
+                  title="View Payment Proof"
+                >
+                  <Eye className="w-4 h-4" />
+                </button>
+              </td>
+            </tr>
+          ))}
 
-                {filteredHistory.length === 0 && (
-                  <tr>
-                    <td colSpan={7} className="px-4 py-8 text-center">
-                      <FileClock className="w-12 h-12 md:w-16 md:h-16 text-gray-300 mx-auto mb-3" />
-                      <p className="text-gray-600 text-sm md:text-lg font-medium">
-                        No payment history found
-                      </p>
-                      <p className="text-gray-500 text-xs md:text-sm mt-1">
-                        {searchPONumber ||
-                        searchVendor ||
-                        searchAmount ||
-                        searchReference
-                          ? "Try adjusting your search"
-                          : "No payment history available"}
-                      </p>
-                    </td>
-                  </tr>
-                )}
-              </tbody>
-            </table>
+          {filteredHistory.length === 0 && (
+            <tr>
+              <td colSpan={8} className="px-4 py-8 text-center">
+                <FileClock className="w-12 h-12 md:w-16 md:h-16 text-gray-300 mx-auto mb-3" />
+                <p className="text-gray-600 text-sm md:text-lg font-medium">
+                  No payment history found
+                </p>
+                <p className="text-gray-500 text-xs md:text-sm mt-1">
+                  {searchPONumber ||
+                  searchVendor ||
+                  searchAmount ||
+                  searchReference ||
+                  paymentMethodFilter !== "all" ||
+                  statusFilter !== "all"
+                    ? "Try adjusting your search or filters"
+                    : "No payment history available"}
+                </p>
+              </td>
+            </tr>
+          )}
+        </tbody>
+      </table>
+
           </div>
           {showPaymentProofModal && (
             <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
@@ -2514,10 +2600,10 @@ export default function PaymentsEnhanced() {
 
       {/* Reminders Tab */}
       {activeTab === "reminders" && (
-        <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
-          <div className="overflow-x-auto">
-            <table className="w-full min-w-[1000px]">
-              <thead className="bg-gray-200 border-b border-gray-200">
+        <div className="sticky top-56 z-10 bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+<div className="overflow-y-auto max-h-[calc(100vh-270px)]">           
+            <table className="sticky top-48 z-10 w-full min-w-[1000px]">
+              <thead className="sticky top-0 z-10 bg-gray-200 border-b border-gray-200">
                 <tr>
                   <th className="px-2 md:px-4 py-2 text-left">
                     <div className="text-[10px] md:text-xs font-semibold text-gray-700 uppercase tracking-wider">
