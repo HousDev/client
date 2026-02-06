@@ -23,7 +23,9 @@ export default function CreateBranchModal({
 }: CreateBranchModalProps) {
   const [loading, setLoading] = useState(false);
   const [geoError, setGeoError] = useState<string | null>(null);
-  const [formData, setFormData] = useState<BranchFormData & { is_active: boolean }>({
+  const [formData, setFormData] = useState<
+    BranchFormData & { is_active: boolean }
+  >({
     name: "",
     address: "",
     city: "",
@@ -121,7 +123,10 @@ export default function CreateBranchModal({
       toast.error("Please get location coordinates");
       return false;
     }
-    if (formData.contact_email && !/\S+@\S+\.\S+/.test(formData.contact_email)) {
+    if (
+      formData.contact_email &&
+      !/\S+@\S+\.\S+/.test(formData.contact_email)
+    ) {
       toast.error("Please enter a valid email address");
       return false;
     }
@@ -211,7 +216,9 @@ export default function CreateBranchModal({
                   {mode === "edit" ? "Edit Branch" : "Create New Branch"}
                 </h2>
                 <p className="text-xs text-white/90 font-medium mt-0.5 hidden sm:block">
-                  {mode === "edit" ? "Update branch details" : "Add a new branch for your company"}
+                  {mode === "edit"
+                    ? "Update branch details"
+                    : "Add a new branch for your company"}
                 </p>
               </div>
             </div>
@@ -223,7 +230,10 @@ export default function CreateBranchModal({
             </button>
           </div>
 
-          <form onSubmit={handleSubmit} className="p-4 sm:p-6 max-h-[70vh] overflow-y-auto">
+          <form
+            onSubmit={handleSubmit}
+            className="p-4 sm:p-6 max-h-[70vh] overflow-y-auto"
+          >
             <div className="space-y-4 sm:space-y-6">
               <div className="grid grid-cols-1 gap-3 sm:gap-4">
                 <div className="space-y-1.5">
@@ -251,7 +261,10 @@ export default function CreateBranchModal({
                     placeholder="Email"
                     value={formData.contact_email}
                     onChange={(e) =>
-                      setFormData({ ...formData, contact_email: e.target.value })
+                      setFormData({
+                        ...formData,
+                        contact_email: e.target.value,
+                      })
                     }
                     className="w-full py-2 sm:py-2.5 text-sm border-2 border-gray-200 rounded-lg sm:rounded-xl focus:border-[#C62828] focus:ring-2 focus:ring-[#C62828]/20 outline-none transition-all duration-200 hover:border-gray-300"
                   />
@@ -267,11 +280,13 @@ export default function CreateBranchModal({
                     value={formData.contact_phone}
                     onChange={(e) => {
                       if (!/^\d*$/.test(e.target.value)) {
-                        toast.warning("Only numbers allowed");
                         return;
                       }
                       if (e.target.value.length <= 10) {
-                        setFormData({ ...formData, contact_phone: e.target.value });
+                        setFormData({
+                          ...formData,
+                          contact_phone: e.target.value,
+                        });
                       }
                     }}
                     className="w-full py-2 sm:py-2.5 text-sm border-2 border-gray-200 rounded-lg sm:rounded-xl focus:border-[#C62828] focus:ring-2 focus:ring-[#C62828]/20 outline-none transition-all duration-200 hover:border-gray-300"
@@ -287,9 +302,13 @@ export default function CreateBranchModal({
                     type="text"
                     placeholder="Pincode"
                     value={formData.pincode}
-                    onChange={(e) =>
-                      setFormData({ ...formData, pincode: e.target.value })
-                    }
+                    onChange={(e) => {
+                      if (!/^\d*$/.test(e.target.value)) {
+                        return;
+                      }
+
+                      setFormData({ ...formData, pincode: e.target.value });
+                    }}
                     className="w-full py-2 sm:py-2.5 text-sm border-2 border-gray-200 rounded-lg sm:rounded-xl focus:border-[#C62828] focus:ring-2 focus:ring-[#C62828]/20 outline-none transition-all duration-200 hover:border-gray-300"
                   />
                 </div>
@@ -364,12 +383,17 @@ export default function CreateBranchModal({
                     id="branch-status"
                     type="checkbox"
                     checked={formData.is_active}
-                    onChange={(e) => setFormData({ ...formData, is_active: e.target.checked })}
+                    onChange={(e) =>
+                      setFormData({ ...formData, is_active: e.target.checked })
+                    }
                     className="w-4 h-4 sm:w-5 sm:h-5 text-[#C62828] bg-gray-100 border-gray-300 rounded focus:ring-[#C62828] focus:ring-2"
                   />
                 </div>
                 <div className="ml-3 text-sm">
-                  <label htmlFor="branch-status" className="font-medium text-gray-900">
+                  <label
+                    htmlFor="branch-status"
+                    className="font-medium text-gray-900"
+                  >
                     Active Branch
                   </label>
                   <p className="text-gray-500">
@@ -392,7 +416,7 @@ export default function CreateBranchModal({
                   </div>
                 )}
 
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4 mb-3 sm:mb-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4 mb-3 sm:mb-4">
                   <div className="space-y-1.5">
                     <label className="block text-sm font-medium text-gray-700">
                       Latitude *
@@ -432,25 +456,6 @@ export default function CreateBranchModal({
                       required
                     />
                   </div>
-
-                  <div className="space-y-1.5">
-                    <label className="block text-sm font-medium text-gray-700">
-                      Geofence Radius (meters)
-                    </label>
-                    <Input
-                      type="number"
-                      min="100"
-                      step="100"
-                      value={formData.geofence_radius_meters}
-                      onChange={(e) =>
-                        setFormData({
-                          ...formData,
-                          geofence_radius_meters: parseInt(e.target.value) || 1000,
-                        })
-                      }
-                      className="w-full py-2 sm:py-2.5 text-sm border-2 border-gray-200 rounded-lg sm:rounded-xl focus:border-[#C62828] focus:ring-2 focus:ring-[#C62828]/20 outline-none transition-all duration-200 hover:border-gray-300"
-                    />
-                  </div>
                 </div>
 
                 <button
@@ -482,12 +487,16 @@ export default function CreateBranchModal({
                 {loading ? (
                   <>
                     <div className="w-4 h-4 sm:w-5 sm:h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                    <span>{mode === "edit" ? "Updating..." : "Creating..."}</span>
+                    <span>
+                      {mode === "edit" ? "Updating..." : "Creating..."}
+                    </span>
                   </>
                 ) : (
                   <>
                     <Save className="w-4 h-4 sm:w-5 sm:h-5" />
-                    <span>{mode === "edit" ? "Update Branch" : "Create Branch"}</span>
+                    <span>
+                      {mode === "edit" ? "Update Branch" : "Create Branch"}
+                    </span>
                   </>
                 )}
               </button>

@@ -723,7 +723,7 @@
 //     );
 // }
 
-import { useState, useEffect } from "react";
+import React, { useState, useEffect } from "react";
 import {
   Clock,
   Calendar,
@@ -737,6 +737,7 @@ import {
   AlertTriangle,
   UserCheck,
   X,
+  User,
 } from "lucide-react";
 import Card from "../components/ui/Card";
 import Button from "../components/ui/Button";
@@ -763,6 +764,7 @@ interface AttendanceRecord {
   project_location: string | null;
   user_name?: string;
   employee_code?: string;
+  trackingHistory?: any;
 }
 
 interface AttendanceStats {
@@ -780,7 +782,13 @@ export default function Attendance() {
   const [statusFilter, setStatusFilter] = useState<string>("");
   const [showMarkModal, setShowMarkModal] = useState(false);
   const [attendanceData, setAttendanceData] = useState<AttendanceRecord[]>([]);
-  const [showViewSelfieModal, setShowViewSelfieModal] = useState(false);
+  const [selectedAttendance, setSelectedAttendance] = useState<any>();
+  const [expandRow, setExpandRow] = useState<number | null>(null);
+  const [mapLoading, setMapLoading] = useState<boolean>(false);
+  const [showViewSelfieModal, setShowViewSelfieModal] =
+    useState<boolean>(false);
+  const [showViewLocationModal, setShowViewLocationModal] =
+    useState<boolean>(false);
   const [selectedAttendanceImage, setSelectedAttendanceImage] =
     useState<string>("");
   const [loading, setLoading] = useState(true);
@@ -793,6 +801,7 @@ export default function Attendance() {
     total: 0,
     average_hours: 0,
   });
+
   const [showFilterDropdown, setShowFilterDropdown] = useState(false);
   const { user } = useAuth();
 
@@ -801,13 +810,62 @@ export default function Attendance() {
     loadStatistics();
   }, []);
 
+  const getDateKey = (dateStr: string) =>
+    new Date(dateStr).toISOString().split("T")[0];
+
+  const formatAttendance = (data: any[]) => {
+    const grouped: Record<string, any[]> = {};
+
+    // 1️⃣ Group by date
+    data.forEach((record) => {
+      const dateKey = getDateKey(record.date);
+
+      if (!grouped[dateKey]) {
+        grouped[dateKey] = [];
+      }
+      grouped[dateKey].push(record);
+    });
+
+    // 2️⃣ Build final structure
+    return Object.values(grouped).map((records) => {
+      // sort by punch in time
+      const sortedByIn = [...records].sort(
+        (a, b) =>
+          new Date(a.punch_in_time).getTime() -
+          new Date(b.punch_in_time).getTime(),
+      );
+
+      const firstCheckIn = sortedByIn[0];
+
+      // find last punch out
+      const lastCheckOut = [...records]
+        .filter((r) => r.punch_out_time)
+        .sort(
+          (a, b) =>
+            new Date(b.punch_out_time).getTime() -
+            new Date(a.punch_out_time).getTime(),
+        )[0];
+      console.log("last check out : ", lastCheckOut);
+
+      return {
+        ...firstCheckIn, // 👈 first check-in FULL OBJECT
+        last_punch_out_time: lastCheckOut?.punch_out_time ?? null,
+        trackingHistory: records, // 👈 ALL DATA
+      };
+    });
+  };
+
   const loadAttendance = async () => {
     setLoading(true);
     try {
-      const response: any = await attendanceApi.getAllTodayAttendence();
+      const response: any = await attendanceApi.getCurrentMonthAttendance(
+        user.id,
+      );
       console.log("from load attendence", response);
-      if (response.success) {
-        setAttendanceData(response.data || []);
+      const finalData = formatAttendance(response.data.data);
+      console.log(finalData);
+      if (response.data.success) {
+        setAttendanceData(Array.isArray(finalData) ? finalData : []);
       }
     } catch (error) {
       console.error("Error loading attendance:", error);
@@ -879,21 +937,6 @@ export default function Attendance() {
     }
   };
 
-  const getWorkTypeColor = (workType: string) => {
-    switch (workType) {
-      case "office":
-        return "bg-blue-100 text-blue-800";
-      case "wfh":
-        return "bg-green-100 text-green-800";
-      case "client_site":
-        return "bg-purple-100 text-purple-800";
-      case "field_work":
-        return "bg-orange-100 text-orange-800";
-      default:
-        return "bg-slate-100 text-slate-800";
-    }
-  };
-
   const exportToCSV = () => {
     const headers = [
       "Name",
@@ -931,7 +974,7 @@ export default function Attendance() {
   };
 
   return (
-    <div className="space-y-6 overflow-y-scroll h-screen">
+    <div className="space-y-6  h-screen">
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-bold text-slate-900">Attendance</h1>
@@ -1101,13 +1144,16 @@ export default function Attendance() {
                   Employee
                 </th>
                 <th className="text-left px-6 py-4 text-sm font-semibold text-slate-900">
+                  Date
+                </th>
+                <th className="text-left px-6 py-4 text-sm font-semibold text-slate-900">
                   Check In
                 </th>
                 <th className="text-left px-6 py-4 text-sm font-semibold text-slate-900">
                   Check Out
                 </th>
                 <th className="text-left px-6 py-4 text-sm font-semibold text-slate-900">
-                  Attendence Location
+                  Attendance Location
                 </th>
                 <th className="text-left px-6 py-4 text-sm font-semibold text-slate-900">
                   Status
@@ -1142,124 +1188,377 @@ export default function Attendance() {
                   </td>
                 </tr>
               ) : (
-                filteredData.map((record) => (
-                  <tr
-                    key={record.id}
-                    className="hover:bg-slate-50 transition-colors"
-                  >
-                    <td className="px-6 py-4">
-                      <div>
-                        <p className="font-medium text-slate-900">
-                          {record.user_name || "Unknown"}
-                        </p>
-                        <p className="text-sm text-slate-600">
-                          {record.employee_code || "-"}
-                        </p>
-                      </div>
-                    </td>
-                    <td className="px-6 py-4">
-                      {record.punch_in_time ? (
-                        <div className="flex">
-                          <div className="mr-3">
-                            <img
-                              src={`${
-                                import.meta.env.VITE_API_URL +
-                                "/uploads/" +
-                                record.punch_in_selfie
-                              }`}
-                              alt="view selfie"
-                              className="w-12 h-12 rounded-full"
-                            />
-                          </div>
-                          <div>
-                            <p className="text-sm text-slate-900 mb-1">
-                              {formatTime(record.punch_in_time)}
-                            </p>
-                            <button
-                              onClick={() => {
-                                setShowViewSelfieModal(true);
-                                setSelectedAttendanceImage(
-                                  `${
-                                    import.meta.env.VITE_API_URL +
-                                    "/uploads/" +
-                                    record.punch_in_selfie
-                                  }`,
-                                );
-                              }}
-                              className="text-blue-600 hover:text-blue-700"
-                            >
-                              View Selfie
-                            </button>
-                          </div>
-                        </div>
-                      ) : (
-                        <p className="text-sm text-slate-600">-</p>
-                      )}
-                    </td>
-                    <td className="px-6 py-4">
-                      {record.punch_out_time ? (
-                        <div className="flex">
-                          <div className="mr-3">
-                            <img
-                              src={`${
-                                import.meta.env.VITE_API_URL +
-                                "/uploads/" +
-                                record.punch_out_selfie
-                              }`}
-                              alt="view selfie"
-                              className="w-12 h-12 rounded-full"
-                            />
-                          </div>
-                          <div>
-                            <p className="text-sm text-slate-900 mb-1">
-                              {formatTime(record.punch_out_time)}
-                            </p>
-                            <button
-                              onClick={() => {
-                                setShowViewSelfieModal(true);
-                                setSelectedAttendanceImage(
-                                  `${
-                                    import.meta.env.VITE_API_URL +
-                                    "/uploads/" +
-                                    record.punch_out_selfie
-                                  }`,
-                                );
-                              }}
-                              className="text-blue-600 hover:text-blue-700"
-                            >
-                              View Selfie
-                            </button>
-                          </div>
-                        </div>
-                      ) : (
-                        <p className="text-sm text-slate-600">-</p>
-                      )}
-                    </td>
-                    <td className="px-6 py-4">
-                      <div>
-                        <span className="text-sm text-slate-900">
-                          {formatTime(record.punch_out_time)}
-                        </span>
-                        {record.punch_out_location && (
-                          <p className="text-xs text-slate-500 mt-1">
-                            {record.punch_out_location}
+                filteredData.map((record: any) => (
+                  <React.Fragment key={record.id}>
+                    <tr
+                      className="hover:bg-slate-50 transition-colors"
+                      onClick={() => {
+                        setExpandRow(
+                          expandRow === record.id ? null : record.id,
+                        );
+                      }}
+                    >
+                      <td className="px-6 py-4">
+                        <div>
+                          <p className="font-medium text-slate-900 text-sm">
+                            {record.user_name || "Unknown"}
                           </p>
+                          <p className="text-slate-600 text-xs">
+                            {record.employee_code || "-"}
+                          </p>
+                        </div>
+                      </td>
+                      <td className="px-6 py-4">
+                        <div>
+                          <p className="font-medium text-slate-900 text-xs">
+                            {new Date(record.date).toLocaleDateString() ||
+                              "Unknown"}
+                          </p>
+                        </div>
+                      </td>
+                      <td className="px-6 py-4">
+                        {record.punch_in_time ? (
+                          <div className="flex">
+                            <div className="mr-3">
+                              <button
+                                onClick={() => {
+                                  setShowViewSelfieModal(true);
+                                  setSelectedAttendanceImage(
+                                    `${import.meta.env.VITE_API_URL}/uploads/${
+                                      record.punch_in_selfie
+                                    }`,
+                                  );
+                                  setSelectedAttendance({
+                                    ...record,
+                                    type: "in",
+                                  });
+                                }}
+                                className="text-blue-600 hover:text-blue-700 text-xs w-fit h-fit"
+                              >
+                                <img
+                                  src={`${import.meta.env.VITE_API_URL}/uploads/${
+                                    record.punch_in_selfie
+                                  }`}
+                                  alt="view selfie"
+                                  className="w-12 h-12 rounded-full"
+                                />
+                              </button>
+                            </div>
+                            <div>
+                              <p className="text-xs leading-2 text-slate-900 mb-1">
+                                {formatTime(record.punch_in_time)}
+                              </p>
+                              <button
+                                onClick={() => {
+                                  setShowViewLocationModal(true);
+                                  setMapLoading(true);
+                                  setSelectedAttendance({
+                                    ...record,
+                                    type: "in",
+                                  });
+                                }}
+                                className="text-blue-600 hover:text-blue-700 text-xs w-fit h-fit"
+                              >
+                                View Location
+                              </button>
+                            </div>
+                          </div>
+                        ) : (
+                          <p className="text-sm text-slate-600">-</p>
                         )}
-                      </div>
-                    </td>
-                    <td className="px-6 py-4">
-                      <Badge variant={getStatusBadgeVariant(record.status)}>
-                        {record.status.replace("_", " ").toUpperCase()}
-                      </Badge>
-                    </td>
-                    <td className="px-6 py-4 text-right">
-                      <span className="text-sm font-medium text-slate-900">
-                        {record.punch_out_time
-                          ? `${Number(record.total_hours)?.toFixed(1) || "0.0"}h`
-                          : "In Progress"}
-                      </span>
-                    </td>
-                  </tr>
+                      </td>
+                      <td className="px-6 py-4">
+                        {record.punch_out_time ? (
+                          <div className="flex">
+                            <div className="mr-3">
+                              <button
+                                onClick={() => {
+                                  setShowViewSelfieModal(true);
+                                  setSelectedAttendanceImage(
+                                    `${import.meta.env.VITE_API_URL}/uploads/${
+                                      record.punch_out_selfie
+                                    }`,
+                                  );
+                                  setSelectedAttendance({
+                                    ...record,
+                                    type: "out",
+                                  });
+                                }}
+                                className="text-blue-600 hover:text-blue-700 text-xs"
+                              >
+                                <img
+                                  src={`${import.meta.env.VITE_API_URL}/uploads/${
+                                    record.punch_out_selfie
+                                  }`}
+                                  alt="view selfie"
+                                  className="w-12 h-12 rounded-full"
+                                />
+                              </button>
+                            </div>
+                            <div>
+                              <p className="text-sm text-slate-900 mb-1">
+                                {formatTime(record.punch_out_time)}
+                              </p>
+                              <button
+                                onClick={() => {
+                                  setShowViewLocationModal(true);
+                                  setMapLoading(true);
+                                  setSelectedAttendance({
+                                    ...record,
+                                    type: "out",
+                                  });
+                                }}
+                                className="text-blue-600 hover:text-blue-700 text-xs"
+                              >
+                                View Location
+                              </button>
+                            </div>
+                          </div>
+                        ) : (
+                          <p className="text-sm text-slate-600">-</p>
+                        )}
+                      </td>
+                      <td className="px-6 py-4">
+                        <div>
+                          <p className="text-sm text-slate-900">
+                            <span className="font-semibold">Punch In :</span>{" "}
+                            {record.punch_in_address || "-"}
+                          </p>
+                          <p className="text-sm text-slate-900">
+                            <span className="font-semibold">Punch Out :</span>{" "}
+                            {record.punch_out_address || "-"}
+                          </p>
+                        </div>
+                      </td>
+                      <td className="px-6 py-4">
+                        <Badge variant={getStatusBadgeVariant(record.status)}>
+                          {record.status.replace("_", " ").toUpperCase()}
+                        </Badge>
+                      </td>
+                      <td className="px-6 py-4 text-right">
+                        <span className="text-xs font-medium text-slate-900">
+                          {record.punch_out_time
+                            ? `${Number(record.total_hours)?.toFixed(1) || "0.0"}h`
+                            : "In Progress"}
+                        </span>
+                      </td>
+                    </tr>
+
+                    {/* Expanded details row for tracking history */}
+                    {record.trackingHistory &&
+                      record.trackingHistory.length > 0 &&
+                      expandRow === record.id && (
+                        <tr className="hover:bg-slate-50 transition-colors">
+                          <td colSpan={7} className="p-0">
+                            <div className="px-6 py-4 bg-slate-50 border-t border-slate-200">
+                              <h4 className="text-sm font-semibold text-gray-700 mb-3 flex items-center gap-2">
+                                <User className="w-4 h-4" />
+                                Tracking History for {record?.user_name} (
+                                {record?.employee_code})
+                              </h4>
+                              <div className="overflow-x-auto">
+                                <table className="w-full">
+                                  <thead className="bg-white border-b border-slate-200">
+                                    <tr>
+                                      <th className="text-left px-4 py-2 text-xs font-medium text-slate-700">
+                                        Date
+                                      </th>
+                                      <th className="text-left px-4 py-2 text-xs font-medium text-slate-700">
+                                        Check In
+                                      </th>
+                                      <th className="text-left px-4 py-2 text-xs font-medium text-slate-700">
+                                        Check Out
+                                      </th>
+                                      <th className="text-left px-4 py-2 text-xs font-medium text-slate-700">
+                                        Location
+                                      </th>
+                                      <th className="text-left px-4 py-2 text-xs font-medium text-slate-700">
+                                        Status
+                                      </th>
+                                      <th className="text-right px-4 py-2 text-xs font-medium text-slate-700">
+                                        Hours
+                                      </th>
+                                    </tr>
+                                  </thead>
+                                  <tbody className="divide-y divide-slate-100">
+                                    {record.trackingHistory.map(
+                                      (recordHistory: any) => (
+                                        <tr
+                                          key={recordHistory.id}
+                                          className="hover:bg-slate-50"
+                                        >
+                                          <td className="px-4 py-3">
+                                            <p className="text-xs text-slate-900">
+                                              {new Date(
+                                                recordHistory.date,
+                                              ).toLocaleDateString()}
+                                            </p>
+                                          </td>
+                                          <td className="px-4 py-3">
+                                            {recordHistory.punch_in_time ? (
+                                              <div className="flex items-start">
+                                                {recordHistory.punch_in_selfie && (
+                                                  <button
+                                                    onClick={() => {
+                                                      setShowViewSelfieModal(
+                                                        true,
+                                                      );
+                                                      setSelectedAttendanceImage(
+                                                        `${import.meta.env.VITE_API_URL}/uploads/${
+                                                          recordHistory.punch_in_selfie
+                                                        }`,
+                                                      );
+                                                      setSelectedAttendance({
+                                                        ...recordHistory,
+                                                        type: "in",
+                                                      });
+                                                    }}
+                                                    className="mr-2"
+                                                  >
+                                                    <img
+                                                      src={`${import.meta.env.VITE_API_URL}/uploads/${
+                                                        recordHistory.punch_in_selfie
+                                                      }`}
+                                                      alt="in selfie"
+                                                      className="w-10 h-10 rounded-full"
+                                                    />
+                                                  </button>
+                                                )}
+                                                <div>
+                                                  <p className="text-xs text-slate-900">
+                                                    {formatTime(
+                                                      recordHistory.punch_in_time,
+                                                    )}
+                                                  </p>
+                                                  <button
+                                                    onClick={() => {
+                                                      setShowViewLocationModal(
+                                                        true,
+                                                      );
+                                                      setMapLoading(true);
+                                                      setSelectedAttendance({
+                                                        ...recordHistory,
+                                                        type: "in",
+                                                      });
+                                                    }}
+                                                    className="text-xs text-blue-600 hover:text-blue-700"
+                                                  >
+                                                    View Location
+                                                  </button>
+                                                </div>
+                                              </div>
+                                            ) : (
+                                              <p className="text-xs text-slate-400">
+                                                -
+                                              </p>
+                                            )}
+                                          </td>
+                                          <td className="px-4 py-3">
+                                            {recordHistory.punch_out_time ? (
+                                              <div className="flex items-start">
+                                                {recordHistory.punch_out_selfie && (
+                                                  <button
+                                                    onClick={() => {
+                                                      setShowViewSelfieModal(
+                                                        true,
+                                                      );
+                                                      setSelectedAttendanceImage(
+                                                        `${import.meta.env.VITE_API_URL}/uploads/${
+                                                          recordHistory.punch_out_selfie
+                                                        }`,
+                                                      );
+                                                      setSelectedAttendance({
+                                                        ...recordHistory,
+                                                        type: "out",
+                                                      });
+                                                    }}
+                                                    className="mr-2"
+                                                  >
+                                                    <img
+                                                      src={`${import.meta.env.VITE_API_URL}/uploads/${
+                                                        recordHistory.punch_out_selfie
+                                                      }`}
+                                                      alt="out selfie"
+                                                      className="w-10 h-10 rounded-full"
+                                                    />
+                                                  </button>
+                                                )}
+                                                <div>
+                                                  <p className="text-xs text-slate-900">
+                                                    {formatTime(
+                                                      recordHistory.punch_out_time,
+                                                    )}
+                                                  </p>
+                                                  <button
+                                                    onClick={() => {
+                                                      setShowViewLocationModal(
+                                                        true,
+                                                      );
+                                                      setMapLoading(true);
+                                                      setSelectedAttendance({
+                                                        ...recordHistory,
+                                                        type: "out",
+                                                      });
+                                                    }}
+                                                    className="text-xs text-blue-600 hover:text-blue-700"
+                                                  >
+                                                    View Location
+                                                  </button>
+                                                </div>
+                                              </div>
+                                            ) : (
+                                              <p className="text-xs text-slate-400">
+                                                -
+                                              </p>
+                                            )}
+                                          </td>
+                                          <td className="px-4 py-3">
+                                            <div>
+                                              <p className="text-sm text-slate-900">
+                                                <span className="font-semibold">
+                                                  Punch In :
+                                                </span>{" "}
+                                                {record.punch_in_address || "-"}
+                                              </p>
+                                              <p className="text-sm text-slate-900">
+                                                <span className="font-semibold">
+                                                  Punch Out :
+                                                </span>{" "}
+                                                {record.punch_out_address ||
+                                                  "-"}
+                                              </p>
+                                            </div>
+                                          </td>
+                                          <td className="px-4 py-3">
+                                            <Badge
+                                              variant={getStatusBadgeVariant(
+                                                recordHistory.status,
+                                              )}
+                                              className="text-xs"
+                                            >
+                                              {recordHistory.status
+                                                .replace("_", " ")
+                                                .toUpperCase()}
+                                            </Badge>
+                                          </td>
+                                          <td className="px-4 py-3 text-right">
+                                            <span className="text-xs font-medium text-slate-900">
+                                              {recordHistory.punch_out_time
+                                                ? `${Number(recordHistory.total_hours)?.toFixed(1) || "0.0"}h`
+                                                : "In Progress"}
+                                            </span>
+                                          </td>
+                                        </tr>
+                                      ),
+                                    )}
+                                  </tbody>
+                                </table>
+                              </div>
+                            </div>
+                          </td>
+                        </tr>
+                      )}
+                  </React.Fragment>
                 ))
               )}
             </tbody>
@@ -1272,6 +1571,7 @@ export default function Attendance() {
           <div className="bg-white rounded-2xl shadow-2xl w-2xl h-[40rem] overflow-hidden">
             <div className=" bg-[#C62828] px-6 py-4 flex justify-between items-center">
               <h2 className="text-2xl font-bold text-white">
+                {selectedAttendance?.type === "out" ? "Check Out" : "Check In"}{" "}
                 Attendance Selfie
               </h2>
               <button
@@ -1298,6 +1598,54 @@ export default function Attendance() {
                       Attendance Image Not Available
                     </p>
                   </div>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {showViewLocationModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-3xl h-[32rem] overflow-hidden flex flex-col">
+            {/* Header */}
+            <div className="bg-[#C62828] px-6 py-4 flex justify-between items-center">
+              <h2 className="text-xl font-semibold text-white">
+                {selectedAttendance?.type === "out" ? "Check Out" : "Check In"}{" "}
+                Attendance Location
+              </h2>
+              <button
+                onClick={() => setShowViewLocationModal(false)}
+                className="text-white hover:bg-white/20 rounded-lg p-2 transition"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {/* Body */}
+            <div className="flex-1 bg-gray-100">
+              {(selectedAttendance?.punch_in_latitude &&
+                selectedAttendance?.punch_in_longitude) ||
+              (selectedAttendance?.punch_out_latitude &&
+                selectedAttendance?.punch_out_longitude) ? (
+                <div className="w-full h-full border-0">
+                  {mapLoading && (
+                    <div className="w-full h-full flex justify-center items-center">
+                      <p className="text-gray-600">Loading Map...</p>
+                    </div>
+                  )}
+                  <iframe
+                    className="w-full h-full border-0"
+                    loading="lazy"
+                    onLoad={() => setMapLoading(false)}
+                    referrerPolicy="no-referrer-when-downgrade"
+                    src={`https://www.google.com/maps?q=${selectedAttendance.punch_in_latitude},${selectedAttendance.punch_in_longitude}&z=16&output=embed`}
+                  />
+                </div>
+              ) : (
+                <div className="flex flex-col items-center justify-center h-full text-gray-500">
+                  <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-red-600 mb-4"></div>
+                  <p className="text-sm">Location not available</p>
                 </div>
               )}
             </div>

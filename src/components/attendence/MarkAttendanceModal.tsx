@@ -2,6 +2,9 @@ import React, { useState, useEffect, useRef, useCallback } from "react";
 import { X, Loader2, MapPin, RefreshCw, SwitchCamera } from "lucide-react";
 import attendanceApi from "../../lib/attendanceApi";
 import { useAuth } from "../../contexts/AuthContext";
+import securityApi from "../../lib/securityApi";
+import HrmsEmployeesApi from "../../lib/employeeApi";
+import companyApi from "../../lib/companyApi";
 
 // Types
 export enum PunchStatus {
@@ -62,8 +65,6 @@ export const OFFICE_LOCATION = {
   latitude: 18.6055756,
   longitude: 73.7842205,
 };
-
-export const MAX_DISTANCE_METERS = 500;
 
 export function calculateDistance(
   lat1: number,
@@ -333,30 +334,45 @@ const AttendanceTracker: React.FC<AttendanceTrackerProps> = ({
   const [distance, setDistance] = useState<number | null>(null);
   const [isWithinRange, setIsWithinRange] = useState(false);
   const [selfie, setSelfie] = useState<string | null>(null);
+  const [attendanceBranch, setAttendanceBranch] = useState<any>();
   const [showCamera, setShowCamera] = useState(true);
   const [facingMode, setFacingMode] = useState<FacingMode>("user");
   const { user } = useAuth();
-  const checkLocation = useCallback(() => {
-    if (!navigator.geolocation) return;
-    navigator.geolocation.getCurrentPosition(
-      (pos) => {
-        const coords = {
-          latitude: pos.coords.latitude,
-          longitude: pos.coords.longitude,
-        };
-        setLocation(coords);
-        const d = calculateDistance(
-          coords.latitude,
-          coords.longitude,
-          OFFICE_LOCATION.latitude,
-          OFFICE_LOCATION.longitude,
-        );
-        setDistance(Math.round(d));
-        setIsWithinRange(d <= MAX_DISTANCE_METERS);
-      },
-      (err) => console.error("Location error", err),
-      { enableHighAccuracy: true },
-    );
+
+  const checkLocation = useCallback(async () => {
+    const securityRes = await securityApi.getPunchRadiusSettings();
+    const employeeData = await HrmsEmployeesApi.getEmployeeByEmail(user.email);
+    const MAX_DISTANCE_METERS = securityRes.max_punch_distance_meters;
+    for (let i = 0; employeeData.attendence_location.length > i; i++) {
+      const [empBranch] = await companyApi.getCompanyLocationsById(
+        employeeData.attendence_location[i],
+      );
+
+      if (!navigator.geolocation) return;
+
+      navigator.geolocation.getCurrentPosition(
+        (pos) => {
+          const coords = {
+            latitude: pos.coords.latitude,
+            longitude: pos.coords.longitude,
+          };
+
+          setLocation(coords);
+
+          const d = calculateDistance(
+            coords.latitude,
+            coords.longitude,
+            empBranch.latitude,
+            empBranch.longitude,
+          );
+          setDistance(Math.round(d));
+          setAttendanceBranch(d <= MAX_DISTANCE_METERS ? empBranch : {});
+          setIsWithinRange(d <= MAX_DISTANCE_METERS);
+        },
+        (err) => console.error("Location error", err),
+        { enableHighAccuracy: true },
+      );
+    }
   }, []);
 
   useEffect(() => {
@@ -385,14 +401,16 @@ const AttendanceTracker: React.FC<AttendanceTrackerProps> = ({
     setLoading(true);
     try {
       const type = currentStatus === PunchStatus.IN ? "in" : "out";
-
       const payload = {
         user_id: user.id,
         latitude: location.latitude,
         longitude: location.longitude,
         selfie: selfie, // base64 string
+        punch_in_address:
+          currentStatus === PunchStatus.IN ? attendanceBranch.address : null,
+        punch_out_address:
+          currentStatus === PunchStatus.OUT ? attendanceBranch.address : null,
       };
-
       console.log("this is my payload : ", payload);
       let result: any;
       if (type === "in") {
@@ -400,18 +418,8 @@ const AttendanceTracker: React.FC<AttendanceTrackerProps> = ({
       } else {
         result = await attendanceApi.punchOut(payload);
       }
-      // const result = await attendanceService.markAttendance(
-      //   {
-      //     user_id: 101,
-      //     latitude: location.latitude,
-      //     longitude: location.longitude,
-      //     work_type: "office",
-      //     selfie: selfie,
-      //   },
-      //   type,
-      // );
 
-      if (result.success) {
+      if (result.data.success) {
         onSuccess();
         setSelfie(null);
         setShowCamera(true);
@@ -522,9 +530,11 @@ const MarkAttendanceModal: React.FC<MarkAttendanceModalProps> = ({
 }) => {
   const [records, setRecords] = useState<AttendanceRecord[]>([]);
   const [lastUserAttendance, setLastUserAttendance] = useState<any>();
+
   const [currentStatus, setCurrentStatus] = useState<PunchStatus>(
     PunchStatus.OUT,
   );
+
   const [isLoading, setIsLoading] = useState(true);
 
   const loadData = async () => {
@@ -532,10 +542,18 @@ const MarkAttendanceModal: React.FC<MarkAttendanceModalProps> = ({
     try {
       const lastAttendance: any =
         await attendanceApi.getUserLastAttendance(userId);
+      console.log("last attendance data : ", lastAttendance);
 
-      setCurrentStatus(
-        lastAttendance.punch_out_time ? PunchStatus.IN : PunchStatus.OUT,
-      );
+      if (lastAttendance.data.data) {
+        setCurrentStatus(
+          lastAttendance.data.data.punch_out_time
+            ? PunchStatus.IN
+            : PunchStatus.OUT,
+        );
+      } else {
+        setCurrentStatus(PunchStatus.IN);
+      }
+
       setLastUserAttendance(lastAttendance);
     } catch (err) {
       console.error("Data loading failed", err);
