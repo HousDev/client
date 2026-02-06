@@ -169,6 +169,17 @@ const attendanceApi = {
     }
   },
 
+  // Check attendance
+  async getUserLastAttendance(user_id: number) {
+    try {
+      const response = await api.get(`/attendance/todayLast/${user_id}`);
+      return response;
+    } catch (error: any) {
+      console.error("Check Attendance API error:", error);
+      throw error;
+    }
+  },
+
   // Get statistics
   async getStatistics(params?: { start_date?: string; end_date?: string }) {
     try {

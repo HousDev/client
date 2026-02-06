@@ -2894,7 +2894,6 @@
 //   );
 // }
 
-
 // src/components/UsersMaster.tsx
 import React, {
   useEffect,
@@ -2996,7 +2995,7 @@ interface UserFormData {
   allotted_project: string[];
   company_id: string;
   attendance_location: string[];
-  attendance_location_ids: string[];// Change this to attendence_location_id
+  attendance_location_ids: string[]; // Change this to attendence_location_id
 }
 
 export default function UsersMaster() {
@@ -3019,7 +3018,8 @@ export default function UsersMaster() {
   const [designations, setDesignations] = useState<Designation[]>([]);
   const [loadingDesignations, setLoadingDesignations] = useState(false);
   const [isProjectDropdownOpen, setIsProjectDropdownOpen] = useState(false);
-  const [isAttendanceDropdownOpen, setIsAttendanceDropdownOpen] = useState(false); // ✅ Add this
+  const [isAttendanceDropdownOpen, setIsAttendanceDropdownOpen] =
+    useState(false); // ✅ Add this
 
   const projectDropdownRef = useRef<HTMLDivElement>(null);
   const attendanceDropdownRef = useRef<HTMLDivElement>(null); // ✅ Add this
@@ -3078,7 +3078,7 @@ export default function UsersMaster() {
     allotted_project: [],
     company_id: "",
     attendance_location: [],
-  attendance_location_ids: [], // Change this to attendence_location_id
+    attendance_location_ids: [], // Change this to attendence_location_id
   });
 
   // Load users
@@ -3356,18 +3356,18 @@ export default function UsersMaster() {
 
   // Load office locations when company changes
   // Load office locations when company changes
-useEffect(() => {
-  if (formData.company_id) {
-    loadOfficeLocations(formData.company_id);
-    // ✅ Clear attendance locations array
-    setFormData((prev) => ({
-      ...prev,
-      attendance_location_ids: [], // Changed from single to array
-    }));
-  } else {
-    setOfficeLocations([]);
-  }
-}, [formData.company_id, loadOfficeLocations]);
+  useEffect(() => {
+    if (formData.company_id) {
+      loadOfficeLocations(formData.company_id);
+      // ✅ Clear attendance locations array
+      setFormData((prev) => ({
+        ...prev,
+        attendance_location_ids: [], // Changed from single to array
+      }));
+    } else {
+      setOfficeLocations([]);
+    }
+  }, [formData.company_id, loadOfficeLocations]);
   // Load designations when department or role changes
   useEffect(() => {
     if (formData.department_id && formData.role_id) {
@@ -3401,19 +3401,19 @@ useEffect(() => {
       ) {
         setIsProjectDropdownOpen(false);
       }
-   if (
-      attendanceDropdownRef.current &&
-      !attendanceDropdownRef.current.contains(event.target as Node)
-    ) {
-      setIsAttendanceDropdownOpen(false);
-    }
-  };
+      if (
+        attendanceDropdownRef.current &&
+        !attendanceDropdownRef.current.contains(event.target as Node)
+      ) {
+        setIsAttendanceDropdownOpen(false);
+      }
+    };
 
-  document.addEventListener("mousedown", handleClickOutside);
-  return () => {
-    document.removeEventListener("mousedown", handleClickOutside);
-  };
-}, []);
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, []);
 
   // File upload handler
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -3572,6 +3572,7 @@ useEffect(() => {
   // Create employee record
   const createEmployeeRecord = useCallback(
     async (userId: string, profilePictureUrl: string | null) => {
+      console.log("user id : ", userId);
       try {
         if (!formData.department_id)
           throw new Error("Department ID is required");
@@ -3580,7 +3581,10 @@ useEffect(() => {
           throw new Error("Designation is required for employees");
         if (!formData.joining_date)
           throw new Error("Date of joining is required for employees");
-        if (!formData.attendance_location_ids || formData.attendance_location_ids.length === 0)
+        if (
+          !formData.attendance_location_ids ||
+          formData.attendance_location_ids.length === 0
+        )
           throw new Error("Attendance location is required for employees");
 
         // Get the selected office location name
@@ -3605,7 +3609,10 @@ useEffect(() => {
 
         // ✅ Handle attendance location properly as array
         let attendanceLocations: any = null;
-        if (formData.attendance_location_ids && formData.attendance_location_ids.length > 0) {
+        if (
+          formData.attendance_location_ids &&
+          formData.attendance_location_ids.length > 0
+        ) {
           attendanceLocations = formData.attendance_location_ids; // Send as array
         }
 
@@ -3856,7 +3863,7 @@ useEffect(() => {
         }
 
         const response: any = await UsersApi.create(payload);
-
+        console.log("user creation response : ", response);
         let newUser: UserProfile;
         let userId: string;
 
@@ -3890,6 +3897,7 @@ useEffect(() => {
         // Create employee record if needed
         if (formData.is_employee && userId) {
           try {
+            console.log("sdjafsdhfkjsadhfkj", userId);
             await createEmployeeRecord(userId, profilePicUrl);
             toast.success("Employee record created successfully!");
           } catch (empError: any) {
@@ -3957,7 +3965,7 @@ useEffect(() => {
       allotted_project: [],
       company_id: "",
       attendance_location: [],
-    attendance_location_ids: [], // ✅ Reset as empty array
+      attendance_location_ids: [], // ✅ Reset as empty array
     });
     setEditingId(null);
     setShowPassword(false);
@@ -3965,7 +3973,7 @@ useEffect(() => {
     setSelectedFile(null);
     setPreviewUrl("");
     setIsProjectDropdownOpen(false);
-      setIsAttendanceDropdownOpen(false); // ✅ Add this
+    setIsAttendanceDropdownOpen(false); // ✅ Add this
 
     setDepartmentRoles([]);
   }, [previewUrl]);
@@ -4159,22 +4167,22 @@ useEffect(() => {
   }, []);
 
   const handleAttendanceLocationToggle = useCallback((locationId: string) => {
-  setFormData((prev) => {
-    const currentLocations = [...prev.attendance_location_ids];
-    const index = currentLocations.indexOf(locationId);
-    
-    if (index > -1) {
-      currentLocations.splice(index, 1);
-    } else {
-      currentLocations.push(locationId);
-    }
-    
-    return { 
-      ...prev, 
-      attendance_location_ids: currentLocations 
-    };
-  });
-}, []);
+    setFormData((prev) => {
+      const currentLocations = [...prev.attendance_location_ids];
+      const index = currentLocations.indexOf(locationId);
+
+      if (index > -1) {
+        currentLocations.splice(index, 1);
+      } else {
+        currentLocations.push(locationId);
+      }
+
+      return {
+        ...prev,
+        attendance_location_ids: currentLocations,
+      };
+    });
+  }, []);
 
   // Get selected projects
   const getSelectedProjects = useCallback(() => {
@@ -4517,44 +4525,42 @@ useEffect(() => {
     return departments.filter((dept) => dept.is_active);
   }, [departments]);
   // Check phone duplicate on blur
-const handlePhoneCheck = () => {
-  if (!formData.phone || formData.phone.trim() === "") return;
+  const handlePhoneCheck = () => {
+    if (!formData.phone || formData.phone.trim() === "") return;
 
-  const existingUser = users.find(
-    (user) => user.phone === formData.phone
-  );
+    const existingUser = users.find((user) => user.phone === formData.phone);
 
-  // Create mode
-  if (existingUser && !editingId) {
-    toast.error("Phone number already exists in users");
-    return;
-  }
+    // Create mode
+    if (existingUser && !editingId) {
+      toast.error("Phone number already exists in users");
+      return;
+    }
 
-  // Edit mode (ignore current user being edited)
-  if (existingUser && existingUser.id !== editingId) {
-    toast.error("Phone number already exists in users");
-  }
-};
+    // Edit mode (ignore current user being edited)
+    if (existingUser && existingUser.id !== editingId) {
+      toast.error("Phone number already exists in users");
+    }
+  };
 
-// Check email duplicate on blur
-const handleEmailCheck = () => {
-  if (!formData.email || formData.email.trim() === "") return;
+  // Check email duplicate on blur
+  const handleEmailCheck = () => {
+    if (!formData.email || formData.email.trim() === "") return;
 
-  const existingUser = users.find(
-    (user) => user.email.toLowerCase() === formData.email.toLowerCase()
-  );
+    const existingUser = users.find(
+      (user) => user.email.toLowerCase() === formData.email.toLowerCase(),
+    );
 
-  // Create mode
-  if (existingUser && !editingId) {
-    toast.error("Email already exists in users");
-    return;
-  }
+    // Create mode
+    if (existingUser && !editingId) {
+      toast.error("Email already exists in users");
+      return;
+    }
 
-  // Edit mode (ignore current user being edited)
-  if (existingUser && existingUser.id !== editingId) {
-    toast.error("Email already exists in users");
-  }
-};
+    // Edit mode (ignore current user being edited)
+    if (existingUser && existingUser.id !== editingId) {
+      toast.error("Email already exists in users");
+    }
+  };
 
   // Loading state
   if (loading) {
@@ -5098,48 +5104,48 @@ const handleEmailCheck = () => {
                     </div>
 
                     {/* Email */}
-                {/* Email Input */}
-<div className="space-y-1">
-  <label className="block text-xs font-semibold text-gray-700">
-    Email <span className="text-red-500">*</span>
-  </label>
-  <input
-    type="email"
-    value={formData.email}
-    onBlur={handleEmailCheck}
-    onChange={(e) =>
-      setFormData({ 
-        ...formData, 
-        email: e.target.value.toLowerCase() 
-      })
-    }
-    className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
-    placeholder="john@example.com"
-    required
-    disabled={!!editingId}
-  />
-</div>
+                    {/* Email Input */}
+                    <div className="space-y-1">
+                      <label className="block text-xs font-semibold text-gray-700">
+                        Email <span className="text-red-500">*</span>
+                      </label>
+                      <input
+                        type="email"
+                        value={formData.email}
+                        onBlur={handleEmailCheck}
+                        onChange={(e) =>
+                          setFormData({
+                            ...formData,
+                            email: e.target.value.toLowerCase(),
+                          })
+                        }
+                        className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
+                        placeholder="john@example.com"
+                        required
+                        disabled={!!editingId}
+                      />
+                    </div>
 
-{/* Phone Input */}
-<div className="space-y-1">
-  <label className="block text-xs font-semibold text-gray-700">
-    Phone
-  </label>
-  <input
-    type="tel"
-    value={formData.phone}
-    onBlur={handlePhoneCheck}
-    onChange={(e) => {
-      const value = e.target.value
-        .replace(/\D/g, "")
-        .slice(0, 10);
-      setFormData({ ...formData, phone: value });
-    }}
-    className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
-    placeholder="9876543210"
-    maxLength={10}
-  />
-</div>
+                    {/* Phone Input */}
+                    <div className="space-y-1">
+                      <label className="block text-xs font-semibold text-gray-700">
+                        Phone
+                      </label>
+                      <input
+                        type="tel"
+                        value={formData.phone}
+                        onBlur={handlePhoneCheck}
+                        onChange={(e) => {
+                          const value = e.target.value
+                            .replace(/\D/g, "")
+                            .slice(0, 10);
+                          setFormData({ ...formData, phone: value });
+                        }}
+                        className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
+                        placeholder="9876543210"
+                        maxLength={10}
+                      />
+                    </div>
 
                     {/* Password (only for new users) */}
                     {!editingId && (
@@ -5417,85 +5423,113 @@ const handleEmailCheck = () => {
 
                           {/* Attendance Location (Branch) */}
                           {/* Attendance Location (Branch) */}
-                     {/* Attendance Location - Multi-select (like projects) */}
-<div className="space-y-1 md:col-span-2">
-  <label className="block text-xs font-semibold text-gray-700">
-    Attendance Location (Branch)
-    {formData.is_employee && <span className="text-red-500">*</span>}
-  </label>
-  
-  {/* Multi-select dropdown container */}
-  <div className="relative" ref={attendanceDropdownRef}>
-    <button
-      type="button"
-      onClick={() => setIsAttendanceDropdownOpen(!isAttendanceDropdownOpen)}
-      className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none bg-white text-left flex items-center justify-between"
-      disabled={!formData.company_id || officeLocations.length === 0}
-    >
-      <span className="text-gray-700 truncate">
-        {formData.attendance_location_ids.length > 0
-          ? `${formData.attendance_location_ids.length} location(s) selected`
-          : "Select branch(es)"}
-      </span>
-      <ChevronDown
-        className={`w-4 h-4 text-gray-400 transition-transform ${isAttendanceDropdownOpen ? "rotate-180" : ""}`}
-      />
-    </button>
+                          {/* Attendance Location - Multi-select (like projects) */}
+                          <div className="space-y-1 md:col-span-2">
+                            <label className="block text-xs font-semibold text-gray-700">
+                              Attendance Location (Branch)
+                              {formData.is_employee && (
+                                <span className="text-red-500">*</span>
+                              )}
+                            </label>
 
-    {/* Dropdown list */}
-    {isAttendanceDropdownOpen && (
-      <div className="absolute z-10 w-full mt-1 bg-white border border-gray-300 rounded-lg shadow-lg max-h-48 overflow-y-auto">
-        {officeLocations.length > 0 ? (
-          officeLocations.map((location) => (
-            <label
-              key={location.id}
-              className="flex items-center gap-2 px-3 py-2 hover:bg-gray-50 cursor-pointer"
-            >
-              <input
-                type="checkbox"
-                checked={formData.attendance_location_ids.includes(location.id)}
-                onChange={() => handleAttendanceLocationToggle(location.id)}
-                className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-2 focus:ring-blue-500"
-              />
-              <span className="text-sm text-gray-700 truncate">
-                {location.name} - {location.city}
-              </span>
-            </label>
-          ))
-        ) : (
-          <div className="px-3 py-2 text-sm text-gray-500">
-            {formData.company_id ? "Loading branches..." : "Select company first"}
-          </div>
-        )}
-      </div>
-    )}
-  </div>
+                            {/* Multi-select dropdown container */}
+                            <div
+                              className="relative"
+                              ref={attendanceDropdownRef}
+                            >
+                              <button
+                                type="button"
+                                onClick={() =>
+                                  setIsAttendanceDropdownOpen(
+                                    !isAttendanceDropdownOpen,
+                                  )
+                                }
+                                className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none bg-white text-left flex items-center justify-between"
+                                disabled={
+                                  !formData.company_id ||
+                                  officeLocations.length === 0
+                                }
+                              >
+                                <span className="text-gray-700 truncate">
+                                  {formData.attendance_location_ids.length > 0
+                                    ? `${formData.attendance_location_ids.length} location(s) selected`
+                                    : "Select branch(es)"}
+                                </span>
+                                <ChevronDown
+                                  className={`w-4 h-4 text-gray-400 transition-transform ${isAttendanceDropdownOpen ? "rotate-180" : ""}`}
+                                />
+                              </button>
 
-  {/* Selected locations preview (like projects) */}
-  {formData.attendance_location_ids.length > 0 && (
-    <div className="flex flex-wrap gap-1 mt-2">
-      {officeLocations
-        .filter((location) => formData.attendance_location_ids.includes(location.id))
-        .map((location) => (
-          <div
-            key={location.id}
-            className="flex items-center gap-1 bg-blue-600 text-white px-2 py-1 rounded text-xs font-medium"
-          >
-            <span className="truncate max-w-[120px]">
-              {location.name} - {location.city}
-            </span>
-            <button
-              type="button"
-              onClick={() => handleAttendanceLocationToggle(location.id)}
-              className="hover:bg-blue-700 rounded-full p-0.5"
-            >
-              <X className="w-3 h-3" />
-            </button>
-          </div>
-        ))}
-    </div>
-  )}
-</div>
+                              {/* Dropdown list */}
+                              {isAttendanceDropdownOpen && (
+                                <div className="absolute z-10 w-full mt-1 bg-white border border-gray-300 rounded-lg shadow-lg max-h-48 overflow-y-auto">
+                                  {officeLocations.length > 0 ? (
+                                    officeLocations.map((location) => (
+                                      <label
+                                        key={location.id}
+                                        className="flex items-center gap-2 px-3 py-2 hover:bg-gray-50 cursor-pointer"
+                                      >
+                                        <input
+                                          type="checkbox"
+                                          checked={formData.attendance_location_ids.includes(
+                                            location.id,
+                                          )}
+                                          onChange={() =>
+                                            handleAttendanceLocationToggle(
+                                              location.id,
+                                            )
+                                          }
+                                          className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-2 focus:ring-blue-500"
+                                        />
+                                        <span className="text-sm text-gray-700 truncate">
+                                          {location.name} - {location.city}
+                                        </span>
+                                      </label>
+                                    ))
+                                  ) : (
+                                    <div className="px-3 py-2 text-sm text-gray-500">
+                                      {formData.company_id
+                                        ? "Loading branches..."
+                                        : "Select company first"}
+                                    </div>
+                                  )}
+                                </div>
+                              )}
+                            </div>
+
+                            {/* Selected locations preview (like projects) */}
+                            {formData.attendance_location_ids.length > 0 && (
+                              <div className="flex flex-wrap gap-1 mt-2">
+                                {officeLocations
+                                  .filter((location) =>
+                                    formData.attendance_location_ids.includes(
+                                      location.id,
+                                    ),
+                                  )
+                                  .map((location) => (
+                                    <div
+                                      key={location.id}
+                                      className="flex items-center gap-1 bg-blue-600 text-white px-2 py-1 rounded text-xs font-medium"
+                                    >
+                                      <span className="truncate max-w-[120px]">
+                                        {location.name} - {location.city}
+                                      </span>
+                                      <button
+                                        type="button"
+                                        onClick={() =>
+                                          handleAttendanceLocationToggle(
+                                            location.id,
+                                          )
+                                        }
+                                        className="hover:bg-blue-700 rounded-full p-0.5"
+                                      >
+                                        <X className="w-3 h-3" />
+                                      </button>
+                                    </div>
+                                  ))}
+                              </div>
+                            )}
+                          </div>
 
                           {/* Date of Joining */}
                           <div className="space-y-1">
