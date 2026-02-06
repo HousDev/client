@@ -881,6 +881,8 @@ export default function Permissions() {
     { action: "view_material_requests", label: "View Material Requests", module: "Material Requests" },
     { action: "update_material_requests", label: "Update Material Requests", module: "Material Requests" },
     { action: "delete_material_requests", label: "Delete Material Requests", module: "Material Requests" },
+    { action: "make_material_requests", label: "Make Material Requests", module: "Material Requests" },
+    { action: "make_material_requests_for_po", label: "Make Material Requests for PO", module: "Material Requests" },
 
     // Payments
     { action: "view_payments", label: "View Payments", module: "Payments" },

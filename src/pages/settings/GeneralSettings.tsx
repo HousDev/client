@@ -75,13 +75,7 @@ interface SystemSettings {
 
 // ═══════════════════════════════════════════════════════════════════════════
 const GeneralSettings: React.FC = () => {
-  const {
-    user,
-    profile,
-    updateProfileLocally,
-    updateSystemSettingsLocally,
-    refreshSystemSettings,
-  } = useAuth();
+const { user, profile, updateProfileLocally, updateSystemSettingsLocally, refreshSystemSettings, refreshUser } = useAuth();
 
   const [activeTab, setActiveTab] = useState<string>("profile");
   const [loading, setLoading] = useState<boolean>(true);
