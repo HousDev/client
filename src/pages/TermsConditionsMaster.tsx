@@ -732,9 +732,6 @@
 //   );
 // }
 
-
-
-
 // import { useState, useEffect, useRef } from "react";
 // import {
 //   Plus,
@@ -788,12 +785,12 @@
 //   const [allVendors, setAllVendors] = useState<any[]>([]);
 //   const [loading, setLoading] = useState(true);
 //   const [searchTerm, setSearchTerm] = useState("");
-  
+
 //   // Column search states
 //   const [searchContent, setSearchContent] = useState("");
 //   const [searchCategory, setSearchCategory] = useState("");
 //   const [searchVendor, setSearchVendor] = useState("");
-  
+
 //   const [showModal, setShowModal] = useState(false);
 //   const [editingId, setEditingId] = useState<number | null>(null);
 //   const dropdownRef = useRef<HTMLDivElement | null>(null);
@@ -807,11 +804,11 @@
 //     is_active: true,
 //     created_at: "",
 //   });
-  
+
 //   // Checkbox states
 //   const [selectedItems, setSelectedItems] = useState<Set<number>>(new Set());
 //   const [selectAll, setSelectAll] = useState(false);
-  
+
 //   // Filter states
 //   const [showFilterOptions, setShowFilterOptions] = useState(false);
 //   const [showSubFilterOption, setShowSubFilterOption] = useState("");
@@ -905,7 +902,7 @@
 
 //   const handleSubmit = async (e: React.FormEvent) => {
 //     e.preventDefault();
-    
+
 //     if (!formData.content.trim() || !formData.category.trim()) {
 //       toast.error("Please fill all required fields");
 //       return;
@@ -979,9 +976,9 @@
 //         confirmButtonText: "Delete",
 //         cancelButtonText: "Cancel",
 //       });
-      
+
 //       if (!result.isConfirmed) return;
-      
+
 //       const deleteRes = await TermsConditionsApi.deleteTC(id);
 //       if (deleteRes.status) {
 //         await loadTerms();
@@ -1040,8 +1037,8 @@
 //       if (updateIsDefaultRes.status) {
 //         await loadTerms();
 //         toast.success(
-//           currentStatus 
-//             ? "Removed from default" 
+//           currentStatus
+//             ? "Removed from default"
 //             : "Set as default"
 //         );
 //       } else {
@@ -1223,8 +1220,6 @@
 //         </div>
 //       </div>
 
-     
-
 //       {/* Main Table */}
 //       <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
 //         <div className="overflow-x-auto">
@@ -1301,10 +1296,10 @@
 //             <tbody className="divide-y divide-gray-200">
 //               {filteredTerms.map((term) => {
 //                 const isSelected = selectedItems.has(term.id);
-//                 const vendorName = activeTab === "vendor" 
+//                 const vendorName = activeTab === "vendor"
 //                   ? allVendors.find((v) => v.id === term.vendor_id)?.name || "-"
 //                   : "";
-                
+
 //                 return (
 //                   <tr
 //                     key={term.id}
@@ -1324,7 +1319,7 @@
 //                         )}
 //                       </button>
 //                     </td>
-                    
+
 //                     {activeTab === "vendor" && (
 //                       <td className="px-6 py-4">
 //                         <div className="text-gray-800 font-medium">
@@ -1332,7 +1327,7 @@
 //                         </div>
 //                       </td>
 //                     )}
-                    
+
 //                     <td className="px-6 py-4">
 //                       <div className="max-w-xs">
 //                         <div className="text-gray-800 line-clamp-2">
@@ -1340,7 +1335,7 @@
 //                         </div>
 //                       </div>
 //                     </td>
-                    
+
 //                     <td className="px-6 py-4">
 //                       <span
 //                         className={`px-3 py-1 rounded-full text-xs font-medium ${getCategoryColor(
@@ -1350,7 +1345,7 @@
 //                         {term.category.toUpperCase()}
 //                       </span>
 //                     </td>
-                    
+
 //                     <td className="px-6 py-4">
 //                       <span
 //                         className={`px-3 py-1 rounded-full text-xs font-medium ${
@@ -1362,7 +1357,7 @@
 //                         {term.is_active ? "ACTIVE" : "INACTIVE"}
 //                       </span>
 //                     </td>
-                    
+
 //                     <td className="px-6 py-4">
 //                       <button
 //                         onClick={() => toggleDefault(term.id, !!term.is_default)}
@@ -1380,7 +1375,7 @@
 //                         />
 //                       </button>
 //                     </td>
-                    
+
 //                     <td className="px-6 py-4">
 //                       <div className="flex items-center gap-2">
 //                         <button
@@ -1480,7 +1475,7 @@
 //                   </div>
 //                 </div>
 //               )}
-              
+
 //               <div className="space-y-4">
 //                 <div className="space-y-1">
 //                   <label className="block text-xs font-semibold text-gray-800 mb-1">
@@ -1600,7 +1595,6 @@
 //   );
 // }
 
-
 import { useState, useEffect, useRef } from "react";
 import {
   Plus,
@@ -1655,12 +1649,12 @@ export default function TermsConditionsMaster() {
   const [allVendors, setAllVendors] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
-  
+
   // Column search states
   const [searchContent, setSearchContent] = useState("");
   const [searchCategory, setSearchCategory] = useState("");
   const [searchVendor, setSearchVendor] = useState("");
-  
+
   const [showModal, setShowModal] = useState(false);
   const [editingId, setEditingId] = useState<number | null>(null);
   const dropdownRef = useRef<HTMLDivElement | null>(null);
@@ -1674,11 +1668,11 @@ export default function TermsConditionsMaster() {
     is_active: true,
     created_at: "",
   });
-  
+
   // Checkbox states
   const [selectedItems, setSelectedItems] = useState<Set<number>>(new Set());
   const [selectAll, setSelectAll] = useState(false);
-  
+
   // Filter states
   const [showFilterOptions, setShowFilterOptions] = useState(false);
   const [showSubFilterOption, setShowSubFilterOption] = useState("");
@@ -1730,13 +1724,13 @@ export default function TermsConditionsMaster() {
     // Column searches
     if (searchContent) {
       filtered = filtered.filter((term) =>
-        term.content.toLowerCase().includes(searchContent.toLowerCase())
+        term.content.toLowerCase().includes(searchContent.toLowerCase()),
       );
     }
 
     if (searchCategory) {
       filtered = filtered.filter((term) =>
-        term.category.toLowerCase().includes(searchCategory.toLowerCase())
+        term.category.toLowerCase().includes(searchCategory.toLowerCase()),
       );
     }
 
@@ -1750,9 +1744,10 @@ export default function TermsConditionsMaster() {
     // Global search (backward compatibility)
     if (searchTerm) {
       const q = searchTerm.toLowerCase();
-      filtered = filtered.filter((term) =>
-        term.content.toLowerCase().includes(q) ||
-        term.category.toLowerCase().includes(q)
+      filtered = filtered.filter(
+        (term) =>
+          term.content.toLowerCase().includes(q) ||
+          term.category.toLowerCase().includes(q),
       );
     }
 
@@ -1768,11 +1763,20 @@ export default function TermsConditionsMaster() {
     setFilteredTerms(filtered);
     setSelectAll(false);
     setSelectedItems(new Set());
-  }, [terms, activeTab, searchContent, searchCategory, searchVendor, searchTerm, selectedFilter, allVendors]);
+  }, [
+    terms,
+    activeTab,
+    searchContent,
+    searchCategory,
+    searchVendor,
+    searchTerm,
+    selectedFilter,
+    allVendors,
+  ]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     if (!formData.content.trim() || !formData.category.trim()) {
       toast.error("Please fill all required fields");
       return;
@@ -1794,7 +1798,10 @@ export default function TermsConditionsMaster() {
     try {
       setSubmitting(true);
       if (editingId) {
-        const updateRes: any = await TermsConditionsApi.updateTC(editingId, payload);
+        const updateRes: any = await TermsConditionsApi.updateTC(
+          editingId,
+          payload,
+        );
         if (updateRes.status) {
           await loadTerms();
           toast.success("Terms updated successfully!");
@@ -1846,9 +1853,9 @@ export default function TermsConditionsMaster() {
         confirmButtonText: "Delete",
         cancelButtonText: "Cancel",
       });
-      
+
       if (!result.isConfirmed) return;
-      
+
       const deleteRes = await TermsConditionsApi.deleteTC(id);
       if (deleteRes.status) {
         await loadTerms();
@@ -1884,7 +1891,7 @@ export default function TermsConditionsMaster() {
     setSubmitting(true);
     try {
       await Promise.all(
-        Array.from(selectedItems).map((id) => TermsConditionsApi.deleteTC(id))
+        Array.from(selectedItems).map((id) => TermsConditionsApi.deleteTC(id)),
       );
       await loadTerms();
       setSelectedItems(new Set());
@@ -1902,14 +1909,12 @@ export default function TermsConditionsMaster() {
     try {
       const updateIsDefaultRes = await TermsConditionsApi.updateIsDefaultTC(
         id,
-        !currentStatus
+        !currentStatus,
       );
       if (updateIsDefaultRes.status) {
         await loadTerms();
         toast.success(
-          currentStatus 
-            ? "Removed from default" 
-            : "Set as default"
+          currentStatus ? "Removed from default" : "Set as default",
         );
       } else {
         toast.error("Failed to update default status");
@@ -2009,16 +2014,14 @@ export default function TermsConditionsMaster() {
   return (
     <div className="px-0 bg-gray-50 min-h-screen">
       {/* Header with Actions and Bulk Actions - Side by Side */}
-     {/* Tab Navigation */}
-<div className="flex flex-col gap-2 mb-4 mt-4 sm:flex-row sm:items-center sm:gap-4 mx-0 md:mx-0">
-
-  {/* Tabs */}
-  <div className="w-full sm:flex-1">
-    <div className="flex bg-white border border-gray-200 rounded-lg overflow-hidden shadow-sm">
-
-      <button
-        onClick={() => setActiveTab("vendor")}
-        className={`flex-1 flex items-center justify-center gap-1.5
+      {/* Tab Navigation */}
+      <div className="flex flex-col gap-2 mb-4 mt-4 sm:flex-row sm:items-center sm:gap-4 mx-0 md:mx-0">
+        {/* Tabs */}
+        <div className="w-full sm:flex-1">
+          <div className="flex bg-white border border-gray-200 rounded-lg overflow-hidden shadow-sm">
+            <button
+              onClick={() => setActiveTab("vendor")}
+              className={`flex-1 flex items-center justify-center gap-1.5
           px-2 py-2
           text-[11px] sm:text-sm
           font-medium transition
@@ -2027,14 +2030,14 @@ export default function TermsConditionsMaster() {
               ? "bg-red-50 text-red-600 border-b-2 border-red-600"
               : "text-gray-600 hover:bg-gray-50"
           }`}
-      >
-        <ReceiptText className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
-        Vendor Terms
-      </button>
+            >
+              <ReceiptText className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+              Vendor Terms
+            </button>
 
-      <button
-        onClick={() => setActiveTab("common")}
-        className={`flex-1 flex items-center justify-center gap-1.5
+            <button
+              onClick={() => setActiveTab("common")}
+              className={`flex-1 flex items-center justify-center gap-1.5
           px-2 py-2
           text-[11px] sm:text-sm
           font-medium transition
@@ -2043,21 +2046,20 @@ export default function TermsConditionsMaster() {
               ? "bg-red-50 text-red-600 border-b-2 border-red-600"
               : "text-gray-600 hover:bg-gray-50"
           }`}
-      >
-        <ReceiptText className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
-        Common Terms
-      </button>
+            >
+              <ReceiptText className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+              Common Terms
+            </button>
+          </div>
+        </div>
 
-    </div>
-  </div>
-
-  {/* Add Terms Button */}
-  <button
-    onClick={() => {
-      resetForm();
-      setShowModal(true);
-    }}
-    className="
+        {/* Add Terms Button */}
+        <button
+          onClick={() => {
+            resetForm();
+            setShowModal(true);
+          }}
+          className="
       w-full sm:w-auto
       bg-[#C62828] text-white
       px-3 py-2
@@ -2070,39 +2072,38 @@ export default function TermsConditionsMaster() {
       transition
       whitespace-nowrap
     "
-  >
-    <Plus className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
-    Add Terms
-  </button>
-
-</div>
-{/* Bulk Actions Bar */}
-{selectedItems.size > 0 && (
-  <div className="mx-2 md:mx-0 mb-2">
-    <div
-      className="
+        >
+          <Plus className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+          Add Terms
+        </button>
+      </div>
+      {/* Bulk Actions Bar */}
+      {selectedItems.size > 0 && (
+        <div className="mx-2 md:mx-0 mb-2">
+          <div
+            className="
         flex items-center justify-between
         bg-red-50 border border-red-200
         rounded-lg
         px-3 py-2
         shadow-sm
       "
-    >
-      {/* Left: Selected Count */}
-      <div className="flex items-center gap-2">
-        <div className="bg-red-100 p-1.5 rounded-md">
-          <Trash2 className="w-3.5 h-3.5 text-red-600" />
-        </div>
-        <span className="text-xs md:text-sm font-medium text-gray-800">
-          {selectedItems.size} selected
-        </span>
-      </div>
+          >
+            {/* Left: Selected Count */}
+            <div className="flex items-center gap-2">
+              <div className="bg-red-100 p-1.5 rounded-md">
+                <Trash2 className="w-3.5 h-3.5 text-red-600" />
+              </div>
+              <span className="text-xs md:text-sm font-medium text-gray-800">
+                {selectedItems.size} selected
+              </span>
+            </div>
 
-      {/* Right: Delete Button */}
-      <button
-        onClick={handleBulkDelete}
-        disabled={submitting}
-        className="
+            {/* Right: Delete Button */}
+            <button
+              onClick={handleBulkDelete}
+              disabled={submitting}
+              className="
           flex items-center gap-1.5
           bg-red-600 text-white
           px-3 py-1.5
@@ -2112,18 +2113,17 @@ export default function TermsConditionsMaster() {
           transition
           disabled:opacity-50
         "
-      >
-        {submitting ? (
-          <Loader2 className="w-3.5 h-3.5 animate-spin" />
-        ) : (
-          <Trash2 className="w-3.5 h-3.5" />
-        )}
-        Delete
-      </button>
-    </div>
-  </div>
-)}
-
+            >
+              {submitting ? (
+                <Loader2 className="w-3.5 h-3.5 animate-spin" />
+              ) : (
+                <Trash2 className="w-3.5 h-3.5" />
+              )}
+              Delete
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* Main Table */}
       <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden mx-0 md:mx-0">
@@ -2170,94 +2170,102 @@ export default function TermsConditionsMaster() {
                   </div>
                 </th>
               </tr>
-              
+
               {/* Search Row */}
-           {/* Search Row */}
-<tr className="bg-gray-50 border-b border-gray-200">
-  <td className="px-2 md:px-4 py-1 text-center">
-    <input
-      type="checkbox"
-      checked={selectAll}
-      onChange={handleSelectAll}
-      className="w-3.5 h-3.5 md:w-4 md:h-4 text-[#C62828] border-gray-300 rounded focus:ring-[#C62828]"
-    />
-  </td>
-  
-  {activeTab === "vendor" && (
-    <td className="px-2 md:px-4 py-1">
-      <input
-        type="text"
-        placeholder="Search vendor..."
-        value={searchVendor}
-        onChange={(e) => setSearchVendor(e.target.value)}
-        className="w-full px-2 py-1 text-[9px] md:text-xs border border-gray-300 rounded focus:ring-1 focus:ring-blue-500 focus:border-transparent"
-      />
-    </td>
-  )}
-  
-  <td className="px-2 md:px-4 py-1">
-    <input
-      type="text"
-      placeholder="Search content..."
-      value={searchContent}
-      onChange={(e) => setSearchContent(e.target.value)}
-      className="w-full px-2 py-1 text-[9px] md:text-xs border border-gray-300 rounded focus:ring-1 focus:ring-blue-500 focus:border-transparent"
-    />
-  </td>
-  
-  <td className="px-2 md:px-4 py-1">
-    <input
-      type="text"
-      placeholder="Search category..."
-      value={searchCategory}
-      onChange={(e) => setSearchCategory(e.target.value)}
-      className="w-full px-2 py-1 text-[9px] md:text-xs border border-gray-300 rounded focus:ring-1 focus:ring-blue-500 focus:border-transparent"
-    />
-  </td>
-  
-  <td className="px-2 md:px-4 py-1">
-    <select
-      value={selectedFilter === true ? "active" : selectedFilter === false ? "inactive" : ""}
-      onChange={(e) => {
-        if (e.target.value === "active") {
-          setSelectedFilter(true);
-        } else if (e.target.value === "inactive") {
-          setSelectedFilter(false);
-        } else {
-          setSelectedFilter("");
-        }
-      }}
-      className="w-full px-2 py-1 text-[9px] md:text-xs border border-gray-300 rounded focus:ring-1 focus:ring-blue-500 focus:border-transparent"
-    >
-      <option value="">All Status</option>
-      <option value="active">Active</option>
-      <option value="inactive">Inactive</option>
-    </select>
-  </td>
-  
-  {/* Empty cell for Default column (no search) */}
-  <td className="px-2 md:px-4 py-1"></td>
-  
-  {/* Actions - Clear Filter Button */}
-  <td className="px-2 md:px-4 py-1 text-center">
-    <button
-      onClick={resetFilters}
-      className="inline-flex items-center px-2 py-1 border border-gray-300 rounded hover:bg-gray-50 transition text-[9px] md:text-xs font-medium text-gray-700"
-      title="Clear Filters"
-    >
-      <XCircle className="w-2.5 h-2.5 md:w-3 md:h-3 mr-0.5" />
-      Clear
-    </button>
-  </td>
-</tr>
+              {/* Search Row */}
+              <tr className="bg-gray-50 border-b border-gray-200">
+                <td className="px-2 md:px-4 py-1 text-center">
+                  <input
+                    type="checkbox"
+                    checked={selectAll}
+                    onChange={handleSelectAll}
+                    className="w-3.5 h-3.5 md:w-4 md:h-4 text-[#C62828] border-gray-300 rounded focus:ring-[#C62828]"
+                  />
+                </td>
+
+                {activeTab === "vendor" && (
+                  <td className="px-2 md:px-4 py-1">
+                    <input
+                      type="text"
+                      placeholder="Search vendor..."
+                      value={searchVendor}
+                      onChange={(e) => setSearchVendor(e.target.value)}
+                      className="w-full px-2 py-1 text-[9px] md:text-xs border border-gray-300 rounded focus:ring-1 focus:ring-blue-500 focus:border-transparent"
+                    />
+                  </td>
+                )}
+
+                <td className="px-2 md:px-4 py-1">
+                  <input
+                    type="text"
+                    placeholder="Search content..."
+                    value={searchContent}
+                    onChange={(e) => setSearchContent(e.target.value)}
+                    className="w-full px-2 py-1 text-[9px] md:text-xs border border-gray-300 rounded focus:ring-1 focus:ring-blue-500 focus:border-transparent"
+                  />
+                </td>
+
+                <td className="px-2 md:px-4 py-1">
+                  <input
+                    type="text"
+                    placeholder="Search category..."
+                    value={searchCategory}
+                    onChange={(e) => setSearchCategory(e.target.value)}
+                    className="w-full px-2 py-1 text-[9px] md:text-xs border border-gray-300 rounded focus:ring-1 focus:ring-blue-500 focus:border-transparent"
+                  />
+                </td>
+
+                <td className="px-2 md:px-4 py-1">
+                  <select
+                    value={
+                      selectedFilter === true
+                        ? "active"
+                        : selectedFilter === false
+                          ? "inactive"
+                          : ""
+                    }
+                    onChange={(e) => {
+                      if (e.target.value === "active") {
+                        setSelectedFilter(true);
+                      } else if (e.target.value === "inactive") {
+                        setSelectedFilter(false);
+                      } else {
+                        setSelectedFilter("");
+                      }
+                    }}
+                    className="w-full px-2 py-1 text-[9px] md:text-xs border border-gray-300 rounded focus:ring-1 focus:ring-blue-500 focus:border-transparent"
+                  >
+                    <option value="">All Status</option>
+                    <option value="active">Active</option>
+                    <option value="inactive">Inactive</option>
+                  </select>
+                </td>
+
+                {/* Empty cell for Default column (no search) */}
+                <td className="px-2 md:px-4 py-1"></td>
+
+                {/* Actions - Clear Filter Button */}
+                <td className="px-2 md:px-4 py-1 text-center">
+                  <button
+                    onClick={resetFilters}
+                    className="inline-flex items-center px-2 py-1 border border-gray-300 rounded hover:bg-gray-50 transition text-[9px] md:text-xs font-medium text-gray-700"
+                    title="Clear Filters"
+                  >
+                    <XCircle className="w-2.5 h-2.5 md:w-3 md:h-3 mr-0.5" />
+                    Clear
+                  </button>
+                </td>
+              </tr>
             </thead>
             <tbody className="divide-y divide-gray-200">
               {filteredTerms.map((term) => {
                 const isSelected = selectedItems.has(term.id);
-                const vendorName = activeTab === "vendor" 
-                  ? allVendors.find((v) => v.id === term.vendor_id)?.name || "-"
-                  : "";
-                
+                const vendorName =
+                  activeTab === "vendor"
+                    ? allVendors.find((v) => v.id === term.vendor_id)?.name ||
+                      "-"
+                    : "";
+
                 return (
                   <tr
                     key={term.id}
@@ -2273,7 +2281,7 @@ export default function TermsConditionsMaster() {
                         className="w-3.5 h-3.5 md:w-4 md:h-4 text-[#C62828] border-gray-300 rounded focus:ring-[#C62828]"
                       />
                     </td>
-                    
+
                     {activeTab === "vendor" && (
                       <td className="px-2 md:px-4 py-3">
                         <div className="text-gray-800 font-medium text-xs md:text-sm">
@@ -2281,7 +2289,7 @@ export default function TermsConditionsMaster() {
                         </div>
                       </td>
                     )}
-                    
+
                     <td className="px-2 md:px-4 py-3">
                       <div className="max-w-xs">
                         <div className="text-gray-800 line-clamp-2 text-xs md:text-sm">
@@ -2289,17 +2297,17 @@ export default function TermsConditionsMaster() {
                         </div>
                       </div>
                     </td>
-                    
+
                     <td className="px-2 md:px-4 py-3">
                       <span
                         className={`px-2 py-0.5 md:px-3 md:py-1 rounded-full text-[10px] md:text-xs font-medium ${getCategoryColor(
-                          term.category
+                          term.category,
                         )}`}
                       >
                         {term.category.toUpperCase()}
                       </span>
                     </td>
-                    
+
                     <td className="px-2 md:px-4 py-3">
                       <span
                         className={`px-2 py-0.5 md:px-3 md:py-1 rounded-full text-[10px] md:text-xs font-medium ${
@@ -2311,16 +2319,22 @@ export default function TermsConditionsMaster() {
                         {term.is_active ? "ACTIVE" : "INACTIVE"}
                       </span>
                     </td>
-                    
+
                     <td className="px-2 md:px-4 py-3">
                       <button
-                        onClick={() => toggleDefault(term.id, !!term.is_default)}
+                        onClick={() =>
+                          toggleDefault(term.id, !!term.is_default)
+                        }
                         className={`p-1.5 rounded-lg transition-all duration-200 hover:scale-105 ${
                           term.is_default
                             ? "text-green-600 bg-green-100 hover:bg-green-200"
                             : "text-gray-500 hover:bg-gray-100"
                         }`}
-                        title={term.is_default ? "Remove from default" : "Set as default"}
+                        title={
+                          term.is_default
+                            ? "Remove from default"
+                            : "Set as default"
+                        }
                       >
                         <CheckSquare
                           className={`w-4 h-4 ${
@@ -2329,7 +2343,7 @@ export default function TermsConditionsMaster() {
                         />
                       </button>
                     </td>
-                    
+
                     <td className="px-2 md:px-4 py-3">
                       <div className="flex items-center gap-1.5 md:gap-2">
                         <button
@@ -2361,7 +2375,11 @@ export default function TermsConditionsMaster() {
                 No Terms Found
               </h3>
               <p className="text-gray-600">
-                {searchTerm || searchContent || searchCategory || searchVendor || selectedFilter
+                {searchTerm ||
+                searchContent ||
+                searchCategory ||
+                searchVendor ||
+                selectedFilter
                   ? "Try a different search term"
                   : "No terms available"}
               </p>
@@ -2429,7 +2447,7 @@ export default function TermsConditionsMaster() {
                   </div>
                 </div>
               )}
-              
+
               <div className="space-y-4">
                 <div className="space-y-1">
                   <label className="block text-xs font-semibold text-gray-800 mb-1">

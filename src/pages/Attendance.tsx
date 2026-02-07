@@ -855,6 +855,10 @@ export default function Attendance() {
     });
   };
 
+  useEffect(() => {
+    console.log("ats data", attendanceData);
+  }, [attendanceData]);
+
   const loadAttendance = async () => {
     setLoading(true);
     try {
@@ -1208,6 +1212,7 @@ export default function Attendance() {
                           </p>
                         </div>
                       </td>
+
                       <td className="px-6 py-4">
                         <div>
                           <p className="font-medium text-slate-900 text-xs">
@@ -1216,6 +1221,7 @@ export default function Attendance() {
                           </p>
                         </div>
                       </td>
+
                       <td className="px-6 py-4">
                         {record.punch_in_time ? (
                           <div className="flex">
@@ -1297,7 +1303,7 @@ export default function Attendance() {
                             </div>
                             <div>
                               <p className="text-sm text-slate-900 mb-1">
-                                {formatTime(record.punch_out_time)}
+                                {formatTime(record.last_punch_out_time)}
                               </p>
                               <button
                                 onClick={() => {
@@ -1518,13 +1524,14 @@ export default function Attendance() {
                                                 <span className="font-semibold">
                                                   Punch In :
                                                 </span>{" "}
-                                                {record.punch_in_address || "-"}
+                                                {recordHistory.punch_in_address ||
+                                                  "-"}
                                               </p>
                                               <p className="text-sm text-slate-900">
                                                 <span className="font-semibold">
                                                   Punch Out :
                                                 </span>{" "}
-                                                {record.punch_out_address ||
+                                                {recordHistory.punch_out_address ||
                                                   "-"}
                                               </p>
                                             </div>

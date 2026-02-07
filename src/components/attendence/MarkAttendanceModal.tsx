@@ -342,22 +342,26 @@ const AttendanceTracker: React.FC<AttendanceTrackerProps> = ({
   const checkLocation = useCallback(async () => {
     const securityRes = await securityApi.getPunchRadiusSettings();
     const employeeData = await HrmsEmployeesApi.getEmployeeByEmail(user.email);
+
     const MAX_DISTANCE_METERS = securityRes.max_punch_distance_meters;
-    for (let i = 0; employeeData.attendence_location.length > i; i++) {
-      const [empBranch] = await companyApi.getCompanyLocationsById(
-        employeeData.attendence_location[i],
-      );
 
-      if (!navigator.geolocation) return;
+    if (!navigator.geolocation) return;
 
-      navigator.geolocation.getCurrentPosition(
-        (pos) => {
-          const coords = {
-            latitude: pos.coords.latitude,
-            longitude: pos.coords.longitude,
-          };
+    navigator.geolocation.getCurrentPosition(
+      async (pos) => {
+        const coords = {
+          latitude: pos.coords.latitude,
+          longitude: pos.coords.longitude,
+        };
 
-          setLocation(coords);
+        setLocation(coords);
+
+        let nearestBranch: any = null;
+        let minDistance = Infinity;
+
+        for (const branchId of employeeData.attendence_location) {
+          const [empBranch] =
+            await companyApi.getCompanyLocationsById(branchId);
 
           const d = calculateDistance(
             coords.latitude,
@@ -365,15 +369,68 @@ const AttendanceTracker: React.FC<AttendanceTrackerProps> = ({
             empBranch.latitude,
             empBranch.longitude,
           );
-          setDistance(Math.round(d));
-          setAttendanceBranch(d <= MAX_DISTANCE_METERS ? empBranch : {});
-          setIsWithinRange(d <= MAX_DISTANCE_METERS);
-        },
-        (err) => console.error("Location error", err),
-        { enableHighAccuracy: true },
-      );
-    }
+
+          console.log(d <= MAX_DISTANCE_METERS, d < minDistance);
+
+          if (d <= MAX_DISTANCE_METERS && d < minDistance) {
+            minDistance = d;
+            nearestBranch = empBranch;
+          }
+        }
+
+        if (nearestBranch) {
+          console.log("branch", nearestBranch);
+          setAttendanceBranch(nearestBranch);
+          setDistance(Math.round(minDistance));
+          setIsWithinRange(true);
+        } else {
+          setAttendanceBranch({});
+          setDistance(null);
+          setIsWithinRange(false);
+        }
+      },
+      (err) => console.error("Location error", err),
+      { enableHighAccuracy: true },
+    );
   }, []);
+
+  // const checkLocation = useCallback(async () => {
+  //   const securityRes = await securityApi.getPunchRadiusSettings();
+  //   const employeeData = await HrmsEmployeesApi.getEmployeeByEmail(user.email);
+  //   const MAX_DISTANCE_METERS = securityRes.max_punch_distance_meters;
+  //   for (let i = 0; employeeData.attendence_location.length > i; i++) {
+  //     const [empBranch] = await companyApi.getCompanyLocationsById(
+  //       employeeData.attendence_location[i],
+  //     );
+
+  //     if (!navigator.geolocation) return;
+
+  //     navigator.geolocation.getCurrentPosition(
+  //       (pos) => {
+  //         const coords = {
+  //           latitude: pos.coords.latitude,
+  //           longitude: pos.coords.longitude,
+  //         };
+
+  //         setLocation(coords);
+
+  //         const d = calculateDistance(
+  //           coords.latitude,
+  //           coords.longitude,
+  //           empBranch.latitude,
+  //           empBranch.longitude,
+  //         );
+  //         console.log(d <= MAX_DISTANCE_METERS);
+  //         console.log("selected branch", empBranch);
+  //         setDistance(Math.round(d));
+  //         setAttendanceBranch(d <= MAX_DISTANCE_METERS ? empBranch : {});
+  //         setIsWithinRange(d <= MAX_DISTANCE_METERS);
+  //       },
+  //       (err) => console.error("Location error", err),
+  //       { enableHighAccuracy: true },
+  //     );
+  //   }
+  // }, []);
 
   useEffect(() => {
     checkLocation();
@@ -411,6 +468,9 @@ const AttendanceTracker: React.FC<AttendanceTrackerProps> = ({
         punch_out_address:
           currentStatus === PunchStatus.OUT ? attendanceBranch.address : null,
       };
+      console.log("address : ", attendanceBranch.address);
+      console.log("in address : ", payload.punch_in_address);
+      console.log("out address : ", payload.punch_out_address);
       console.log("this is my payload : ", payload);
       let result: any;
       if (type === "in") {
