@@ -2,7 +2,6 @@ import { api } from "./Api";
 
 export interface Company {
   active_branch_count: number;
-  active_branch_count: any;
   id: string;
   name: string;
   code: string;
@@ -104,7 +103,10 @@ const companyApi = {
   },
 
   // Update company
-  async updateCompany(id: string, data: Partial<CompanyFormData>): Promise<Company> {
+  async updateCompany(
+    id: string,
+    data: Partial<CompanyFormData>,
+  ): Promise<Company> {
     try {
       const response = await api.put(`/companies/${id}`, data);
       return response.data;
@@ -136,10 +138,27 @@ const companyApi = {
     }
   },
 
-  // Create office location
-  async createOfficeLocation(companyId: string, data: BranchFormData): Promise<OfficeLocation> {
+  // Get company locations (including inactive)
+  async getCompanyLocationsById(branchId: string): Promise<OfficeLocation[]> {
     try {
-      const response = await api.post(`/companies/${companyId}/locations`, data);
+      const response = await api.get(`/companies/office-location/${branchId}`);
+      return response.data || [];
+    } catch (error) {
+      console.error("Error fetching company locations:", error);
+      throw error;
+    }
+  },
+
+  // Create office location
+  async createOfficeLocation(
+    companyId: string,
+    data: BranchFormData,
+  ): Promise<OfficeLocation> {
+    try {
+      const response = await api.post(
+        `/companies/${companyId}/locations`,
+        data,
+      );
       return response.data;
     } catch (error) {
       console.error("Error creating office location:", error);
@@ -148,7 +167,10 @@ const companyApi = {
   },
 
   // Update office location
-  async updateOfficeLocation(id: string, data: Partial<BranchFormData>): Promise<OfficeLocation> {
+  async updateOfficeLocation(
+    id: string,
+    data: Partial<BranchFormData>,
+  ): Promise<OfficeLocation> {
     try {
       const response = await api.put(`/companies/locations/${id}`, data);
       return response.data;

@@ -41,6 +41,8 @@ const attendanceApi = {
       formData.append("user_id", data.user_id.toString());
       formData.append("latitude", data.latitude.toString());
       formData.append("longitude", data.longitude.toString());
+      formData.append("punch_in_address", data.punch_in_address);
+      formData.append("punch_out_address", data.punch_out_address);
 
       // Convert base64 to File and append
       const selfieFile = dataURLtoFile(data.selfie, "selfie.jpg");
@@ -64,7 +66,10 @@ const attendanceApi = {
     user_id: number;
     latitude: number;
     longitude: number;
-    selfie: string; // base64 string
+    selfie: string;
+    // base64 string
+    punch_in_address: string;
+    punch_out_address: string;
   }) {
     try {
       const formData = new FormData();
@@ -72,6 +77,8 @@ const attendanceApi = {
       formData.append("user_id", data.user_id.toString());
       formData.append("latitude", data.latitude.toString());
       formData.append("longitude", data.longitude.toString());
+      formData.append("punch_in_address", data.punch_in_address);
+      formData.append("punch_out_address", data.punch_out_address);
 
       const selfieFile = dataURLtoFile(data.selfie, "selfie.jpg");
       formData.append("selfie", selfieFile);
@@ -165,6 +172,19 @@ const attendanceApi = {
       return response;
     } catch (error: any) {
       console.error("Check Attendance API error:", error);
+      throw error;
+    }
+  },
+
+  // Get current month attendance of user
+  async getCurrentMonthAttendance(user_id: number) {
+    try {
+      const response = await api.get(
+        `/attendance/currentMonthAttendance/${user_id}`,
+      );
+      return response;
+    } catch (error: any) {
+      console.error("Get Current Month Attendance API error:", error);
       throw error;
     }
   },
