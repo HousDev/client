@@ -1632,10 +1632,12 @@ export default function StoreManagement({
       )}
       {/* Management Table */}
       {activeTab === "management" && (
-        <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden mx-0 md:mx-0">
-          <div className="overflow-x-auto">
-            <table className="w-full min-w-[1000px]">
-              <thead className="bg-gray-200 border-b border-gray-200">
+        <div className="   sticky top-40 z-10 bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden mx-0 md:mx-0">
+    {/* Change 1: Updated container with max height */}
+    <div className="overflow-y-auto max-h-[calc(100vh-250px)]">
+      <table className=" sticky top-48 z-10 w-full min-w-[1000px]">
+        {/* Change 2: Added sticky to thead */}
+        <thead className="sticky top-0 z-10 bg-gray-200 border-b border-gray-200">
                 {/* Column Headers */}
                 <tr>
                   <th className="px-2 md:px-4 py-2 text-left w-72">
