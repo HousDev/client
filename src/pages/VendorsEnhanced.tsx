@@ -1939,36 +1939,24 @@ const handleCompanyEmailCheck = () => {
 
   return (
     <div className="p-0 px-0 bg-gray-50 min-h-screen">
-      <div className="mb-2">
-        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-          <div className="flex gap-3">
-            <button
-              onClick={() => {
-                resetForm();
-                setShowModal(true);
-              }}
-              className="
-    bg-[#C62828] text-white -mt-2 mb-1
-    px-3 py-1.5 
-    sm:px-4 sm:py-2 
-    md:px-5 md:py-2.5 
-    lg:px-6 lg:py-2
-    xl:px-7 xl:py-2
-    rounded-md sm:rounded-lg
-    hover:bg-gray-800 
-    transition-all duration-200
-    flex items-center gap-1.5 sm:gap-2
-    font-medium
-    shadow-sm
-    text-xs sm:text-sm md:text-base
-  "
-            >
-              <Plus className="w-3.5 h-3.5 sm:w-4 sm:h-4 md:w-5 md:h-5" />
-              <span>Add Vendor</span>
-            </button>
-          </div>
-        </div>
-      </div>
+     <div className="mb-2 sticky top-16 z-20  py-2">
+  <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+    <div className="flex gap-3">
+      <button
+        onClick={() => {
+          resetForm();
+          setShowModal(true);
+        }}
+        className="bg-[#C62828] text-white px-4 py-2 rounded-lg
+        hover:bg-gray-800 transition flex items-center gap-2"
+      >
+        <Plus className="w-4 h-4" />
+        <span>Add Vendor</span>
+      </button>
+    </div>
+  </div>
+</div>
+
 
       {/* Table */}
       {/* Table */}
@@ -1978,10 +1966,10 @@ const handleCompanyEmailCheck = () => {
           <p className="text-gray-600 mt-4">Loading vendors...</p>
         </div>
       ) : (
-        <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
-          <div className="overflow-x-auto">
+        <div className="sticky top-32 z-20 bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+<div className="overflow-x-auto max-h-[450px] overflow-y-auto">
             <table className="w-full min-w-[800px]">
-              <thead className="bg-gray-200 border-b border-gray-200">
+<thead className=" bg-gray-200 border-b border-gray-200">
                 {/* Header Row */}
                 <tr>
                   {/* Removed checkbox header */}
@@ -2617,71 +2605,133 @@ const handleCompanyEmailCheck = () => {
                           </div>
 
                           {/* Sub Item */}
-                          <div className="space-y-1">
-                            <label className="block text-[11px] font-medium text-gray-700">
-                              Sub Item
-                            </label>
-                            {isCategoryMaterial(formData.category_name) ? (
-                              <div className="relative">
-                                <div className="absolute inset-y-0 left-0 pl-2.5 flex items-center pointer-events-none">
-                                  <Package className="h-3 w-3 text-gray-400" />
-                                </div>
-                                <select
-                                  value={formData.sub_item_id || ""}
-                                  onChange={(e) =>
-                                    setFormData({
-                                      ...formData,
-                                      sub_item_id: e.target.value,
-                                    })
-                                  }
-                                  className="w-full pl-8 pr-6 py-1.5 text-xs border border-gray-300 rounded focus:ring-1 focus:ring-blue-500 focus:border-blue-500 transition-all duration-150 hover:border-gray-400 appearance-none"
-                                >
-                                  <option value="">Select Material</option>
-                                  {materials.map((m) => (
-                                    <option key={m.id} value={m.id}>
-                                      {m.name} {m.code ? `| ${m.code}` : ""}
-                                    </option>
-                                  ))}
-                                </select>
-                                <div className="absolute inset-y-0 right-0 pr-1.5 flex items-center pointer-events-none">
-                                  <ChevronDown className="h-3 w-3 text-gray-400" />
-                                </div>
-                              </div>
-                            ) : isCategoryService(formData.category_name) ? (
-                              <div className="relative">
-                                <div className="absolute inset-y-0 left-0 pl-2.5 flex items-center pointer-events-none">
-                                  <Settings className="h-3 w-3 text-gray-400" />
-                                </div>
-                                <select
-                                  value={formData.sub_item_id || ""}
-                                  onChange={(e) =>
-                                    setFormData({
-                                      ...formData,
-                                      sub_item_id: e.target.value,
-                                    })
-                                  }
-                                  className="w-full pl-8 pr-6 py-1.5 text-xs border border-gray-300 rounded focus:ring-1 focus:ring-blue-500 focus:border-blue-500 transition-all duration-150 hover:border-gray-400 appearance-none"
-                                >
-                                  <option value="">Select Service</option>
-                                  {services.map((s) => (
-                                    <option key={s.id} value={s.id}>
-                                      {s.name} {s.code ? `| ${s.code}` : ""}
-                                    </option>
-                                  ))}
-                                </select>
-                                <div className="absolute inset-y-0 right-0 pr-1.5 flex items-center pointer-events-none">
-                                  <ChevronDown className="h-3 w-3 text-gray-400" />
-                                </div>
-                              </div>
-                            ) : (
-                              <div className="flex items-center gap-1 text-[10px] text-gray-500 bg-gray-50 p-1.5 rounded border border-gray-200">
-                                <Info className="w-2.5 h-2.5 flex-shrink-0" />
-                                <span className="truncate">
-                                  Select category
-                                </span>
-                              </div>
-                            )}
-                          </div>
+                        <div className="space-y-1">
+  <label className="block text-[11px] font-medium text-gray-700">
+    Sub Item
+  </label>
+  {isCategoryMaterial(formData.category_name) ? (
+    <div className="relative w-full">
+      {/* Icon - Responsive positioning */}
+      <div className="absolute inset-y-0 left-0 pl-1.5 sm:pl-2 md:pl-2.5 flex items-center pointer-events-none z-10">
+        <Package className="h-2.5 w-2.5 sm:h-3 sm:w-3 text-gray-400" />
+      </div>
+      
+      <select
+        value={formData.sub_item_id || ""}
+        onChange={(e) =>
+          setFormData({
+            ...formData,
+            sub_item_id: e.target.value,
+          })
+        }
+        className="
+          w-full 
+          border border-gray-300 
+          rounded 
+          appearance-none
+          transition-all duration-150 
+          hover:border-gray-400
+          focus:ring-1 focus:ring-blue-500 focus:border-blue-500
+          pl-6 sm:pl-7 md:pl-8
+          pr-5 sm:pr-5.5 md:pr-6
+          py-1 sm:py-1.5
+          text-[10px] xs:text-[11px] sm:text-xs
+          overflow-hidden
+          text-ellipsis
+        "
+        style={{
+          maxWidth: '100%',
+          width: '100%',
+          minWidth: 0
+        }}
+      >
+        <option value="">Select Material</option>
+        {materials.map((m) => (
+          <option 
+            key={m.id} 
+            value={m.id}
+            title={`${m.name}${m.code ? ` | ${m.code}` : ""}`}
+            className="truncate"
+          >
+            {m.name.length > 50 
+              ? `${m.name.substring(0, 50)}...` 
+              : m.name}
+            {m.code ? ` | ${m.code}` : ""}
+          </option>
+        ))}
+      </select>
+      
+      {/* Chevron - Responsive positioning */}
+      <div className="absolute inset-y-0 right-0 pr-1 sm:pr-1.5 flex items-center pointer-events-none">
+        <ChevronDown className="h-2.5 w-2.5 sm:h-3 sm:w-3 text-gray-400" />
+      </div>
+    </div>
+  ) : isCategoryService(formData.category_name) ? (
+    <div className="relative w-full">
+      {/* Icon - Responsive positioning */}
+      <div className="absolute inset-y-0 left-0 pl-1.5 sm:pl-2 md:pl-2.5 flex items-center pointer-events-none z-10">
+        <Settings className="h-2.5 w-2.5 sm:h-3 sm:w-3 text-gray-400" />
+      </div>
+      
+      <select
+        value={formData.sub_item_id || ""}
+        onChange={(e) =>
+          setFormData({
+            ...formData,
+            sub_item_id: e.target.value,
+          })
+        }
+        className="
+          w-full 
+          border border-gray-300 
+          rounded 
+          appearance-none
+          transition-all duration-150 
+          hover:border-gray-400
+          focus:ring-1 focus:ring-blue-500 focus:border-blue-500
+          pl-6 sm:pl-7 md:pl-8
+          pr-5 sm:pr-5.5 md:pr-6
+          py-1 sm:py-1.5
+          text-[10px] xs:text-[11px] sm:text-xs
+          overflow-hidden
+          text-ellipsis
+        "
+        style={{
+          maxWidth: '100%',
+          width: '100%',
+          minWidth: 0
+        }}
+      >
+        <option value="">Select Service</option>
+        {services.map((s) => (
+          <option 
+            key={s.id} 
+            value={s.id}
+            title={`${s.name}${s.code ? ` | ${s.code}` : ""}`}
+            className="truncate"
+          >
+            {s.name.length > 50 
+              ? `${s.name.substring(0, 50)}...` 
+              : s.name}
+            {s.code ? ` | ${s.code}` : ""}
+          </option>
+        ))}
+      </select>
+      
+      {/* Chevron - Responsive positioning */}
+      <div className="absolute inset-y-0 right-0 pr-1 sm:pr-1.5 flex items-center pointer-events-none">
+        <ChevronDown className="h-2.5 w-2.5 sm:h-3 sm:w-3 text-gray-400" />
+      </div>
+    </div>
+  ) : (
+    <div className="flex items-center gap-1 text-[10px] sm:text-xs text-gray-500 bg-gray-50 p-1.5 rounded border border-gray-200 w-full">
+      <Info className="w-2.5 h-2.5 flex-shrink-0" />
+      <span className="truncate">
+        Select category
+      </span>
+    </div>
+  )}
+</div>
                         </div>
 
                         {/* Tax Details */}

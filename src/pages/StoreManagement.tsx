@@ -1525,7 +1525,7 @@ export default function StoreManagement({
         />
       )}
       {/* Main Tabs */}
-      <div className="mt-12 md:mt-2 flex bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden mb-4 md:mb-6 mx-0 md:mx-0">
+      <div className=" sticky top-20 z-10 mt-12 md:mt-2 flex bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden mb-4 md:mb-6 mx-0 md:mx-0">
         {" "}
         <button
           onClick={() => setActiveTab("tracking")}
@@ -1558,7 +1558,7 @@ export default function StoreManagement({
       </div>
       {/* Sub Tabs for Tracking */}
       {activeTab === "tracking" && (
-        <div className="flex bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden mb-4 md:mb-6 mx-4 md:mx-0">
+        <div className=" sticky top-36 z-10 flex bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden mb-4 md:mb-6 mx-4 md:mx-0">
           <button
             onClick={() => setSubTabs("MaterialIn")}
             className={`flex-1 px-2 md:px-4 py-2 font-medium transition-all duration-200
