@@ -2006,7 +2006,7 @@ export default function CreatePurchaseOrderForm({
                       );
                       setSelectedPaymentTermData(findedData);
                     }}
-                    placeholder="Select Vendor"
+                    placeholder="Select a payment term"
                     required
                   />
                 </div>

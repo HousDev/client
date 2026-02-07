@@ -81,6 +81,8 @@ export default function CreateTask({
   const [engineers, setEngineers] = useState<any>([]);
   const [works, setWorks] = useState<any>([]);
 
+  // ✅ ADD THIS LINE
+  const today = new Date().toISOString().split("T")[0];
   const loadProjectDetails = async () => {
     try {
       const projectRes: any = await projectApi.getProjectById(projectId);
@@ -506,17 +508,24 @@ export default function CreateTask({
                   </label>
                   <div className="relative group">
                     <div className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 group-focus-within:text-amber-600 transition-colors">
-                      <Calendar className="w-3.5 h-3.5" />
+                      <Calendar className="w-3.5 h-3.5 pr-10" />
                     </div>
                     <input
                       type="date"
                       value={formData.start_date}
+                      min={today}
                       onChange={(e) =>
-                        setFormData({ ...formData, start_date: e.target.value })
+                        setFormData({
+                          ...formData,
+                          start_date: e.target.value,
+                          end_date: ""
+                        })
                       }
-                      className="w-full pl-10 pr-4 py-2 text-sm border border-gray-300 rounded-xl focus:border-amber-600 focus:ring-2 focus:ring-amber-600/20 outline-none transition-all duration-200 hover:border-gray-400"
+                      className="w-full px-4 py-2 text-sm border border-gray-300 rounded-xl
+             focus:border-amber-600 focus:ring-2 focus:ring-amber-600/20"
                       required
                     />
+
                   </div>
                 </div>
                 <div className="space-y-1.5">
@@ -527,17 +536,20 @@ export default function CreateTask({
                   </label>
                   <div className="relative group">
                     <div className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 group-focus-within:text-amber-600 transition-colors">
-                      <Calendar className="w-3.5 h-3.5" />
+                      <Calendar className="w-3.5 h-3.5 pr-10" />
                     </div>
                     <input
                       type="date"
                       value={formData.end_date}
+                      min={formData.start_date || today}
                       onChange={(e) =>
                         setFormData({ ...formData, end_date: e.target.value })
                       }
-                      className="w-full pl-10 pr-4 py-2 text-sm border border-gray-300 rounded-xl focus:border-amber-600 focus:ring-2 focus:ring-amber-600/20 outline-none transition-all duration-200 hover:border-gray-400"
+                      className="w-full px-4 py-2 text-sm border border-gray-300 rounded-xl
+             focus:border-amber-600 focus:ring-2 focus:ring-amber-600/20"
                       required
                     />
+
                   </div>
                 </div>
               </div>
