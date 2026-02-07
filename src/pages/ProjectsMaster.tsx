@@ -2137,9 +2137,9 @@ export default function ProjectsMaster() {
   return (
     <div className="p-0">
       {/* Tabs Section - Matching PurchaseOrders style */}
-      <div className="flex flex-col gap-2 mb-3 sm:flex-row sm:items-center sm:gap-4">
+      <div className=" sticky top-20 z-20 flex flex-col gap-2 mb-3 sm:flex-row sm:items-center sm:gap-4">
         <div className="w-full sm:flex-1">
-          <div className="flex bg-white border border-gray-200 rounded-lg overflow-hidden">
+          <div className="flex bg-white border border-gray-200 rounded-lg ">
             <button
               onClick={() => setActiveTab("project")}
               className={`flex-1 flex items-center justify-center gap-1.5
@@ -2238,10 +2238,10 @@ export default function ProjectsMaster() {
           </div>
 
           {/* Main Table */}
-          <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden md:-mt-1 ">
-            <div className="overflow-x-auto">
+          <div className="sticky top-32 bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden md:-mt-1 ">
+<div className="overflow-y-auto max-h-[calc(100vh-160px)]">           
               <table className="w-full min-w-[800px]">
-                <thead className="bg-gray-200 border-b border-gray-200">
+                <thead className="sticky top-0 z-10 bg-gray-200 border-b border-gray-200">
                   {/* Header Row */}
                   <tr>
                     <th className="px-3 md:px-4 py-2 text-center w-16">
@@ -2490,268 +2490,268 @@ export default function ProjectsMaster() {
         </div>
       )}
 
-      {activeTab === "projectDetails" && (
-        <div>
-          {/* Search Bar with Filters */}
-          <div className="mb-3">
-            <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
-              <div className="p-2 md:p-4 border-b border-gray-200">
-                {/* MOBILE: ONE LINE */}
-                {/* MOBILE: ONE LINE COMPACT */}
-                <div className="flex md:hidden items-center gap-1.5">
-                  {/* Name */}
-                  <input
-                    type="text"
-                    placeholder="Name"
-                    value={searchDetailFilters.name}
-                    onChange={(e) =>
-                      handleDetailSearchFilterChange("name", e.target.value)
-                    }
-                    className="flex-1 min-w-0 px-2 py-1 text-[10px]
-      border border-gray-300 rounded-md
-      focus:ring-1 focus:ring-blue-500"
-                  />
+{activeTab === "projectDetails" && (
+  <div>
+    {/* Search Bar with Filters - Sticky */}
+    <div className="sticky top-32 z-10 bg-white mb-3">
+      <div className="bg-white rounded-lg shadow-sm border border-gray-200">
+        <div className="p-2 md:p-4 border-b border-gray-200">
+          {/* MOBILE: ONE LINE COMPACT */}
+          <div className="flex md:hidden items-center gap-1.5">
+            {/* Name */}
+            <input
+              type="text"
+              placeholder="Name"
+              value={searchDetailFilters.name}
+              onChange={(e) =>
+                handleDetailSearchFilterChange("name", e.target.value)
+              }
+              className="flex-1 min-w-0 px-2 py-1 text-[10px]
+                border border-gray-300 rounded-md
+                focus:ring-1 focus:ring-blue-500"
+            />
 
-                  {/* Category */}
-                  <input
-                    type="text"
-                    placeholder="Category"
-                    value={searchDetailFilters.category}
-                    onChange={(e) =>
-                      handleDetailSearchFilterChange("category", e.target.value)
-                    }
-                    className="flex-1 min-w-0 px-2 py-1 text-[10px]
-      border border-gray-300 rounded-md
-      focus:ring-1 focus:ring-blue-500"
-                  />
+            {/* Category */}
+            <input
+              type="text"
+              placeholder="Category"
+              value={searchDetailFilters.category}
+              onChange={(e) =>
+                handleDetailSearchFilterChange("category", e.target.value)
+              }
+              className="flex-1 min-w-0 px-2 py-1 text-[10px]
+                border border-gray-300 rounded-md
+                focus:ring-1 focus:ring-blue-500"
+            />
 
-                  {/* Clear */}
-                  <button
-                    onClick={clearAllDetailFilters}
-                    className="shrink-0 px-2 py-1
-      border border-gray-300 rounded-md
-      text-[10px]"
-                  >
-                    Clear
-                  </button>
+            {/* Clear */}
+            <button
+              onClick={clearAllDetailFilters}
+              className="shrink-0 px-2 py-1
+                border border-gray-300 rounded-md
+                text-[10px]"
+            >
+              Clear
+            </button>
 
-                  {/* Delete (ALWAYS VISIBLE) */}
-                  {selectedDetailItems.size > 0 && (
-                    <button
-                      onClick={handleBulkDeleteDetails}
-                      className="shrink-0 px-2 py-1
-        bg-red-600 text-white rounded-md
-        text-[10px] whitespace-nowrap"
-                    >
-                      Del {selectedDetailItems.size}
-                    </button>
-                  )}
-                </div>
-
-                {/* DESKTOP / TABLET: GRID */}
-                <div
-                  className={`hidden md:grid gap-4
-        ${selectedDetailItems.size > 0 ? "md:grid-cols-4" : "md:grid-cols-3"}`}
-                >
-                  {/* Name */}
-                  <div>
-                    <div className="text-xs font-semibold text-gray-700 uppercase mb-1">
-                      Name
-                    </div>
-                    <input
-                      type="text"
-                      placeholder="Search name..."
-                      value={searchDetailFilters.name}
-                      onChange={(e) =>
-                        handleDetailSearchFilterChange("name", e.target.value)
-                      }
-                      className="w-full px-3 py-2 text-xs border border-gray-300 rounded-md focus:ring-1 focus:ring-blue-500"
-                    />
-                  </div>
-
-                  {/* Category */}
-                  <div>
-                    <div className="text-xs font-semibold text-gray-700 uppercase mb-1">
-                      Category
-                    </div>
-                    <input
-                      type="text"
-                      placeholder="Search category..."
-                      value={searchDetailFilters.category}
-                      onChange={(e) =>
-                        handleDetailSearchFilterChange(
-                          "category",
-                          e.target.value,
-                        )
-                      }
-                      className="w-full px-3 py-2 text-xs border border-gray-300 rounded-md focus:ring-1 focus:ring-blue-500"
-                    />
-                  </div>
-
-                  {/* Clear */}
-                  <div className="flex items-end">
-                    <button
-                      onClick={clearAllDetailFilters}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md text-xs hover:bg-gray-50"
-                    >
-                      Clear Filters
-                    </button>
-                  </div>
-
-                  {/* Bulk Delete */}
-                  {selectedDetailItems.size > 0 && (
-                    <div className="flex items-end">
-                      <button
-                        onClick={handleBulkDeleteDetails}
-                        className="w-full px-3 py-2 bg-red-600 text-white rounded-md text-xs hover:bg-red-700"
-                      >
-                        Delete ({selectedDetailItems.size})
-                      </button>
-                    </div>
-                  )}
-                </div>
-              </div>
-            </div>
+            {/* Delete (ALWAYS VISIBLE) */}
+            {selectedDetailItems.size > 0 && (
+              <button
+                onClick={handleBulkDeleteDetails}
+                className="shrink-0 px-2 py-1
+                  bg-red-600 text-white rounded-md
+                  text-[10px] whitespace-nowrap"
+              >
+                Del {selectedDetailItems.size}
+              </button>
+            )}
           </div>
 
-          {/* Project Details Grid */}
-          <div className="grid grid-cols-1 xs:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
-            {filteredProjectsDetails.map((project) => {
-              const isSelected = selectedDetailItems.has(project.id);
-              return (
-                <div
-                  key={project.id}
-                  className={`border rounded-xl shadow-sm hover:shadow-md transition ${
-                    isSelected
-                      ? "border-blue-500 bg-blue-50"
-                      : "border-slate-300 hover:border-gray-400"
-                  }`}
+          {/* DESKTOP / TABLET: GRID */}
+          <div
+            className={`hidden md:grid gap-4 
+              ${selectedDetailItems.size > 0 ? "md:grid-cols-4" : "md:grid-cols-3"}`}
+          >
+            {/* Name */}
+            <div>
+              <div className="text-xs font-semibold text-gray-700 uppercase mb-1">
+                Name
+              </div>
+              <input
+                type="text"
+                placeholder="Search name..."
+                value={searchDetailFilters.name}
+                onChange={(e) =>
+                  handleDetailSearchFilterChange("name", e.target.value)
+                }
+                className="w-full px-3 py-2 text-xs border border-gray-300 rounded-md focus:ring-1 focus:ring-blue-500"
+              />
+            </div>
+
+            {/* Category */}
+            <div>
+              <div className="text-xs font-semibold text-gray-700 uppercase mb-1">
+                Category
+              </div>
+              <input
+                type="text"
+                placeholder="Search category..."
+                value={searchDetailFilters.category}
+                onChange={(e) =>
+                  handleDetailSearchFilterChange("category", e.target.value)
+                }
+                className="w-full px-3 py-2 text-xs border border-gray-300 rounded-md focus:ring-1 focus:ring-blue-500"
+              />
+            </div>
+
+            {/* Clear */}
+            <div className="flex items-end">
+              <button
+                onClick={clearAllDetailFilters}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md text-xs hover:bg-gray-50"
+              >
+                Clear Filters
+              </button>
+            </div>
+
+            {/* Bulk Delete */}
+            {selectedDetailItems.size > 0 && (
+              <div className="flex items-end">
+                <button
+                  onClick={handleBulkDeleteDetails}
+                  className="w-full px-3 py-2 bg-red-600 text-white rounded-md text-xs hover:bg-red-700"
                 >
-                  {/* Card Header */}
-                  <div className="rounded-xl flex justify-between items-center p-3 md:p-4 border-b bg-gradient-to-r from-gray-50 to-white">
-                    <div className="flex items-center gap-2 flex-1 min-w-0">
-                      <input
-                        type="checkbox"
-                        checked={isSelected}
-                        onChange={() => handleSelectDetailItem(project.id)}
-                        className="w-3.5 h-3.5 md:w-4 md:h-4 text-[#C62828] border-gray-300 rounded focus:ring-[#C62828] flex-shrink-0"
-                      />
-                      <h1
-                        className="text-xs md:text-sm font-semibold truncate"
-                        title={project.name}
-                      >
-                        {project.name}
-                      </h1>
-                    </div>
-                    <div className="flex gap-1 flex-shrink-0">
-                      <button
-                        onClick={() => {
-                          setSelectedProjectDetails(project);
-                          setUpdateProjectDetails(true);
-                          setShowProjectDetailsForm(true);
-                        }}
-                        className="p-1 md:p-1.5 text-green-600 hover:bg-green-50 rounded-lg transition hover:scale-105 active:scale-95"
-                        title="Edit"
-                      >
-                        <Edit2 className="w-3.5 h-3.5 md:w-4 md:h-4" />
-                      </button>
-                      <button
-                        onClick={() => deleteProjectDetails(project.id)}
-                        className="p-1 md:p-1.5 text-red-600 hover:bg-red-50 rounded-lg transition hover:scale-105 active:scale-95"
-                        title="Delete"
-                      >
-                        <Trash2 className="w-3.5 h-3.5 md:w-4 md:h-4" />
-                      </button>
-                    </div>
+                  Delete ({selectedDetailItems.size})
+                </button>
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+    </div>
+
+    {/* Project Details Grid - Sticky Container with Scroll */}
+    <div className="sticky top-44 md:top-48 z-10  rounded-xl ">
+      <div className="overflow-y-auto max-h-[calc(100vh-280px)] md:max-h-[calc(100vh-260px)] p-3">
+        <div className="grid grid-cols-1 xs:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
+          {filteredProjectsDetails.map((project) => {
+            const isSelected = selectedDetailItems.has(project.id);
+            return (
+              <div
+                key={project.id}
+                className={`border rounded-xl shadow-sm hover:shadow-md transition ${
+                  isSelected
+                    ? "border-blue-500 bg-blue-50"
+                    : "border-slate-300 hover:border-gray-400"
+                }`}
+              >
+                {/* Card Header */}
+                <div className="rounded-xl flex justify-between items-center p-3 md:p-4 border-b bg-gradient-to-r from-gray-50 to-white">
+                  <div className="flex items-center gap-2 flex-1 min-w-0">
+                    <input
+                      type="checkbox"
+                      checked={isSelected}
+                      onChange={() => handleSelectDetailItem(project.id)}
+                      className="w-3.5 h-3.5 md:w-4 md:h-4 text-[#C62828] border-gray-300 rounded focus:ring-[#C62828] flex-shrink-0"
+                    />
+                    <h1
+                      className="text-xs md:text-sm font-semibold truncate"
+                      title={project.name}
+                    >
+                      {project.name}
+                    </h1>
                   </div>
+                  <div className="flex gap-1 flex-shrink-0">
+                    <button
+                      onClick={() => {
+                        setSelectedProjectDetails(project);
+                        setUpdateProjectDetails(true);
+                        setShowProjectDetailsForm(true);
+                      }}
+                      className="p-1 md:p-1.5 text-green-600 hover:bg-green-50 rounded-lg transition hover:scale-105 active:scale-95"
+                      title="Edit"
+                    >
+                      <Edit2 className="w-3.5 h-3.5 md:w-4 md:h-4" />
+                    </button>
+                    <button
+                      onClick={() => deleteProjectDetails(project.id)}
+                      className="p-1 md:p-1.5 text-red-600 hover:bg-red-50 rounded-lg transition hover:scale-105 active:scale-95"
+                      title="Delete"
+                    >
+                      <Trash2 className="w-3.5 h-3.5 md:w-4 md:h-4" />
+                    </button>
+                  </div>
+                </div>
 
-                  {/* Card Content */}
-                  <div className="p-3 md:p-4">
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-2">
-                        <div
-                          className={`p-1.5 md:p-2 rounded-lg ${
-                            project.category === "floor"
-                              ? "bg-green-100"
-                              : "bg-blue-100"
-                          }`}
-                        >
-                          {project.category === "floor" ? (
-                            <Layers className="w-3.5 h-3.5 md:w-4 md:h-4 text-green-700" />
-                          ) : project.category === "flat" ? (
-                            <Home className="w-3.5 h-3.5 md:w-4 md:h-4 text-blue-700" />
-                          ) : (
-                            <DoorOpen className="w-3.5 h-3.5 md:w-4 md:h-4 text-blue-700" />
-                          )}
-                        </div>
-                        <div>
-                          <span className="text-xs md:text-sm font-medium text-gray-800">
-                            {project.category === "floor"
-                              ? "Floor"
-                              : project.category === "flat"
-                                ? "Flat"
-                                : "Common Area"}
-                          </span>
-                          {/* Safe ID display */}
-                          {project.id && (
-                            <div className="text-[9px] md:text-xs text-gray-500 mt-0.5">
-                              ID: {String(project.id).slice(0, 8)}
-                              {String(project.id).length > 8 ? "..." : ""}
-                            </div>
-                          )}
-                        </div>
-                      </div>
-
-                      {/* Status Indicator */}
+                {/* Card Content */}
+                <div className="p-3 md:p-4">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
                       <div
-                        className={`px-2 py-1 rounded-full text-[9px] md:text-xs font-medium ${
-                          project.is_active !== false
-                            ? "bg-green-100 text-green-700"
-                            : "bg-gray-100 text-gray-700"
+                        className={`p-1.5 md:p-2 rounded-lg ${
+                          project.category === "floor"
+                            ? "bg-green-100"
+                            : "bg-blue-100"
                         }`}
                       >
-                        {project.is_active !== false ? "Active" : "Inactive"}
+                        {project.category === "floor" ? (
+                          <Layers className="w-3.5 h-3.5 md:w-4 md:h-4 text-green-700" />
+                        ) : project.category === "flat" ? (
+                          <Home className="w-3.5 h-3.5 md:w-4 md:h-4 text-blue-700" />
+                        ) : (
+                          <DoorOpen className="w-3.5 h-3.5 md:w-4 md:h-4 text-blue-700" />
+                        )}
                       </div>
+                      <div>
+                        <span className="text-xs md:text-sm font-medium text-gray-800">
+                          {project.category === "floor"
+                            ? "Floor"
+                            : project.category === "flat"
+                              ? "Flat"
+                              : "Common Area"}
+                        </span>
+                        {/* Safe ID display */}
+                        {project.id && (
+                          <div className="text-[9px] md:text-xs text-gray-500 mt-0.5">
+                            ID: {String(project.id).slice(0, 8)}
+                            {String(project.id).length > 8 ? "..." : ""}
+                          </div>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* Status Indicator */}
+                    <div
+                      className={`px-2 py-1 rounded-full text-[9px] md:text-xs font-medium ${
+                        project.is_active !== false
+                          ? "bg-green-100 text-green-700"
+                          : "bg-gray-100 text-gray-700"
+                      }`}
+                    >
+                      {project.is_active !== false ? "Active" : "Inactive"}
                     </div>
                   </div>
                 </div>
-              );
-            })}
-          </div>
-
-          {/* Empty State */}
-          {filteredProjectsDetails.length === 0 && (
-            <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 md:p-8 text-center mt-6">
-              <Package className="w-12 h-12 md:w-16 md:h-16 text-gray-300 mx-auto mb-4" />
-              <p className="text-gray-600 text-sm md:text-base font-medium">
-                No project details found
-              </p>
-              <p className="text-gray-500 text-xs md:text-sm mt-2 mb-4">
-                {searchDetailFilters.name || searchDetailFilters.category
-                  ? "Try a different search term or clear filters"
-                  : "Click 'Add Project Details' to get started"}
-              </p>
-              {!searchDetailFilters.name && !searchDetailFilters.category && (
-                <button
-                  onClick={() => {
-                    setShowProjectDetailsForm(true);
-                    setUpdateProjectDetails(false);
-                    setSelectedProjectDetails({
-                      id: "",
-                      name: "",
-                      category: "floor",
-                    });
-                  }}
-                  className="inline-flex items-center gap-2 bg-[#C62828] text-white px-4 py-2 rounded-lg hover:bg-red-500 transition text-sm font-medium shadow-sm"
-                >
-                  <Plus className="w-4 h-4" />
-                  Add Project Details
-                </button>
-              )}
-            </div>
-          )}
+              </div>
+            );
+          })}
         </div>
-      )}
+
+        {/* Empty State - Inside scroll container */}
+        {filteredProjectsDetails.length === 0 && (
+          <div className="bg-white rounded-xl p-6 md:p-8 text-center">
+            <Package className="w-12 h-12 md:w-16 md:h-16 text-gray-300 mx-auto mb-4" />
+            <p className="text-gray-600 text-sm md:text-base font-medium">
+              No project details found
+            </p>
+            <p className="text-gray-500 text-xs md:text-sm mt-2 mb-4">
+              {searchDetailFilters.name || searchDetailFilters.category
+                ? "Try a different search term or clear filters"
+                : "Click 'Add Project Details' to get started"}
+            </p>
+            {!searchDetailFilters.name && !searchDetailFilters.category && (
+              <button
+                onClick={() => {
+                  setShowProjectDetailsForm(true);
+                  setUpdateProjectDetails(false);
+                  setSelectedProjectDetails({
+                    id: "",
+                    name: "",
+                    category: "floor",
+                  });
+                }}
+                className="inline-flex items-center gap-2 bg-[#C62828] text-white px-4 py-2 rounded-lg hover:bg-red-500 transition text-sm font-medium shadow-sm"
+              >
+                <Plus className="w-4 h-4" />
+                Add Project Details
+              </button>
+            )}
+          </div>
+        )}
+      </div>
+    </div>
+  </div>
+)}
       {/* Filter Sidebar */}
       {showFilterSidebar && activeTab === "project" && (
         <div className="fixed inset-0 z-50 overflow-hidden">

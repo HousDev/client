@@ -1534,7 +1534,7 @@ const toggleEmployeeStatus = async (id: string, currentStatus: string) => {
         </Button> */}
       </div>
 
-      <div className=" grid grid-cols-2 sm:grid-cols-2 md:grid-cols-4 gap-2 md:gap-3">
+      <div className=" sticky top-20 z-10 grid grid-cols-2 sm:grid-cols-2 md:grid-cols-4 gap-2 md:gap-3">
         <Card className="p-2 sm:p-3 md:p-3.5">
           <div className="flex items-center justify-between">
             <div>
@@ -1600,19 +1600,10 @@ const toggleEmployeeStatus = async (id: string, currentStatus: string) => {
         </Card>
       </div>
 
-      <Card>
-        <div className="p-4 border-b border-slate-200">
-          <div className="flex flex-col md:flex-row gap-3 items-center justify-end">
-            {/* Global Search */}
-            {/* <div className="w-full md:w-auto">
-              <Input
-                placeholder="Search employees..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full md:w-64"
-                startIcon={<Search className="h-4 w-4" />}
-              />
-            </div> */}
+      
+        
+          <div className=" sticky top-44 z-10 flex flex-col md:flex-row gap-3 items-center justify-end">
+            
 
             {/* Action Buttons */}
             <div className="flex gap-2 w-full md:w-auto">
@@ -1674,290 +1665,308 @@ const toggleEmployeeStatus = async (id: string, currentStatus: string) => {
               </Button>
             </div>
           </div>
-        </div>
+      
 
-        <div className="overflow-x-auto">
-          <table className="w-full min-w-[800px]">
-            <thead className="bg-slate-50 border-b border-slate-200">
-              {/* Header Row */}
-              <tr>
-                <th className="text-left px-4 py-3 text-xs font-semibold text-slate-900 uppercase tracking-wide w-16">
-                  <div className="text-center">Select</div>
-                </th>
-                <th className="text-left px-4 py-3 text-xs font-semibold text-slate-900 uppercase tracking-wide">
-                  Employee
-                </th>
-                <th className="text-left px-4 py-3 text-xs font-semibold text-slate-900 uppercase tracking-wide">
-                  Code
-                </th>
-                <th className="text-left px-4 py-3 text-xs font-semibold text-slate-900 uppercase tracking-wide">
-                  Email
-                </th>
-                <th className="text-left px-4 py-3 text-xs font-semibold text-slate-900 uppercase tracking-wide">
-                  Department
-                </th>
-                <th className="text-left px-4 py-3 text-xs font-semibold text-slate-900 uppercase tracking-wide">
-                  Role
-                </th>
-                <th className="text-left px-4 py-3 text-xs font-semibold text-slate-900 uppercase tracking-wide">
-                  Status
-                </th>
-                <th className="text-right px-4 py-3 text-xs font-semibold text-slate-900 uppercase tracking-wide">
-                  Actions
-                </th>
-              </tr>
-
-              {/* Search Row - Separate Row Below Headers */}
-              <tr className="bg-slate-50 border-b border-slate-200">
-                {/* Select Column */}
-                <td className="px-4 py-2 text-center">
-                  <input
-                    type="checkbox"
-                    checked={selectAll}
-                    onChange={handleSelectAll}
-                    className="w-4 h-4 text-[#C62828] border-gray-300 rounded focus:ring-[#C62828]"
-                  />
-                </td>
-
-                {/* Name Column Search */}
-                <td className="px-4 py-2">
-                  <input
-                    type="text"
-                    placeholder="Search name..."
-                    value={columnFilters.name}
-                    onChange={(e) => handleColumnFilterChange('name', e.target.value)}
-                    className="w-full px-2 py-1 text-xs border border-gray-300 rounded focus:ring-1 focus:ring-blue-500 focus:border-transparent"
-                  />
-                </td>
-
-                {/* Code Column Search */}
-                <td className="px-4 py-2">
-                  <input
-                    type="text"
-                    placeholder="Search code..."
-                    value={columnFilters.code}
-                    onChange={(e) => handleColumnFilterChange('code', e.target.value)}
-                    className="w-full px-2 py-1 text-xs border border-gray-300 rounded focus:ring-1 focus:ring-blue-500 focus:border-transparent"
-                  />
-                </td>
-
-                {/* Email Column Search */}
-                <td className="px-4 py-2">
-                  <input
-                    type="text"
-                    placeholder="Search email..."
-                    value={columnFilters.email}
-                    onChange={(e) => handleColumnFilterChange('email', e.target.value)}
-                    className="w-full px-2 py-1 text-xs border border-gray-300 rounded focus:ring-1 focus:ring-blue-500 focus:border-transparent"
-                  />
-                </td>
-
-                {/* Department Column Search */}
-                <td className="px-4 py-2">
-                  <input
-                    type="text"
-                    placeholder="Search dept..."
-                    value={columnFilters.department}
-                    onChange={(e) => handleColumnFilterChange('department', e.target.value)}
-                    className="w-full px-2 py-1 text-xs border border-gray-300 rounded focus:ring-1 focus:ring-blue-500 focus:border-transparent"
-                  />
-                </td>
-
-                {/* Role Column Search */}
-                <td className="px-4 py-2">
-                  <input
-                    type="text"
-                    placeholder="Search role..."
-                    value={columnFilters.role}
-                    onChange={(e) => handleColumnFilterChange('role', e.target.value)}
-                    className="w-full px-2 py-1 text-xs border border-gray-300 rounded focus:ring-1 focus:ring-blue-500 focus:border-transparent"
-                  />
-                </td>
-
-                {/* Status Column Search */}
-                <td className="px-4 py-2">
-                  <input
-                    type="text"
-                    placeholder="Search status..."
-                    value={columnFilters.status}
-                    onChange={(e) => handleColumnFilterChange('status', e.target.value)}
-                    className="w-full px-2 py-1 text-xs border border-gray-300 rounded focus:ring-1 focus:ring-blue-500 focus:border-transparent"
-                  />
-                </td>
-
-                {/* Actions Column - Filter and Clear Buttons */}
-                <td className="px-4 py-2 text-right">
-                  <div className="flex justify-end gap-2">
-                    <button
-                      onClick={() => setShowFilterSidebar(true)}
-                      className="inline-flex items-center px-2 py-1 border border-gray-300 rounded hover:bg-gray-50 transition text-xs font-medium text-gray-700"
-                      title="Advanced Filters"
-                    >
-                      <Filter className="w-3 h-3 mr-1" />
-                      Filters
-                    </button>
-                    <button
-                      onClick={clearAllFilters}
-                      className="inline-flex items-center px-2 py-1 border border-gray-300 rounded hover:bg-gray-50 transition text-xs font-medium text-gray-700"
-                      title="Clear All Filters"
-                    >
-                      <X className="w-3 h-3 mr-1" />
-                      Clear
-                    </button>
-                  </div>
-                </td>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-slate-100">
-              {filteredEmployees.map((employee) => {
-                const isSelected = selectedItems.has(employee.id);
-                const hasDetails = hasAdditionalDetails(employee);
-
-                return (
-                  <tr
-                    key={employee.id}
-                    className={`hover:bg-slate-50 transition-colors ${isSelected ? 'bg-blue-50' : ''}`}
-                  >
-                    <td className="px-4 py-3 text-center">
-                      <input
-                        type="checkbox"
-                        checked={isSelected}
-                        onChange={() => handleSelectItem(employee.id)}
-                        className="w-4 h-4 text-[#C62828] border-gray-300 rounded focus:ring-[#C62828]"
-                      />
-                    </td>
-                    <td className="px-4 py-3">
-                      <div className="flex items-center gap-3">
-                        <div className="w-8 h-8 rounded-full overflow-hidden bg-slate-100 flex-shrink-0 border border-gray-200">
-                          {employee.profile_picture ? (
-                            <img
-                              src={`${import.meta.env.VITE_API_URL}${employee.profile_picture}`}
-                              alt={`${employee.first_name} ${employee.last_name}`}
-                              className="w-full h-full object-cover"
-                              onError={(e) => {
-                                e.currentTarget.style.display = 'none';
-                                const parent = e.currentTarget.parentElement;
-                                if (parent) {
-                                  const fallback = document.createElement('div');
-                                  fallback.className = 'w-full h-full flex items-center justify-center bg-blue-100';
-                                  fallback.innerHTML = `<span class="text-xs font-medium text-blue-700">${employee.first_name.charAt(0)}${employee.last_name.charAt(0)}</span>`;
-                                  parent.appendChild(fallback);
-                                }
-                              }}
-                            />
-                          ) : (
-                            <div className="w-full h-full flex items-center justify-center bg-blue-100">
-                              <span className="text-xs font-medium text-blue-700">
-                                {employee.first_name.charAt(0)}{employee.last_name.charAt(0)}
-                              </span>
-                            </div>
-                          )}
-                        </div>
-                        <div>
-                          <p className="text-sm font-medium text-slate-900">
-                            {employee.first_name} {employee.last_name}
-                          </p>
-                          <p className="text-xs text-slate-600">{employee.designation}</p>
-                        </div>
-                      </div>
-                    </td>
-                    <td className="px-4 py-3">
-                      <span className="text-xs font-mono text-slate-700 bg-slate-100 px-2 py-1 rounded">
-                        {employee.employee_code || "EMP" + employee.id}
-                      </span>
-                    </td>
-                    <td className="px-4 py-3">
-                      <span className="text-sm text-slate-900">
-                        {employee.email}
-                      </span>
-                    </td>
-                    <td className="px-4 py-3">
-                      <span className="text-sm text-slate-900">
-                        {employee.department?.name || "N/A"}
-                      </span>
-                    </td>
-                    <td className="px-4 py-3">
-                      <Badge variant="info">{employee.role?.name || "N/A"}</Badge>
-                    </td>
-                    <td className="px-4 py-3">
-                      {/* Status Toggle Button */}
-                      <button
-                        onClick={() => toggleEmployeeStatus(employee.id, employee.employee_status)}
-                        className={`px-3 py-1 rounded-full text-xs font-medium transition-colors ${
-                          employee.employee_status === 'active'
-                            ? 'bg-green-100 text-green-700 hover:bg-green-200'
-                            : employee.employee_status === 'inactive'
-                            ? 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                            : employee.employee_status === 'on_leave'
-                            ? 'bg-yellow-100 text-yellow-700 hover:bg-yellow-200'
-                            : 'bg-red-100 text-red-700 hover:bg-red-200'
-                        }`}
-                        title={`Click to ${employee.employee_status === 'active' ? 'deactivate' : 'activate'}`}
-                      >
-                        {employee.employee_status === 'active' && 'ACTIVE'}
-                        {employee.employee_status === 'inactive' && 'INACTIVE'}
-                        {employee.employee_status === 'on_leave' && 'ON LEAVE'}
-                        {employee.employee_status === 'terminated' && 'TERMINATED'}
-                      </button>
-                    </td>
-                    <td className="px-4 py-3">
-                      <div className="flex items-center justify-end gap-1">
-                        {/* View Profile Button */}
-                        <button
-                          onClick={() => {
-                            if (onViewProfile) {
-                              onViewProfile(employee.id);
-                            }
-                          }}
-                          className="p-1.5 hover:bg-slate-100 rounded transition-colors"
-                          title="View Profile"
-                        >
-                          <Eye className="h-4 w-4 text-slate-600" />
-                        </button>
-
-                        {/* Edit Basic Info Button */}
-                        <button
-                          onClick={() => {
-                            setSelectedEmployee(employee);
-                            setShowEditModal(true);
-                          }}
-                          className="p-1.5 hover:bg-slate-100 rounded transition-colors"
-                          title="Edit Basic Info"
-                        >
-                          <Edit className="h-4 w-4 text-slate-600" />
-                        </button>
-
-                        {/* Delete Button */}
-                        <button
-                          onClick={() => deleteEmployee(Number(employee.id))}
-                          className="p-1.5 hover:bg-slate-100 rounded transition-colors"
-                          title="Delete"
-                        >
-                          <Trash2 className="h-4 w-4 text-red-600" />
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
-
-          {filteredEmployees.length === 0 && (
-            <div className="text-center py-12">
-              <Users className="w-12 h-12 text-gray-300 mx-auto mb-3" />
-              <p className="text-gray-600 text-base font-medium">
-                No employees found
-              </p>
-              <p className="text-gray-500 text-sm mt-2">
-                {searchTerm || Object.values(columnFilters).some(val => val)
-                  ? "Try a different search term or clear filters"
-                  : "Click 'Add Employee' to get started"}
-              </p>
+        <div className="sticky top-32 bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden md:-mt-1">
+  <div className="overflow-y-auto max-h-[calc(100vh-280px)]">
+    <table className="w-full min-w-[800px]">
+      <thead className="sticky top-0 z-10 bg-gray-200 border-b border-gray-200">
+        {/* Header Row */}
+        <tr>
+          <th className="px-3 md:px-4 py-2 text-center w-16">
+            <div className="text-[10px] md:text-xs font-semibold text-gray-700 uppercase tracking-wider">
+              Select
             </div>
-          )}
-        </div>
-      </Card>
+          </th>
+          <th className="px-3 md:px-4 py-2 text-left">
+            <div className="text-[10px] md:text-xs font-semibold text-gray-700 uppercase tracking-wider">
+              Employee
+            </div>
+          </th>
+          <th className="px-3 md:px-4 py-2 text-left">
+            <div className="text-[10px] md:text-xs font-semibold text-gray-700 uppercase tracking-wider">
+              Code
+            </div>
+          </th>
+          <th className="px-3 md:px-4 py-2 text-left">
+            <div className="text-[10px] md:text-xs font-semibold text-gray-700 uppercase tracking-wider">
+              Email
+            </div>
+          </th>
+          <th className="px-3 md:px-4 py-2 text-left">
+            <div className="text-[10px] md:text-xs font-semibold text-gray-700 uppercase tracking-wider">
+              Department
+            </div>
+          </th>
+          <th className="px-3 md:px-4 py-2 text-left">
+            <div className="text-[10px] md:text-xs font-semibold text-gray-700 uppercase tracking-wider">
+              Role
+            </div>
+          </th>
+          <th className="px-3 md:px-4 py-2 text-left">
+            <div className="text-[10px] md:text-xs font-semibold text-gray-700 uppercase tracking-wider">
+              Status
+            </div>
+          </th>
+          <th className="px-3 md:px-4 py-2 text-left">
+            <div className="text-[10px] md:text-xs font-semibold text-gray-700 uppercase tracking-wider">
+              Actions
+            </div>
+          </th>
+        </tr>
+
+        {/* Search Row - Separate Row Below Headers */}
+        <tr className="bg-gray-50 border-b border-gray-200">
+          {/* Select Column */}
+          <td className="px-3 md:px-4 py-1 text-center">
+            <input
+              type="checkbox"
+              checked={selectAll}
+              onChange={handleSelectAll}
+              className="w-3.5 h-3.5 md:w-4 md:h-4 text-[#C62828] border-gray-300 rounded focus:ring-[#C62828]"
+            />
+          </td>
+
+          {/* Name Column Search */}
+          <td className="px-3 md:px-4 py-1">
+            <input
+              type="text"
+              placeholder="Search name..."
+              value={columnFilters.name}
+              onChange={(e) => handleColumnFilterChange('name', e.target.value)}
+              className="w-full px-2 py-1 text-[9px] md:text-xs border border-gray-300 rounded focus:ring-1 focus:ring-blue-500 focus:border-transparent"
+            />
+          </td>
+
+          {/* Code Column Search */}
+          <td className="px-3 md:px-4 py-1">
+            <input
+              type="text"
+              placeholder="Search code..."
+              value={columnFilters.code}
+              onChange={(e) => handleColumnFilterChange('code', e.target.value)}
+              className="w-full px-2 py-1 text-[9px] md:text-xs border border-gray-300 rounded focus:ring-1 focus:ring-blue-500 focus:border-transparent"
+            />
+          </td>
+
+          {/* Email Column Search */}
+          <td className="px-3 md:px-4 py-1">
+            <input
+              type="text"
+              placeholder="Search email..."
+              value={columnFilters.email}
+              onChange={(e) => handleColumnFilterChange('email', e.target.value)}
+              className="w-full px-2 py-1 text-[9px] md:text-xs border border-gray-300 rounded focus:ring-1 focus:ring-blue-500 focus:border-transparent"
+            />
+          </td>
+
+          {/* Department Column Search */}
+          <td className="px-3 md:px-4 py-1">
+            <input
+              type="text"
+              placeholder="Search dept..."
+              value={columnFilters.department}
+              onChange={(e) => handleColumnFilterChange('department', e.target.value)}
+              className="w-full px-2 py-1 text-[9px] md:text-xs border border-gray-300 rounded focus:ring-1 focus:ring-blue-500 focus:border-transparent"
+            />
+          </td>
+
+          {/* Role Column Search */}
+          <td className="px-3 md:px-4 py-1">
+            <input
+              type="text"
+              placeholder="Search role..."
+              value={columnFilters.role}
+              onChange={(e) => handleColumnFilterChange('role', e.target.value)}
+              className="w-full px-2 py-1 text-[9px] md:text-xs border border-gray-300 rounded focus:ring-1 focus:ring-blue-500 focus:border-transparent"
+            />
+          </td>
+
+          {/* Status Column Search */}
+          <td className="px-3 md:px-4 py-1">
+            <input
+              type="text"
+              placeholder="Search status..."
+              value={columnFilters.status}
+              onChange={(e) => handleColumnFilterChange('status', e.target.value)}
+              className="w-full px-2 py-1 text-[9px] md:text-xs border border-gray-300 rounded focus:ring-1 focus:ring-blue-500 focus:border-transparent"
+            />
+          </td>
+
+          {/* Actions Column - Filter and Clear Buttons */}
+          <td className="px-3 md:px-4 py-1 text-center">
+            <div className="flex justify-center gap-1">
+              <button
+                onClick={() => setShowFilterSidebar(true)}
+                className="inline-flex items-center px-2 py-1 border border-gray-300 rounded hover:bg-gray-50 transition text-[9px] md:text-xs font-medium text-gray-700"
+                title="Advanced Filters"
+              >
+                <Filter className="w-2.5 h-2.5 md:w-3 md:h-3 mr-0.5" />
+                Filters
+              </button>
+              <button
+                onClick={clearAllFilters}
+                className="inline-flex items-center px-2 py-1 border border-gray-300 rounded hover:bg-gray-50 transition text-[9px] md:text-xs font-medium text-gray-700"
+                title="Clear All Filters"
+              >
+                <X className="w-2.5 h-2.5 md:w-3 md:h-3 mr-0.5" />
+                Clear
+              </button>
+            </div>
+          </td>
+        </tr>
+      </thead>
+      <tbody className="divide-y divide-gray-200">
+        {filteredEmployees.map((employee) => {
+          const isSelected = selectedItems.has(employee.id);
+          const hasDetails = hasAdditionalDetails(employee);
+
+          return (
+            <tr
+              key={employee.id}
+              className={`hover:bg-gray-50 transition ${isSelected ? 'bg-blue-50' : ''}`}
+            >
+              <td className="px-3 md:px-4 py-3 text-center">
+                <input
+                  type="checkbox"
+                  checked={isSelected}
+                  onChange={() => handleSelectItem(employee.id)}
+                  className="w-3.5 h-3.5 md:w-4 md:h-4 text-[#C62828] border-gray-300 rounded focus:ring-[#C62828]"
+                />
+              </td>
+              <td className="px-3 md:px-4 py-3">
+                <div className="flex items-center gap-3">
+                  <div className="w-8 h-8 rounded-full overflow-hidden bg-slate-100 flex-shrink-0 border border-gray-200">
+                    {employee.profile_picture ? (
+                      <img
+                        src={`${import.meta.env.VITE_API_URL}${employee.profile_picture}`}
+                        alt={`${employee.first_name} ${employee.last_name}`}
+                        className="w-full h-full object-cover"
+                        onError={(e) => {
+                          e.currentTarget.style.display = 'none';
+                          const parent = e.currentTarget.parentElement;
+                          if (parent) {
+                            const fallback = document.createElement('div');
+                            fallback.className = 'w-full h-full flex items-center justify-center bg-blue-100';
+                            fallback.innerHTML = `<span class="text-xs font-medium text-blue-700">${employee.first_name.charAt(0)}${employee.last_name.charAt(0)}</span>`;
+                            parent.appendChild(fallback);
+                          }
+                        }}
+                      />
+                    ) : (
+                      <div className="w-full h-full flex items-center justify-center bg-blue-100">
+                        <span className="text-xs font-medium text-blue-700">
+                          {employee.first_name.charAt(0)}{employee.last_name.charAt(0)}
+                        </span>
+                      </div>
+                    )}
+                  </div>
+                  <div>
+                    <p className="text-xs md:text-sm font-medium text-gray-800">
+                      {employee.first_name} {employee.last_name}
+                    </p>
+                    <p className="text-[10px] md:text-xs text-gray-600">{employee.designation}</p>
+                  </div>
+                </div>
+              </td>
+              <td className="px-3 md:px-4 py-3">
+                <span className="text-[10px] md:text-xs font-mono text-gray-700 bg-gray-100 px-2 py-1 rounded">
+                  {employee.employee_code || "EMP" + employee.id}
+                </span>
+              </td>
+              <td className="px-3 md:px-4 py-3">
+                <span className="text-xs md:text-sm text-gray-800">
+                  {employee.email}
+                </span>
+              </td>
+              <td className="px-3 md:px-4 py-3">
+                <span className="text-xs md:text-sm text-gray-800">
+                  {employee.department?.name || "N/A"}
+                </span>
+              </td>
+              <td className="px-3 md:px-4 py-3">
+                <Badge variant="info">{employee.role?.name || "N/A"}</Badge>
+              </td>
+              <td className="px-3 md:px-4 py-3">
+                {/* Status Toggle Button */}
+                <button
+                  onClick={() => toggleEmployeeStatus(employee.id, employee.employee_status)}
+                  className={`px-2 py-0.5 md:px-3 md:py-1 rounded-full text-[10px] md:text-xs font-medium transition-colors ${
+                    employee.employee_status === 'active'
+                      ? 'bg-green-100 text-green-700 hover:bg-green-200'
+                      : employee.employee_status === 'inactive'
+                      ? 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                      : employee.employee_status === 'on_leave'
+                      ? 'bg-yellow-100 text-yellow-700 hover:bg-yellow-200'
+                      : 'bg-red-100 text-red-700 hover:bg-red-200'
+                  }`}
+                  title={`Click to ${employee.employee_status === 'active' ? 'deactivate' : 'activate'}`}
+                >
+                  {employee.employee_status === 'active' && 'ACTIVE'}
+                  {employee.employee_status === 'inactive' && 'INACTIVE'}
+                  {employee.employee_status === 'on_leave' && 'ON LEAVE'}
+                  {employee.employee_status === 'terminated' && 'TERMINATED'}
+                </button>
+              </td>
+              <td className="px-3 md:px-4 py-3">
+                <div className="flex items-center justify-center gap-1.5 md:gap-2">
+                  {/* View Profile Button */}
+                  <button
+                    onClick={() => {
+                      if (onViewProfile) {
+                        onViewProfile(employee.id);
+                      }
+                    }}
+                    className="p-1.5 md:p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition"
+                    title="View Profile"
+                  >
+                    <Eye className="w-3.5 h-3.5 md:w-4 md:h-4" />
+                  </button>
+
+                  {/* Edit Basic Info Button */}
+                  <button
+                    onClick={() => {
+                      setSelectedEmployee(employee);
+                      setShowEditModal(true);
+                    }}
+                    className="p-1.5 md:p-2 text-green-600 hover:bg-green-50 rounded-lg transition"
+                    title="Edit Basic Info"
+                  >
+                    <Edit className="w-3.5 h-3.5 md:w-4 md:h-4" />
+                  </button>
+
+                  {/* Delete Button */}
+                  <button
+                    onClick={() => deleteEmployee(Number(employee.id))}
+                    className="p-1.5 md:p-2 text-red-600 hover:bg-red-50 rounded-lg transition"
+                    title="Delete"
+                  >
+                    <Trash2 className="w-3.5 h-3.5 md:w-4 md:h-4" />
+                  </button>
+                </div>
+              </td>
+            </tr>
+          );
+        })}
+      </tbody>
+    </table>
+
+    {filteredEmployees.length === 0 && (
+      <div className="text-center py-12">
+        <Users className="w-12 h-12 md:w-16 md:h-16 text-gray-300 mx-auto mb-3" />
+        <p className="text-gray-600 text-sm md:text-lg font-medium">
+          No employees found
+        </p>
+        <p className="text-gray-500 text-xs md:text-sm mt-2">
+          {searchTerm || Object.values(columnFilters).some(val => val)
+            ? "Try a different search term or clear filters"
+            : "Click 'Add Employee' to get started"}
+        </p>
+      </div>
+    )}
+  </div>
+</div>
+     
 
       {/* Filter Sidebar */}
       {showFilterSidebar && (

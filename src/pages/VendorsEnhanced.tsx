@@ -1966,13 +1966,12 @@ const handleCompanyEmailCheck = () => {
           <p className="text-gray-600 mt-4">Loading vendors...</p>
         </div>
       ) : (
-        <div className="sticky top-32 z-20 bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
-<div className="overflow-x-auto max-h-[450px] overflow-y-auto">
+        <div className="sticky top-32 z-20 bg-white rounded-xl shadow-sm border border-gray-200 ">
+<div className="overflow-y-auto max-h-[calc(100vh-160px)]">           
             <table className="w-full min-w-[800px]">
-<thead className=" bg-gray-200 border-b border-gray-200">
+<thead className=" sticky top-0 z-10 bg-gray-200 border-b border-gray-200">
                 {/* Header Row */}
                 <tr>
-                  {/* Removed checkbox header */}
                   <th className="px-3 md:px-4 py-2 text-left">
                     <div className="text-[10px] md:text-xs font-semibold text-gray-700 uppercase tracking-wider">
                       Name
