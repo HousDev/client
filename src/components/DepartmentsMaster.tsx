@@ -1485,7 +1485,9 @@ export default function DepartmentsMaster() {
   });
 
   return (
-    <div className="bg-white rounded-xl shadow-sm border border-gray-200 mt-4 p-4 md:p-6">
+    <div className="sticky top-28 z-10 bg-white rounded-xl shadow-sm border border-gray-200 mt-4 p-4 md:p-6">
+                                  <div className="overflow-y-auto max-h-[calc(100vh-300px)] md:max-h-[calc(100vh-260px)] ">
+
       {/* Header */}
       <div className="flex flex-col md:flex-row md:justify-between md:items-center gap-4 mb-6">
         <div>
@@ -1592,6 +1594,7 @@ export default function DepartmentsMaster() {
       {/* Statistics Cards */}
       {statsLoading ? (
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4 mb-6">
+
           {[1, 2, 3, 4].map((i) => (
             <div key={i} className="bg-gray-100 rounded-lg p-3 md:p-4 animate-pulse">
               <div className="h-3 md:h-4 bg-gray-300 rounded w-1/2 mb-2"></div>
@@ -1691,7 +1694,8 @@ export default function DepartmentsMaster() {
       ) : (
         <>
           {/* Departments Table */}
-     <div className="overflow-x-auto rounded-lg border border-gray-200">
+     <div className=" rounded-lg border border-gray-200">
+      
         <table className="w-full min-w-[640px]">
           <thead className="bg-gray-50">
             <tr>
@@ -1796,6 +1800,7 @@ export default function DepartmentsMaster() {
           </tbody>
         </table>
       </div>
+      
 
           {/* Pagination */}
           {totalPages > 1 && departments.length > 0 && (
@@ -2135,6 +2140,7 @@ export default function DepartmentsMaster() {
           </div>
         </div>
       )}
+    </div>
     </div>
   );
 }

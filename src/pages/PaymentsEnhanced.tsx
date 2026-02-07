@@ -2034,7 +2034,7 @@ export default function PaymentsEnhanced() {
       {/* Payments Tab */}
       {activeTab === "payments" && (
         <div className="sticky top-56 z-10 bg-white rounded-xl shadow-sm border border-gray-200 ">
-<div className="overflow-y-auto max-h-[calc(100vh-270px)]">           
+<div className="overflow-y-auto max-h-[calc(100vh-298px)] md:max-h-[calc(100vh-270px)]">           
             <table className="sticky top-48 z-10 w-full min-w-[820px] lg:min-w-full">
               <thead className="sticky top-0 z-10 bg-gray-200 border-b border-gray-200">
                 <tr>
@@ -2297,7 +2297,7 @@ export default function PaymentsEnhanced() {
       {/* History Tab */}
      {activeTab === "history" && (
   <div className="sticky top-56 z-10 bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
-    <div className="overflow-y-auto max-h-[calc(100vh-270px)]">           
+    <div className="overflow-y-auto max-h-[calc(100vh-298px)] md:max-h-[calc(100vh-270px)]">           
       <table className="sticky top-48 z-10 w-full min-w-[800px]">
         <thead className="sticky top-0 z-10 bg-gray-200 border-b border-gray-200">
           <tr>
@@ -2601,7 +2601,7 @@ export default function PaymentsEnhanced() {
       {/* Reminders Tab */}
       {activeTab === "reminders" && (
         <div className="sticky top-56 z-10 bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
-<div className="overflow-y-auto max-h-[calc(100vh-270px)]">           
+<div className="overflow-y-auto max-h-[calc(100vh-300px)] md:max-h-[calc(100vh-270px)]">           
             <table className="sticky top-48 z-10 w-full min-w-[1000px]">
               <thead className="sticky top-0 z-10 bg-gray-200 border-b border-gray-200">
                 <tr>

@@ -1013,7 +1013,7 @@ const MaterialInTransactions = (loadTableData: any) => {
 
   {/* Main Table */}
   <div className=" sticky top-52 z-10 bg-white rounded-xl shadow-sm border border-gray-200 ">
-<div className="overflow-y-auto max-h-[calc(100vh-240px)]">           
+      <div className="overflow-y-auto max-h-[calc(100vh-220px)] md:max-h-[calc(100vh-240px)] ">
       <table className=" sticky top-48 z-10 w-full min-w-[1000px]">
         <thead className="sticky top-0 z-10 bg-gray-200 border-b border-gray-200">
           <tr>

@@ -110,9 +110,9 @@ export default function Masters() {
   const ActiveComponent = tabs.find((tab) => tab.id === activeTab)?.component;
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className=" bg-gray-50">
       {/* Tab Navigation */}
-      <div className="bg-white border-b border-gray-200 shadow-sm">
+      <div className="sticky top-20 z-10 bg-white border-b border-gray-200 shadow-sm">
         <div className="overflow-x-auto">
           <div className="flex gap-1.5 p-2 min-w-max">
             {tabs.map((tab) => {

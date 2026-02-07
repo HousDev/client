@@ -1208,9 +1208,9 @@ export default function ItemsMaster(): JSX.Element {
   }
 
   return (
-    <div className="px-0 bg-gray-50 min-h-screen">
+    <div className="px-0 bg-gray-50 ">
       {/* Header with Actions and Bulk Actions - Side by Side */}
-      <div className="mt-0 mb-0 px-2 py-1 md:p-4 flex flex-col md:flex-row md:items-center justify-between gap-1 md:gap-3">
+      <div className=" sticky top-36 z-10 mt-0 mb-0 px-2 py-1 md:p-4 flex flex-col md:flex-row md:items-center justify-between gap-1 md:gap-3">
         <div></div>
 
         <div className="flex items-center gap-1 md:gap-2 flex-nowrap md:flex-wrap w-full md:w-auto">
@@ -1335,36 +1335,44 @@ export default function ItemsMaster(): JSX.Element {
             Add Item
           </button>
 
-          <div className="flex items-center gap-2">
-            <button
-              onClick={handleImportClick}
-              className="bg-gradient-to-r from-[#C62828] to-red-600 hover:from-red-600 hover:to-red-700 px-3 py-1.5 text-white font-semibold rounded-lg text-xs flex items-center gap-2 transition-all duration-200"
-            >
-              Import Excel
-            </button>
-            <input
-              ref={fileInputRef}
-              type="file"
-              accept=".xlsx,.xls"
-              onChange={handleFileChange}
-              style={{ display: "none" }}
-            />
-            <a
-              href={`${import.meta.env.VITE_API_URL}/templates/items-import-template`}
-              title="Download Template Data"
-              className="p-2 rounded-lg bg-gray-100 hover:bg-gray-200 transition-all duration-200"
-            >
-              <Download className="w-4 h-4 text-gray-600" />
-            </a>
-          </div>
+         <div className="flex items-center gap-2 flex-wrap">
+  <button
+    onClick={handleImportClick}
+    className="bg-gradient-to-r from-[#C62828] to-red-600 hover:from-red-600 hover:to-red-700 
+    px-2 md:px-3 py-1 md:py-1.5 
+    text-[10px] md:text-xs 
+    text-white font-semibold 
+    rounded-lg flex items-center gap-1 md:gap-2 
+    transition-all duration-200"
+  >
+    Import Excel
+  </button>
+
+  <input
+    ref={fileInputRef}
+    type="file"
+    accept=".xlsx,.xls"
+    onChange={handleFileChange}
+    className="hidden"
+  />
+
+  <a
+    href={`${import.meta.env.VITE_API_URL}/templates/items-import-template`}
+    title="Download Template Data"
+    className="p-1.5 md:p-2 rounded-lg bg-gray-100 hover:bg-gray-200 transition-all duration-200"
+  >
+    <Download className="w-3.5 h-3.5 md:w-4 md:h-4 text-gray-600" />
+  </a>
+</div>
+
         </div>
       </div>
 
       {/* Main Table - Responsive with Search Bars */}
       <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden mx-0 md:mx-0">
-        <div className="overflow-x-auto">
-          <table className="w-full min-w-[1300px]">
-            <thead className="bg-gray-200 border-b border-gray-200">
+      <div className="overflow-y-auto max-h-[calc(100vh-300px)] md:max-h-[calc(100vh-300px)] ">
+          <table className="w-full min-w-[800px]">
+            <thead className="sticky top-0 z-10 bg-gray-200 border-b border-gray-200">
               {/* Header Row */}
               <tr>
                 <th className="px-3 md:px-4 py-2 text-center w-12">
