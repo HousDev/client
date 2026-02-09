@@ -29,6 +29,7 @@ const REQUIRED_HEADERS = [
   "Sub Category",
   "Service Rate",
   "Unit",
+  "SAC Code",
   "IGST",
   "CGST",
   "SGST",
@@ -85,8 +86,8 @@ const buildServicesData = (rows: any[], last_service_code: string) => {
     const serviceName = String(row["Service Name"]).trim();
     const category = String(row["Category"]).trim();
     const subCategory = String(row["Sub Category"]).trim();
+    const unit = String(row["Unit"]).trim() || "nos";
     const sac = String(row["SAC Code"]).trim();
-    const location = String(row["Location"]).trim();
 
     if (!serviceName || !category || !sac) {
       errors.push(
@@ -99,32 +100,32 @@ const buildServicesData = (rows: any[], last_service_code: string) => {
     const PREFIX = "SER";
     const MIN_DIGITS = 4;
 
-    const lastCode = lsc ?? `${PREFIX}0`;
+    const lastCode = lsc ?? `${PREFIX}0000`;
     const nextNumber = Number(lastCode.replace(PREFIX, "")) + 1;
+
     const nextServiceCode =
       PREFIX + String(nextNumber).padStart(MIN_DIGITS, "0");
 
     lsc = nextServiceCode;
 
     /* -------- GST -------- */
-    const igst = Number(row["IGST"]) || 18;
-    const cgst = Number(row["CGST"]) || 9;
-    const sgst = Number(row["SGST"]) || 9;
+    const igst = Number(row["IGST"]) || 0;
+    const cgst = Number(row["CGST"]) || 0;
+    const sgst = Number(row["SGST"]) || 0;
 
     services.push({
-      item_code: nextServiceCode,
-      item_name: serviceName,
+      service_code: nextServiceCode,
+      service_name: serviceName,
       category: "service",
-      item_category: category,
-      item_sub_category: subCategory || null,
       description: serviceName,
-      sac_code: sac,
+      unit,
       igst_rate: igst,
       cgst_rate: cgst,
       sgst_rate: sgst,
       standard_rate: Number(row["Service Rate"]) || 0,
+      service_category: category,
+      service_sub_category: subCategory || null,
       is_active: 1,
-      location: location || "",
     });
   });
 

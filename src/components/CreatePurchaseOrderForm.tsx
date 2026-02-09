@@ -781,7 +781,7 @@ export default function CreatePurchaseOrderForm({
       });
 
       if (
-        selected_terms_idsData.length === 0 ||
+        selected_terms_idsData.length === 0 &&
         terms_and_conditionsData.length === 0
       ) {
         toast.error("Select Terms & Conditions For Purchase Order.");

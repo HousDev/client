@@ -18,7 +18,6 @@ import {
 import ItemsApi from "../lib/itemsApi";
 import { toast } from "sonner";
 import MySwal from "../utils/swal";
-import { excelToItemsData } from "../utils/excelToItemsData";
 import ServicesApi from "../lib/servicesApi";
 import { excelToServicesData } from "../utils/excelToServicesData";
 
@@ -36,11 +35,11 @@ export type ServiceFormData = {
 
   sac_code?: string;
 
-  igst_rate: number;
-  cgst_rate: number;
-  sgst_rate: number;
+  igst_rate: string;
+  cgst_rate: string;
+  sgst_rate: string;
 
-  standard_rate: number;
+  standard_rate: string;
 
   is_active?: boolean;
 };
@@ -81,10 +80,10 @@ export default function ServiceMaster(): JSX.Element {
     service_name: "",
     unit: "job",
     sac_code: "",
-    igst_rate: 18,
-    cgst_rate: 9,
-    sgst_rate: 9,
-    standard_rate: 0,
+    igst_rate: "18",
+    cgst_rate: "9",
+    sgst_rate: "9",
+    standard_rate: "0",
     description: "",
   });
 
@@ -114,11 +113,11 @@ export default function ServiceMaster(): JSX.Element {
 
           sac_code: sv.sac_code ?? "",
 
-          igst_rate: Number(sv.igst_rate) || 0,
-          cgst_rate: Number(sv.cgst_rate) || 0,
-          sgst_rate: Number(sv.sgst_rate) || 0,
+          igst_rate: sv.igst_rate || "0",
+          cgst_rate: sv.cgst_rate || "0",
+          sgst_rate: sv.sgst_rate || "0",
 
-          standard_rate: Number(sv.standard_rate) || 0,
+          standard_rate: sv.standard_rate || "0",
 
           is_active: sv.is_active === undefined ? true : Boolean(sv.is_active),
         }),
@@ -148,11 +147,11 @@ export default function ServiceMaster(): JSX.Element {
       unit: "job", // default for services
       sac_code: "",
 
-      igst_rate: 18,
-      cgst_rate: 9,
-      sgst_rate: 9,
+      igst_rate: "18",
+      cgst_rate: "9",
+      sgst_rate: "9",
 
-      standard_rate: 0,
+      standard_rate: "0",
 
       is_active: true,
     });
@@ -309,11 +308,11 @@ export default function ServiceMaster(): JSX.Element {
       unit: service.unit || "job",
       sac_code: service.sac_code || "",
 
-      igst_rate: service.igst_rate || 0,
-      cgst_rate: service.cgst_rate || 0,
-      sgst_rate: service.sgst_rate || 0,
+      igst_rate: service.igst_rate || "0",
+      cgst_rate: service.cgst_rate || "0",
+      sgst_rate: service.sgst_rate || "0",
 
-      standard_rate: service.standard_rate || 0,
+      standard_rate: service.standard_rate || "0",
 
       is_active: service.is_active ?? true,
     });
@@ -755,7 +754,7 @@ export default function ServiceMaster(): JSX.Element {
               style={{ display: "none" }}
             />
             <a
-              href={`${import.meta.env.VITE_API_URL}/templates/items-import-template`}
+              href={`${import.meta.env.VITE_API_URL}/templates/services-import-template`}
               title="Download Template Data"
               className="p-2 rounded-lg bg-gray-100 hover:bg-gray-200 transition-all duration-200"
             >
@@ -1011,7 +1010,7 @@ export default function ServiceMaster(): JSX.Element {
                       {item.sgst_rate}%
                     </td>
                     <td className="px-3 md:px-4 py-3 font-medium text-gray-800 text-xs md:text-sm">
-                      {formatCurrency(item.standard_rate)}
+                      {formatCurrency(Number(item.standard_rate))}
                     </td>
                     <td className="px-3 md:px-4 py-3">
                       <button
@@ -1275,6 +1274,7 @@ export default function ServiceMaster(): JSX.Element {
                       <option value="day">Day</option>
                       <option value="hour">Hour</option>
                       <option value="nos">Nos</option>
+                      <option value="sqft">Sqft</option>
                     </select>
                   </div>
 
@@ -1284,14 +1284,19 @@ export default function ServiceMaster(): JSX.Element {
                       Standard Rate <span className="text-red-500">*</span>
                     </label>
                     <input
-                      type="number"
+                      type="text"
                       value={formData.standard_rate}
-                      onChange={(e) =>
+                      onChange={(e) => {
+                        if (
+                          !/^\d*\.?\d*$/.test(e.target.value) ||
+                          Number(e.target.value) < 0
+                        )
+                          return;
                         setFormData({
                           ...formData,
-                          standard_rate: Number(e.target.value),
-                        })
-                      }
+                          standard_rate: e.target.value,
+                        });
+                      }}
                       className="w-full px-3 py-2 text-sm border-2 rounded-xl"
                       min="0"
                       step="0.01"
@@ -1305,14 +1310,19 @@ export default function ServiceMaster(): JSX.Element {
                       IGST (%) <span className="text-red-500">*</span>
                     </label>
                     <input
-                      type="number"
+                      type="text"
                       value={formData.igst_rate}
-                      onChange={(e) =>
+                      onChange={(e) => {
+                        if (
+                          !/^\d*\.?\d*$/.test(e.target.value) ||
+                          Number(e.target.value) < 0
+                        )
+                          return;
                         setFormData({
                           ...formData,
-                          igst_rate: Number(e.target.value),
-                        })
-                      }
+                          igst_rate: e.target.value,
+                        });
+                      }}
                       className="w-full px-3 py-2 text-sm border-2 rounded-xl"
                       required
                     />
@@ -1324,14 +1334,19 @@ export default function ServiceMaster(): JSX.Element {
                       CGST (%) <span className="text-red-500">*</span>
                     </label>
                     <input
-                      type="number"
+                      type="text"
                       value={formData.cgst_rate}
-                      onChange={(e) =>
+                      onChange={(e) => {
+                        if (
+                          !/^\d*\.?\d*$/.test(e.target.value) ||
+                          Number(e.target.value) < 0
+                        )
+                          return;
                         setFormData({
                           ...formData,
-                          cgst_rate: Number(e.target.value),
-                        })
-                      }
+                          cgst_rate: e.target.value,
+                        });
+                      }}
                       className="w-full px-3 py-2 text-sm border-2 rounded-xl"
                       required
                     />
@@ -1343,14 +1358,19 @@ export default function ServiceMaster(): JSX.Element {
                       SGST (%) <span className="text-red-500">*</span>
                     </label>
                     <input
-                      type="number"
+                      type="text"
                       value={formData.sgst_rate}
-                      onChange={(e) =>
+                      onChange={(e) => {
+                        if (
+                          !/^\d*\.?\d*$/.test(e.target.value) ||
+                          Number(e.target.value) < 0
+                        )
+                          return;
                         setFormData({
                           ...formData,
-                          sgst_rate: Number(e.target.value),
-                        })
-                      }
+                          sgst_rate: e.target.value,
+                        });
+                      }}
                       className="w-full px-3 py-2 text-sm border-2 rounded-xl"
                       required
                     />
