@@ -1961,7 +1961,7 @@ const handleCompanyEmailCheck = () => {
       {/* Table */}
       {/* Table */}
       {loading ? (
-        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-3 text-center">
+        <div className="bg-white rounded-xl shadow-sm border border-gray-200  text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
           <p className="text-gray-600 mt-4">Loading vendors...</p>
         </div>
@@ -1969,7 +1969,7 @@ const handleCompanyEmailCheck = () => {
         <div className="sticky top-32 z-20 bg-white rounded-xl shadow-sm border border-gray-200 ">
 <div className="overflow-y-auto max-h-[calc(100vh-160px)]">           
             <table className="w-full min-w-[800px]">
-<thead className=" sticky top-0 z-10 bg-gray-200 border-b border-gray-200">
+<thead className=" sticky top-0 z-10 bg-gray-200 border-b-2 border-gray-200">
                 {/* Header Row */}
                 <tr>
                   <th className="px-3 md:px-4 py-2 text-left">

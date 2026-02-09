@@ -1163,7 +1163,6 @@
 //     </div>
 //   );
 // }
-
 import { useState, useEffect, useRef } from "react";
 import {
   Clock,
@@ -1273,8 +1272,7 @@ const STATUS_FILTERS = [
   { value: "completed", name: "Completed" },
   { value: "partial", name: "Partial" },
   { value: "overdue", name: "Overdue" },
-    { value: "success", name: "Success" }, // Changed from "completed"
-
+  { value: "success", name: "Success" },
 ];
 
 const PAYMENT_METHODS = [
@@ -1300,14 +1298,32 @@ export default function PaymentsEnhanced() {
   const [submitting, setSubmitting] = useState(false);
   const [paymentProofUrl, setPaymentProofUrl] = useState<String>("");
 
-  // Search states
+  // Search states - Separate for each tab
   const [searchTerm, setSearchTerm] = useState("");
-  const [searchPONumber, setSearchPONumber] = useState("");
-  const [searchVendor, setSearchVendor] = useState("");
-  const [searchAmount, setSearchAmount] = useState("");
-  const [searchDate, setSearchDate] = useState("");
-  const [searchReference, setSearchReference] = useState("");
-  const [paymentMethodFilter, setPaymentMethodFilter] = useState("all");
+  
+  // PO Payments tab search states
+  const [poSearchPONumber, setPoSearchPONumber] = useState("");
+  const [poSearchVendor, setPoSearchVendor] = useState("");
+  const [poSearchAmount, setPoSearchAmount] = useState("");
+  const [poSearchDate, setPoSearchDate] = useState("");
+  const [poStatusFilter, setPoStatusFilter] = useState("all");
+  
+  // History tab search states
+  const [historySearchPONumber, setHistorySearchPONumber] = useState("");
+  const [historySearchVendor, setHistorySearchVendor] = useState("");
+  const [historySearchAmount, setHistorySearchAmount] = useState("");
+  const [historySearchDate, setHistorySearchDate] = useState("");
+  const [historySearchReference, setHistorySearchReference] = useState("");
+  const [historyPaymentMethodFilter, setHistoryPaymentMethodFilter] = useState("all");
+  const [historyStatusFilter, setHistoryStatusFilter] = useState("all");
+  
+  // Reminders tab search states
+  const [remindersSearchPONumber, setRemindersSearchPONumber] = useState("");
+  const [remindersSearchVendor, setRemindersSearchVendor] = useState("");
+  const [remindersSearchAmount, setRemindersSearchAmount] = useState("");
+  const [remindersSearchDate, setRemindersSearchDate] = useState("");
+  const [remindersStatusFilter, setRemindersStatusFilter] = useState("all");
+  
   const [showPaymentProofModal, setShowPaymentProofModal] =
     useState<boolean>(false);
 
@@ -1471,10 +1487,10 @@ export default function PaymentsEnhanced() {
       currency: "INR",
     }).format(amount || 0);
 
-  // Search and filter functions
+  // Search and filter functions - Updated to use tab-specific states
   const getFilteredPOs = () => {
     return pos.filter((po) => {
-      if (statusFilter !== "all" && statusFilter !== po.payment_status) {
+      if (poStatusFilter !== "all" && poStatusFilter !== po.payment_status) {
         return false;
       }
 
@@ -1489,24 +1505,24 @@ export default function PaymentsEnhanced() {
       }
 
       if (
-        searchPONumber &&
-        !po.po_number?.toLowerCase().includes(searchPONumber.toLowerCase())
+        poSearchPONumber &&
+        !po.po_number?.toLowerCase().includes(poSearchPONumber.toLowerCase())
       ) {
         return false;
       }
 
       if (
-        searchVendor &&
-        !po.vendors?.name?.toLowerCase().includes(searchVendor.toLowerCase())
+        poSearchVendor &&
+        !po.vendors?.name?.toLowerCase().includes(poSearchVendor.toLowerCase())
       ) {
         return false;
       }
 
-      if (searchAmount && !String(po.grand_total).includes(searchAmount)) {
+      if (poSearchAmount && !String(po.grand_total).includes(poSearchAmount)) {
         return false;
       }
 
-      if (searchDate && po.po_date && !po.po_date.includes(searchDate)) {
+      if (poSearchDate && po.po_date && !po.po_date.includes(poSearchDate)) {
         return false;
       }
 
@@ -1515,141 +1531,143 @@ export default function PaymentsEnhanced() {
   };
 
   const getFilteredHistory = () => {
-  return paymentHistorys.filter((payment: any) => {
-    const paymentMethod = (payment.payment_method || "").toLowerCase();
-    const paymentStatus = (payment.status || "").toLowerCase();
-    
-    // General search term across multiple fields
-    if (searchTerm) {
-      const searchLower = searchTerm.toLowerCase();
-      const matches =
-        payment.purchase_order?.po_number
+    return paymentHistorys.filter((payment: any) => {
+      const paymentMethod = (payment.payment_method || "").toLowerCase();
+      const paymentStatus = (payment.status || "").toLowerCase();
+      
+      // General search term across multiple fields
+      if (searchTerm) {
+        const searchLower = searchTerm.toLowerCase();
+        const matches =
+          payment.purchase_order?.po_number
+            ?.toLowerCase()
+            .includes(searchLower) ||
+          payment.purchase_order?.vendors?.name
+            ?.toLowerCase()
+            .includes(searchLower) ||
+          paymentMethod.includes(searchLower) ||
+          paymentStatus.includes(searchLower) ||
+          payment.payment_reference_no
+            ?.toLowerCase()
+            .includes(searchLower);
+        if (!matches) return false;
+      }
+
+      // PO Number specific search
+      if (
+        historySearchPONumber &&
+        !payment.purchase_order?.po_number
           ?.toLowerCase()
-          .includes(searchLower) ||
-        payment.purchase_order?.vendors?.name
-          ?.toLowerCase()
-          .includes(searchLower) ||
-        paymentMethod.includes(searchLower) ||
-        paymentStatus.includes(searchLower) ||
-        payment.payment_reference_no
-          ?.toLowerCase()
-          .includes(searchLower);
-      if (!matches) return false;
-    }
-
-    // PO Number specific search
-    if (
-      searchPONumber &&
-      !payment.purchase_order?.po_number
-        ?.toLowerCase()
-        .includes(searchPONumber.toLowerCase())
-    ) {
-      return false;
-    }
-
-    // Vendor specific search
-    if (
-      searchVendor &&
-      !payment.purchase_order?.vendors?.name
-        ?.toLowerCase()
-        .includes(searchVendor.toLowerCase())
-    ) {
-      return false;
-    }
-
-    // Amount specific search
-    if (
-      searchAmount &&
-      !String(payment.amount_paid || 0).includes(searchAmount)
-    ) {
-      return false;
-    }
-
-    // Payment method filter - handle both lowercase and uppercase
-    if (paymentMethodFilter !== "all") {
-      const filterMethod = paymentMethodFilter.toLowerCase();
-      if (paymentMethod !== filterMethod) {
+          .includes(historySearchPONumber.toLowerCase())
+      ) {
         return false;
       }
-    }
 
-    // Reference number search
-    if (
-      searchReference &&
-      !payment.payment_reference_no
-        ?.toLowerCase()
-        .includes(searchReference.toLowerCase())
-    ) {
-      return false;
-    }
-
-    // Date search
-    if (
-      searchDate &&
-      payment.payment_date &&
-      !payment.payment_date.includes(searchDate)
-    ) {
-      return false;
-    }
-
-    // Status filter - handle both lowercase and uppercase
-    if (statusFilter !== "all") {
-      const filterStatus = statusFilter.toLowerCase();
-      if (paymentStatus !== filterStatus) {
+      // Vendor specific search
+      if (
+        historySearchVendor &&
+        !payment.purchase_order?.vendors?.name
+          ?.toLowerCase()
+          .includes(historySearchVendor.toLowerCase())
+      ) {
         return false;
       }
-    }
 
-    return true;
-  });
-};
- const getFilteredReminders = () => {
-  return paymentReminders.filter((reminder) => {
-    // Status filter - handle case sensitivity
-    if (statusFilter !== "all") {
-      const reminderStatus = (reminder.status || "").toLowerCase();
-      const filterStatus = statusFilter.toLowerCase();
-      if (reminderStatus !== filterStatus) {
+      // Amount specific search
+      if (
+        historySearchAmount &&
+        !String(payment.amount_paid || 0).includes(historySearchAmount)
+      ) {
         return false;
       }
-    }
 
-    // PO Number search
-    if (
-      searchPONumber &&
-      !reminder.po_number?.toLowerCase().includes(searchPONumber.toLowerCase())
-    ) {
-      return false;
-    }
+      // Payment method filter
+      if (historyPaymentMethodFilter !== "all") {
+        const filterMethod = historyPaymentMethodFilter.toLowerCase();
+        if (paymentMethod !== filterMethod) {
+          return false;
+        }
+      }
 
-    // Vendor search
-    if (
-      searchVendor &&
-      !reminder.vendor?.toLowerCase().includes(searchVendor.toLowerCase())
-    ) {
-      return false;
-    }
+      // Reference number search
+      if (
+        historySearchReference &&
+        !payment.payment_reference_no
+          ?.toLowerCase()
+          .includes(historySearchReference.toLowerCase())
+      ) {
+        return false;
+      }
 
-    // Amount search
-    if (
-      searchAmount &&
-      !String(reminder.balance_amount || 0).includes(searchAmount)
-    ) {
-      return false;
-    }
+      // Date search
+      if (
+        historySearchDate &&
+        payment.payment_date &&
+        !payment.payment_date.includes(historySearchDate)
+      ) {
+        return false;
+      }
 
-    // Date search
-    if (
-      searchDate &&
-      reminder.due_date &&
-      !reminder.due_date.includes(searchDate)
-    ) {
-      return false;
-    }
+      // Status filter
+      if (historyStatusFilter !== "all") {
+        const filterStatus = historyStatusFilter.toLowerCase();
+        if (paymentStatus !== filterStatus) {
+          return false;
+        }
+      }
 
-    return true;
-  });
-};
+      return true;
+    });
+  };
+
+  const getFilteredReminders = () => {
+    return paymentReminders.filter((reminder) => {
+      // Status filter
+      if (remindersStatusFilter !== "all") {
+        const reminderStatus = (reminder.status || "").toLowerCase();
+        const filterStatus = remindersStatusFilter.toLowerCase();
+        if (reminderStatus !== filterStatus) {
+          return false;
+        }
+      }
+
+      // PO Number search
+      if (
+        remindersSearchPONumber &&
+        !reminder.po_number?.toLowerCase().includes(remindersSearchPONumber.toLowerCase())
+      ) {
+        return false;
+      }
+
+      // Vendor search
+      if (
+        remindersSearchVendor &&
+        !reminder.vendor?.toLowerCase().includes(remindersSearchVendor.toLowerCase())
+      ) {
+        return false;
+      }
+
+      // Amount search
+      if (
+        remindersSearchAmount &&
+        !String(reminder.balance_amount || 0).includes(remindersSearchAmount)
+      ) {
+        return false;
+      }
+
+      // Date search
+      if (
+        remindersSearchDate &&
+        reminder.due_date &&
+        !reminder.due_date.includes(remindersSearchDate)
+      ) {
+        return false;
+      }
+
+      return true;
+    });
+  };
+
   // Selection handlers
   const handleSelectAll = () => {
     const filtered = getFilteredPOs();
@@ -1691,13 +1709,31 @@ export default function PaymentsEnhanced() {
 
   const resetFilters = () => {
     setSearchTerm("");
-    setSearchPONumber("");
-    setSearchVendor("");
-    setSearchAmount("");
-    setSearchDate("");
-    setSearchReference("");
+    
+    // Reset PO Payments tab filters
+    setPoSearchPONumber("");
+    setPoSearchVendor("");
+    setPoSearchAmount("");
+    setPoSearchDate("");
+    setPoStatusFilter("all");
+    
+    // Reset History tab filters
+    setHistorySearchPONumber("");
+    setHistorySearchVendor("");
+    setHistorySearchAmount("");
+    setHistorySearchDate("");
+    setHistorySearchReference("");
+    setHistoryPaymentMethodFilter("all");
+    setHistoryStatusFilter("all");
+    
+    // Reset Reminders tab filters
+    setRemindersSearchPONumber("");
+    setRemindersSearchVendor("");
+    setRemindersSearchAmount("");
+    setRemindersSearchDate("");
+    setRemindersStatusFilter("all");
+    
     setStatusFilter("all");
-    setPaymentMethodFilter("all");
     setShowFilters(false);
     toast.success("Filters reset");
   };
@@ -1881,7 +1917,7 @@ export default function PaymentsEnhanced() {
       {/* Header */}
       <div className="sticky top-20 z-10 mb-0">
         {/* Compact Stats Cards */}
-        <div className="  grid grid-cols-2 lg:grid-cols-4 gap-2 md:gap-3 mb-4">
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-2 md:gap-3 mb-4">
           {/* Total Paid */}
           <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-2.5 sm:p-3 hover:border-green-500 transition-all duration-200 min-w-0">
             <div className="flex items-start justify-between gap-2">
@@ -1957,7 +1993,7 @@ export default function PaymentsEnhanced() {
         </div>
 
         {/* Tabs */}
-        <div className="sticky top-24 z-10 bg-white rounded-xl shadow-sm border border-gray-200 mb-4 ">
+        <div className="sticky top-[148px] md:top-[136px] z-20 bg-white rounded-xl shadow-sm border border-gray-200 mb-4">
           <div className="flex flex-row w-full overflow-x-auto scrollbar-hide">
             <button
               onClick={() => setActiveTab("payments")}
@@ -2004,10 +2040,10 @@ export default function PaymentsEnhanced() {
         </div>
       </div>
 
-      {/* Bulk Payment Button */}
+      {/* Bulk Payment Button - Fixed positioning */}
       {selectedItems.size > 0 && activeTab === "payments" && (
-        <div className="mb-4">
-          <div className="bg-blue-50 border border-blue-200 rounded-xl p-3 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+        <div className="sticky top-[250px] md:top-[250px] z-30 mb-4">
+          <div className="bg-blue-50 border border-blue-200 rounded-xl p-3 flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-sm">
             <div className="flex items-center gap-3">
               <div className="bg-blue-100 p-2 rounded-lg">
                 <CheckSquare className="w-4 h-4 text-blue-600" />
@@ -2033,9 +2069,9 @@ export default function PaymentsEnhanced() {
 
       {/* Payments Tab */}
       {activeTab === "payments" && (
-        <div className="sticky top-56 z-10 bg-white rounded-xl shadow-sm border border-gray-200 ">
-<div className="overflow-y-auto max-h-[calc(100vh-298px)] md:max-h-[calc(100vh-270px)]">           
-            <table className="sticky top-48 z-10 w-full min-w-[820px] lg:min-w-full">
+        <div className="bg-white rounded-xl shadow-sm border border-gray-200">
+          <div className="overflow-y-auto max-h-[calc(100vh-340px)] md:max-h-[calc(100vh-310px)]">
+            <table className="sticky top-0 z-10 w-full min-w-[820px] lg:min-w-full">
               <thead className="sticky top-0 z-10 bg-gray-200 border-b border-gray-200">
                 <tr>
                   <th className="px-2 md:px-4 py-2 text-center w-10">
@@ -2096,8 +2132,8 @@ export default function PaymentsEnhanced() {
                       <input
                         type="text"
                         placeholder="Search..."
-                        value={searchPONumber}
-                        onChange={(e) => setSearchPONumber(e.target.value)}
+                        value={poSearchPONumber}
+                        onChange={(e) => setPoSearchPONumber(e.target.value)}
                         className="w-auto pl-7 pr-2 py-1 text-[10px] md:text-xs border border-gray-300 rounded focus:ring-1 focus:ring-blue-500 focus:border-transparent"
                       />
                     </div>
@@ -2112,8 +2148,8 @@ export default function PaymentsEnhanced() {
                       <input
                         type="text"
                         placeholder="Search..."
-                        value={searchVendor}
-                        onChange={(e) => setSearchVendor(e.target.value)}
+                        value={poSearchVendor}
+                        onChange={(e) => setPoSearchVendor(e.target.value)}
                         className="w-auto pl-7 pr-2 py-1 text-[10px] md:text-xs border border-gray-300 rounded focus:ring-1 focus:ring-blue-500 focus:border-transparent"
                       />
                     </div>
@@ -2128,8 +2164,8 @@ export default function PaymentsEnhanced() {
                       <input
                         type="text"
                         placeholder="Search..."
-                        value={searchAmount}
-                        onChange={(e) => setSearchAmount(e.target.value)}
+                        value={poSearchAmount}
+                        onChange={(e) => setPoSearchAmount(e.target.value)}
                         className="w-auto pl-7 pr-2 py-1 text-[10px] md:text-xs border border-gray-300 rounded focus:ring-1 focus:ring-blue-500 focus:border-transparent"
                       />
                     </div>
@@ -2145,8 +2181,8 @@ export default function PaymentsEnhanced() {
                   <td className="px-2 md:px-4 py-1">
                     <div className="relative">
                       <select
-                        value={statusFilter}
-                        onChange={(e) => setStatusFilter(e.target.value)}
+                        value={poStatusFilter}
+                        onChange={(e) => setPoStatusFilter(e.target.value)}
                         className="w-full px-2 py-1 text-[10px] md:text-xs border border-gray-300 rounded focus:ring-1 focus:ring-blue-500 focus:border-transparent appearance-none"
                       >
                         <option value="all">All Status</option>
@@ -2278,10 +2314,10 @@ export default function PaymentsEnhanced() {
                         No payments found
                       </p>
                       <p className="text-gray-500 text-xs md:text-sm mt-1">
-                        {searchPONumber ||
-                        searchVendor ||
-                        searchAmount ||
-                        statusFilter !== "all"
+                        {poSearchPONumber ||
+                        poSearchVendor ||
+                        poSearchAmount ||
+                        poStatusFilter !== "all"
                           ? "Try adjusting your search or filters"
                           : "No pending payments available"}
                       </p>
@@ -2295,255 +2331,254 @@ export default function PaymentsEnhanced() {
       )}
 
       {/* History Tab */}
-     {activeTab === "history" && (
-  <div className="sticky top-56 z-10 bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
-    <div className="overflow-y-auto max-h-[calc(100vh-298px)] md:max-h-[calc(100vh-270px)]">           
-      <table className="sticky top-48 z-10 w-full min-w-[800px]">
-        <thead className="sticky top-0 z-10 bg-gray-200 border-b border-gray-200">
-          <tr>
-            <th className="px-2 md:px-4 py-2 text-left">
-              <div className="text-[10px] md:text-xs font-semibold text-gray-700 uppercase tracking-wider">
-                PO NUMBER
-              </div>
-            </th>
-            <th className="px-2 md:px-4 py-2 text-left">
-              <div className="text-[10px] md:text-xs font-semibold text-gray-700 uppercase tracking-wider">
-                VENDOR
-              </div>
-            </th>
-            <th className="px-2 md:px-4 py-2 text-left">
-              <div className="text-[10px] md:text-xs font-semibold text-gray-700 uppercase tracking-wider">
-                AMOUNT
-              </div>
-            </th>
-            <th className="px-2 md:px-4 py-2 text-left">
-              <div className="text-[10px] md:text-xs font-semibold text-gray-700 uppercase tracking-wider">
-                METHOD
-              </div>
-            </th>
-            <th className="px-2 md:px-4 py-2 text-left">
-              <div className="text-[10px] md:text-xs font-semibold text-gray-700 uppercase tracking-wider">
-                REFERENCE
-              </div>
-            </th>
-            <th className="px-2 md:px-4 py-2 text-left">
-              <div className="text-[10px] md:text-xs font-semibold text-gray-700 uppercase tracking-wider">
-                DATE
-              </div>
-            </th>
-            <th className="px-2 md:px-4 py-2 text-left">
-              <div className="text-[10px] md:text-xs font-semibold text-gray-700 uppercase tracking-wider">
-                STATUS
-              </div>
-            </th>
-            <th className="px-2 md:px-4 py-2 text-left">
-              <div className="text-[10px] md:text-xs font-semibold text-gray-700 uppercase tracking-wider">
-                PROOF
-              </div>
-            </th>
-          </tr>
+      {activeTab === "history" && (
+        <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+          <div className="overflow-y-auto max-h-[calc(100vh-298px)] md:max-h-[calc(100vh-270px)]">
+            <table className="sticky top-0 z-10 w-full min-w-[800px]">
+              <thead className="sticky top-0 z-10 bg-gray-200 border-b border-gray-200">
+                <tr>
+                  <th className="px-2 md:px-4 py-2 text-left">
+                    <div className="text-[10px] md:text-xs font-semibold text-gray-700 uppercase tracking-wider">
+                      PO NUMBER
+                    </div>
+                  </th>
+                  <th className="px-2 md:px-4 py-2 text-left">
+                    <div className="text-[10px] md:text-xs font-semibold text-gray-700 uppercase tracking-wider">
+                      VENDOR
+                    </div>
+                  </th>
+                  <th className="px-2 md:px-4 py-2 text-left">
+                    <div className="text-[10px] md:text-xs font-semibold text-gray-700 uppercase tracking-wider">
+                      AMOUNT
+                    </div>
+                  </th>
+                  <th className="px-2 md:px-4 py-2 text-left">
+                    <div className="text-[10px] md:text-xs font-semibold text-gray-700 uppercase tracking-wider">
+                      METHOD
+                    </div>
+                  </th>
+                  <th className="px-2 md:px-4 py-2 text-left">
+                    <div className="text-[10px] md:text-xs font-semibold text-gray-700 uppercase tracking-wider">
+                      REFERENCE
+                    </div>
+                  </th>
+                  <th className="px-2 md:px-4 py-2 text-left">
+                    <div className="text-[10px] md:text-xs font-semibold text-gray-700 uppercase tracking-wider">
+                      DATE
+                    </div>
+                  </th>
+                  <th className="px-2 md:px-4 py-2 text-left">
+                    <div className="text-[10px] md:text-xs font-semibold text-gray-700 uppercase tracking-wider">
+                      STATUS
+                    </div>
+                  </th>
+                  <th className="px-2 md:px-4 py-2 text-left">
+                    <div className="text-[10px] md:text-xs font-semibold text-gray-700 uppercase tracking-wider">
+                      PROOF
+                    </div>
+                  </th>
+                </tr>
 
-          {/* Search Row */}
-          <tr className="bg-gray-50 border-b border-gray-200">
-            <td className="px-2 md:px-4 py-1">
-              <div className="relative">
-                <div className="absolute left-2 top-1/2 -translate-y-1/2">
-                  <Search className="w-3 h-3 text-gray-400" />
-                </div>
-                <input
-                  type="text"
-                  placeholder="PO #..."
-                  value={searchPONumber}
-                  onChange={(e) => setSearchPONumber(e.target.value)}
-                  className="w-full pl-7 pr-2 py-1 text-[10px] md:text-xs border border-gray-300 rounded focus:ring-1 focus:ring-blue-500 focus:border-transparent"
-                />
-              </div>
-            </td>
+                {/* Search Row */}
+                <tr className="bg-gray-50 border-b border-gray-200">
+                  <td className="px-2 md:px-4 py-1">
+                    <div className="relative">
+                      <div className="absolute left-2 top-1/2 -translate-y-1/2">
+                        <Search className="w-3 h-3 text-gray-400" />
+                      </div>
+                      <input
+                        type="text"
+                        placeholder="PO #..."
+                        value={historySearchPONumber}
+                        onChange={(e) => setHistorySearchPONumber(e.target.value)}
+                        className="w-full pl-7 pr-2 py-1 text-[10px] md:text-xs border border-gray-300 rounded focus:ring-1 focus:ring-blue-500 focus:border-transparent"
+                      />
+                    </div>
+                  </td>
 
-            <td className="px-2 md:px-4 py-1">
-              <div className="relative">
-                <div className="absolute left-2 top-1/2 -translate-y-1/2">
-                  <User className="w-3 h-3 text-gray-400" />
-                </div>
-                <input
-                  type="text"
-                  placeholder="Vendor..."
-                  value={searchVendor}
-                  onChange={(e) => setSearchVendor(e.target.value)}
-                  className="w-full pl-7 pr-2 py-1 text-[10px] md:text-xs border border-gray-300 rounded focus:ring-1 focus:ring-blue-500 focus:border-transparent"
-                />
-              </div>
-            </td>
+                  <td className="px-2 md:px-4 py-1">
+                    <div className="relative">
+                      <div className="absolute left-2 top-1/2 -translate-y-1/2">
+                        <User className="w-3 h-3 text-gray-400" />
+                      </div>
+                      <input
+                        type="text"
+                        placeholder="Vendor..."
+                        value={historySearchVendor}
+                        onChange={(e) => setHistorySearchVendor(e.target.value)}
+                        className="w-full pl-7 pr-2 py-1 text-[10px] md:text-xs border border-gray-300 rounded focus:ring-1 focus:ring-blue-500 focus:border-transparent"
+                      />
+                    </div>
+                  </td>
 
-            <td className="px-2 md:px-4 py-1">
-              <div className="relative">
-                <div className="absolute left-2 top-1/2 -translate-y-1/2">
-                  <IndianRupee className="w-3 h-3 text-gray-400" />
-                </div>
-                <input
-                  type="text"
-                  placeholder="Amount..."
-                  value={searchAmount}
-                  onChange={(e) => setSearchAmount(e.target.value)}
-                  className="w-full pl-7 pr-2 py-1 text-[10px] md:text-xs border border-gray-300 rounded focus:ring-1 focus:ring-blue-500 focus:border-transparent"
-                />
-              </div>
-            </td>
+                  <td className="px-2 md:px-4 py-1">
+                    <div className="relative">
+                      <div className="absolute left-2 top-1/2 -translate-y-1/2">
+                        <IndianRupee className="w-3 h-3 text-gray-400" />
+                      </div>
+                      <input
+                        type="text"
+                        placeholder="Amount..."
+                        value={historySearchAmount}
+                        onChange={(e) => setHistorySearchAmount(e.target.value)}
+                        className="w-full pl-7 pr-2 py-1 text-[10px] md:text-xs border border-gray-300 rounded focus:ring-1 focus:ring-blue-500 focus:border-transparent"
+                      />
+                    </div>
+                  </td>
 
-            <td className="px-2 md:px-4 py-1">
-              <select
-                value={paymentMethodFilter}
-                onChange={(e) => setPaymentMethodFilter(e.target.value)}
-                className="w-full px-2 py-1 text-[10px] md:text-xs border border-gray-300 rounded focus:ring-1 focus:ring-blue-500 focus:border-transparent"
-              >
-                <option value="all">All Methods</option>
-                <option value="bank_transfer">Bank Transfer</option>
-                <option value="cheque">Cheque</option>
-                <option value="cash">Cash</option>
-                <option value="online">Online</option>
-              </select>
-            </td>
+                  <td className="px-2 md:px-4 py-1">
+                    <select
+                      value={historyPaymentMethodFilter}
+                      onChange={(e) => setHistoryPaymentMethodFilter(e.target.value)}
+                      className="w-full px-2 py-1 text-[10px] md:text-xs border border-gray-300 rounded focus:ring-1 focus:ring-blue-500 focus:border-transparent"
+                    >
+                      <option value="all">All Methods</option>
+                      <option value="bank_transfer">Bank Transfer</option>
+                      <option value="cheque">Cheque</option>
+                      <option value="cash">Cash</option>
+                      <option value="online">Online</option>
+                    </select>
+                  </td>
 
-            <td className="px-2 md:px-4 py-1">
-              <div className="relative">
-                <div className="absolute left-2 top-1/2 -translate-y-1/2">
-                  <FileText className="w-3 h-3 text-gray-400" />
-                </div>
-                <input
-                  type="text"
-                  placeholder="Ref #..."
-                  value={searchReference}
-                  onChange={(e) => setSearchReference(e.target.value)}
-                  className="w-full pl-7 pr-2 py-1 text-[10px] md:text-xs border border-gray-300 rounded focus:ring-1 focus:ring-blue-500 focus:border-transparent"
-                />
-              </div>
-            </td>
+                  <td className="px-2 md:px-4 py-1">
+                    <div className="relative">
+                      <div className="absolute left-2 top-1/2 -translate-y-1/2">
+                        <FileText className="w-3 h-3 text-gray-400" />
+                      </div>
+                      <input
+                        type="text"
+                        placeholder="Ref #..."
+                        value={historySearchReference}
+                        onChange={(e) => setHistorySearchReference(e.target.value)}
+                        className="w-full pl-7 pr-2 py-1 text-[10px] md:text-xs border border-gray-300 rounded focus:ring-1 focus:ring-blue-500 focus:border-transparent"
+                      />
+                    </div>
+                  </td>
 
-            <td className="px-2 md:px-4 py-1">
-              <div className="relative">
-                <div className="absolute left-2 top-1/2 -translate-y-1/2">
-                  <Calendar className="w-3 h-3 text-gray-400" />
-                </div>
-                <input
-                  type="date"
-                  value={searchDate}
-                  onChange={(e) => setSearchDate(e.target.value)}
-                  className="w-full pl-7 pr-2 py-1 text-[10px] md:text-xs border border-gray-300 rounded focus:ring-1 focus:ring-blue-500 focus:border-transparent"
-                />
-              </div>
-            </td>
+                  <td className="px-2 md:px-4 py-1">
+                    <div className="relative">
+                      <div className="absolute left-2 top-1/2 -translate-y-1/2">
+                        <Calendar className="w-3 h-3 text-gray-400" />
+                      </div>
+                      <input
+                        type="date"
+                        value={historySearchDate}
+                        onChange={(e) => setHistorySearchDate(e.target.value)}
+                        className="w-full pl-7 pr-2 py-1 text-[10px] md:text-xs border border-gray-300 rounded focus:ring-1 focus:ring-blue-500 focus:border-transparent"
+                      />
+                    </div>
+                  </td>
 
-            <td className="px-2 md:px-4 py-1">
-              <select
-                value={statusFilter}
-                onChange={(e) => setStatusFilter(e.target.value)}
-                className="w-full px-2 py-1 text-[10px] md:text-xs border border-gray-300 rounded focus:ring-1 focus:ring-blue-500 focus:border-transparent"
-              >
-                <option value="all">All Status</option>
-                <option value="pending">Pending</option>
-                <option value="success">Success</option>
-                <option value="failed">Failed</option>
-                <option value="cancelled">Cancelled</option>
-                <option value="completed">Completed</option>
-              </select>
-            </td>
-            
-            <td className="px-2 md:px-4 py-1">
-              <div className="flex gap-1">
-                <button
-                  onClick={() => setShowFilters(!showFilters)}
-                  className="inline-flex items-center px-2 py-1 border border-gray-300 rounded hover:bg-gray-50 transition text-[10px] md:text-xs font-medium text-gray-700"
-                  title="Advanced Filters"
-                >
-                  <Filter className="w-3 h-3 mr-1" />
-                  Filters
-                </button>
-              </div>
-            </td>
-          </tr>
-        </thead>
-        <tbody className="divide-y divide-gray-200">
-          {filteredHistory.map((payment: any) => (
-            <tr key={payment.id} className="hover:bg-gray-50 transition">
-              <td className="px-2 md:px-4 py-2">
-                <div className="font-bold text-blue-600 text-xs md:text-sm">
-                  {payment.purchase_order?.po_number || payment.po_id}
-                </div>
-              </td>
-              <td className="px-2 md:px-4 py-2">
-                <div className="text-gray-800 text-xs md:text-sm truncate max-w-[120px]">
-                  {payment.purchase_order?.vendors?.name || "-"}
-                </div>
-              </td>
-              <td className="px-2 md:px-4 py-2">
-                <div className="font-semibold text-green-600 text-xs md:text-sm">
-                  {formatCurrency(payment.amount_paid || 0)}
-                </div>
-              </td>
-              <td className="px-2 md:px-4 py-2">
-                <div className="text-gray-800 text-xs md:text-sm">
-                  {(payment.payment_method || "")
-                    .replace("_", " ")
-                    .toUpperCase() || "-"}
-                </div>
-              </td>
-              <td className="px-2 md:px-4 py-2">
-                <div className="text-gray-800 text-xs md:text-sm font-mono">
-                  {payment.payment_reference_no || "-"}
-                </div>
-              </td>
-              <td className="px-2 md:px-4 py-2">
-                <div className="text-gray-800 text-xs md:text-sm">
-                  {payment.payment_date
-                    ? new Date(payment.payment_date).toLocaleDateString()
-                    : "-"}
-                </div>
-              </td>
-              <td className="px-2 md:px-4 py-2">
-                <span
-                  className={`px-2 py-1 rounded-full text-[10px] md:text-xs font-medium ${getStatusColor(payment.status || "")}`}
-                >
-                  {(payment.status || "pending").toUpperCase()}
-                </span>
-              </td>
-              <td className="px-2 md:px-4 py-2">
-                <button
-                  onClick={() => {
-                    setShowPaymentProofModal(true);
-                    setPaymentProofUrl(payment.payment_proof);
-                  }}
-                  className={`px-2 py-1 rounded-full text-[10px] md:text-xs font-medium cursor-pointer text-blue-600 hover:bg-blue-50 transition`}
-                  title="View Payment Proof"
-                >
-                  <Eye className="w-4 h-4" />
-                </button>
-              </td>
-            </tr>
-          ))}
+                  <td className="px-2 md:px-4 py-1">
+                    <select
+                      value={historyStatusFilter}
+                      onChange={(e) => setHistoryStatusFilter(e.target.value)}
+                      className="w-full px-2 py-1 text-[10px] md:text-xs border border-gray-300 rounded focus:ring-1 focus:ring-blue-500 focus:border-transparent"
+                    >
+                      <option value="all">All Status</option>
+                      <option value="pending">Pending</option>
+                      <option value="success">Success</option>
+                      <option value="failed">Failed</option>
+                      <option value="cancelled">Cancelled</option>
+                      <option value="completed">Completed</option>
+                    </select>
+                  </td>
 
-          {filteredHistory.length === 0 && (
-            <tr>
-              <td colSpan={8} className="px-4 py-8 text-center">
-                <FileClock className="w-12 h-12 md:w-16 md:h-16 text-gray-300 mx-auto mb-3" />
-                <p className="text-gray-600 text-sm md:text-lg font-medium">
-                  No payment history found
-                </p>
-                <p className="text-gray-500 text-xs md:text-sm mt-1">
-                  {searchPONumber ||
-                  searchVendor ||
-                  searchAmount ||
-                  searchReference ||
-                  paymentMethodFilter !== "all" ||
-                  statusFilter !== "all"
-                    ? "Try adjusting your search or filters"
-                    : "No payment history available"}
-                </p>
-              </td>
-            </tr>
-          )}
-        </tbody>
-      </table>
+                  <td className="px-2 md:px-4 py-1">
+                    <div className="flex gap-1">
+                      <button
+                        onClick={() => setShowFilters(!showFilters)}
+                        className="inline-flex items-center px-2 py-1 border border-gray-300 rounded hover:bg-gray-50 transition text-[10px] md:text-xs font-medium text-gray-700"
+                        title="Advanced Filters"
+                      >
+                        <Filter className="w-3 h-3 mr-1" />
+                        Filters
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-gray-200">
+                {filteredHistory.map((payment: any) => (
+                  <tr key={payment.id} className="hover:bg-gray-50 transition">
+                    <td className="px-2 md:px-4 py-2">
+                      <div className="font-bold text-blue-600 text-xs md:text-sm">
+                        {payment.purchase_order?.po_number || payment.po_id}
+                      </div>
+                    </td>
+                    <td className="px-2 md:px-4 py-2">
+                      <div className="text-gray-800 text-xs md:text-sm truncate max-w-[120px]">
+                        {payment.purchase_order?.vendors?.name || "-"}
+                      </div>
+                    </td>
+                    <td className="px-2 md:px-4 py-2">
+                      <div className="font-semibold text-green-600 text-xs md:text-sm">
+                        {formatCurrency(payment.amount_paid || 0)}
+                      </div>
+                    </td>
+                    <td className="px-2 md:px-4 py-2">
+                      <div className="text-gray-800 text-xs md:text-sm">
+                        {(payment.payment_method || "")
+                          .replace("_", " ")
+                          .toUpperCase() || "-"}
+                      </div>
+                    </td>
+                    <td className="px-2 md:px-4 py-2">
+                      <div className="text-gray-800 text-xs md:text-sm font-mono">
+                        {payment.payment_reference_no || "-"}
+                      </div>
+                    </td>
+                    <td className="px-2 md:px-4 py-2">
+                      <div className="text-gray-800 text-xs md:text-sm">
+                        {payment.payment_date
+                          ? new Date(payment.payment_date).toLocaleDateString()
+                          : "-"}
+                      </div>
+                    </td>
+                    <td className="px-2 md:px-4 py-2">
+                      <span
+                        className={`px-2 py-1 rounded-full text-[10px] md:text-xs font-medium ${getStatusColor(payment.status || "")}`}
+                      >
+                        {(payment.status || "pending").toUpperCase()}
+                      </span>
+                    </td>
+                    <td className="px-2 md:px-4 py-2">
+                      <button
+                        onClick={() => {
+                          setShowPaymentProofModal(true);
+                          setPaymentProofUrl(payment.payment_proof);
+                        }}
+                        className={`px-2 py-1 rounded-full text-[10px] md:text-xs font-medium cursor-pointer text-blue-600 hover:bg-blue-50 transition`}
+                        title="View Payment Proof"
+                      >
+                        <Eye className="w-4 h-4" />
+                      </button>
+                    </td>
+                  </tr>
+                ))}
 
+                {filteredHistory.length === 0 && (
+                  <tr>
+                    <td colSpan={8} className="px-4 py-8 text-center">
+                      <FileClock className="w-12 h-12 md:w-16 md:h-16 text-gray-300 mx-auto mb-3" />
+                      <p className="text-gray-600 text-sm md:text-lg font-medium">
+                        No payment history found
+                      </p>
+                      <p className="text-gray-500 text-xs md:text-sm mt-1">
+                        {historySearchPONumber ||
+                        historySearchVendor ||
+                        historySearchAmount ||
+                        historySearchReference ||
+                        historyPaymentMethodFilter !== "all" ||
+                        historyStatusFilter !== "all"
+                          ? "Try adjusting your search or filters"
+                          : "No payment history available"}
+                      </p>
+                    </td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
           </div>
           {showPaymentProofModal && (
             <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
@@ -2600,9 +2635,9 @@ export default function PaymentsEnhanced() {
 
       {/* Reminders Tab */}
       {activeTab === "reminders" && (
-        <div className="sticky top-56 z-10 bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
-<div className="overflow-y-auto max-h-[calc(100vh-300px)] md:max-h-[calc(100vh-270px)]">           
-            <table className="sticky top-48 z-10 w-full min-w-[1000px]">
+        <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+          <div className="overflow-y-auto max-h-[calc(100vh-300px)] md:max-h-[calc(100vh-270px)]">
+            <table className="sticky top-0 z-10 w-full min-w-[1000px]">
               <thead className="sticky top-0 z-10 bg-gray-200 border-b border-gray-200">
                 <tr>
                   <th className="px-2 md:px-4 py-2 text-left">
@@ -2647,8 +2682,8 @@ export default function PaymentsEnhanced() {
                       <input
                         type="text"
                         placeholder="Search..."
-                        value={searchPONumber}
-                        onChange={(e) => setSearchPONumber(e.target.value)}
+                        value={remindersSearchPONumber}
+                        onChange={(e) => setRemindersSearchPONumber(e.target.value)}
                         className="w-full pl-7 pr-2 py-1 text-[10px] md:text-xs border border-gray-300 rounded focus:ring-1 focus:ring-blue-500 focus:border-transparent"
                       />
                     </div>
@@ -2662,8 +2697,8 @@ export default function PaymentsEnhanced() {
                       <input
                         type="text"
                         placeholder="Search..."
-                        value={searchVendor}
-                        onChange={(e) => setSearchVendor(e.target.value)}
+                        value={remindersSearchVendor}
+                        onChange={(e) => setRemindersSearchVendor(e.target.value)}
                         className="w-full pl-7 pr-2 py-1 text-[10px] md:text-xs border border-gray-300 rounded focus:ring-1 focus:ring-blue-500 focus:border-transparent"
                       />
                     </div>
@@ -2677,8 +2712,8 @@ export default function PaymentsEnhanced() {
                       <input
                         type="text"
                         placeholder="Search..."
-                        value={searchAmount}
-                        onChange={(e) => setSearchAmount(e.target.value)}
+                        value={remindersSearchAmount}
+                        onChange={(e) => setRemindersSearchAmount(e.target.value)}
                         className="w-full pl-7 pr-2 py-1 text-[10px] md:text-xs border border-gray-300 rounded focus:ring-1 focus:ring-blue-500 focus:border-transparent"
                       />
                     </div>
@@ -2691,8 +2726,8 @@ export default function PaymentsEnhanced() {
                       </div>
                       <input
                         type="date"
-                        value={searchDate}
-                        onChange={(e) => setSearchDate(e.target.value)}
+                        value={remindersSearchDate}
+                        onChange={(e) => setRemindersSearchDate(e.target.value)}
                         className="w-full pl-7 pr-2 py-1 text-[10px] md:text-xs border border-gray-300 rounded focus:ring-1 focus:ring-blue-500 focus:border-transparent"
                       />
                     </div>
@@ -2700,8 +2735,8 @@ export default function PaymentsEnhanced() {
 
                   <td className="px-2 md:px-4 py-1">
                     <select
-                      value={statusFilter}
-                      onChange={(e) => setStatusFilter(e.target.value)}
+                      value={remindersStatusFilter}
+                      onChange={(e) => setRemindersStatusFilter(e.target.value)}
                       className="w-full px-2 py-1 text-[10px] md:text-xs border border-gray-300 rounded focus:ring-1 focus:ring-blue-500 focus:border-transparent"
                     >
                       <option value="all">All Status</option>
@@ -2784,7 +2819,7 @@ export default function PaymentsEnhanced() {
                         No payment reminders found
                       </p>
                       <p className="text-gray-500 text-xs md:text-sm mt-1">
-                        {searchPONumber || searchVendor || searchAmount
+                        {remindersSearchPONumber || remindersSearchVendor || remindersSearchAmount
                           ? "Try adjusting your search"
                           : "No payment reminders available"}
                       </p>
@@ -2856,8 +2891,8 @@ export default function PaymentsEnhanced() {
                         type="radio"
                         name="method"
                         value={method.value}
-                        checked={paymentMethodFilter === method.value}
-                        onChange={(e) => setPaymentMethodFilter(e.target.value)}
+                        checked={historyPaymentMethodFilter === method.value}
+                        onChange={(e) => setHistoryPaymentMethodFilter(e.target.value)}
                         className="w-4 h-4 text-blue-600"
                       />
                       <span className="text-sm text-gray-700">

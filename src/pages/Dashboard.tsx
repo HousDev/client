@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 // import { useState, useEffect } from "react";
 // import { Users, FileText, Package, CreditCard, TrendingUp } from "lucide-react";
 
@@ -825,7 +826,6 @@
 //     </div>
 //   );
 // };
-
 // export default Dashboard;
 import React, { useState, useEffect } from "react";
 import {
@@ -882,8 +882,8 @@ import projectApi from "../lib/projectApi";
 interface DashboardStats {
   totalVendors: number;
   totalPOs: number;
-  totalMaterialRequests: { requested: number; approved: number; total: number };
-  totalStocks: number;
+  totalMaterialRequests: { approved: number; total: number };
+  totalStocks: { inStock: number; lowStock: number; outOfStock: number };
   totalBudgets: number;
   activeProjects: number;
 }
@@ -948,8 +948,8 @@ const Dashboard: React.FC = () => {
   const [stats, setStats] = useState<DashboardStats>({
     totalVendors: 0,
     totalPOs: 0,
-    totalMaterialRequests: { requested: 0, approved: 0, total: 0 },
-    totalStocks: 0,
+    totalMaterialRequests: { approved: 0, total: 0 },
+    totalStocks: { inStock: 0, lowStock: 0, outOfStock: 0 },
     totalBudgets: 0,
     activeProjects: 0,
   });
@@ -985,69 +985,58 @@ const Dashboard: React.FC = () => {
       setPoItemsData(Array.isArray(items) ? items : []);
 
       // Calculate material requests statistics
-      let totalRequested = 0;
-      let totalApproved = 0;
+      const totalRequests = Array.isArray(requests) ? requests.length : 0;
+      const approvedRequests = Array.isArray(requests) 
+        ? requests.filter((r: any) => r.status === 'approved').length 
+        : 0;
+
+      // Calculate stock statistics from inventory
+      let inStockCount = 0;
+      let lowStockCount = 0;
+      let outOfStockCount = 0;
       
-      if (Array.isArray(requests)) {
-        requests.forEach((request: any) => {
-          // Count total requests
-          if (request.materials && Array.isArray(request.materials)) {
-            request.materials.forEach((material: any) => {
-              totalRequested += material.required_quantity || 0;
-              
-              // Count approved quantities
-              if (material.approved_quantity) {
-                totalApproved += material.approved_quantity;
-              }
-            });
+      if (Array.isArray(inventory)) {
+        inventory.forEach((item: any) => {
+          const quantity = item.quantity_available || 0;
+          const minQuantity = item.minimum_quantity || 1;
+          
+          // Check for out of stock first
+          if (quantity === 0) {
+            outOfStockCount++;
+          }
+          // Then check for low stock (below minimum quantity but not zero)
+          else if (quantity < minQuantity) {
+            lowStockCount++;
+          }
+          // Everything else is in stock
+          else {
+            inStockCount++;
           }
         });
       }
-
-      // Calculate total stock from inventory
-      const totalStock = Array.isArray(inventory) 
-        ? inventory.reduce((sum: number, item: any) => sum + (item.quantity_available || 0), 0)
-        : 0;
 
       // Calculate total budget from POs
       const totalBudget = Array.isArray(pos)
         ? pos.reduce((sum: number, po: any) => sum + (po.grand_total || 0), 0)
         : 0;
 
-      // Count active vendors
-      const activeVendors = Array.isArray(vendors) ? vendors.length : 0;
-
-      // Calculate payment statistics from POs
-      let totalPaid = 0;
-      let totalBalance = 0;
-      let pendingPOs = 0;
-      let approvedPOs = 0;
-      
-      if (Array.isArray(pos)) {
-        pos.forEach((po: any) => {
-          totalPaid += po.total_paid || 0;
-          totalBalance += po.balance_amount || 0;
-          
-          if (po.status === 'pending' || po.status === 'draft') {
-            pendingPOs++;
-          }
-          if (po.status === 'approved' || po.status === 'authorize') {
-            approvedPOs++;
-          }
-        });
-      }
+      // Count total vendors (not just active)
+      const totalVendors = Array.isArray(vendors) ? vendors.length : 0;
 
       setStats({
-        totalVendors: activeVendors,
+        totalVendors: totalVendors,
         totalPOs: Array.isArray(pos) ? pos.length : 0,
         totalMaterialRequests: {
-          requested: totalRequested,
-          approved: totalApproved,
-          total: Array.isArray(requests) ? requests.length : 0
+          approved: approvedRequests,
+          total: totalRequests
         },
-        totalStocks: totalStock,
-        totalBudgets: totalBudget,
-        activeProjects: 12,
+        totalStocks: {
+          inStock: inStockCount,
+          lowStock: lowStockCount,
+          outOfStock: outOfStockCount
+        },
+        totalBudgets: 1000000000, // Static value: 100 Crore = 100,00,00,000
+        activeProjects: 12, // Static value as per original code
       });
 
     } catch (error) {
@@ -1055,11 +1044,11 @@ const Dashboard: React.FC = () => {
       
       // Fallback data
       setStats({
-        totalVendors: 142,
-        totalPOs: 865,
-        totalMaterialRequests: { requested: 1240, approved: 1050, total: 45 },
-        totalStocks: 4520,
-        totalBudgets: 12500000,
+        totalVendors: 0,
+        totalPOs: 0,
+        totalMaterialRequests: { approved: 0, total: 0 },
+        totalStocks: { inStock: 0, lowStock: 0, outOfStock: 0 },
+        totalBudgets: 0,
         activeProjects: 12,
       });
       
@@ -1096,6 +1085,13 @@ const Dashboard: React.FC = () => {
   };
 
   const formatCurrency = (amount: number) => {
+    if (amount >= 10000000) { // 1 Crore and above
+      const crore = amount / 10000000;
+      return `₹${crore.toFixed(1)}Cr`;
+    } else if (amount >= 100000) { // 1 Lakh and above
+      const lakh = amount / 100000;
+      return `₹${lakh.toFixed(1)}L`;
+    }
     return new Intl.NumberFormat('en-IN', {
       style: 'currency',
       currency: 'INR',
@@ -1128,27 +1124,25 @@ const Dashboard: React.FC = () => {
       subtext: `${vendorData.filter((v: any) => v.is_active).length} active`
     },
     {
-      label: "Mat Requests",
-      value: `${stats.totalMaterialRequests.total} (${stats.totalMaterialRequests.approved}/${stats.totalMaterialRequests.requested})`,
+      label: "Material Requests",
+      value: `${stats.totalMaterialRequests.approved}/${stats.totalMaterialRequests.total}`,
       icon: Package,
       color: "text-amber-600",
       bg: "bg-amber-50",
-      subtext: `${materialRequests.filter((r: any) => r.status === 'approved').length} approved • ${stats.totalMaterialRequests.requested > 0 
-        ? Math.round((stats.totalMaterialRequests.approved / stats.totalMaterialRequests.requested) * 100) 
-        : 0}% approved`
+      subtext: `${materialRequests.filter((r: any) => r.status === 'approved').length} approved requests`
     },
     {
       label: "Total Stocks",
-      value: stats.totalStocks.toLocaleString(),
+      value: `${stats.totalStocks.inStock}/${inventoryData.length}`,
       icon: Box,
       color: "text-purple-600",
       bg: "bg-purple-50",
       trend: inventoryData.length > 0 ? "↑" : "",
-      subtext: `${inventoryData.filter((item: any) => (item.quantity_available || 0) < (item.minimum_quantity || 1)).length} low stock`
+      subtext: `${stats.totalStocks.lowStock} low stock • ${stats.totalStocks.outOfStock} out of stock`
     },
     {
       label: "Total Budget",
-      value: `₹${(stats.totalBudgets / 1000000).toFixed(1)}Cr`,
+      value: formatCurrency(stats.totalBudgets),
       icon: TrendingUp,
       color: "text-[#d32f2f]",
       bg: "bg-red-50",
@@ -1161,9 +1155,7 @@ const Dashboard: React.FC = () => {
       id: "r1",
       issue: "Material Shortage",
       impact: "High",
-      description: inventoryData.length > 0 
-        ? `${inventoryData.filter((item: any) => (item.quantity_available || 0) < (item.minimum_quantity || 0)).length} items below minimum stock`
-        : "Check inventory levels",
+      description: `Low stock: ${stats.totalStocks.lowStock} items • Out of stock: ${stats.totalStocks.outOfStock} items`,
     },
     {
       id: "r2",
@@ -1391,132 +1383,126 @@ const Dashboard: React.FC = () => {
       </div>
 
       {/* 4. Material Request Drill-Down Section */}
-    <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
-  <div className="p-4 md:p-6 border-b border-gray-100 bg-gray-50/50 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-    <div>
-      <h3 className="text-base md:text-lg font-bold text-gray-800 flex items-center gap-2">
-        <Package className="w-5 h-5 text-amber-600" />
-        Material Requests Overview
-      </h3>
-      <p className="text-[10px] md:text-xs text-gray-500 font-medium">
-        {stats.totalMaterialRequests.total} total requests • {materialRequests.filter((r: any) => r.status === 'approved').length} approved • {stats.totalMaterialRequests.requested} units requested
-      </p>
-    </div>
-    <button 
-      onClick={fetchDashboardData}
-      className="w-full sm:w-auto text-xs font-bold border border-gray-300 rounded-lg px-3 py-2 outline-none hover:bg-gray-50 transition-colors bg-white flex items-center justify-center gap-2"
-    >
-      <RefreshCw className="w-3 h-3" />
-      Refresh Data
-    </button>
-  </div>
-  <div className="overflow-x-auto">
-    <table className="w-full text-left min-w-[800px]">
-      <thead className="bg-gray-50 text-[9px] md:text-[10px] uppercase font-bold text-gray-400 tracking-wider">
-        <tr>
-          <th className="px-3 py-3">Request No</th>
-          <th className="px-3 py-3">Requester</th>
-          <th className="px-3 py-3">Project</th>
-          <th className="px-3 py-3">Work Type</th>
-          <th className="px-3 py-3">Date</th>
-          <th className="px-3 py-3">Items</th>
-          <th className="px-3 py-3">Status</th>
-        </tr>
-      </thead>
-      <tbody className="divide-y divide-gray-100">
-        {materialRequests.slice(0, 5).map((request: any) => (
-          <tr 
-            key={request.id || request.request_no} 
-            className="hover:bg-gray-50/50 transition-colors cursor-pointer"
-            onClick={() => {
-              // You can add click handler here if needed
-              console.log("View request:", request);
-            }}
+      <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+        <div className="p-4 md:p-6 border-b border-gray-100 bg-gray-50/50 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+          <div>
+            <h3 className="text-base md:text-lg font-bold text-gray-800 flex items-center gap-2">
+              <Package className="w-5 h-5 text-amber-600" />
+              Material Requests Overview
+            </h3>
+            <p className="text-[10px] md:text-xs text-gray-500 font-medium">
+              {stats.totalMaterialRequests.total} total requests • {stats.totalMaterialRequests.approved} approved
+            </p>
+          </div>
+          <button 
+            onClick={fetchDashboardData}
+            className="w-full sm:w-auto text-xs font-bold border border-gray-300 rounded-lg px-3 py-2 outline-none hover:bg-gray-50 transition-colors bg-white flex items-center justify-center gap-2"
           >
-            <td className="px-3 py-4">
-              <div className="flex items-center">
-                <div className="min-w-0">
-                  <p className="text-xs md:text-sm font-medium text-black- truncate max-w-[120px]">
-                    {request.request_no || `REQ-${request.id}`}
-                  </p>
-                </div>
-              </div>
-            </td>
-            <td className="px-3 py-4">
-              <div className="min-w-0">
-                <p className="text-xs text-gray-600 font-semibold truncate max-w-[120px]">
-                  {request.user_name || "N/A"}
-                </p>
-                {/* {request.user_phone && (
-                  <p className="text-[10px] text-gray-500 flex items-center mt-0.5 truncate">
-                    <Phone className="w-2.5 h-2.5 mr-1" />
-                    {request.user_phone}
-                  </p>
-                )} */}
-              </div>
-            </td>
-            <td className="px-3 py-4">
-              <div className="min-w-0">
-                <p className="text-xs text-gray-600 font-semibold truncate max-w-[120px]">
-                  {request.project_name || request.projectId || "Project"}
-                </p>
-                <div className="text-[10px] text-gray-500 mt-0.5 truncate">
-                  {[request.building_name, request.floor_name]
-                    .filter(Boolean)
-                    .join(" • ")}
-                </div>
-                {(request.flat_name || request.common_area_name) && (
-                  <div className="text-[10px] text-gray-400 mt-0.5 truncate">
-                    {request.flat_name || request.common_area_name}
-                  </div>
-                )}
-              </div>
-            </td>
-            <td className="px-3 py-4">
-              <p className="text-xs text-gray-600 truncate max-w-[150px]">
-                {request.work || "N/A"}
-              </p>
-            </td>
-            <td className="px-3 py-4">
-              <div className="flex items-center">
-                <Calendar className="w-3 h-3 text-gray-400 mr-1.5" />
-                <p className="text-xs text-gray-700 whitespace-nowrap">
-                  {formatDate(request.start_date || request.created_at)}
-                </p>
-              </div>
-            </td>
-            <td className="px-3 py-4">
-              <p className="text-xs font-medium text-gray-600 whitespace-nowrap">
-                {request.materials?.length || 0} items
-              </p>
-            </td>
-            <td className="px-3 py-4">
-              <span
-                className={`px-2 py-0.5 rounded text-[8px] md:text-[9px] font-bold uppercase whitespace-nowrap ${
-                  request.status === 'approved'
-                    ? "bg-emerald-100 text-emerald-700"
-                    : request.status === 'pending'
-                    ? "bg-blue-100 text-blue-700"
-                    : request.status === 'rejected'
-                    ? "bg-red-100 text-red-700"
-                    : "bg-gray-100 text-gray-700"
-                }`}
-              >
-                {request.status?.toUpperCase() || 'DRAFT'}
-              </span>
-            </td>
-          </tr>
-        ))}
-      </tbody>
-    </table>
-    {materialRequests.length === 0 && (
-      <div className="text-center py-8 text-gray-500 text-sm">
-        <Package className="w-10 h-10 text-gray-300 mx-auto mb-3" />
-        No material requests found
+            <RefreshCw className="w-3 h-3" />
+            Refresh Data
+          </button>
+        </div>
+        <div className="overflow-x-auto">
+          <table className="w-full text-left min-w-[800px]">
+            <thead className="bg-gray-50 text-[9px] md:text-[10px] uppercase font-bold text-gray-400 tracking-wider">
+              <tr>
+                <th className="px-3 py-3">Request No</th>
+                <th className="px-3 py-3">Requester</th>
+                <th className="px-3 py-3">Project</th>
+                <th className="px-3 py-3">Work Type</th>
+                <th className="px-3 py-3">Date</th>
+                <th className="px-3 py-3">Items</th>
+                <th className="px-3 py-3">Status</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-gray-100">
+              {materialRequests.slice(0, 5).map((request: any) => (
+                <tr 
+                  key={request.id || request.request_no} 
+                  className="hover:bg-gray-50/50 transition-colors cursor-pointer"
+                  onClick={() => {
+                    // You can add click handler here if needed
+                    console.log("View request:", request);
+                  }}
+                >
+                  <td className="px-3 py-4">
+                    <div className="flex items-center">
+                      <div className="min-w-0">
+                        <p className="text-xs md:text-sm font-medium text-black- truncate max-w-[120px]">
+                          {request.request_no || `REQ-${request.id}`}
+                        </p>
+                      </div>
+                    </div>
+                  </td>
+                  <td className="px-3 py-4">
+                    <div className="min-w-0">
+                      <p className="text-xs text-gray-600 font-semibold truncate max-w-[120px]">
+                        {request.user_name || "N/A"}
+                      </p>
+                    </div>
+                  </td>
+                  <td className="px-3 py-4">
+                    <div className="min-w-0">
+                      <p className="text-xs text-gray-600 font-semibold truncate max-w-[120px]">
+                        {request.project_name || request.projectId || "Project"}
+                      </p>
+                      <div className="text-[10px] text-gray-500 mt-0.5 truncate">
+                        {[request.building_name, request.floor_name]
+                          .filter(Boolean)
+                          .join(" • ")}
+                      </div>
+                      {(request.flat_name || request.common_area_name) && (
+                        <div className="text-[10px] text-gray-400 mt-0.5 truncate">
+                          {request.flat_name || request.common_area_name}
+                        </div>
+                      )}
+                    </div>
+                  </td>
+                  <td className="px-3 py-4">
+                    <p className="text-xs text-gray-600 truncate max-w-[150px]">
+                      {request.work || "N/A"}
+                    </p>
+                  </td>
+                  <td className="px-3 py-4">
+                    <div className="flex items-center">
+                      <Calendar className="w-3 h-3 text-gray-400 mr-1.5" />
+                      <p className="text-xs text-gray-700 whitespace-nowrap">
+                        {formatDate(request.start_date || request.created_at)}
+                      </p>
+                    </div>
+                  </td>
+                  <td className="px-3 py-4">
+                    <p className="text-xs font-medium text-gray-600 whitespace-nowrap">
+                      {request.materials?.length || 0} items
+                    </p>
+                  </td>
+                  <td className="px-3 py-4">
+                    <span
+                      className={`px-2 py-0.5 rounded text-[8px] md:text-[9px] font-bold uppercase whitespace-nowrap ${
+                        request.status === 'approved'
+                          ? "bg-emerald-100 text-emerald-700"
+                          : request.status === 'pending'
+                          ? "bg-blue-100 text-blue-700"
+                          : request.status === 'rejected'
+                          ? "bg-red-100 text-red-700"
+                          : "bg-gray-100 text-gray-700"
+                      }`}
+                    >
+                      {request.status?.toUpperCase() || 'DRAFT'}
+                    </span>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+          {materialRequests.length === 0 && (
+            <div className="text-center py-8 text-gray-500 text-sm">
+              <Package className="w-10 h-10 text-gray-300 mx-auto mb-3" />
+              No material requests found
+            </div>
+          )}
+        </div>
       </div>
-    )}
-  </div>
-</div>
 
       {/* 5. Purchase Orders Drill-Down Section */}
       <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
@@ -1527,7 +1513,7 @@ const Dashboard: React.FC = () => {
               Purchase Orders Overview
             </h3>
             <p className="text-[10px] md:text-xs text-gray-500 font-medium">
-              {poData.length} total purchase orders • ₹{(stats.totalBudgets / 100000).toFixed(1)}L total value
+              {poData.length} total purchase orders • {formatCurrency(stats.totalBudgets)} total value
             </p>
           </div>
           <div className="flex gap-2">
@@ -1629,7 +1615,7 @@ const Dashboard: React.FC = () => {
                   </span>
                 </div>
                 <span className="text-[11px] font-bold text-gray-800">
-                  ${item.value.toLocaleString()}
+                  ₹{item.value.toLocaleString('en-IN')}
                 </span>
               </div>
             ))}
@@ -1652,12 +1638,18 @@ const Dashboard: React.FC = () => {
             </div>
             <div className="flex justify-between items-center">
               <span className="text-[10px] font-bold text-gray-700">
+                In Stock Items
+              </span>
+              <span className="text-[10px] font-black text-emerald-600">
+                {stats.totalStocks.inStock}
+              </span>
+            </div>
+            <div className="flex justify-between items-center">
+              <span className="text-[10px] font-bold text-gray-700">
                 Low Stock Items
               </span>
               <span className="text-[10px] font-black text-amber-600">
-                {inventoryData.filter((item: any) => 
-                  (item.quantity_available || 0) < (item.minimum_quantity || 1)
-                ).length}
+                {stats.totalStocks.lowStock}
               </span>
             </div>
             <div className="flex justify-between items-center">
@@ -1665,9 +1657,7 @@ const Dashboard: React.FC = () => {
                 Out of Stock
               </span>
               <span className="text-[10px] font-black text-rose-600">
-                {inventoryData.filter((item: any) => 
-                  (item.quantity_available || 0) === 0
-                ).length}
+                {stats.totalStocks.outOfStock}
               </span>
             </div>
           </div>
@@ -1742,4 +1732,4 @@ const Zap = ({ className }: { className?: string }) => (
   </svg>
 );
 
-export default Dashboard;;
+export default Dashboard;

@@ -1152,7 +1152,7 @@ export default function AreaTasks({
   return (
     <div className="p-3">
       {/* Header with Actions - Made sticky */}
-      <div className="sticky top-16 z-10  pb-3 pt-3 border-b border-gray-200">
+      <div className="sticky top-16 z-10 px-0  mt-0 border-b border-gray-200">
         <button
           className="flex items-center font-semibold mb-4"
           onClick={() => setSelectedProjectId(null)}
