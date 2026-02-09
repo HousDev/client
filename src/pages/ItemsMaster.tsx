@@ -1155,7 +1155,7 @@ export default function ItemsMaster(): JSX.Element {
   };
 
   const handleItemsPerPageChange = (value: string) => {
-    console.log(value)
+    console.log(value);
     const newValue = parseInt(value, 10);
     if (!isNaN(newValue) && newValue > 0) {
       setItemsPerPage(newValue);
@@ -1291,9 +1291,7 @@ export default function ItemsMaster(): JSX.Element {
           <div className="hidden md:block h-6 border-l border-gray-300 mx-1"></div>
 
           <div className="flex items-center gap-2">
-            <span className="text-xs md:text-sm text-gray-600">
-              Show
-            </span>
+            <span className="text-xs md:text-sm text-gray-600">Show</span>
             {/* <input
               type="text"
               disabled
@@ -1303,7 +1301,11 @@ export default function ItemsMaster(): JSX.Element {
               onChange={(e) => handleItemsPerPageChange(e.target.value)}
               className="w-16 px-2 py-1 text-xs md:text-sm border border-gray-300 rounded focus:ring-1 focus:ring-[#C62828] focus:border-transparent text-center"
             /> */}
-            <select name="" onChange={(e) => handleItemsPerPageChange(e.target.value)} className="border border-slate-400 px-3 py-1 rounded-lg">
+            <select
+              name=""
+              onChange={(e) => handleItemsPerPageChange(e.target.value)}
+              className="border border-slate-400 px-3 py-1 rounded-lg"
+            >
               <option value={10}>10</option>
               <option value={25}>25</option>
               <option value={50}>50</option>
@@ -1335,42 +1337,41 @@ export default function ItemsMaster(): JSX.Element {
             Add Item
           </button>
 
-         <div className="flex items-center gap-2 flex-wrap">
-  <button
-    onClick={handleImportClick}
-    className="bg-gradient-to-r from-[#C62828] to-red-600 hover:from-red-600 hover:to-red-700 
+          <div className="flex items-center gap-2 flex-wrap">
+            <button
+              onClick={handleImportClick}
+              className="bg-gradient-to-r from-[#C62828] to-red-600 hover:from-red-600 hover:to-red-700 
     px-2 md:px-3 py-1 md:py-1.5 
     text-[10px] md:text-xs 
     text-white font-semibold 
     rounded-lg flex items-center gap-1 md:gap-2 
     transition-all duration-200"
-  >
-    Import Excel
-  </button>
+            >
+              Import Excel
+            </button>
 
-  <input
-    ref={fileInputRef}
-    type="file"
-    accept=".xlsx,.xls"
-    onChange={handleFileChange}
-    className="hidden"
-  />
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept=".xlsx,.xls"
+              onChange={handleFileChange}
+              className="hidden"
+            />
 
-  <a
-    href={`${import.meta.env.VITE_API_URL}/templates/items-import-template`}
-    title="Download Template Data"
-    className="p-1.5 md:p-2 rounded-lg bg-gray-100 hover:bg-gray-200 transition-all duration-200"
-  >
-    <Download className="w-3.5 h-3.5 md:w-4 md:h-4 text-gray-600" />
-  </a>
-</div>
-
+            <a
+              href={`${import.meta.env.VITE_API_URL}/templates/items-import-template`}
+              title="Download Template Data"
+              className="p-1.5 md:p-2 rounded-lg bg-gray-100 hover:bg-gray-200 transition-all duration-200"
+            >
+              <Download className="w-3.5 h-3.5 md:w-4 md:h-4 text-gray-600" />
+            </a>
+          </div>
         </div>
       </div>
 
       {/* Main Table - Responsive with Search Bars */}
       <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden mx-0 md:mx-0">
-      <div className="overflow-y-auto max-h-[calc(100vh-300px)] md:max-h-[calc(100vh-300px)] ">
+        <div className="overflow-y-auto max-h-[calc(100vh-300px)] md:max-h-[calc(100vh-300px)] ">
           <table className="w-full min-w-[800px]">
             <thead className="sticky top-0 z-10 bg-gray-200 border-b border-gray-200">
               {/* Header Row */}
@@ -1577,8 +1578,9 @@ export default function ItemsMaster(): JSX.Element {
                 return (
                   <tr
                     key={item.id}
-                    className={`hover:bg-gray-50 transition ${isSelected ? "bg-blue-50" : ""
-                      }`}
+                    className={`hover:bg-gray-50 transition ${
+                      isSelected ? "bg-blue-50" : ""
+                    }`}
                   >
                     <td className="px-3 md:px-4 py-3 text-center">
                       <input
@@ -1607,10 +1609,11 @@ export default function ItemsMaster(): JSX.Element {
                     </td>
                     <td className="px-3 md:px-4 py-3">
                       <span
-                        className={`px-2 py-0.5 md:px-3 md:py-1 rounded-full text-[10px] md:text-xs font-medium ${item.category === "material"
+                        className={`px-2 py-0.5 md:px-3 md:py-1 rounded-full text-[10px] md:text-xs font-medium ${
+                          item.category === "material"
                             ? "bg-blue-100 text-blue-700"
                             : "bg-green-100 text-green-700"
-                          }`}
+                        }`}
                       >
                         {item.category?.toUpperCase()}
                       </span>
@@ -1636,10 +1639,11 @@ export default function ItemsMaster(): JSX.Element {
                     <td className="px-3 md:px-4 py-3">
                       <button
                         onClick={() => toggleActive(item.id, item.is_active)}
-                        className={`px-2 py-0.5 md:px-3 md:py-1 rounded-full text-[10px] md:text-xs font-medium ${item.is_active
+                        className={`px-2 py-0.5 md:px-3 md:py-1 rounded-full text-[10px] md:text-xs font-medium ${
+                          item.is_active
                             ? "bg-green-100 text-green-700"
                             : "bg-red-100 text-red-700"
-                          }`}
+                        }`}
                       >
                         {item.is_active ? "ACTIVE" : "INACTIVE"}
                       </button>
@@ -1675,15 +1679,15 @@ export default function ItemsMaster(): JSX.Element {
                     </p>
                     <p className="text-gray-500 text-xs md:text-sm mt-1">
                       {searchItemCode ||
-                        searchItemName ||
-                        searchCategory ||
-                        searchHSN ||
-                        searchUnit ||
-                        searchIGST ||
-                        searchCGST ||
-                        searchSGST ||
-                        searchRate ||
-                        searchStatus
+                      searchItemName ||
+                      searchCategory ||
+                      searchHSN ||
+                      searchUnit ||
+                      searchIGST ||
+                      searchCGST ||
+                      searchSGST ||
+                      searchRate ||
+                      searchStatus
                         ? "Try a different search term"
                         : "No items available"}
                     </p>
@@ -1700,19 +1704,20 @@ export default function ItemsMaster(): JSX.Element {
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-3 md:gap-4">
               {/* Items per page selector */}
 
-
               {/* Page info */}
               <div className="text-xs md:text-sm text-gray-700">
                 Showing{" "}
                 <span className="font-semibold">
-                  {Math.min((currentPage - 1) * itemsPerPage + 1, filteredItems.length)}
+                  {Math.min(
+                    (currentPage - 1) * itemsPerPage + 1,
+                    filteredItems.length,
+                  )}
                 </span>{" "}
                 to{" "}
                 <span className="font-semibold">
                   {Math.min(currentPage * itemsPerPage, filteredItems.length)}
                 </span>{" "}
-                of{" "}
-                <span className="font-semibold">{filteredItems.length}</span>{" "}
+                of <span className="font-semibold">{filteredItems.length}</span>{" "}
                 items
               </div>
 
@@ -1721,10 +1726,11 @@ export default function ItemsMaster(): JSX.Element {
                 <button
                   onClick={() => goToPage(1)}
                   disabled={currentPage === 1}
-                  className={`p-1.5 md:p-2 rounded border ${currentPage === 1
-                    ? "border-gray-200 text-gray-400 cursor-not-allowed"
-                    : "border-gray-300 text-gray-700 hover:bg-gray-50"
-                    }`}
+                  className={`p-1.5 md:p-2 rounded border ${
+                    currentPage === 1
+                      ? "border-gray-200 text-gray-400 cursor-not-allowed"
+                      : "border-gray-300 text-gray-700 hover:bg-gray-50"
+                  }`}
                   title="First page"
                 >
                   <ChevronsLeft className="w-3.5 h-3.5 md:w-4 md:h-4" />
@@ -1733,10 +1739,11 @@ export default function ItemsMaster(): JSX.Element {
                 <button
                   onClick={() => goToPage(currentPage - 1)}
                   disabled={currentPage === 1}
-                  className={`p-1.5 md:p-2 rounded border ${currentPage === 1
-                    ? "border-gray-200 text-gray-400 cursor-not-allowed"
-                    : "border-gray-300 text-gray-700 hover:bg-gray-50"
-                    }`}
+                  className={`p-1.5 md:p-2 rounded border ${
+                    currentPage === 1
+                      ? "border-gray-200 text-gray-400 cursor-not-allowed"
+                      : "border-gray-300 text-gray-700 hover:bg-gray-50"
+                  }`}
                   title="Previous page"
                 >
                   <ChevronLeft className="w-3.5 h-3.5 md:w-4 md:h-4" />
@@ -1760,10 +1767,11 @@ export default function ItemsMaster(): JSX.Element {
                       <button
                         key={pageNum}
                         onClick={() => goToPage(pageNum)}
-                        className={`w-7 h-7 md:w-8 md:h-8 rounded border text-xs md:text-sm font-medium ${currentPage === pageNum
-                          ? "bg-[#C62828] text-white border-[#C62828]"
-                          : "border-gray-300 text-gray-700 hover:bg-gray-50"
-                          }`}
+                        className={`w-7 h-7 md:w-8 md:h-8 rounded border text-xs md:text-sm font-medium ${
+                          currentPage === pageNum
+                            ? "bg-[#C62828] text-white border-[#C62828]"
+                            : "border-gray-300 text-gray-700 hover:bg-gray-50"
+                        }`}
                       >
                         {pageNum}
                       </button>
@@ -1774,10 +1782,11 @@ export default function ItemsMaster(): JSX.Element {
                 <button
                   onClick={() => goToPage(currentPage + 1)}
                   disabled={currentPage === totalPages}
-                  className={`p-1.5 md:p-2 rounded border ${currentPage === totalPages
-                    ? "border-gray-200 text-gray-400 cursor-not-allowed"
-                    : "border-gray-300 text-gray-700 hover:bg-gray-50"
-                    }`}
+                  className={`p-1.5 md:p-2 rounded border ${
+                    currentPage === totalPages
+                      ? "border-gray-200 text-gray-400 cursor-not-allowed"
+                      : "border-gray-300 text-gray-700 hover:bg-gray-50"
+                  }`}
                   title="Next page"
                 >
                   <ChevronRight className="w-3.5 h-3.5 md:w-4 md:h-4" />
@@ -1786,10 +1795,11 @@ export default function ItemsMaster(): JSX.Element {
                 <button
                   onClick={() => goToPage(totalPages)}
                   disabled={currentPage === totalPages}
-                  className={`p-1.5 md:p-2 rounded border ${currentPage === totalPages
-                    ? "border-gray-200 text-gray-400 cursor-not-allowed"
-                    : "border-gray-300 text-gray-700 hover:bg-gray-50"
-                    }`}
+                  className={`p-1.5 md:p-2 rounded border ${
+                    currentPage === totalPages
+                      ? "border-gray-200 text-gray-400 cursor-not-allowed"
+                      : "border-gray-300 text-gray-700 hover:bg-gray-50"
+                  }`}
                   title="Last page"
                 >
                   <ChevronsRight className="w-3.5 h-3.5 md:w-4 md:h-4" />
@@ -1970,12 +1980,17 @@ export default function ItemsMaster(): JSX.Element {
                       <input
                         type="number"
                         value={formData.standard_rate}
-                        onChange={(e) =>
+                        onChange={(e) => {
+                          if (
+                            !/^\d*\.?\d*$/.test(e.target.value) ||
+                            Number(e.target.value) < 0
+                          )
+                            return;
                           setFormData({
                             ...formData,
                             standard_rate: parseFloat(e.target.value),
-                          })
-                        }
+                          });
+                        }}
                         className="w-full pl-9 pr-3 py-2 text-sm border-2 border-gray-200 rounded-xl focus:border-[#C62828] focus:ring-2 focus:ring-[#C62828]/20 outline-none transition-all duration-200 hover:border-gray-300"
                         min="0"
                         step="0.01"
@@ -1997,12 +2012,17 @@ export default function ItemsMaster(): JSX.Element {
                       <input
                         type="text"
                         value={formData.igst_rate}
-                        onChange={(e) =>
+                        onChange={(e) => {
+                          if (
+                            !/^\d*\.?\d*$/.test(e.target.value) ||
+                            Number(e.target.value) < 0
+                          )
+                            return;
                           setFormData({
                             ...formData,
                             igst_rate: e.target.value,
-                          })
-                        }
+                          });
+                        }}
                         className="w-full pl-9 pr-3 py-2 text-sm border-2 border-gray-200 rounded-xl focus:border-[#C62828] focus:ring-2 focus:ring-[#C62828]/20 outline-none transition-all duration-200 hover:border-gray-300"
                         required
                       />
@@ -2021,12 +2041,17 @@ export default function ItemsMaster(): JSX.Element {
                       <input
                         type="text"
                         value={formData.cgst_rate}
-                        onChange={(e) =>
+                        onChange={(e) => {
+                          if (
+                            !/^\d*\.?\d*$/.test(e.target.value) ||
+                            Number(e.target.value) < 0
+                          )
+                            return;
                           setFormData({
                             ...formData,
                             cgst_rate: e.target.value,
-                          })
-                        }
+                          });
+                        }}
                         className="w-full pl-9 pr-3 py-2 text-sm border-2 border-gray-200 rounded-xl focus:border-[#C62828] focus:ring-2 focus:ring-[#C62828]/20 outline-none transition-all duration-200 hover:border-gray-300"
                         required
                       />
@@ -2045,12 +2070,17 @@ export default function ItemsMaster(): JSX.Element {
                       <input
                         type="text"
                         value={formData.sgst_rate}
-                        onChange={(e) =>
+                        onChange={(e) => {
+                          if (
+                            !/^\d*\.?\d*$/.test(e.target.value) ||
+                            Number(e.target.value) < 0
+                          )
+                            return;
                           setFormData({
                             ...formData,
                             sgst_rate: e.target.value,
-                          })
-                        }
+                          });
+                        }}
                         className="w-full pl-9 pr-3 py-2 text-sm border-2 border-gray-200 rounded-xl focus:border-[#C62828] focus:ring-2 focus:ring-[#C62828]/20 outline-none transition-all duration-200 hover:border-gray-300"
                         required
                       />
