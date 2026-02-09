@@ -1,5 +1,6 @@
+
 import { useState, useEffect, SetStateAction } from 'react';
-import { Receipt, Plus, Search, Filter, Download, CheckCircle, XCircle, Clock, FileText, Trash2, Calendar, Package, X } from 'lucide-react';
+import { Receipt, Plus, Search, Filter, Download, CheckCircle, XCircle, Clock, FileText, Trash2, Calendar, Package, X, MoreVertical, AlertTriangle } from 'lucide-react';
 import Card from '../components/ui/Card';
 import Button from '../components/ui/Button';
 import Input from '../components/ui/Input';
@@ -10,6 +11,7 @@ import { formatters } from '../utils/formatters';
 import SubmitExpenseModal from '../components/modals/SubmitExpenseModal';
 import DatePicker from 'react-datepicker';
 import 'react-datepicker/dist/react-datepicker.css';
+import Swal from 'sweetalert2';
 
 export default function Expenses() {
     const [expenses, setExpenses] = useState<Expense[]>([]);
@@ -19,6 +21,7 @@ export default function Expenses() {
     const [showRejectModal, setShowRejectModal] = useState(false);
     const [rejectReason, setRejectReason] = useState('');
     const [selectedExpenseId, setSelectedExpenseId] = useState<number | null>(null);
+    const [openMenuId, setOpenMenuId] = useState<number | null>(null);
     const [stats, setStats] = useState({
         pending: 0,
         approved: 0,
@@ -63,6 +66,21 @@ export default function Expenses() {
         const user = JSON.parse(localStorage.getItem('user') || '{}');
         return user.employee || null;
     };
+
+    // Close menu when clicking outside
+    useEffect(() => {
+        const handleClickOutside = (event: MouseEvent) => {
+            if (openMenuId !== null) {
+                const target = event.target as HTMLElement;
+                if (!target.closest('.menu-container')) {
+                    setOpenMenuId(null);
+                }
+            }
+        };
+
+        document.addEventListener('mousedown', handleClickOutside);
+        return () => document.removeEventListener('mousedown', handleClickOutside);
+    }, [openMenuId]);
 
     useEffect(() => {
         const loadAllData = async () => {
@@ -186,16 +204,46 @@ export default function Expenses() {
     };
 
     const handleApprove = async (id: number) => {
-        if (!confirm('Are you sure you want to approve this expense?')) return;
-        
-        try {
-            const userData = getCurrentUser();
-            await expenseApi.approveExpense(id, { ...userData, notes: 'Expense approved' });
-            loadExpenses();
-            loadStats();
-        } catch (error) {
-            console.error('Error approving expense:', error);
-            alert('Failed to approve expense');
+        const result = await Swal.fire({
+            title: 'Approve Expense',
+            text: 'Are you sure you want to approve this expense?',
+            icon: 'question',
+            showCancelButton: true,
+            confirmButtonColor: '#10B981',
+            cancelButtonColor: '#6B7280',
+            confirmButtonText: 'Yes, approve it!',
+            cancelButtonText: 'Cancel',
+            reverseButtons: true,
+            customClass: {
+                confirmButton: 'mr-2',
+                cancelButton: 'ml-2'
+            }
+        });
+
+        if (result.isConfirmed) {
+            try {
+                const userData = getCurrentUser();
+                await expenseApi.approveExpense(id, { ...userData, notes: 'Expense approved' });
+                
+                await Swal.fire({
+                    title: 'Approved!',
+                    text: 'The expense has been approved successfully.',
+                    icon: 'success',
+                    timer: 2000,
+                    showConfirmButton: false
+                });
+                
+                loadExpenses();
+                loadStats();
+            } catch (error) {
+                console.error('Error approving expense:', error);
+                await Swal.fire({
+                    title: 'Error!',
+                    text: 'Failed to approve expense',
+                    icon: 'error',
+                    confirmButtonColor: '#EF4444',
+                });
+            }
         }
     };
 
@@ -209,29 +257,65 @@ export default function Expenses() {
         if (!selectedExpenseId) return;
         
         if (!rejectReason.trim()) {
-            alert('Please enter a reason for rejection');
+            await Swal.fire({
+                title: 'Validation Error',
+                text: 'Please enter a reason for rejection',
+                icon: 'warning',
+                confirmButtonColor: '#3B82F6',
+            });
             return;
         }
-        
-        if (!confirm('Are you sure you want to reject this expense?')) return;
-        
-        try {
-            const userData = getCurrentUser();
-            await expenseApi.rejectExpense(selectedExpenseId, { ...userData, notes: rejectReason });
-            loadExpenses();
-            loadStats();
-            setShowRejectModal(false);
-            setRejectReason('');
-            setSelectedExpenseId(null);
-        } catch (error) {
-            console.error('Error rejecting expense:', error);
-            alert('Failed to reject expense');
+
+        const confirmResult = await Swal.fire({
+            title: 'Confirm Rejection',
+            text: 'Are you sure you want to reject this expense? This action cannot be undone.',
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: '#EF4444',
+            cancelButtonColor: '#6B7280',
+            confirmButtonText: 'Yes, reject it!',
+            cancelButtonText: 'Cancel',
+            reverseButtons: true
+        });
+
+        if (confirmResult.isConfirmed) {
+            try {
+                const userData = getCurrentUser();
+                await expenseApi.rejectExpense(selectedExpenseId, { ...userData, notes: rejectReason });
+                
+                await Swal.fire({
+                    title: 'Rejected!',
+                    text: 'The expense has been rejected successfully.',
+                    icon: 'success',
+                    timer: 2000,
+                    showConfirmButton: false
+                });
+                
+                loadExpenses();
+                loadStats();
+                setShowRejectModal(false);
+                setRejectReason('');
+                setSelectedExpenseId(null);
+            } catch (error) {
+                console.error('Error rejecting expense:', error);
+                await Swal.fire({
+                    title: 'Error!',
+                    text: 'Failed to reject expense',
+                    icon: 'error',
+                    confirmButtonColor: '#EF4444',
+                });
+            }
         }
     };
 
     const handleViewReceipt = async (expense: Expense) => {
         if (!expense.receipt_path) {
-            alert('No receipt attached to this expense');
+            await Swal.fire({
+                title: 'No Receipt',
+                text: 'No receipt attached to this expense',
+                icon: 'info',
+                confirmButtonColor: '#3B82F6',
+            });
             return;
         }
 
@@ -247,7 +331,55 @@ export default function Expenses() {
             document.body.removeChild(a);
         } catch (error) {
             console.error('Error downloading receipt:', error);
-            alert('Failed to download receipt');
+            await Swal.fire({
+                title: 'Error!',
+                text: 'Failed to download receipt',
+                icon: 'error',
+                confirmButtonColor: '#EF4444',
+            });
+        }
+    };
+
+    const handleDelete = async (id: number) => {
+        const result = await Swal.fire({
+            title: 'Delete Expense',
+            text: 'Are you sure you want to delete this expense? This action cannot be undone.',
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: '#EF4444',
+            cancelButtonColor: '#6B7280',
+            confirmButtonText: 'Yes, delete it!',
+            cancelButtonText: 'Cancel',
+            reverseButtons: true,
+            customClass: {
+                confirmButton: 'mr-2',
+                cancelButton: 'ml-2'
+            }
+        });
+
+        if (result.isConfirmed) {
+            try {
+                await expenseApi.deleteExpense(id);
+                
+                await Swal.fire({
+                    title: 'Deleted!',
+                    text: 'The expense has been deleted successfully.',
+                    icon: 'success',
+                    timer: 2000,
+                    showConfirmButton: false
+                });
+                
+                loadExpenses();
+                loadStats();
+            } catch (error) {
+                console.error('Error deleting expense:', error);
+                await Swal.fire({
+                    title: 'Error!',
+                    text: 'Failed to delete expense',
+                    icon: 'error',
+                    confirmButtonColor: '#EF4444',
+                });
+            }
         }
     };
 
@@ -275,26 +407,63 @@ export default function Expenses() {
 
     const handleBulkDelete = async () => {
         if (selectedItems.size === 0) {
-            alert("Please select expenses to delete");
+            await Swal.fire({
+                title: 'No Selection',
+                text: 'Please select expenses to delete',
+                icon: 'info',
+                confirmButtonColor: '#3B82F6',
+            });
             return;
         }
 
-        if (!confirm(`Are you sure you want to delete ${selectedItems.size} expense(s)? This action cannot be undone.`)) {
-            return;
-        }
+        const result = await Swal.fire({
+            title: 'Delete Expenses',
+            html: `
+                <div class="text-left">
+                    <p class="text-gray-600 mb-2">Are you sure you want to delete <strong>${selectedItems.size}</strong> expense(s)?</p>
+                    <p class="text-sm text-gray-500">This action cannot be undone.</p>
+                </div>
+            `,
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: '#EF4444',
+            cancelButtonColor: '#6B7280',
+            confirmButtonText: 'Yes, delete them!',
+            cancelButtonText: 'Cancel',
+            reverseButtons: true,
+            customClass: {
+                confirmButton: 'mr-2',
+                cancelButton: 'ml-2'
+            }
+        });
 
-        try {
-            await Promise.all(
-                Array.from(selectedItems).map((id) => expenseApi.deleteExpense(id))
-            );
-            alert(`${selectedItems.size} expense(s) deleted successfully!`);
-            setSelectedItems(new Set());
-            setSelectAll(false);
-            await loadExpenses();
-            await loadStats();
-        } catch (error) {
-            console.error("Error deleting expenses:", error);
-            alert("Failed to delete expenses");
+        if (result.isConfirmed) {
+            try {
+                await Promise.all(
+                    Array.from(selectedItems).map((id) => expenseApi.deleteExpense(id))
+                );
+                
+                await Swal.fire({
+                    title: 'Deleted!',
+                    text: `${selectedItems.size} expense(s) deleted successfully!`,
+                    icon: 'success',
+                    timer: 2000,
+                    showConfirmButton: false
+                });
+                
+                setSelectedItems(new Set());
+                setSelectAll(false);
+                await loadExpenses();
+                await loadStats();
+            } catch (error) {
+                console.error("Error deleting expenses:", error);
+                await Swal.fire({
+                    title: 'Error!',
+                    text: 'Failed to delete expenses',
+                    icon: 'error',
+                    confirmButtonColor: '#EF4444',
+                });
+            }
         }
     };
 
@@ -312,6 +481,16 @@ export default function Expenses() {
         setShowFilterSidebar(false);
     };
 
+    const clearAllFilters = () => {
+        setSearchClaimNumber('');
+        setSearchCategory('');
+        setSearchMerchant('');
+        setSearchDescription('');
+        setSearchAmount('');
+        setSearchDate('');
+        setSearchStatus('');
+    };
+
     const applyFilters = () => {
         setShowFilterSidebar(false);
     };
@@ -325,159 +504,158 @@ export default function Expenses() {
     }
 
     return (
-        <div className="p-3 md:p-4 bg-gray-50 min-h-screen">
-            {/* Delete Button (Appears when checkboxes are selected) */}
-            {selectedItems.size > 0 && (
-                <div className="mb-4">
-                    <div className="bg-gradient-to-r from-red-50 to-rose-50 border border-red-200 rounded-xl shadow-sm p-3">
-                        <div className="flex flex-col md:flex-row md:items-center justify-between gap-3">
-                            <div className="flex items-center gap-3">
-                                <div className="bg-red-100 p-2 rounded-lg">
-                                    <Trash2 className="w-4 h-4 text-red-600" />
-                                </div>
-                                <div>
-                                    <p className="font-medium text-gray-800 text-sm">
-                                        {selectedItems.size} expense{selectedItems.size > 1 ? 's' : ''} selected
-                                    </p>
-                                    <p className="text-xs text-gray-600">
-                                        Click delete to remove selected items
-                                    </p>
-                                </div>
-                            </div>
-                            <button
-                                onClick={handleBulkDelete}
-                                className="flex items-center gap-2 bg-gradient-to-r from-red-600 to-rose-600 text-white px-4 py-2 rounded-xl hover:from-red-700 hover:to-rose-700 transition-all duration-200 font-medium shadow-md hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed text-sm"
-                            >
-                                <Trash2 className="w-3 h-3" />
-                                Delete ({selectedItems.size})
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            )}
-
+        <div className="space-y-5">
             {/* Header */}
-            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
-                <div>
-                    <h1 className="text-2xl md:text-3xl font-bold text-gray-900">Expense Management</h1>
-                    <p className="text-gray-600 text-sm mt-1">Track and manage employee expenses</p>
+            <div className="flex items-center justify-end py-0 px-2 -mt-2 -mb-2">
+                <div className="sticky top-44 z-10 flex flex-col md:flex-row gap-3 items-center justify-end">
+                    {selectedItems.size > 0 && (
+                        <div className="flex items-center gap-2 bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 rounded-md px-3 py-2">
+                            <div className="flex items-center gap-2">
+                                <div className="bg-blue-100 p-1 rounded">
+                                    <Receipt className="w-3 h-3 text-blue-600" />
+                                </div>
+                                <p className="font-medium text-xs text-gray-800">
+                                    {selectedItems.size} selected
+                                </p>
+                            </div>
+
+                            <div className="flex items-center gap-1">
+                                <button
+                                    onClick={handleBulkDelete}
+                                    className="bg-red-600 hover:bg-red-700 text-white px-2 py-1 rounded text-xs font-medium transition"
+                                >
+                                    <Trash2 className="w-3 h-3 inline mr-1" />
+                                    Delete
+                                </button>
+                            </div>
+                        </div>
+                    )}
                 </div>
-                <Button onClick={() => setShowSubmitModal(true)}>
-                    <Plus className="h-4 w-4 mr-2" />
+                <Button onClick={() => setShowSubmitModal(true)} className="text-sm ml-2">
+                    <Plus className="h-4 w-4 mr-1.5" />
                     Submit Expense
                 </Button>
             </div>
 
-            {/* Stats Cards */}
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
-                <Card className="p-4 md:p-6">
+            {/* Stats Cards - Sticky & Compact */}
+            <div className="sticky top-20 z-10 grid grid-cols-2 sm:grid-cols-2 md:grid-cols-4 gap-2 md:gap-3">
+                <Card className="p-2 sm:p-3 md:p-3.5">
                     <div className="flex items-center justify-between">
                         <div>
-                            <p className="text-xs md:text-sm text-gray-600">Pending Approval</p>
-                            <p className="text-xl md:text-3xl font-bold text-yellow-600 mt-1 md:mt-2">{stats.pending}</p>
-                            <p className="text-xs text-gray-500">Awaiting review</p>
+                            <p className="text-[10px] sm:text-xs text-slate-600 font-medium">
+                                Pending
+                            </p>
+                            <p className="text-lg sm:text-xl md:text-xl font-bold text-yellow-600 mt-0.5">
+                                {stats.pending}
+                            </p>
                         </div>
-                        <div className="w-10 h-10 md:w-12 md:h-12 bg-yellow-100 rounded-lg flex items-center justify-center">
-                            <Clock className="h-5 w-5 md:h-6 md:w-6 text-yellow-600" />
+                        <div className="w-8 h-8 sm:w-9 sm:h-9 md:w-9 md:h-9 bg-yellow-100 rounded-md flex items-center justify-center">
+                            <Clock className="h-4 w-4 text-yellow-600" />
                         </div>
                     </div>
                 </Card>
 
-                <Card className="p-4 md:p-6">
+                <Card className="p-2 sm:p-3 md:p-3.5">
                     <div className="flex items-center justify-between">
                         <div>
-                            <p className="text-xs md:text-sm text-gray-600">Approved</p>
-                            <p className="text-xl md:text-3xl font-bold text-green-600 mt-1 md:mt-2">{stats.approved}</p>
-                            <p className="text-xs text-gray-500">Total approved</p>
+                            <p className="text-[10px] sm:text-xs text-slate-600 font-medium">
+                                Approved
+                            </p>
+                            <p className="text-lg sm:text-xl md:text-xl font-bold text-green-600 mt-0.5">
+                                {stats.approved}
+                            </p>
                         </div>
-                        <div className="w-10 h-10 md:w-12 md:h-12 bg-green-100 rounded-lg flex items-center justify-center">
-                            <CheckCircle className="h-5 w-5 md:h-6 md:w-6 text-green-600" />
+                        <div className="w-8 h-8 sm:w-9 sm:h-9 md:w-9 md:h-9 bg-green-100 rounded-md flex items-center justify-center">
+                            <CheckCircle className="h-4 w-4 text-green-600" />
                         </div>
                     </div>
                 </Card>
 
-                <Card className="p-4 md:p-6">
+                <Card className="p-2 sm:p-3 md:p-3.5">
                     <div className="flex items-center justify-between">
                         <div>
-                            <p className="text-xs md:text-sm text-gray-600">Total Amount</p>
-                            <p className="text-xl md:text-3xl font-bold text-blue-600 mt-1 md:mt-2">{formatters.currency(stats.total_amount)}</p>
-                            <p className="text-xs text-gray-500">This month</p>
+                            <p className="text-[10px] sm:text-xs text-slate-600 font-medium">
+                                Total Amount
+                            </p>
+                            <p className="text-lg sm:text-xl md:text-xl font-bold text-blue-600 mt-0.5">
+                                {formatters.currency(stats.total_amount)}
+                            </p>
                         </div>
-                        <div className="w-10 h-10 md:w-12 md:h-12 bg-blue-100 rounded-lg flex items-center justify-center">
-                            <Receipt className="h-5 w-5 md:h-6 md:w-6 text-blue-600" />
+                        <div className="w-8 h-8 sm:w-9 sm:h-9 md:w-9 md:h-9 bg-blue-100 rounded-md flex items-center justify-center">
+                            <Receipt className="h-4 w-4 text-blue-600" />
                         </div>
                     </div>
                 </Card>
 
-                <Card className="p-4 md:p-6">
+                <Card className="p-2 sm:p-3 md:p-3.5">
                     <div className="flex items-center justify-between">
                         <div>
-                            <p className="text-xs md:text-sm text-gray-600">Rejected</p>
-                            <p className="text-xl md:text-3xl font-bold text-red-600 mt-1 md:mt-2">{stats.rejected}</p>
-                            <p className="text-xs text-gray-500">This month</p>
+                            <p className="text-[10px] sm:text-xs text-slate-600 font-medium">
+                                Rejected
+                            </p>
+                            <p className="text-lg sm:text-xl md:text-xl font-bold text-red-600 mt-0.5">
+                                {stats.rejected}
+                            </p>
                         </div>
-                        <div className="w-10 h-10 md:w-12 md:h-12 bg-red-100 rounded-lg flex items-center justify-center">
-                            <XCircle className="h-5 w-5 md:h-6 md:w-6 text-red-600" />
+                        <div className="w-8 h-8 sm:w-9 sm:h-9 md:w-9 md:h-9 bg-red-100 rounded-md flex items-center justify-center">
+                            <XCircle className="h-4 w-4 text-red-600" />
                         </div>
                     </div>
                 </Card>
             </div>
 
             {/* Main Table */}
-            <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
-                <div className="overflow-x-auto">
+            <div className="sticky top-32 bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden md:-mt-1">
+                <div className="overflow-y-auto max-h-[calc(100vh-295px)] md:max-h-[calc(100vh-280px)]">
                     <table className="w-full min-w-[1000px]">
-                        <thead className="bg-gray-200 border-b border-gray-200">
+                        <thead className="sticky top-0 z-10 bg-gray-200 border-b border-gray-200">
                             <tr>
-                                <th className="px-2 md:px-4 py-2 text-center w-10">
-                                    <input
-                                        type="checkbox"
-                                        checked={selectAll}
-                                        onChange={handleSelectAll}
-                                        className="w-3 h-3 md:w-4 md:h-4 text-[#C62828] border-gray-300 rounded focus:ring-[#C62828]"
-                                    />
+                                <th className="px-3 md:px-4 py-2 text-center w-16">
+                                    <div className="text-[10px] md:text-xs font-semibold text-gray-700 uppercase tracking-wider">
+                                        Select
+                                    </div>
                                 </th>
-                                <th className="px-2 md:px-4 py-2 text-left">
+                                <th className="px-3 md:px-4 py-2 text-left">
                                     <div className="text-[10px] md:text-xs font-semibold text-gray-700 uppercase tracking-wider">
                                         Claim No.
                                     </div>
                                 </th>
-                                <th className="px-2 md:px-4 py-2 text-left">
+                                <th className="px-3 md:px-4 py-2 text-left">
                                     <div className="text-[10px] md:text-xs font-semibold text-gray-700 uppercase tracking-wider">
-                                        Employee
+                                        Employee ID
                                     </div>
                                 </th>
-                                <th className="px-2 md:px-4 py-2 text-left">
+                                <th className="px-3 md:px-4 py-2 text-left">
                                     <div className="text-[10px] md:text-xs font-semibold text-gray-700 uppercase tracking-wider">
                                         Category
                                     </div>
                                 </th>
-                                <th className="px-2 md:px-4 py-2 text-left">
+                                <th className="px-3 md:px-4 py-2 text-left">
                                     <div className="text-[10px] md:text-xs font-semibold text-gray-700 uppercase tracking-wider">
                                         Merchant/Vendor
                                     </div>
                                 </th>
-                                <th className="px-2 md:px-4 py-2 text-left">
+                                <th className="px-3 md:px-4 py-2 text-left">
                                     <div className="text-[10px] md:text-xs font-semibold text-gray-700 uppercase tracking-wider">
                                         Description
                                     </div>
                                 </th>
-                                <th className="px-2 md:px-4 py-2 text-left">
+                                <th className="px-3 md:px-4 py-2 text-left">
                                     <div className="text-[10px] md:text-xs font-semibold text-gray-700 uppercase tracking-wider">
                                         Amount
                                     </div>
                                 </th>
-                                <th className="px-2 md:px-4 py-2 text-left">
+                                <th className="px-3 md:px-4 py-2 text-left">
                                     <div className="text-[10px] md:text-xs font-semibold text-gray-700 uppercase tracking-wider">
                                         Date
                                     </div>
                                 </th>
-                                <th className="px-2 md:px-4 py-2 text-left">
+                                <th className="px-3 md:px-4 py-2 text-left">
                                     <div className="text-[10px] md:text-xs font-semibold text-gray-700 uppercase tracking-wider">
                                         Status
                                     </div>
                                 </th>
-                                <th className="px-2 md:px-4 py-2 text-left">
+                                <th className="px-3 md:px-4 py-2 text-left">
                                     <div className="text-[10px] md:text-xs font-semibold text-gray-700 uppercase tracking-wider">
                                         Actions
                                     </div>
@@ -486,90 +664,97 @@ export default function Expenses() {
                             
                             {/* Search Row */}
                             <tr className="bg-gray-50 border-b border-gray-200">
-                                <td className="px-2 md:px-4 py-1"></td>
+                                <td className="px-3 md:px-4 py-1 text-center">
+                                    <input
+                                        type="checkbox"
+                                        checked={selectAll}
+                                        onChange={handleSelectAll}
+                                        className="w-3.5 h-3.5 md:w-4 md:h-4 text-[#C62828] border-gray-300 rounded focus:ring-[#C62828]"
+                                    />
+                                </td>
                                 
                                 {/* Claim Number Column */}
-                                <td className="px-2 md:px-4 py-1">
+                                <td className="px-3 md:px-4 py-1">
                                     <input
                                         type="text"
                                         placeholder="Search..."
                                         value={searchClaimNumber}
                                         onChange={(e) => setSearchClaimNumber(e.target.value)}
-                                        className="w-full px-2 py-1 text-[10px] md:text-xs border border-gray-300 rounded focus:ring-1 focus:ring-blue-500 focus:border-transparent"
+                                        className="w-full px-2 py-1 text-[9px] md:text-xs border border-gray-300 rounded focus:ring-1 focus:ring-blue-500 focus:border-transparent"
                                     />
                                 </td>
                                 
-                                {/* Employee Column */}
-                                <td className="px-2 md:px-4 py-1">
+                                {/* Employee ID Column */}
+                                <td className="px-3 md:px-4 py-1">
                                     <input
                                         type="text"
                                         placeholder="Search..."
                                         value={searchDescription}
                                         onChange={(e) => setSearchDescription(e.target.value)}
-                                        className="w-full px-2 py-1 text-[10px] md:text-xs border border-gray-300 rounded focus:ring-1 focus:ring-blue-500 focus:border-transparent"
+                                        className="w-full px-2 py-1 text-[9px] md:text-xs border border-gray-300 rounded focus:ring-1 focus:ring-blue-500 focus:border-transparent"
                                     />
                                 </td>
                                 
                                 {/* Category Column */}
-                                <td className="px-2 md:px-4 py-1">
+                                <td className="px-3 md:px-4 py-1">
                                     <input
                                         type="text"
                                         placeholder="Search..."
                                         value={searchCategory}
                                         onChange={(e) => setSearchCategory(e.target.value)}
-                                        className="w-full px-2 py-1 text-[10px] md:text-xs border border-gray-300 rounded focus:ring-1 focus:ring-blue-500 focus:border-transparent"
+                                        className="w-full px-2 py-1 text-[9px] md:text-xs border border-gray-300 rounded focus:ring-1 focus:ring-blue-500 focus:border-transparent"
                                     />
                                 </td>
                                 
                                 {/* Merchant/Vendor Column */}
-                                <td className="px-2 md:px-4 py-1">
+                                <td className="px-3 md:px-4 py-1">
                                     <input
                                         type="text"
                                         placeholder="Search..."
                                         value={searchMerchant}
                                         onChange={(e) => setSearchMerchant(e.target.value)}
-                                        className="w-full px-2 py-1 text-[10px] md:text-xs border border-gray-300 rounded focus:ring-1 focus:ring-blue-500 focus:border-transparent"
+                                        className="w-full px-2 py-1 text-[9px] md:text-xs border border-gray-300 rounded focus:ring-1 focus:ring-blue-500 focus:border-transparent"
                                     />
                                 </td>
                                 
                                 {/* Description Column */}
-                                <td className="px-2 md:px-4 py-1">
+                                <td className="px-3 md:px-4 py-1">
                                     <input
                                         type="text"
                                         placeholder="Search..."
                                         value={searchDescription}
                                         onChange={(e) => setSearchDescription(e.target.value)}
-                                        className="w-full px-2 py-1 text-[10px] md:text-xs border border-gray-300 rounded focus:ring-1 focus:ring-blue-500 focus:border-transparent"
+                                        className="w-full px-2 py-1 text-[9px] md:text-xs border border-gray-300 rounded focus:ring-1 focus:ring-blue-500 focus:border-transparent"
                                     />
                                 </td>
                                 
                                 {/* Amount Column */}
-                                <td className="px-2 md:px-4 py-1">
+                                <td className="px-3 md:px-4 py-1">
                                     <input
                                         type="text"
                                         placeholder="Search..."
                                         value={searchAmount}
                                         onChange={(e) => setSearchAmount(e.target.value)}
-                                        className="w-full px-2 py-1 text-[10px] md:text-xs border border-gray-300 rounded focus:ring-1 focus:ring-blue-500 focus:border-transparent"
+                                        className="w-full px-2 py-1 text-[9px] md:text-xs border border-gray-300 rounded focus:ring-1 focus:ring-blue-500 focus:border-transparent"
                                     />
                                 </td>
                                 
                                 {/* Date Column */}
-                                <td className="px-2 md:px-4 py-1">
+                                <td className="px-3 md:px-4 py-1">
                                     <input
                                         type="date"
                                         value={searchDate}
                                         onChange={(e) => setSearchDate(e.target.value)}
-                                        className="w-full px-2 py-1 text-[10px] md:text-xs border border-gray-300 rounded focus:ring-1 focus:ring-blue-500 focus:border-transparent"
+                                        className="w-full px-2 py-1 text-[9px] md:text-xs border border-gray-300 rounded focus:ring-1 focus:ring-blue-500 focus:border-transparent"
                                     />
                                 </td>
                                 
                                 {/* Status Column */}
-                                <td className="px-2 md:px-4 py-1">
+                                <td className="px-3 md:px-4 py-1">
                                     <select
                                         value={searchStatus}
                                         onChange={(e) => setSearchStatus(e.target.value)}
-                                        className="w-full px-2 py-1 text-[10px] md:text-xs border border-gray-300 rounded focus:ring-1 focus:ring-blue-500 focus:border-transparent bg-white"
+                                        className="w-full px-2 py-1 text-[9px] md:text-xs border border-gray-300 rounded focus:ring-1 focus:ring-blue-500 focus:border-transparent bg-white"
                                     >
                                         <option value="">All</option>
                                         <option value="pending_approval">Pending</option>
@@ -578,15 +763,15 @@ export default function Expenses() {
                                     </select>
                                 </td>
                                 
-                                {/* Actions Column - Filter icon */}
-                                <td className="px-2 md:px-4 py-1 text-center">
+                                {/* Actions Column - Clear Button */}
+                                <td className="px-3 md:px-4 py-1 text-center">
                                     <button
-                                        onClick={() => setShowFilterSidebar(true)}
-                                        className="inline-flex items-center px-2 py-1 border border-gray-300 rounded hover:bg-gray-50 transition text-[10px] md:text-xs font-medium text-gray-700"
-                                        title="Advanced Filters"
+                                        onClick={clearAllFilters}
+                                        className="inline-flex items-center px-2 py-1 border border-gray-300 rounded hover:bg-gray-50 transition text-[9px] md:text-xs font-medium text-gray-700"
+                                        title="Clear All Filters"
                                     >
-                                        <Filter className="w-2.5 h-2.5 md:w-3 md:h-3 mr-0.5" />
-                                        Date Filters
+                                        <X className="w-2.5 h-2.5 md:w-3 md:h-3 mr-0.5" />
+                                        Clear
                                     </button>
                                 </td>
                             </tr>
@@ -594,9 +779,6 @@ export default function Expenses() {
                         <tbody className="divide-y divide-gray-200">
                             {filteredExpenses.map((expense) => {
                                 const isSelected = selectedItems.has(expense.id);
-                                const employeeName = expense.employee 
-                                    ? `${expense.employee.first_name} ${expense.employee.last_name}`
-                                    : `ID: ${expense.employee_id}`;
 
                                 return (
                                     <tr
@@ -605,59 +787,50 @@ export default function Expenses() {
                                             isSelected ? "bg-blue-50" : ""
                                         }`}
                                     >
-                                        <td className="px-2 md:px-4 py-2 text-center">
+                                        <td className="px-3 md:px-4 py-3 text-center">
                                             <input
                                                 type="checkbox"
                                                 checked={isSelected}
                                                 onChange={() => handleSelectItem(expense.id)}
-                                                className="w-3 h-3 md:w-4 md:h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+                                                className="w-3.5 h-3.5 md:w-4 md:h-4 text-[#C62828] border-gray-300 rounded focus:ring-[#C62828]"
                                             />
                                         </td>
-                                        <td className="px-2 md:px-4 py-2">
-                                            <div className="font-medium text-gray-800 text-xs md:text-sm truncate max-w-[120px]" title={expense.claim_number}>
+                                        <td className="px-3 md:px-4 py-3">
+                                            <div className="font-medium text-gray-800 text-xs md:text-sm">
                                                 {expense.claim_number}
                                             </div>
                                         </td>
-                                        <td className="px-2 md:px-4 py-2">
-                                            <div className="text-gray-800 text-xs md:text-sm truncate max-w-[120px]" title={employeeName}>
-                                                {employeeName}
-                                            </div>
-                                            {/* Show Employee ID below the name */}
-                                            <div className="text-[10px] text-gray-500 mt-0.5">
+                                        <td className="px-3 md:px-4 py-3">
+                                            <div className="text-gray-800 text-xs md:text-sm">
                                                 ID: {expense.employee_id}
                                             </div>
-                                            {expense.employee?.designation && (
-                                                <div className="text-[10px] text-gray-500 mt-0.5">
-                                                    {expense.employee.designation}
-                                                </div>
-                                            )}
                                         </td>
-                                        <td className="px-2 md:px-4 py-2">
-                                            <div className="text-gray-800 text-xs md:text-sm truncate max-w-[100px]" title={expense.category}>
+                                        <td className="px-3 md:px-4 py-3">
+                                            <div className="text-gray-800 text-xs md:text-sm">
                                                 {expense.category}
                                             </div>
                                         </td>
-                                        <td className="px-2 md:px-4 py-2">
-                                            <div className="text-gray-800 text-xs md:text-sm truncate max-w-[120px]" title={expense.merchant_vendor_name}>
+                                        <td className="px-3 md:px-4 py-3">
+                                            <div className="text-gray-800 text-xs md:text-sm">
                                                 {expense.merchant_vendor_name}
                                             </div>
                                         </td>
-                                        <td className="px-2 md:px-4 py-2">
-                                            <div className="text-gray-600 text-xs md:text-sm truncate max-w-[150px]" title={expense.description}>
+                                        <td className="px-3 md:px-4 py-3">
+                                            <div className="text-gray-600 text-xs md:text-sm">
                                                 {expense.description}
                                             </div>
                                         </td>
-                                        <td className="px-2 md:px-4 py-2">
+                                        <td className="px-3 md:px-4 py-3">
                                             <div className="text-gray-800 text-xs md:text-sm font-semibold">
-                                                ₹{formatters.currency(expense.amount)}
+                                                {formatters.currency(expense.amount)}
                                             </div>
                                         </td>
-                                        <td className="px-2 md:px-4 py-2">
+                                        <td className="px-3 md:px-4 py-3">
                                             <div className="text-gray-800 text-xs md:text-sm whitespace-nowrap">
                                                 {formatters.date(expense.expense_date)}
                                             </div>
                                         </td>
-                                        <td className="px-2 md:px-4 py-2">
+                                        <td className="px-3 md:px-4 py-3">
                                             <Badge variant={
                                                 expense.status === 'approved' ? 'success' :
                                                 expense.status === 'rejected' ? 'error' : 'warning'
@@ -665,36 +838,77 @@ export default function Expenses() {
                                                 {expense.status.replace('_', ' ')}
                                             </Badge>
                                         </td>
-                                        <td className="px-2 md:px-4 py-2">
-                                            <div className="flex items-center gap-1">
-                                                {expense.receipt_path && (
-                                                    <button
-                                                        onClick={() => handleViewReceipt(expense)}
-                                                        className="p-1 text-blue-600 hover:bg-blue-50 rounded transition"
-                                                        title="View Receipt"
-                                                    >
-                                                        <FileText className="w-3 h-3 md:w-4 md:h-4" />
-                                                    </button>
-                                                )}
-                                                {expense.status === 'pending_approval' && (
-                                                    <>
-                                                        <button
-                                                            onClick={() => handleApprove(expense.id)}
-                                                            className="p-1 text-green-600 hover:bg-green-50 rounded transition"
-                                                            title="Approve"
-                                                        >
-                                                            <CheckCircle className="w-3 h-3 md:w-4 md:h-4" />
-                                                        </button>
-                                                        <button
-                                                            onClick={() => handleRejectClick(expense.id)}
-                                                            className="p-1 text-red-600 hover:bg-red-50 rounded transition"
-                                                            title="Reject"
-                                                        >
-                                                            <XCircle className="w-3 h-3 md:w-4 md:h-4" />
-                                                        </button>
-                                                    </>
-                                                )}
-                                            </div>
+                                        <td className="px-3 md:px-4 py-3 relative menu-container">
+                                            <button
+                                                onClick={() => setOpenMenuId(openMenuId === expense.id ? null : expense.id)}
+                                                className="p-1.5 md:p-2 hover:bg-gray-100 rounded transition"
+                                            >
+                                                <MoreVertical className="w-3.5 h-3.5 md:w-4 md:h-4 text-gray-600" />
+                                            </button>
+
+                                            {openMenuId === expense.id && (
+                                                <div className="absolute right-4 top-10 z-50 w-44 bg-white border border-gray-200 rounded-lg shadow-lg">
+                                                    <ul className="py-1 text-sm text-gray-700">
+                                                        {expense.receipt_path && (
+                                                            <li>
+                                                                <button
+                                                                    onClick={() => {
+                                                                        handleViewReceipt(expense);
+                                                                        setOpenMenuId(null);
+                                                                    }}
+                                                                    className="w-full flex items-center gap-2 px-4 py-2 hover:bg-gray-100 text-blue-600 text-left"
+                                                                >
+                                                                    <FileText className="w-4 h-4" />
+                                                                    View Receipt
+                                                                </button>
+                                                            </li>
+                                                        )}
+                                                        {expense.status === 'pending_approval' && (
+                                                            <>
+                                                                <li>
+                                                                    <button
+                                                                        onClick={() => {
+                                                                            handleApprove(expense.id);
+                                                                            setOpenMenuId(null);
+                                                                        }}
+                                                                        className="w-full flex items-center gap-2 px-4 py-2 hover:bg-gray-100 text-green-600 text-left"
+                                                                    >
+                                                                        <CheckCircle className="w-4 h-4" />
+                                                                        Approve
+                                                                    </button>
+                                                                </li>
+                                                                <li>
+                                                                    <button
+                                                                        onClick={() => {
+                                                                            handleRejectClick(expense.id);
+                                                                            setOpenMenuId(null);
+                                                                        }}
+                                                                        className="w-full flex items-center gap-2 px-4 py-2 hover:bg-gray-100 text-orange-600 text-left"
+                                                                    >
+                                                                        <XCircle className="w-4 h-4" />
+                                                                        Reject
+                                                                    </button>
+                                                                </li>
+                                                            </>
+                                                        )}
+
+                                                        <hr className="my-1" />
+
+                                                        <li>
+                                                            <button
+                                                                onClick={() => {
+                                                                    handleDelete(expense.id);
+                                                                    setOpenMenuId(null);
+                                                                }}
+                                                                className="w-full flex items-center gap-2 px-4 py-2 hover:bg-red-50 text-red-600 text-left"
+                                                            >
+                                                                <Trash2 className="w-4 h-4" />
+                                                                Delete
+                                                            </button>
+                                                        </li>
+                                                    </ul>
+                                                </div>
+                                            )}
                                         </td>
                                     </tr>
                                 );
@@ -702,10 +916,10 @@ export default function Expenses() {
                             
                             {filteredExpenses.length === 0 && (
                                 <tr>
-                                    <td colSpan={10} className="px-4 py-8 text-center">
+                                    <td colSpan={10} className="px-3 md:px-4 py-8 text-center">
                                         <Package className="w-12 h-12 md:w-16 md:h-16 text-gray-300 mx-auto mb-3" />
                                         <p className="text-gray-600 text-sm md:text-lg font-medium">No Expenses Found</p>
-                                        <p className="text-gray-500 text-xs md:text-sm mt-1">
+                                        <p className="text-gray-500 text-xs md:text-sm mt-2">
                                             {searchClaimNumber || searchMerchant || searchDescription
                                                 ? "Try a different search term"
                                                 : "No expense claims available"}
@@ -735,7 +949,7 @@ export default function Expenses() {
                         md:max-w-md md:w-full
                     `}>
                         {/* Header */}
-                        <div className="bg-gradient-to-r from-blue-600 to-blue-700 px-4 md:px-6 py-3 md:py-4 flex justify-between items-center">
+                        <div className="bg-gradient-to-r from-[#C62828] to-[#D32F2F] px-4 md:px-6 py-3 md:py-4 flex justify-between items-center">
                             <div className="flex items-center gap-3">
                                 <div className="p-2 bg-white/20 rounded-lg">
                                     <Calendar className="w-4 h-4 md:w-5 md:h-5 text-white" />
@@ -773,7 +987,7 @@ export default function Expenses() {
                                     {/* From Date */}
                                     <div className="space-y-2">
                                         <label className="block text-xs md:text-sm font-semibold text-gray-700 flex items-center gap-2">
-                                            <Calendar className="w-4 h-4 text-blue-600" />
+                                            <Calendar className="w-4 h-4 text-[#C62828]" />
                                             From Date
                                         </label>
                                         <div className="relative">
@@ -785,7 +999,7 @@ export default function Expenses() {
                                                 endDate={endDate}
                                                 maxDate={endDate || new Date()}
                                                 placeholderText="Select start date"
-                                                className="w-full pl-9 md:pl-10 pr-3 md:pr-4 py-2 text-xs md:text-sm border border-gray-300 rounded-lg focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 outline-none transition-all"
+                                                className="w-full pl-9 md:pl-10 pr-3 md:pr-4 py-2 text-xs md:text-sm border border-gray-300 rounded-lg focus:border-[#C62828] focus:ring-2 focus:ring-[#C62828]/20 outline-none transition-all"
                                                 dateFormat="dd/MM/yyyy"
                                                 isClearable
                                                 showMonthDropdown
@@ -801,7 +1015,7 @@ export default function Expenses() {
                                     {/* To Date */}
                                     <div className="space-y-2">
                                         <label className="block text-xs md:text-sm font-semibold text-gray-700 flex items-center gap-2">
-                                            <Calendar className="w-4 h-4 text-blue-600" />
+                                            <Calendar className="w-4 h-4 text-[#C62828]" />
                                             To Date
                                         </label>
                                         <div className="relative">
@@ -814,7 +1028,7 @@ export default function Expenses() {
                                                 minDate={startDate || undefined}
                                                 maxDate={new Date()}
                                                 placeholderText="Select end date"
-                                                className="w-full pl-9 md:pl-10 pr-3 md:pr-4 py-2 text-xs md:text-sm border border-gray-300 rounded-lg focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 outline-none transition-all"
+                                                className="w-full pl-9 md:pl-10 pr-3 md:pr-4 py-2 text-xs md:text-sm border border-gray-300 rounded-lg focus:border-[#C62828] focus:ring-2 focus:ring-[#C62828]/20 outline-none transition-all"
                                                 dateFormat="dd/MM/yyyy"
                                                 isClearable
                                                 showMonthDropdown
@@ -855,7 +1069,7 @@ export default function Expenses() {
                                                 setEndDate(null);
                                             }
                                         }}
-                                        className="w-4 h-4 md:w-5 md:h-5 text-blue-600"
+                                        className="w-4 h-4 md:w-5 md:h-5 text-[#C62828]"
                                     />
                                     <div>
                                         <p className="text-xs md:text-sm font-medium text-gray-700">
@@ -879,7 +1093,7 @@ export default function Expenses() {
                             </button>
                             <button
                                 onClick={applyFilters}
-                                className="flex-1 bg-gradient-to-r from-blue-600 to-blue-700 text-white px-3 md:px-4 py-2 text-xs md:text-sm rounded-lg hover:shadow-lg font-medium"
+                                className="flex-1 bg-gradient-to-r from-[#C62828] to-[#D32F2F] text-white px-3 md:px-4 py-2 text-xs md:text-sm rounded-lg hover:shadow-lg font-medium"
                             >
                                 Apply Filters
                             </button>
@@ -900,92 +1114,53 @@ export default function Expenses() {
 
             {/* Reject Expense Modal */}
             {showRejectModal && (
-                <div className="fixed inset-0 z-[100] overflow-hidden">
-                    <div
-                        className="absolute inset-0 bg-black bg-opacity-50 transition-opacity duration-300"
-                        onClick={() => {
-                            setShowRejectModal(false);
-                            setRejectReason('');
-                            setSelectedExpenseId(null);
-                        }}
-                    />
-
-                    <div className={`
-                        absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2
-                        bg-white rounded-xl shadow-2xl flex flex-col
-                        transition-all duration-300 ease-out
-                        ${showRejectModal ? "opacity-100 scale-100" : "opacity-0 scale-95"}
-                        w-[90vw] max-w-md
-                    `}>
-                        {/* Header */}
-                        <div className="bg-gradient-to-r from-red-600 to-rose-600 px-6 py-4 rounded-t-xl flex justify-between items-center">
-                            <div className="flex items-center gap-3">
-                                <div className="p-2 bg-white/20 rounded-lg">
-                                    <XCircle className="w-5 h-5 text-white" />
-                                </div>
-                                <div>
-                                    <h2 className="text-lg font-bold text-white">
-                                        Reject Expense
-                                    </h2>
-                                    <p className="text-sm text-white/80">
-                                        Please provide a reason for rejection
-                                    </p>
-                                </div>
+                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black bg-opacity-50">
+                    <div className="bg-white rounded-xl shadow-xl w-full max-w-md p-6">
+                        <div className="flex items-center gap-3 mb-6">
+                            <div className="p-3 bg-red-100 rounded-full">
+                                <AlertTriangle className="w-6 h-6 text-red-600" />
                             </div>
-
+                            <div>
+                                <h3 className="text-xl font-semibold text-gray-800">Reject Expense</h3>
+                                <p className="text-sm text-gray-600">Please provide a reason for rejection</p>
+                            </div>
+                        </div>
+                        
+                        <div className="mb-6">
+                            <label className="block text-sm font-medium text-gray-700 mb-2">
+                                Rejection Reason *
+                            </label>
+                            <textarea
+                                value={rejectReason}
+                                onChange={(e) => setRejectReason(e.target.value)}
+                                placeholder="Enter the reason for rejecting this expense claim..."
+                                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500 outline-none transition-all resize-none"
+                                rows={4}
+                            />
+                            {rejectReason.trim() === '' && (
+                                <p className="text-red-500 text-xs mt-1">Please enter a rejection reason</p>
+                            )}
+                        </div>
+                        
+                        <div className="flex justify-end gap-3">
                             <button
                                 onClick={() => {
                                     setShowRejectModal(false);
                                     setRejectReason('');
                                     setSelectedExpenseId(null);
                                 }}
-                                className="text-white hover:bg-white hover:bg-opacity-20 rounded-lg p-1.5 transition"
-                            >
-                                <X className="w-5 h-5" />
-                            </button>
-                        </div>
-
-                        {/* Content */}
-                        <div className="flex-1 p-6">
-                            <div className="space-y-4">
-                                <p className="text-gray-700 text-sm">
-                                    Please enter the reason for rejecting this expense claim. This will be recorded and visible to the employee.
-                                </p>
-                                
-                                <div className="space-y-2">
-                                    <label className="block text-sm font-semibold text-gray-700">
-                                        Reason for Rejection *
-                                    </label>
-                                    <textarea
-                                        value={rejectReason}
-                                        onChange={(e) => setRejectReason(e.target.value)}
-                                        placeholder="Enter detailed reason for rejection..."
-                                        className="w-full px-4 py-3 text-sm border border-gray-300 rounded-lg focus:border-red-500 focus:ring-2 focus:ring-red-500/20 outline-none transition-all resize-none min-h-[120px]"
-                                        autoFocus
-                                    />
-                                    <p className="text-xs text-gray-500">
-                                        Required field. Minimum 10 characters.
-                                    </p>
-                                </div>
-                            </div>
-                        </div>
-
-                        {/* Footer */}
-                        <div className="border-t p-4 flex gap-3">
-                            <button
-                                onClick={() => {
-                                    setShowRejectModal(false);
-                                    setRejectReason('');
-                                    setSelectedExpenseId(null);
-                                }}
-                                className="flex-1 px-4 py-2.5 text-sm border border-gray-300 rounded-lg hover:bg-gray-50 font-medium transition"
+                                className="px-5 py-2.5 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition font-medium"
                             >
                                 Cancel
                             </button>
                             <button
                                 onClick={handleRejectConfirm}
-                                disabled={!rejectReason.trim() || rejectReason.trim().length < 10}
-                                className="flex-1 bg-gradient-to-r from-red-600 to-rose-600 text-white px-4 py-2.5 text-sm rounded-lg hover:shadow-lg font-medium transition disabled:opacity-50 disabled:cursor-not-allowed"
+                                disabled={!rejectReason.trim()}
+                                className={`px-5 py-2.5 rounded-lg transition font-medium ${
+                                    rejectReason.trim() 
+                                        ? 'bg-red-600 text-white hover:bg-red-700 shadow-sm' 
+                                        : 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                                }`}
                             >
                                 Confirm Rejection
                             </button>
@@ -995,4 +1170,4 @@ export default function Expenses() {
             )}
         </div>
     );
-} 
+}

@@ -1296,8 +1296,8 @@ useEffect(() => {
       {activeTab === "tracking" && (
         <div className="space-y-6">
           {/* PO Overview */}
-          <div className="  sticky top-32   bg-white rounded-xl shadow-sm border border-gray-200 ">
-<div className="overflow-y-auto max-h-[calc(100vh-160px)]">           
+          <div className="     bg-white rounded-xl shadow-sm border border-gray-200 ">
+      <div className="overflow-y-auto max-h-[calc(100vh-200px)] md:max-h-[calc(100vh-170px)] ">
     <table className="w-full min-w-[800px]">
 <thead className="sticky top-0 z-10 bg-gray-200 border-b border-gray-200">                  {/* Header Row */}
                   <tr>
@@ -1532,7 +1532,7 @@ useEffect(() => {
 
       {activeTab === "management" && (
         <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
-<div className="overflow-x-auto h-[calc(100vh-160px)]">     
+      <div className="overflow-y-auto max-h-[calc(100vh-190px)] md:max-h-[calc(100vh-170px)] ">
          <table className="w-full min-w-[800px]">
 <thead className="sticky top-0 z-10 bg-gray-200 border-b border-gray-200">                {/* Header Row */}
                 <tr>

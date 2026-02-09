@@ -1389,9 +1389,9 @@ export default function Leaves() {
             </div>
           </div>
         )}
-      </div>
-        <Button onClick={() => setShowApplyForm(true)} className="text-sm">
-          <Plus className="h-4 w-4 mr-1.5" />
+      </div >
+        <Button onClick={() => setShowApplyForm(true)} className="text-sm sticky top-20 z-10">
+          <Plus className=" h-4 w-4 mr-1.5" />
           Apply Leave
         </Button>
       </div>
@@ -1468,8 +1468,8 @@ export default function Leaves() {
 
       {/* Main Table */}
       <div className="sticky top-32 bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden md:-mt-1">
-        <div className="overflow-y-auto max-h-[calc(100vh-280px)]">
-          <table className="w-full min-w-[1300px]">
+        <div className="overflow-y-auto max-h-[calc(100vh-295px)] md:max-h-[calc(100vh-280px)]">
+          <table className="w-full min-w-[800px]">
             <thead className="sticky top-0 z-10 bg-gray-200 border-b border-gray-200">
               {/* Header Row */}
               <tr>

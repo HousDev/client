@@ -2239,7 +2239,7 @@ export default function ProjectsMaster() {
 
           {/* Main Table */}
           <div className="sticky top-32 bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden md:-mt-1 ">
-<div className="overflow-y-auto max-h-[calc(100vh-160px)]">           
+<div className="overflow-y-auto max-h-[calc(100vh-180px)] md:max-h-[calc(100vh-160px)]">           
               <table className="w-full min-w-[800px]">
                 <thead className="sticky top-0 z-10 bg-gray-200 border-b border-gray-200">
                   {/* Header Row */}

@@ -723,9 +723,9 @@ export default function PaymentTermsMaster() {
   }
 
   return (
-    <div className="px-0 bg-gray-50 min-h-screen">
+    <div className="px-0 bg-gray-50 ">
       {/* Header with Bulk Actions and Add Button in one line */}
-      <div className="mt-0 mb-0 px-2 py-1 md:p-4 flex flex-col md:flex-row md:items-center justify-between gap-1 md:gap-3">
+      <div className=" sticky top-16 z-10 mt-0 mb-0 px-2 py-1 md:p-4 flex flex-col md:flex-row md:items-center justify-between gap-1 md:gap-3">
         <div></div>
 
         <div className="flex items-center gap-1 md:gap-2 flex-nowrap md:flex-wrap w-full md:w-auto">
@@ -808,10 +808,10 @@ export default function PaymentTermsMaster() {
       </div>
 
       {/* Main Table with Search Bars below header */}
-      <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden mx-0 md:mx-0">
-        <div className="overflow-x-auto">
-          <table className="w-full min-w-[900px]">
-            <thead className="bg-gray-200 border-b border-gray-200">
+      <div className="sticky top-56 z-10 bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden mx-0 md:mx-0">
+      <div className="overflow-y-auto max-h-[calc(100vh-300px)] md:max-h-[calc(100vh-260px)] ">
+          <table className="w-full min-w-[800px]">
+            <thead className="sticky top-0 z-10 bg-gray-200 border-b border-gray-200">
               {/* Header Row */}
               <tr>
                 <th className="px-3 md:px-4 py-2 text-center w-12">

@@ -2012,10 +2012,10 @@ export default function TermsConditionsMaster() {
   }
 
   return (
-    <div className="px-0 bg-gray-50 min-h-screen">
+    <div className="px-0 bg-gray-50 ">
       {/* Header with Actions and Bulk Actions - Side by Side */}
       {/* Tab Navigation */}
-      <div className="flex flex-col gap-2 mb-4 mt-4 sm:flex-row sm:items-center sm:gap-4 mx-0 md:mx-0">
+      <div className=" sticky top-44 z-10 flex flex-col gap-2 mb-4 mt-4 sm:flex-row sm:items-center sm:gap-4 mx-0 md:mx-0">
         {/* Tabs */}
         <div className="w-full sm:flex-1">
           <div className="flex bg-white border border-gray-200 rounded-lg overflow-hidden shadow-sm">
@@ -2126,10 +2126,10 @@ export default function TermsConditionsMaster() {
       )}
 
       {/* Main Table */}
-      <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden mx-0 md:mx-0">
-        <div className="overflow-x-auto">
+      <div className=" bg-white rounded-xl shadow-sm border border-gray-200  mx-0 md:mx-0">
+      <div className="overflow-y-auto max-h-[calc(100vh-300px)] md:max-h-[calc(100vh-260px)] ">
           <table className="w-full">
-            <thead className="bg-gray-200 border-b border-gray-200">
+            <thead className=" sticky top-0 z-10 bg-gray-200 border-b border-gray-200">
               {/* Header Row */}
               <tr>
                 <th className="px-2 md:px-4 py-2 text-center w-12">
