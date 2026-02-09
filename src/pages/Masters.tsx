@@ -3,7 +3,6 @@ import {
   Package,
   FileText,
   CreditCard,
-  Building2,
   FileType,
   Wrench,
   Shield,
@@ -12,6 +11,7 @@ import {
   MapPin,
 } from "lucide-react";
 import ItemsMaster from "./ItemsMaster";
+import ServicesMaster from "./ServiceMaster";
 import TermsConditionsMaster from "./TermsConditionsMaster";
 import PaymentTermsMaster from "./PaymentTermsMaster";
 import GenericMaster from "./GenericMaster";
@@ -19,8 +19,6 @@ import DepartmentsMaster from "../components/DepartmentsMaster";
 import RolesMaster from "../components/RolesMaster";
 import DesignationMaster from "../components/DesignationMaster";
 import LocationMaster from "../components/LocationMaster"; // Import the new component
-
-
 
 export default function Masters() {
   const [activeTab, setActiveTab] = useState("items");
@@ -30,10 +28,18 @@ export default function Masters() {
       id: "items",
       label: "Items Master",
       icon: Package,
-      description: "Materials & Services",
+      description: "Materials",
       component: ItemsMaster,
     },
-    
+
+    {
+      id: "service",
+      label: "Service Master",
+      icon: Package,
+      description: "Services",
+      component: ServicesMaster,
+    },
+
     {
       id: "po_types",
       label: "PO Types",
@@ -91,20 +97,19 @@ export default function Masters() {
       component: DepartmentsMaster,
     },
     {
-    id: "designations",
-    label: "Designations",
-    icon: Award,
-    description: "Job titles by department",
-    component: DesignationMaster,
-  },
-  {
+      id: "designations",
+      label: "Designations",
+      icon: Award,
+      description: "Job titles by department",
+      component: DesignationMaster,
+    },
+    {
       id: "locations", // Add this tab
       label: "Locations",
       icon: MapPin,
       description: "Manage locations",
       component: LocationMaster,
     },
-
   ];
 
   const ActiveComponent = tabs.find((tab) => tab.id === activeTab)?.component;
@@ -136,11 +141,7 @@ export default function Masters() {
                   <div
                     className={`
                       p-1.5 rounded-md transition-all duration-200
-                      ${
-                        isActive
-                          ? "bg-white/20"
-                          : "bg-gray-100"
-                      }
+                      ${isActive ? "bg-white/20" : "bg-gray-100"}
                     `}
                   >
                     <Icon

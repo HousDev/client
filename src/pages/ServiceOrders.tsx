@@ -1,1774 +1,2052 @@
-import { useState, useEffect, useRef, SetStateAction } from "react";
+/* eslint-disable @typescript-eslint/no-explicit-any */
+// src/components/PurchaseOrders.tsx
+import axios from "axios";
+import { useState, useEffect } from "react";
 import {
   Plus,
-  Wrench,
-  Calendar,
-  X,
-  Trash2,
   Edit2,
-  Printer,
-  Share2,
-  FileText,
-  Layers,
-  MapPin,
-  Phone,
-  Save,
-  Truck,
-  UserRound,
+  Trash2,
   XCircle,
-  Clock,
-  CheckSquare,
-  AlertCircle,
-  Building,
-  ChevronDown,
-  DollarSign,
-  Percent,
-  Tag,
-  Shield,
-  FileCheck,
-  Calculator,
-  CreditCard,
+  FileText,
   Package,
-  Info,
-  Box,
-  Search,
-  ClipboardCheck,
+  X,
+  Save,
+  FileCheck2,
+  Check,
+  IndianRupee,
+  FileDown,
+  Loader2,
 } from "lucide-react";
 import { useAuth } from "../contexts/AuthContext";
-import {
-  getServiceOrders,
-  createServiceOrder,
-  updateServiceOrder,
-  deleteServiceOrder,
-  bulkUpdateStatus,
-  bulkDeleteServiceOrders,
-} from "../lib/serviceOrderApi";
-
-// dynamic master APIs
-import projectApi from "../lib/projectApi";
 import vendorApi from "../lib/vendorApi";
-import serviceTypeApi from "../lib/serviceTypeApi";
-import buildingApi from "../lib/areaTasksApi.ts";
-import TermsConditionsApi from "../lib/termsConditionsApi";
+import projectApi from "../lib/projectApi";
+import poTypeApi from "../lib/poTypeApi";
+import poApi from "../lib/poApi";
+import po_trackingApi from "../lib/po_tracking";
+import CreatePurchaseOrderForm from "../components/CreatePurchaseOrderForm";
+import UpdatePurchaseOrderForm from "../components/updatePurchaseOrderForm";
+import ItemsApi from "../lib/itemsApi";
+import SearchableSelect from "../components/SearchableSelect";
+import { UsersApi } from "../lib/Api";
 import { toast } from "sonner";
+import MySwal from "../utils/swal";
+import TermsConditionsApi from "../lib/termsConditionsApi";
+import poPaymentApi from "../lib/poPaymentApi";
+import CreateServiceOrderForm from "../components/ServiceOrder/CreateServiceOrder";
+import UpdateServiceOrderForm from "../components/ServiceOrder/UpdateServiceOrders";
 
-interface ServiceItem {
+type Vendor = {
   id: string;
-  service_item_id: string;
-  item_code: string;
-  item_name: string;
-  description: string;
-  hsn_code: string;
-  quantity: number;
-  unit: string;
-  rate: number;
-  amount: number;
-  igst_rate: number;
-  cgst_rate: number;
-  sgst_rate: number;
-  gst_amount: number;
-}
-
-interface SOFormData {
-  so_number: string;
-  vendor_id: string;
-  project_id: string;
-  service_type_id: string;
-  building_id: string;
-  so_date: string;
-  start_date: string;
-  end_date: string;
-  
-  items: ServiceItem[];
-  sub_total: number;
-  discount_percentage: number;
-  discount_amount: number;
-  taxable_amount: number;
-  cgst_amount: number;
-  sgst_amount: number;
-  igst_amount: number;
-  total_gst_amount: number;
-  grand_total: number;
-  
-  payment_terms: string;
-  terms_and_conditions: string;
-  advance_amount: number;
-  total_paid: number;
-  balance_amount: number;
-  
-  status: 'draft' | 'approve' | 'authorize' | 'reject';
-  service_status: 'pending' | 'partial' | 'completed';
-  selected_terms_ids: string[];
-  note: string;
-  
-  created_by?: string | null;
+  name: string;
+  phone?: string;
+  email?: string;
+  is_active?: boolean;
+};
+type Project = { id: string; name: string; is_active?: boolean };
+type POType = { id: string; name: string; is_active?: boolean };
+export type PO = {
+  id: string;
+  po_number: string;
+  po_date?: string;
+  delivery_date: string;
+  validity_date?: string;
+  vendor_id?: string;
+  vendors?: Vendor | null;
+  project_id?: string;
+  projects?: Project | null;
+  po_type_id?: string;
+  po_types?: POType | null;
+  status?: string;
+  total_amount?: number;
+  tax_amount?: number;
+  grand_total?: number;
+  total_paid?: number;
+  balance_amount?: number;
+  payment_status?: string;
+  material_status?: string;
+  material_received_percentage?: number;
+  notes?: string;
+  is_interstate?: boolean;
+  cgst_amount?: number;
+  sgst_amount?: number;
+  igst_amount?: number;
   created_at?: string;
-}
-
-interface ServiceMasterItem {
+};
+type Tracking = {
   id: string;
-  item_code: string;
-  item_name: string;
-  description: string;
-  hsn_code: string;
-  unit: string;
-  standard_rate: number;
-  igst_rate: number;
-  cgst_rate: number;
-  sgst_rate: number;
-  category: string;
-}
-
-type Option = { id: string; name: string } | string;
-
-/* ------------------ SearchableSelect component ------------------ */
-function SearchableSelect({
-  options,
-  value,
-  onChange,
-  placeholder = "Select...",
-  required = false,
-  disabled = false,
-  id,
-}: {
-  options: Option[];
-  value: string;
-  onChange: (id: string) => void;
-  placeholder?: string;
-  required?: boolean;
-  disabled?: boolean;
-  id?: string;
-}) {
-  const [open, setOpen] = useState(false);
-  const [filter, setFilter] = useState("");
-  const [highlight, setHighlight] = useState(0);
-  const containerRef = useRef<HTMLDivElement | null>(null);
-
-  const normalized = options.map((opt) =>
-    typeof opt === "string" ? { id: opt, name: opt } : opt,
-  );
-
-  const selected = normalized.find((o) => o.id === value) || null;
-
-  const filtered = normalized.filter((o) =>
-    o.name.toLowerCase().includes(filter.toLowerCase()),
-  );
-
-  useEffect(() => {
-    if (!open) setFilter("");
-    setHighlight(0);
-  }, [open]);
-
-  useEffect(() => {
-    function onDocClick(e: MouseEvent) {
-      if (!containerRef.current) return;
-      if (!containerRef.current.contains(e.target as Node)) {
-        setOpen(false);
-      }
-    }
-    document.addEventListener("mousedown", onDocClick);
-    return () => document.removeEventListener("mousedown", onDocClick);
-  }, []);
-
-  const onKeyDown: React.KeyboardEventHandler<HTMLInputElement> = (e) => {
-    if (e.key === "ArrowDown") {
-      e.preventDefault();
-      setHighlight((h) => Math.min(h + 1, filtered.length - 1));
-    } else if (e.key === "ArrowUp") {
-      e.preventDefault();
-      setHighlight((h) => Math.max(h - 1, 0));
-    } else if (e.key === "Enter") {
-      e.preventDefault();
-      const opt = filtered[highlight];
-      if (opt) {
-        onChange(opt.id);
-        setOpen(false);
-      }
-    } else if (e.key === "Escape") {
-      setOpen(false);
-    }
+  po_id: string;
+  item_id?: string;
+  item_description?: string;
+  quantity_ordered: number;
+  quantity_received: number;
+  quantity_pending: number;
+  status?: string;
+  received_date?: string | null;
+  created_at?: string;
+  purchase_orders?: {
+    po_number?: string;
+    status?: string;
+    vendors?: { name?: string };
   };
+};
 
-  return (
-    <div ref={containerRef} className="relative">
-      <div
-        className={`w-full flex items-center gap-2 px-3 py-2 ${disabled ? "border" : "border border-slate-400"} rounded-lg bg-white cursor-pointer ${
-          disabled ? "opacity-90 cursor-not-allowed" : "hover:shadow-sm"
-        }`}
-        onClick={() => !disabled && setOpen((s) => !s)}
-        role="button"
-        aria-haspopup="listbox"
-        aria-expanded={open}
-        id={id}
-      >
-        <div className="flex-1 text-left">
-          {selected ? (
-            <div className="text-sm text-gray-800">{selected.name}</div>
-          ) : (
-            <div className="text-sm text-gray-400">{placeholder}</div>
-          )}
-        </div>
-        <div>
-          <svg
-            className={`w-4 h-4 transform transition ${
-              open ? "rotate-180" : ""
-            }`}
-            viewBox="0 0 20 20"
-            fill="currentColor"
-          >
-            <path d="M5.23 7.21a.75.75 0 011.06-.02L10 10.585l3.71-3.396a.75.75 0 111.02 1.1l-4.185 3.833a.75.75 0 01-1.02 0L5.25 8.29a.75.75 0 01-.02-1.08z" />
-          </svg>
-        </div>
-      </div>
-
-      {open && (
-        <div className="absolute z-50 mt-2 w-full bg-white border border-gray-200 rounded-lg shadow-lg">
-          <div className="p-2">
-            <input
-              autoFocus
-              value={filter}
-              onChange={(e) => setFilter(e.target.value)}
-              onKeyDown={onKeyDown}
-              placeholder="Search..."
-              className="w-full px-3 py-2 border border-gray-200 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
-            />
-          </div>
-
-          <ul
-            role="listbox"
-            aria-labelledby={id}
-            className="max-h-60 overflow-y-auto divide-y divide-gray-100"
-          >
-            {filtered.length === 0 ? (
-              <li className="p-3 text-sm text-gray-500">No results</li>
-            ) : (
-              filtered.map((opt, idx) => (
-                <li
-                  key={opt.id}
-                  role="option"
-                  aria-selected={opt.id === value}
-                  className={`px-3 py-2 cursor-pointer text-sm ${
-                    idx === highlight ? "bg-blue-50" : "hover:bg-gray-50"
-                  } ${
-                    opt.id === value
-                      ? "font-medium text-gray-800"
-                      : "text-gray-700"
-                  }`}
-                  onMouseEnter={() => setHighlight(idx)}
-                  onClick={() => {
-                    onChange(opt.id);
-                    setOpen(false);
-                  }}
-                >
-                  {opt.name}
-                </li>
-              ))
-            )}
-          </ul>
-        </div>
-      )}
-      <input type="hidden" value={value} />
-    </div>
-  );
-}
+type PaymentDataType = {
+  id?: number | string | null;
+  po_id: number | string | null;
+  transaction_type: string | null;
+  amount_paid: string | number | null;
+  payment_method: string | null;
+  payment_reference_no: string | null;
+  payment_proof: File | null;
+  payment_date: string | null;
+  status: string | null;
+  remarks: string | null;
+  purchase_order?: any;
+  created_by: string | null;
+};
 
 export default function ServiceOrders() {
-  const { user } = useAuth();
-  const [serviceOrders, setServiceOrders] = useState<any[]>([]);
-  const [vendors, setVendors] = useState<any[]>([]);
-  const [projects, setProjects] = useState<any[]>([]);
-  const [serviceTypes, setServiceTypes] = useState<any[]>([]);
-  const [buildings, setBuildings] = useState<any[]>([]);
-  const [serviceItems, setServiceItems] = useState<ServiceMasterItem[]>([]);
-  const [terms, setTerms] = useState<any[]>([]);
+  const { user, profile } = useAuth();
+  const [pos, setPOs] = useState<PO[]>([]);
+  const [showChallans, setShowChallans] = useState(false);
+  const [trackingData, setTrackingData] = useState<Tracking[]>([]);
+  const [vendors, setVendors] = useState<Vendor[]>([]);
+  const [projects, setProjects] = useState<Project[]>([]);
+  const [pdfUrl, setPdfUrl] = useState<any>("");
+  const [poTypes, setPOTypes] = useState<POType[]>([]);
   const [loading, setLoading] = useState(true);
-
-  // Modal states
-  const [showModal, setShowModal] = useState(false);
-  const [editingId, setEditingId] = useState<string | null>(null);
-  const [showItemSelector, setShowItemSelector] = useState(false);
-  const [showTermsConditions, setShowTermsConditions] = useState(false);
-  const [showAddTerm, setShowAddTerm] = useState(false);
-  const [showPaymentTerms, setShowPaymentTerms] = useState(false);
-
-  // Search filters
-  const [searchSONumber, setSearchSONumber] = useState("");
-  const [searchVendor, setSearchVendor] = useState("");
-  const [searchProject, setSearchProject] = useState("");
-  const [searchServiceType, setSearchServiceType] = useState("");
-  const [searchBuilding, setSearchBuilding] = useState("");
-  const [searchStartDate, setSearchStartDate] = useState("");
-  const [searchEndDate, setSearchEndDate] = useState("");
-  const [searchStatus, setSearchStatus] = useState("");
-  const [searchServiceStatus, setSearchServiceStatus] = useState("");
-
-  // Item selector search
-  const [itemSelectorSearch, setItemSelectorSearch] = useState("");
-
-  // Payment terms state
-  const [paymentTerms, setPaymentTerms] = useState<any[]>([]);
-  const [selectedPaymentTerms, setSelectedPaymentTerms] = useState<any[]>([]);
-
-  const today = new Date().toISOString().split("T")[0]; // 👈 YAHI ISSUE FIX
-  
-  const [formData, setFormData] = useState<SOFormData>({
-    so_number: "",
-    vendor_id: "",
-    project_id: "",
-    service_type_id: "",
-    building_id: "",
-    so_date: new Date().toISOString().split("T")[0],
-    start_date: new Date().toISOString().split("T")[0],
-    end_date: "",
-    
-    items: [],
-    sub_total: 0,
-    discount_percentage: 0,
-    discount_amount: 0,
-    taxable_amount: 0,
-    cgst_amount: 0,
-    sgst_amount: 0,
-    igst_amount: 0,
-    total_gst_amount: 0,
-    grand_total: 0,
-    
-    payment_terms: "",
-    terms_and_conditions: "",
-    advance_amount: 0,
-    total_paid: 0,
-    balance_amount: 0,
-    
-    status: 'draft',
-    service_status: 'pending',
-    selected_terms_ids: [],
-    note: "",
-    
-    created_by: user?.id ?? null,
-    created_at: new Date().toISOString(),
+  const [submitting, setSubmitting] = useState(false);
+  // const [searchTerm, setSearchTerm] = useState("");
+  const [filteredPOs, setFilteredPOs] = useState<any>([]);
+  const [filteredTracking, setFilteredTracking] = useState<any>([]);
+  const [showViewModal, setShowViewModal] = useState(false);
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [showPaymentModal, setShowPaymentModal] = useState<boolean>(false);
+  const [showCreatePro, setShowCreatePro] = useState(false);
+  const [selectedPO, setSelectedPO] = useState<PO | null>(null);
+  const [editingPO, setEditingPO] = useState<any>(null);
+  const [paymentAmount, setPaymentAmount] = useState(0);
+  const [allStoreManagementEmployee, setAllStoreManagementEmployee] =
+    useState<any>([]);
+  const [from, setFrom] = useState("");
+  const [to, setTo] = useState("");
+  const [paymentData, setPaymentData] = useState<PaymentDataType>({
+    po_id: null,
+    transaction_type: "payment",
+    amount_paid: "",
+    payment_method: "bank_transfer",
+    payment_reference_no: "",
+    payment_proof: null,
+    payment_date: new Date().toISOString().split("T")[0],
+    status: "pending",
+    remarks: "",
+    created_by: user?.id,
   });
 
+  const [challanNumber, setChallanNumber] = useState("");
+  const [challanImage, setChallanImage] = useState<File | null>(null);
+
+  const [showApprovalButtons, setShowApprovalButtons] = useState<number | null>(
+    null,
+  );
+  const [allChallans, setAllChallans] = useState<string[]>([]);
+  const [activeTab, setActiveTab] = useState<"tracking" | "management">(
+    "management",
+  );
+  const [showUpdateMaterialQuantity, setShowUpdateMaterialQuantity] =
+    useState<boolean>(false);
+  const [materialQuantity, setMaterialQuantity] = useState<number>(1);
+  const [selectedTrackingMaterial, setSelectedTrackingMaterial] = useState<
+    number | null
+  >(null);
+
+  const [selectedPOForUdate, setSelectedPOForUpdate] = useState<any>();
+  const [allPurchaseOrderItems, setAllPurchaseOrderItems] = useState<any>([]);
+  const [pdfLoading, setPdfLoading] = useState(false);
+
+  const [items, setItems] = useState<any>([]);
+  // Add these state variables near your other state declarations
+
+  // Replace your useEffect that filters data with these new useEffect hooks
+  // Add these state variables near your other state declarations
+  const [searchFilters, setSearchFilters] = useState<{
+    poNumber: string;
+    vendor: string;
+    project: string;
+    amount: string;
+    poStatus: string;
+    material: string;
+    payment: string;
+    type: string;
+    date: string;
+  }>({
+    poNumber: "",
+    vendor: "",
+    project: "",
+    amount: "",
+    poStatus: "",
+    material: "",
+    payment: "",
+    type: "",
+    date: "",
+  });
   useEffect(() => {
-    loadData();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    if (activeTab === "tracking") {
+      // Tracking tab filters
+      const filtered = pos.filter((po) => {
+        const matchesPoNumber = searchFilters.poNumber
+          ? po.po_number
+              ?.toLowerCase()
+              .includes(searchFilters.poNumber.toLowerCase())
+          : true;
+
+        const matchesVendor = searchFilters.vendor
+          ? po.vendors?.name
+              ?.toLowerCase()
+              .includes(searchFilters.vendor.toLowerCase())
+          : true;
+
+        const matchesProject = searchFilters.project
+          ? po.projects?.name
+              ?.toLowerCase()
+              .includes(searchFilters.project.toLowerCase())
+          : true;
+
+        const matchesAmount = searchFilters.amount
+          ? String(po.grand_total).includes(searchFilters.amount)
+          : true;
+
+        const matchesPoStatus = searchFilters.poStatus
+          ? po.status
+              ?.toLowerCase()
+              .includes(searchFilters.poStatus.toLowerCase())
+          : true;
+
+        const matchesMaterial = searchFilters.material
+          ? po.material_status
+              ?.toLowerCase()
+              .includes(searchFilters.material.toLowerCase())
+          : true;
+
+        const matchesPayment = searchFilters.payment
+          ? po.payment_status
+              ?.toLowerCase()
+              .includes(searchFilters.payment.toLowerCase())
+          : true;
+
+        return (
+          matchesPoNumber &&
+          matchesVendor &&
+          matchesProject &&
+          matchesAmount &&
+          matchesPoStatus &&
+          matchesMaterial &&
+          matchesPayment
+        );
+      });
+
+      setFilteredPOs(filtered);
+    } else if (activeTab === "management") {
+      // Management tab filters
+      const filtered = pos.filter((po) => {
+        const matchesPoNumber = searchFilters.poNumber
+          ? po.po_number
+              ?.toLowerCase()
+              .includes(searchFilters.poNumber.toLowerCase())
+          : true;
+
+        const matchesVendor = searchFilters.vendor
+          ? po.vendors?.name
+              ?.toLowerCase()
+              .includes(searchFilters.vendor.toLowerCase())
+          : true;
+
+        const matchesProject = searchFilters.project
+          ? po.projects?.name
+              ?.toLowerCase()
+              .includes(searchFilters.project.toLowerCase())
+          : true;
+
+        const matchesType = searchFilters.type
+          ? po.po_types?.name
+              ?.toLowerCase()
+              .includes(searchFilters.type.toLowerCase())
+          : true;
+
+        const matchesDate = searchFilters.date
+          ? (po.po_date
+              ? new Date(po.po_date).toLocaleDateString()
+              : ""
+            ).includes(searchFilters.date)
+          : true;
+
+        const matchesAmount = searchFilters.amount
+          ? String(po.grand_total).includes(searchFilters.amount)
+          : true;
+
+        const matchesStatus = searchFilters.poStatus
+          ? po.status
+              ?.toLowerCase()
+              .includes(searchFilters.poStatus.toLowerCase())
+          : true;
+
+        return (
+          matchesPoNumber &&
+          matchesVendor &&
+          matchesProject &&
+          matchesType &&
+          matchesDate &&
+          matchesAmount &&
+          matchesStatus
+        );
+      });
+
+      setFilteredPOs(filtered);
+    }
+  }, [pos, searchFilters, activeTab]); // ✅ ADD activeTab to dependencies
+  // Handler for search filter changes
+  const handleSearchFilterChange = (
+    column: keyof typeof searchFilters,
+    value: string,
+  ) => {
+    setSearchFilters((prev) => ({
+      ...prev,
+      [column]: value,
+    }));
+  };
+
+  // Clear all filters
+  const clearAllFilters = () => {
+    setSearchFilters({
+      poNumber: "",
+      vendor: "",
+      project: "",
+      amount: "",
+      poStatus: "",
+      material: "",
+      payment: "",
+      type: "",
+      date: "",
+    });
+  };
+
+  // localStorage keys
+  const KEY_VENDORS = "mock_vendors_v1";
+  const KEY_PROJECTS = "mock_projects_v1";
+  const KEY_PO_TYPES = "mock_po_types_v1";
+  const KEY_POS = "mock_pos_v1";
+  const KEY_TRACKING = "mock_tracking_v1";
+
+  // --- Default mock data ---
+  const defaultVendors: Vendor[] = [
+    {
+      id: "v_1",
+      name: "Acme Supplies",
+      phone: "9999999999",
+      email: "acme@example.com",
+      is_active: true,
+    },
+    {
+      id: "v_2",
+      name: "Builder Co",
+      phone: "8888888888",
+      email: "builder@example.com",
+      is_active: true,
+    },
+  ];
+
+  const defaultProjects: Project[] = [
+    { id: "p_1", name: "Site A", is_active: true },
+    { id: "p_2", name: "Site B", is_active: true },
+  ];
+
+  const defaultPOTypes: POType[] = [
+    { id: "t_1", name: "Standard", is_active: true },
+    { id: "t_2", name: "Urgent", is_active: true },
+  ];
+
+  const defaultPOs: PO[] = [
+    {
+      id: "po_1",
+      po_number: "PO-1001",
+      po_date: new Date().toISOString(),
+      vendor_id: "v_1",
+      delivery_date: "2025-12-26",
+      vendors: defaultVendors[0],
+      project_id: "p_1",
+      projects: defaultProjects[0],
+      po_type_id: "t_1",
+      po_types: defaultPOTypes[0],
+      status: "pending",
+      total_amount: 50000,
+      tax_amount: 9000,
+      grand_total: 59000,
+      total_paid: 0,
+      balance_amount: 59000,
+      payment_status: "pending",
+      material_status: "pending",
+      material_received_percentage: 0,
+      created_at: new Date().toISOString(),
+    },
+    {
+      id: "po_2",
+      po_number: "PO-1002",
+      po_date: new Date().toISOString(),
+      vendor_id: "v_2",
+      delivery_date: "2025-12-26",
+      vendors: defaultVendors[1],
+      project_id: "p_2",
+      projects: defaultProjects[1],
+      po_type_id: "t_2",
+      po_types: defaultPOTypes[1],
+      status: "approved",
+      total_amount: 120000,
+      tax_amount: 21600,
+      grand_total: 141600,
+      total_paid: 50000,
+      balance_amount: 91600,
+      payment_status: "partial",
+      material_status: "partial",
+      material_received_percentage: 50,
+      created_at: new Date().toISOString(),
+    },
+  ];
+
+  const defaultTracking: Tracking[] = [
+    {
+      id: "tr_1",
+      po_id: "po_1",
+      item_id: "itm_001",
+      item_description: "Cement Bags",
+      quantity_ordered: 100,
+      quantity_received: 0,
+      quantity_pending: 100,
+      status: "pending",
+      created_at: new Date().toISOString(),
+      purchase_orders: {
+        po_number: "PO-1001",
+        status: "pending",
+        vendors: { name: defaultVendors[0].name },
+      },
+    },
+    {
+      id: "tr_2",
+      po_id: "po_2",
+      item_id: "itm_002",
+      item_description: "Steel Rods",
+      quantity_ordered: 200,
+      quantity_received: 100,
+      quantity_pending: 100,
+      status: "partial",
+      created_at: new Date().toISOString(),
+      purchase_orders: {
+        po_number: "PO-1002",
+        status: "approved",
+        vendors: { name: defaultVendors[1].name },
+      },
+    },
+  ];
+
+  const loadAllStoreManagementEmployee = async () => {
+    const res: any = await UsersApi.list();
+    setAllStoreManagementEmployee(res ?? []);
+  };
+  useEffect(() => {
+    loadAllStoreManagementEmployee();
   }, []);
 
- const loadData = async () => {
-  setLoading(true);
-  try {
-    // Fetch all master data in parallel
-    const [
-      vendorsData,
-      projectsData,
-      serviceTypesData,
-      serviceOrdersData,
-    ] = await Promise.all([
-      vendorApi.getVendors(),
-      projectApi.getProjects(),
-      serviceTypeApi.getAll(true),
-      getServiceOrders(),
-    ]);
+  // --- Util: load from localStorage or defaults ---
 
-    console.log("Vendors Data:", vendorsData);
-    console.log("Projects Data:", projectsData);
-    console.log("Service Types Data:", serviceTypesData);
-
-    // Set vendors - handle response structure
-    const vendorsList = Array.isArray(vendorsData) 
-      ? vendorsData 
-      : vendorsData?.data 
-      ? vendorsData.data 
-      : [];
-    setVendors(vendorsList.filter((v: any) => v.category_name === "Service"));
-
-    // Set projects - handle response structure
-    const projectsList = Array.isArray(projectsData) 
-      ? projectsData 
-      : projectsData?.data 
-      ? projectsData.data 
-      : [];
-    setProjects(projectsList);
-
-    // Extract buildings from projects data
-    const buildingsList: any[] = [];
-    projectsList.forEach((project: any) => {
-      if (project.buildings && Array.isArray(project.buildings)) {
-        project.buildings.forEach((building: any) => {
-          buildingsList.push({
-            id: building.id,
-            name: building.building_name || building.name || "N/A",
-            project_id: project.id,
-          });
-        });
-      }
-    });
-    setBuildings(buildingsList);
-
-    // Set service types - handle response structure
-    const serviceTypesList = Array.isArray(serviceTypesData) 
-      ? serviceTypesData 
-      : serviceTypesData?.data 
-      ? serviceTypesData.data 
-      : [];
-    setServiceTypes(serviceTypesList);
-
-    // Set service orders
-    const rows: any[] = Array.isArray(serviceOrdersData) 
-      ? serviceOrdersData 
-      : serviceOrdersData?.data 
-      ? serviceOrdersData.data 
-      : [];
-      
-    rows.sort((a: any, b: any) => 
-      (b.created_at || "").localeCompare(a.created_at || "")
-    );
-    
-    const normalized = rows.map((r: any) => ({
-      ...r,
-      id: String(r.id),
-      so_date: r.so_date ? r.so_date.split("T")[0] : "",
-      start_date: r.start_date ? r.start_date.split("T")[0] : "",
-      end_date: r.end_date ? r.end_date.split("T")[0] : "",
-      items: r.items ? (typeof r.items === 'string' ? JSON.parse(r.items) : r.items) : [],
-      selected_terms_ids: r.selected_terms_ids 
-        ? (typeof r.selected_terms_ids === 'string' ? JSON.parse(r.selected_terms_ids) : r.selected_terms_ids)
-        : [],
-    }));
-    
-    setServiceOrders(normalized);
-
-  } catch (err) {
-    console.error("loadData error", err);
-    toast.error("Failed to load data");
-    setServiceOrders([]);
-    setVendors([]);
-    setProjects([]);
-    setServiceTypes([]);
-    setBuildings([]);
-  } finally {
-    setLoading(false);
-  }
-};
-
-// Add this function to load project details when project is selected
-const loadProjectBuildings = async (projectId: string) => {
-  try {
-    const projectRes: any = await projectApi.getProjectById(projectId);
-    const projectData = projectRes.data;
-    
-    const buildingsList = Array.isArray(projectData?.buildings) 
-      ? projectData.buildings.map((b: any) => ({
-          id: b.id,
-          name: b.building_name || b.name || "N/A",
-        }))
-      : [];
-      
-    setBuildings(buildingsList);
-  } catch (error) {
-    console.error("Error loading project buildings:", error);
-    toast.error("Failed to load buildings for selected project");
-    setBuildings([]);
-  }
-};
-
-// Update the project selection in your form:
-<SearchableSelect
-  options={projects.map((p: any) => ({
-    id: String(p.id),
-    name: p.name || p.project_name || "N/A",
-  }))}
-  value={formData.project_id}
-  onChange={(id) => {
-    setFormData({ ...formData, project_id: id, building_id: "" }); // Reset building when project changes
-    loadProjectBuildings(id); // Load buildings for selected project
-  }}
-  placeholder="Select Project"
-  required
-/>
-
-  const loadTerms = async (vendorId: string) => {
+  const loadVendor = async () => {
     try {
-      let data: any = await TermsConditionsApi.getByIdVendorTC(vendorId);
-      data = data.filter((d: any) => d.is_active);
-      const result = Object.values(
-        data.reduce((acc: any, item: any) => {
-          const key = item.category;
-          if (!acc[key]) {
-            acc[key] = {
-              id: item.id,
-              vendor_id: item.vendor_id,
-              category: item.category,
-              content: [],
-              is_active: item.is_active,
-            };
-          }
-          acc[key].content.push({
-            content: item.content,
-            is_default: Boolean(item.is_default),
-            term_id: item.id,
-          });
-          const status = acc[key].content.find((c: any) => !c.is_default);
-          acc[key].isActive = status ? false : true;
-          return acc;
-        }, {}),
-      );
-      setTerms(Array.isArray(result) ? result : []);
-    } catch (err) {
-      console.warn("loadTerms failed, fallback to empty", err);
-      setTerms([]);
+      const response = await vendorApi.getVendors();
+      return response;
+    } catch (error) {
+      console.log(error);
+    }
+  };
+  const loadProjects = async () => {
+    try {
+      const response: any = await projectApi.getProjects();
+      return response.data;
+    } catch (error) {
+      console.log(error);
+    }
+  };
+  const loadPO_Type = async () => {
+    try {
+      const response = await poTypeApi.getPOTypes();
+      return response;
+    } catch (error) {
+      console.log(error);
+    }
+  };
+  const loadPOS = async () => {
+    try {
+      const response = await poApi.getPOs();
+      return response;
+    } catch (error) {
+      console.log(error);
+    }
+  };
+  const loadTrackings = async () => {
+    try {
+      const response = await po_trackingApi.getTrackings();
+      return response;
+    } catch (error) {
+      console.log(error);
     }
   };
 
-  const generateSONumber = () => {
-    const now = new Date();
-    const year = now.getFullYear();
-    const month = String(now.getMonth() + 1).padStart(2, "0");
-    const random = Math.floor(Math.random() * 9999)
-      .toString()
-      .padStart(4, "0");
-    return `SO/${year}/${month}/${random}`;
+  const loadAllData = () => {
+    loadAllPOsItems();
+    let sv: any = [];
+    let sp: any = [];
+    let st: any = [];
+    let spo: any = [];
+    let strack: any = [];
+    loadVendor().then((d) => {
+      sv = d;
+    });
+    loadProjects().then((d) => {
+      sp = d;
+    });
+    loadPO_Type().then((d) => {
+      st = d;
+    });
+    loadPOS().then((d) => {
+      spo = d;
+    });
+    loadTrackings().then((d) => {
+      strack = d;
+    });
+    setLoading(true);
+    const t = setTimeout(() => {
+      const vs: Vendor[] = sv ? sv : defaultVendors;
+      const ps: Project[] = sp ? sp : defaultProjects;
+      const ts: POType[] = st ? st : defaultPOTypes;
+      const poList: PO[] = spo ? spo : defaultPOs;
+      const trackingList: Tracking[] = strack ? strack : defaultTracking;
+      // console.log(poList, "po list data");
+      // link vendor/project/type objects into POs for convenience
+      const poWithRelations = poList.map((p) => ({
+        ...p,
+        vendors: vs.find((v) => v.id === p.vendor_id) ?? p.vendors ?? null,
+        projects:
+          ps.find((pr) => String(pr.id) === p.project_id) ?? p.projects ?? null,
+        po_types:
+          ts.find((t) => String(t.id) === p.po_type_id) ?? p.po_types ?? null,
+      }));
+      // console.log(poWithRelations, "resultssss");
+
+      // link purchase_orders into tracking items
+      const trackingWithPO = trackingList.map((t) => ({
+        ...t,
+        purchase_orders: poWithRelations.find((p) => p.id === t.po_id)
+          ? {
+              po_number: poWithRelations.find((p) => p.id === t.po_id)!
+                .po_number,
+              status: poWithRelations.find((p) => p.id === t.po_id)!.status,
+              vendors: {
+                name: poWithRelations.find((p) => p.id === t.po_id)!.vendors
+                  ?.name,
+              },
+            }
+          : t.purchase_orders,
+      }));
+
+      // console.log("venders results", vs);
+      // console.log("projects results", ps);
+      // console.log("Types results", ts);
+      // console.log("PO with Relations results", poWithRelations);
+      // console.log("tracking with po", trackingWithPO);
+
+      setVendors(vs);
+      setProjects(ps);
+      setPOTypes(ts);
+      setPOs(poWithRelations);
+      setTrackingData(trackingWithPO);
+
+      setLoading(false);
+    }, 250);
+    return () => clearTimeout(t);
   };
 
-  // Add service item from master
-  const addItemFromMaster = (item: ServiceMasterItem) => {
-    const existingIndex = formData.items.findIndex(
-      (i) => i.service_item_id === item.id,
+  useEffect(() => {
+    loadAllData();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [profile?.id]);
+
+  // --- Persist helpers ---
+  const persistPOs = (newPOs: PO[]) => {
+    // Save minimal representation (without nested objects) so load is consistent
+    const toSave = newPOs.map((p) => ({
+      ...p,
+      vendors: undefined,
+      projects: undefined,
+      po_types: undefined,
+    }));
+    localStorage.setItem(KEY_POS, JSON.stringify(toSave));
+    setPOs(newPOs);
+  };
+
+  const persistTracking = (newTracking: Tracking[]) => {
+    localStorage.setItem(KEY_TRACKING, JSON.stringify(newTracking));
+    setTrackingData(newTracking);
+  };
+
+  const persistMasters = (v: Vendor[], p: Project[], t: POType[]) => {
+    localStorage.setItem(KEY_VENDORS, JSON.stringify(v));
+    localStorage.setItem(KEY_PROJECTS, JSON.stringify(p));
+    localStorage.setItem(KEY_PO_TYPES, JSON.stringify(t));
+    setVendors(v);
+    setProjects(p);
+    setPOTypes(t);
+  };
+
+  // --- Permissions: admin gets everything, others follow profile.permissions ---
+  const can = (permission: string) => {
+    // Try these fields for role - adapt if your backend uses different field names
+    const role =
+      (profile as any)?.role_name ??
+      (profile as any)?.role ??
+      (user as any)?.role ??
+      null;
+
+    // If admin — grant all access
+    if (role === "admin") return true;
+
+    // fallback to permissions object if present on profile
+    const perms: Record<string, boolean> | null =
+      (profile as any)?.permissions ?? null;
+
+    if (perms && typeof perms === "object") {
+      return Boolean(perms[permission]);
+    }
+
+    // Default: deny
+    return false;
+  };
+
+  // --- Data operations (mocked) ---
+  const loadPOs = async () => {
+    setLoading(true);
+    setTimeout(() => {
+      const sv = localStorage.getItem(KEY_VENDORS);
+      const sp = localStorage.getItem(KEY_PROJECTS);
+      const st = localStorage.getItem(KEY_PO_TYPES);
+      const spo = localStorage.getItem(KEY_POS);
+
+      const vs: Vendor[] = sv ? JSON.parse(sv) : defaultVendors;
+      const ps: Project[] = sp ? JSON.parse(sp) : defaultProjects;
+      const ts: POType[] = st ? JSON.parse(st) : defaultPOTypes;
+      const poList: PO[] = spo ? JSON.parse(spo) : defaultPOs;
+
+      const poWithRelations = poList.map((p) => ({
+        ...p,
+        vendors: vs.find((v) => v.id === p.vendor_id) ?? p.vendors ?? null,
+        projects: ps.find((pr) => pr.id === p.project_id) ?? p.projects ?? null,
+        po_types: ts.find((t) => t.id === p.po_type_id) ?? p.po_types ?? null,
+      }));
+
+      setPOs(poWithRelations);
+      setLoading(false);
+    }, 200);
+  };
+
+  const loadTrackingData = async () => {
+    setLoading(true);
+    setTimeout(() => {
+      const strack = localStorage.getItem(KEY_TRACKING);
+      const spo = localStorage.getItem(KEY_POS);
+      const poList: PO[] = spo ? JSON.parse(spo) : defaultPOs;
+      const trackingList: Tracking[] = strack
+        ? JSON.parse(strack)
+        : defaultTracking;
+
+      const trackingWithPO = trackingList.map((t) => ({
+        ...t,
+        purchase_orders: {
+          po_number: poList.find((p) => p.id === t.po_id)?.po_number,
+          status: poList.find((p) => p.id === t.po_id)?.status,
+          vendors: {
+            name: vendors.find(
+              (v) => v.id === poList.find((p) => p.id === t.po_id)?.vendor_id,
+            )?.name,
+          },
+        },
+      }));
+      setTrackingData(trackingWithPO);
+      setLoading(false);
+    }, 200);
+  };
+
+  const loadMasterData = async () => {
+    setLoading(true);
+    setTimeout(() => {
+      const sv = localStorage.getItem(KEY_VENDORS);
+      const sp = localStorage.getItem(KEY_PROJECTS);
+      const st = localStorage.getItem(KEY_PO_TYPES);
+
+      const vs: Vendor[] = sv ? JSON.parse(sv) : defaultVendors;
+      const ps: Project[] = sp ? JSON.parse(sp) : defaultProjects;
+      const ts: POType[] = st ? JSON.parse(st) : defaultPOTypes;
+
+      persistMasters(vs, ps, ts);
+      setLoading(false);
+    }, 150);
+  };
+
+  // --- Handlers ---
+  const handleView = async (po: any) => {
+    // const blob = await pdf(<PurchaseOrderPDF />).toBlob();
+    // window.open(URL.createObjectURL(blob));
+    // console.log(po, "from pdf preview");
+    if (!po) return;
+    if (!allPurchaseOrderItems) {
+      toast.success("wait data is loading");
+      return;
+    }
+
+    const itemsList = allPurchaseOrderItems.filter(
+      (d: any) => d.po_id === po.id,
     );
 
-    let updatedItems: ServiceItem[];
+    const result = itemsList.map((item: any) => {
+      let materialTrackingId = null;
 
-    if (existingIndex !== -1) {
-      updatedItems = formData.items.map((i, index) => {
-        if (index === existingIndex) {
-          const newQty = i.quantity + 1;
-          const amount = newQty * i.rate;
-          const gstAmount = (amount * ((item.cgst_rate || 0) + (item.sgst_rate || 0))) / 100;
-          return {
-            ...i,
-            quantity: newQty,
-            amount,
-            gst_amount: gstAmount,
-          };
+      for (let i = 0; i < filteredTracking.length; i++) {
+        if (
+          String(filteredTracking[i].item_id) === String(item.item_id) &&
+          String(filteredTracking[i].po_id) === String(item.po_id)
+        ) {
+          materialTrackingId = filteredTracking[i].id; // ONLY ONE VALUE
+          break;
         }
-        return i;
-      });
-    } else {
-      const newItem: ServiceItem = {
-        id: crypto.randomUUID ? crypto.randomUUID() : Math.random().toString(36).slice(2, 9),
-        service_item_id: item.id,
-        item_code: item.item_code || "",
-        item_name: item.item_name || "",
-        description: item.description || "",
-        hsn_code: item.hsn_code || "",
-        quantity: 1,
-        unit: item.unit || "",
-        rate: item.standard_rate || 0,
-        amount: item.standard_rate || 0,
-        igst_rate: item.igst_rate || 0,
-        cgst_rate: item.cgst_rate || 0,
-        sgst_rate: item.sgst_rate || 0,
-        gst_amount: ((item.standard_rate || 0) * ((item.cgst_rate || 0) + (item.sgst_rate || 0))) / 100,
-      };
-
-      updatedItems = [...formData.items, newItem];
-    }
-
-    setFormData({ ...formData, items: updatedItems });
-    calculateTotals(updatedItems, formData.discount_percentage);
-    setShowItemSelector(false);
-    setItemSelectorSearch("");
-  };
-
-  const handleItemChange = (index: number, field: keyof ServiceItem, value: any) => {
-    const newItems = [...formData.items];
-    newItems[index] = { ...newItems[index], [field]: value };
-
-    if (field === "quantity" || field === "rate") {
-      const item = newItems[index];
-      const amount = item.quantity * item.rate;
-      const gstAmount = (amount * ((item.cgst_rate || 0) + (item.sgst_rate || 0))) / 100;
-      newItems[index].amount = amount;
-      newItems[index].gst_amount = gstAmount;
-    }
-
-    setFormData({ ...formData, items: newItems });
-    calculateTotals(newItems, formData.discount_percentage);
-  };
-
-  const removeItem = (index: number) => {
-    const newItems = formData.items.filter((_, i) => i !== index);
-    setFormData({ ...formData, items: newItems });
-    calculateTotals(newItems, formData.discount_percentage);
-  };
-
-  const calculateTotals = (itemsList: ServiceItem[], discountPercentage: number) => {
-    const subTotal = itemsList.reduce((sum, item) => sum + (Number(item.amount) || 0), 0);
-    const discountAmount = (subTotal * (discountPercentage || 0)) / 100;
-    const taxableAmount = subTotal - discountAmount;
-
-    let cgstAmount = 0;
-    let sgstAmount = 0;
-    let igstAmount = 0;
-
-    itemsList.forEach((item) => {
-      const itemTaxableRatio = discountAmount > 0 ? item.amount / subTotal : 1;
-      const itemDiscount = discountAmount * itemTaxableRatio;
-      const itemTaxableAmount = item.amount - itemDiscount;
-
-      const itemCgstAmount = (itemTaxableAmount * (item.cgst_rate || 0)) / 100;
-      const itemSgstAmount = (itemTaxableAmount * (item.sgst_rate || 0)) / 100;
-      cgstAmount += itemCgstAmount;
-      sgstAmount += itemSgstAmount;
-    });
-
-    const totalGstAmount = cgstAmount + sgstAmount + igstAmount;
-    const grandTotal = taxableAmount + totalGstAmount;
-
-    setFormData((prev) => ({
-      ...prev,
-      sub_total: subTotal,
-      discount_amount: discountAmount,
-      taxable_amount: taxableAmount,
-      cgst_amount: cgstAmount,
-      sgst_amount: sgstAmount,
-      igst_amount: igstAmount,
-      total_gst_amount: totalGstAmount,
-      grand_total: grandTotal,
-    }));
-  };
-
-  const handleDiscountChange = (percentage: number) => {
-    setFormData({ ...formData, discount_percentage: percentage });
-    calculateTotals(formData.items, percentage);
-  };
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!formData.vendor_id || !formData.project_id || !formData.service_type_id) {
-      toast.error("Please fill required fields: Vendor, Project, Service Type");
-      return;
-    }
-    if (formData.items.length === 0) {
-      toast.error("Add at least one service item");
-      return;
-    }
-
-    const now = new Date().toISOString();
-    const soEntry = {
-      ...formData,
-      so_number: formData.so_number || generateSONumber(),
-      items: JSON.stringify(formData.items),
-      selected_terms_ids: JSON.stringify(formData.selected_terms_ids),
-      created_by: formData.created_by ?? user?.id ?? null,
-      created_at: editingId ? (formData.created_at ?? now) : now,
-    };
-
-    try {
-      if (editingId) {
-        await updateServiceOrder(editingId, soEntry);
-        toast.success("Service Order updated successfully!");
-      } else {
-        await createServiceOrder(soEntry);
-        toast.success("Service Order created successfully!");
       }
 
-      await loadData();
-      setShowModal(false);
-      resetForm();
-    } catch (err: any) {
-      toast.error(err?.message || "Failed to save service order");
-      console.error("handleSubmit error", err);
+      return {
+        ...item,
+        materialTrackingId: materialTrackingId,
+      };
+    });
+
+    const data: any = {
+      po_number: po.po_number,
+      po_date: po.po_date,
+      vendor_name: po.vendor_name,
+      vendor_address: `${po.vendors.name}, ${po.vendors.office_street}, ${po.vendors.office_city}, ${po.vendors.office_state}, ${po.vendors.office_country} - ${po.vendors.office_pincode}`,
+      vendor_gstn: po.vendors.gst_number,
+      vendor_phone: po.vendors.company_phone,
+      po_items: result,
+      po_terms_and_conditions: po.terms_and_conditions
+        ? po.terms_and_conditions
+            .replace(/,\s*$/, "") // remove trailing comma if exists
+            .split(",") // split into array
+            .map((t: any) => t.trim()) // clean spaces
+            .filter(Boolean)
+        : [],
+    };
+    // console.log(data, "data values from preview");
+    setPdfLoading(true);
+    setSelectedPO(data);
+    setShowViewModal(true);
+
+    // Small delay to ensure state is updated
+    setTimeout(() => {
+      setPdfLoading(false);
+    }, 100);
+  };
+
+  const updateMaterialQuantity = async (e: React.FormEvent) => {
+    e.preventDefault();
+
+    const trackingMaterialData = filteredTracking.find(
+      (item: any) => item.id === selectedTrackingMaterial,
+    );
+
+    if (
+      materialQuantity < 1 ||
+      materialQuantity > Number(trackingMaterialData.quantity_pending) ||
+      !materialQuantity ||
+      !challanNumber
+    ) {
+      toast.error("Invalid input.");
+      return;
+    }
+
+    const formData = new FormData();
+    formData.append("quantity_received", String(materialQuantity));
+    formData.append(
+      "quantity_pending",
+      String(
+        Number(trackingMaterialData.quantity_pending) -
+          Number(materialQuantity),
+      ),
+    );
+    formData.append("challan_number", challanNumber);
+    formData.append("from_person", from);
+    formData.append("to_person", to);
+
+    if (challanImage) {
+      formData.append("challan_image", challanImage);
+    }
+
+    await po_trackingApi.updateMaterialQty(selectedTrackingMaterial, formData);
+
+    toast.success("Received Material Quantity Updated");
+    setShowUpdateMaterialQuantity(false);
+    loadAllData();
+  };
+
+  const handleDelete = async (id: any) => {
+    const result: any = await MySwal.fire({
+      title: "Delete Item?",
+      text: "This action cannot be undone",
+      icon: "warning",
+      showCancelButton: true,
+    });
+
+    if (!result.isConfirmed) return;
+    await poApi.deletePurchaseOrder(id);
+    const filterdData = filteredPOs.filter((item: any) => item.id != id);
+    const filterdTrackingData = filteredTracking.filter(
+      (item: any) => item.po_id != id,
+    );
+    setFilteredPOs(filterdData);
+    setFilteredTracking(filterdTrackingData);
+    // const updated = pos.filter((p) => p.id !== id);
+    // setPOs(updated);
+    toast.success("PO deleted successfully!");
+  };
+
+  const updatePurchaseOrderStatus = async (id: string, status: string) => {
+    try {
+      const result: any = await MySwal.fire({
+        title: status.charAt(0).toUpperCase() + status.slice(1),
+        text: `Are you sure you want to ${
+          status === "authorize"
+            ? status
+            : status === "approved"
+              ? "approve"
+              : "reject"
+        } this service order`,
+        icon: "warning",
+        showCancelButton: true,
+      });
+
+      if (!result.isConfirmed) return;
+
+      const approveRes: any = await poApi.updatePurchaseOrderStatus(id, status);
+      if (approveRes.status) {
+        toast.success(
+          "service order status updated to " + status.toLocaleUpperCase() + ".",
+        );
+        setShowApprovalButtons(null);
+        loadAllData();
+      } else {
+        toast.error(
+          "Failed to update service order status." + status.toLocaleUpperCase(),
+        );
+      }
+    } catch (error) {
+      console.log(error);
     }
   };
 
-  const handleEdit = (so: any) => {
-    setEditingId(so.id ?? null);
-    setFormData({
-      ...so,
-      items: so.items || [],
-      selected_terms_ids: so.selected_terms_ids ? JSON.parse(so.selected_terms_ids) : [],
-    });
-    setShowModal(true);
+  const handlePayment = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!selectedPO) return;
+
+    const newTotalPaid = (selectedPO.total_paid || 0) + paymentAmount;
+    const newBalance = (selectedPO.grand_total || 0) - newTotalPaid;
+    const paymentStatus =
+      newBalance === 0 ? "paid" : newTotalPaid > 0 ? "partial" : "pending";
+
+    const updated = pos.map((p) =>
+      p.id === selectedPO.id
+        ? {
+            ...p,
+            total_paid: newTotalPaid,
+            balance_amount: newBalance,
+            payment_status: paymentStatus,
+          }
+        : p,
+    );
+
+    persistPOs(updated);
+    setTimeout(() => {
+      toast.success("Payment recorded successfully!");
+      setShowPaymentModal(false);
+      setPaymentAmount(0);
+      setSelectedPO(null);
+      loadPOs();
+    }, 300);
   };
 
-  const resetForm = () => {
-    setFormData({
-      so_number: "",
-      vendor_id: "",
-      project_id: "",
-      service_type_id: "",
-      building_id: "",
-      so_date: new Date().toISOString().split("T")[0],
-      start_date: new Date().toISOString().split("T")[0],
-      end_date: "",
-      
-      items: [],
-      sub_total: 0,
-      discount_percentage: 0,
-      discount_amount: 0,
-      taxable_amount: 0,
-      cgst_amount: 0,
-      sgst_amount: 0,
-      igst_amount: 0,
-      total_gst_amount: 0,
-      grand_total: 0,
-      
-      payment_terms: "",
-      terms_and_conditions: "",
-      advance_amount: 0,
-      total_paid: 0,
-      balance_amount: 0,
-      
-      status: 'draft',
-      service_status: 'pending',
-      selected_terms_ids: [],
-      note: "",
-      
-      created_by: user?.id ?? null,
-      created_at: new Date().toISOString(),
-    });
-    setEditingId(null);
-    setSelectedPaymentTerms([]);
+  // --- Filtering helpers ---
+
+  // useEffect(() => {
+  //   // console.log(" from use effect after updating pos");
+  //   const posData = pos.filter(
+  //     (po) =>
+  //       po.po_number?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+  //       po.vendors?.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+  //       po.projects?.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+  //       po.status?.toLowerCase().includes(searchTerm.toLowerCase()),
+  //   );
+  //   setFilteredPOs(posData);
+
+  //   const trackData = trackingData.filter(
+  //     (t) =>
+  //       t.item_description?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+  //       t.purchase_orders?.po_number
+  //         ?.toLowerCase()
+  //         .includes(searchTerm.toLowerCase()) ||
+  //       t.status?.toLowerCase().includes(searchTerm.toLowerCase()),
+  //   );
+  //   setFilteredTracking(trackData);
+  // }, [pos, trackingData, searchTerm]);
+
+  const loadItems = async () => {
+    try {
+      const data = await ItemsApi.getItems();
+      const updatedData = data.map((item) => ({
+        ...item,
+        id: String(item.id),
+      }));
+      setItems(updatedData);
+    } catch (error) {
+      console.log(error);
+    }
   };
 
-  const formatCurrency = (amount: number) =>
-    new Intl.NumberFormat("en-IN", {
-      style: "currency",
-      currency: "INR",
-      maximumFractionDigits: 2,
-    }).format(amount || 0);
-
-  const formatDate = (dateString: string) => {
-    if (!dateString) return "N/A";
-    return new Date(dateString).toLocaleDateString("en-IN", {
-      day: "2-digit",
-      month: "short",
-      year: "numeric",
-    });
+  const loadAllPOsItems = async () => {
+    try {
+      const data: any = await poApi.getPOsItems();
+      setAllPurchaseOrderItems(data.data);
+      // console.log(data, "from service orders items");
+    } catch (error) {
+      console.log(error);
+    }
   };
 
-  const getStatusBadge = (status: string) => {
-    const map: any = {
+  useEffect(() => {
+    loadItems();
+  }, []);
+
+  const getStatusColor = (status?: string) => {
+    const colors: Record<string, string> = {
       draft: "bg-gray-100 text-gray-700",
-      approve: "bg-blue-100 text-blue-700",
+      pending: "bg-yellow-100 text-yellow-700",
+      approved: "bg-orange-100 text-orange-700",
+      rejected: "bg-red-100 text-red-700",
+      completed: "bg-blue-100 text-blue-700",
+      cancelled: "bg-red-100 text-red-700",
       authorize: "bg-green-100 text-green-700",
-      reject: "bg-red-100 text-red-700",
     };
-    return map[status] || "bg-gray-100 text-gray-700";
+    return (status && colors[status]) || "bg-gray-100 text-gray-700";
   };
 
-  const getServiceStatusBadge = (status: string) => {
-    const map: any = {
-      pending: "bg-yellow-100 text-yellow-700",
-      partial: "bg-orange-100 text-orange-700",
+  const getPaymentStatusColor = (status?: string) => {
+    const colors: Record<string, string> = {
+      pending: "bg-red-100 text-red-700",
+      partial: "bg-yellow-100 text-yellow-700",
+      paid: "bg-green-100 text-green-700",
       completed: "bg-green-100 text-green-700",
     };
-    return map[status] || "bg-gray-100 text-gray-700";
+    return (status && colors[status]) || "bg-gray-100 text-gray-700";
   };
 
-  // For demo - mock service items data
-  // In real app, fetch from API
-  const mockServiceItems: ServiceMasterItem[] = [
-    {
-      id: "1",
-      item_code: "SRV001",
-      item_name: "Electrical Maintenance",
-      description: "Monthly electrical system maintenance",
-      hsn_code: "9987",
-      unit: "Hour",
-      standard_rate: 500,
-      igst_rate: 18,
-      cgst_rate: 9,
-      sgst_rate: 9,
-      category: "service",
-    },
-    {
-      id: "2",
-      item_code: "SRV002",
-      item_name: "HVAC Service",
-      description: "HVAC system servicing",
-      hsn_code: "9987",
-      unit: "Hour",
-      standard_rate: 800,
-      igst_rate: 18,
-      cgst_rate: 9,
-      sgst_rate: 9,
-      category: "service",
-    },
-    {
-      id: "3",
-      item_code: "SRV003",
-      item_name: "Plumbing Repair",
-      description: "Emergency plumbing repair",
-      hsn_code: "9987",
-      unit: "Hour",
-      standard_rate: 600,
-      igst_rate: 18,
-      cgst_rate: 9,
-      sgst_rate: 9,
-      category: "service",
-    },
-  ];
+  const formatCurrency = (amount?: number) => {
+    return new Intl.NumberFormat("en-IN", {
+      style: "currency",
+      currency: "INR",
+    }).format(amount || 0);
+  };
 
-  // Mock payment terms data
-  const mockPaymentTerms = [
-    { id: "1", name: "30% Advance, 70% on completion", advance_percentage: 30 },
-    { id: "2", name: "50% Advance, 50% on completion", advance_percentage: 50 },
-    { id: "3", name: "100% After completion", advance_percentage: 0 },
-  ];
+  const viewPoPdf = async (id: number, type = "view") => {
+    try {
+      setPdfLoading(true);
+      setShowViewModal(type === "view");
+      const res = await axios.get(
+        import.meta.env.VITE_API_URL + "/pdf/po/" + id,
+        {
+          responseType: "blob", // IMPORTANT: treat response as binary
+        },
+      );
+      const fileURL = URL.createObjectURL(res.data);
+      if (type === "view") {
+        setPdfUrl(fileURL);
+        setPdfLoading(false);
+      } else {
+        const a = document.createElement("a");
+        a.href = fileURL;
+        a.download = `PO_${id}.pdf`; // filename
+        document.body.appendChild(a);
 
-  // Add payment term to selected list
-  const addPaymentTerm = (term: any) => {
-    if (!selectedPaymentTerms.find(t => t.id === term.id)) {
-      setSelectedPaymentTerms([...selectedPaymentTerms, term]);
-      const advanceAmount = (formData.grand_total * (term.advance_percentage || 0)) / 100;
-      setFormData(prev => ({
-        ...prev,
-        advance_amount: advanceAmount,
-        payment_terms: prev.payment_terms ? `${prev.payment_terms}\n${term.name}` : term.name
-      }));
+        // 4️⃣ Trigger click to download
+        a.click();
+        setPdfLoading(false);
+      }
+    } catch (error) {
+      console.log(error);
+      toast.error("Something went wrong.");
     }
   };
 
-  // Remove payment term
-  const removePaymentTerm = (termId: string) => {
-    setSelectedPaymentTerms(selectedPaymentTerms.filter(t => t.id !== termId));
+  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      setPaymentData((prev) => ({ ...prev, payment_proof: file }));
+    }
   };
 
+  const handleMakePayment = async (e: React.FormEvent) => {
+    e.preventDefault();
+    try {
+      if (!selectedPO) {
+        toast.error("No PO selected");
+        return;
+      }
+
+      if (!can("make_payments")) {
+        toast.error("You don't have permission to make payments");
+        return;
+      }
+
+      if (Number(paymentData.amount_paid) <= 0) {
+        toast.error("Enter a valid amount");
+        return;
+      }
+
+      if ((paymentData.payment_reference_no || "")?.length <= 0) {
+        toast.error("Enter valid reference number");
+        return;
+      }
+
+      if (!paymentData.payment_proof) {
+        toast.error("Upload valid payment proof");
+        return;
+      }
+
+      const newPayment: PaymentDataType = {
+        po_id: paymentData.po_id,
+        transaction_type: paymentData.transaction_type?.toUpperCase() || "",
+        amount_paid: paymentData.amount_paid,
+        payment_method: paymentData.payment_method?.toUpperCase() || "",
+        payment_reference_no: paymentData.payment_reference_no,
+        payment_proof: paymentData.payment_proof,
+        payment_date: paymentData.payment_date,
+        status: paymentData.status?.toUpperCase() || "",
+        remarks: paymentData.remarks,
+        created_by: user?.id,
+      };
+
+      setSubmitting(true);
+      const res: any = await poPaymentApi.createPayment(newPayment);
+
+      if (res.success) {
+        loadAllData();
+        toast.success("Payment recorded successfully!");
+        setShowPaymentModal(false);
+        setSelectedPO(null);
+        setPaymentData({
+          po_id: null,
+          transaction_type: "payment",
+          amount_paid: "",
+          payment_method: "bank_transfer",
+          payment_reference_no: "",
+          payment_proof: null,
+          payment_date: new Date().toISOString().split("T")[0],
+          status: "pending",
+          remarks: "",
+          created_by: user?.id,
+        });
+      } else {
+        toast.error("Failed to create payment record");
+      }
+    } catch (error) {
+      console.log(error);
+      toast.error("Failed to process payment");
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  const openPaymentModal = (po: PO) => {
+    setSelectedPO(po);
+    setPaymentData({
+      ...paymentData,
+      amount_paid: String(po.balance_amount) || String(po.grand_total),
+      payment_date: new Date().toISOString().split("T")[0],
+      po_id: po.id,
+    });
+    setShowPaymentModal(true);
+  };
+
+  // --- UI states while loading ---
   if (loading) {
     return (
-      <div className="flex items-center justify-center h-96 px-3">
+      <div className="flex items-center justify-center h-96">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-red-600 mx-auto mb-4"></div>
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
           <p className="text-gray-600">Loading service orders...</p>
         </div>
       </div>
     );
   }
 
+  // --- Render main UI ---
   return (
-    <div className="p-2 px-0 md:px-0 -mt-4">
-      {/* Header with Actions */}
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6 px-0">
-        <button
-          onClick={() => {
-            resetForm();
-            setShowModal(true);
-          }}
-          className="bg-[#C62828] text-white px-2 md:px-6 py-2 md:py-3 rounded-lg hover:bg-red-500 transition-all duration-200 flex items-center gap-2 shadow-sm hover:shadow-md text-sm md:text-base whitespace-nowrap transform hover:-translate-y-0.5 active:translate-y-0"
-        >
-          <Plus className="w-4 h-4 md:w-5 md:h-5" />
-          Create Service Order
-        </button>
+    <div className="p-1 -mt-2">
+      <div className=" sticky top-20 z-20 flex flex-col gap-2 mb-3 sm:flex-row sm:items-center sm:gap-4">
+        {/* Tabs */}
+        <div className=" w-full sm:flex-1">
+          <div className="flex bg-white border border-gray-200 rounded-lg overflow-hidden">
+            <button
+              onClick={() => setActiveTab("tracking")}
+              className={`flex-1 flex items-center justify-center gap-1.5
+          px-2 py-2
+          text-[11px] sm:text-sm
+          font-medium transition
+          ${
+            activeTab === "tracking"
+              ? "bg-blue-50 text-blue-600 border-b-2 border-blue-600"
+              : "text-gray-600 hover:bg-gray-50"
+          }`}
+            >
+              <Package className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+              SO Tracking
+            </button>
+
+            <button
+              onClick={() => setActiveTab("management")}
+              className={`flex-1 flex items-center justify-center gap-1.5
+          px-2 py-2
+          text-[11px] sm:text-sm
+          font-medium transition
+          ${
+            activeTab === "management"
+              ? "bg-blue-50 text-blue-600 border-b-2 border-blue-600"
+              : "text-gray-600 hover:bg-gray-50"
+          }`}
+            >
+              <FileText className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+              SO Management
+            </button>
+          </div>
+        </div>
+
+        {/* Create SO Button */}
+        {can("create_pos") && (
+          <button
+            onClick={() => setShowCreatePro(true)}
+            className="
+        w-full sm:w-auto
+        bg-[#C62828] text-white
+        px-3 py-2
+        sm:px-5 sm:py-2
+        rounded-lg
+        flex items-center justify-center gap-1.5
+        text-[11px] sm:text-sm
+        shadow-sm
+        hover:bg-[#A62222]
+        transition
+        whitespace-nowrap
+      "
+          >
+            <Plus className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+            Create SO
+          </button>
+        )}
       </div>
 
-      {/* Main Table (unchanged from your code) */}
-      <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden mx-0">
-        <div className="overflow-x-auto">
-          <table className="w-full min-w-[1200px]">
-            <thead className="bg-gray-200 border-b border-gray-200">
-              {/* Header Row */}
-              <tr>
-                <th className="px-3 md:px-4 py-2 text-left">
-                  <div className="text-[10px] md:text-xs font-semibold text-gray-700 uppercase tracking-wider">
-                    SO Number
-                  </div>
-                </th>
-                <th className="px-3 md:px-4 py-2 text-left">
-                  <div className="text-[10px] md:text-xs font-semibold text-gray-700 uppercase tracking-wider">
-                    Vendor
-                  </div>
-                </th>
-                <th className="px-3 md:px-4 py-2 text-left">
-                  <div className="text-[10px] md:text-xs font-semibold text-gray-700 uppercase tracking-wider">
-                    Project
-                  </div>
-                </th>
-                <th className="px-3 md:px-4 py-2 text-left">
-                  <div className="text-[10px] md:text-xs font-semibold text-gray-700 uppercase tracking-wider">
-                    Service Type
-                  </div>
-                </th>
-                <th className="px-3 md:px-4 py-2 text-left">
-                  <div className="text-[10px] md:text-xs font-semibold text-gray-700 uppercase tracking-wider">
-                    Dates
-                  </div>
-                </th>
-                <th className="px-3 md:px-4 py-2 text-left">
-                  <div className="text-[10px] md:text-xs font-semibold text-gray-700 uppercase tracking-wider">
-                    Building
-                  </div>
-                </th>
-                <th className="px-3 md:px-4 py-2 text-left">
-                  <div className="text-[10px] md:text-xs font-semibold text-gray-700 uppercase tracking-wider">
-                    Financials
-                  </div>
-                </th>
-                <th className="px-3 md:px-4 py-2 text-left">
-                  <div className="text-[10px] md:text-xs font-semibold text-gray-700 uppercase tracking-wider">
-                    Status
-                  </div>
-                </th>
-                <th className="px-3 md:px-4 py-2 text-left">
-                  <div className="text-[10px] md:text-xs font-semibold text-gray-700 uppercase tracking-wider">
-                    Service Status
-                  </div>
-                </th>
-                <th className="px-3 md:px-4 py-2 text-left">
-                  <div className="text-[10px] md:text-xs font-semibold text-gray-700 uppercase tracking-wider">
-                    Actions
-                  </div>
-                </th>
-              </tr>
+      {showCreatePro && (
+        <CreateServiceOrderForm
+          setShowCreatePro={setShowCreatePro}
+          loadAllData={loadAllData}
+        />
+      )}
 
-              {/* Search Row - Separate Row Below Headers */}
-              <tr className="bg-gray-50 border-b border-gray-200">
-                {/* SO Number Column Search */}
-                <td className="px-3 md:px-4 py-1">
-                  <input
-                    type="text"
-                    placeholder="SO Number..."
-                    value={searchSONumber}
-                    onChange={(e) => setSearchSONumber(e.target.value)}
-                    className="w-full px-2 py-1 text-[9px] md:text-xs border border-gray-300 rounded focus:ring-1 focus:ring-blue-500 focus:border-transparent"
-                  />
-                </td>
+      {activeTab === "tracking" && (
+        <div className="space-y-6">
+          {/* PO Overview */}
+          <div className="  sticky top-32   bg-white rounded-xl shadow-sm border border-gray-200 ">
+            <div className="overflow-y-auto max-h-[calc(100vh-160px)]">
+              <table className="w-full min-w-[800px]">
+                <thead className="sticky top-0 z-10 bg-gray-200 border-b border-gray-200">
+                  {" "}
+                  {/* Header Row */}
+                  <tr>
+                    <th className="px-3 md:px-4 py-2 text-left">
+                      <div className="text-[10px] md:text-xs font-semibold text-gray-700 uppercase tracking-wider">
+                        SO Number
+                      </div>
+                    </th>
+                    <th className="px-3 md:px-4 py-2 text-left">
+                      <div className="text-[10px] md:text-xs font-semibold text-gray-700 uppercase tracking-wider">
+                        Vendor
+                      </div>
+                    </th>
+                    <th className="px-3 md:px-4 py-2 text-left">
+                      <div className="text-[10px] md:text-xs font-semibold text-gray-700 uppercase tracking-wider">
+                        Project
+                      </div>
+                    </th>
+                    <th className="px-3 md:px-4 py-2 text-left">
+                      <div className="text-[10px] md:text-xs font-semibold text-gray-700 uppercase tracking-wider">
+                        Amount
+                      </div>
+                    </th>
+                    <th className="px-3 md:px-4 py-2 text-left">
+                      <div className="text-[10px] md:text-xs font-semibold text-gray-700 uppercase tracking-wider">
+                        SO Status
+                      </div>
+                    </th>
+                    <th className="px-3 md:px-4 py-2 text-left">
+                      <div className="text-[10px] md:text-xs font-semibold text-gray-700 uppercase tracking-wider">
+                        Material
+                      </div>
+                    </th>
+                    <th className="px-3 md:px-4 py-2 text-left">
+                      <div className="text-[10px] md:text-xs font-semibold text-gray-700 uppercase tracking-wider">
+                        Payment
+                      </div>
+                    </th>
+                    <th className="px-3 md:px-4 py-2 text-left">
+                      <div className="text-[10px] md:text-xs font-semibold text-gray-700 uppercase tracking-wider">
+                        Actions
+                      </div>
+                    </th>
+                  </tr>
+                  {/* Search Row - Separate Row Below Headers */}
+                  {/* Tracking Tab - Search Row */}
+                  <tr className="bg-gray-50 border-b border-gray-200">
+                    {/* PO Number Column Search */}
+                    <td className="px-3 md:px-4 py-1">
+                      <input
+                        type="text"
+                        placeholder="PO Number..."
+                        value={searchFilters.poNumber}
+                        onChange={(e) =>
+                          handleSearchFilterChange("poNumber", e.target.value)
+                        }
+                        className="w-full px-2 py-1 text-[9px] md:text-xs border border-gray-300 rounded focus:ring-1 focus:ring-blue-500 focus:border-transparent"
+                      />
+                    </td>
 
-                {/* Vendor Column Search */}
-                <td className="px-3 md:px-4 py-1">
-                  <input
-                    type="text"
-                    placeholder="Vendor..."
-                    value={searchVendor}
-                    onChange={(e) => setSearchVendor(e.target.value)}
-                    className="w-full px-2 py-1 text-[9px] md:text-xs border border-gray-300 rounded focus:ring-1 focus:ring-blue-500 focus:border-transparent"
-                  />
-                </td>
+                    {/* Vendor Column Search */}
+                    <td className="px-3 md:px-4 py-1">
+                      <input
+                        type="text"
+                        placeholder="Vendor..."
+                        value={searchFilters.vendor}
+                        onChange={(e) =>
+                          handleSearchFilterChange("vendor", e.target.value)
+                        }
+                        className="w-full px-2 py-1 text-[9px] md:text-xs border border-gray-300 rounded focus:ring-1 focus:ring-blue-500 focus:border-transparent"
+                      />
+                    </td>
 
-                {/* Project Column Search */}
-                <td className="px-3 md:px-4 py-1">
-                  <input
-                    type="text"
-                    placeholder="Project..."
-                    value={searchProject}
-                    onChange={(e) => setSearchProject(e.target.value)}
-                    className="w-full px-2 py-1 text-[9px] md:text-xs border border-gray-300 rounded focus:ring-1 focus:ring-blue-500 focus:border-transparent"
-                  />
-                </td>
+                    {/* Project Column Search */}
+                    <td className="px-3 md:px-4 py-1">
+                      <input
+                        type="text"
+                        placeholder="Project..."
+                        value={searchFilters.project}
+                        onChange={(e) =>
+                          handleSearchFilterChange("project", e.target.value)
+                        }
+                        className="w-full px-2 py-1 text-[9px] md:text-xs border border-gray-300 rounded focus:ring-1 focus:ring-blue-500 focus:border-transparent"
+                      />
+                    </td>
 
-                {/* Service Type Column Search */}
-                <td className="px-3 md:px-4 py-1">
-                  <input
-                    type="text"
-                    placeholder="Service Type..."
-                    value={searchServiceType}
-                    onChange={(e) => setSearchServiceType(e.target.value)}
-                    className="w-full px-2 py-1 text-[9px] md:text-xs border border-gray-300 rounded focus:ring-1 focus:ring-blue-500 focus:border-transparent"
-                  />
-                </td>
+                    {/* Amount Column Search */}
+                    <td className="px-3 md:px-4 py-1">
+                      <input
+                        type="text"
+                        placeholder="Amount..."
+                        value={searchFilters.amount}
+                        onChange={(e) =>
+                          handleSearchFilterChange("amount", e.target.value)
+                        }
+                        className="w-full px-2 py-1 text-[9px] md:text-xs border border-gray-300 rounded focus:ring-1 focus:ring-blue-500 focus:border-transparent"
+                      />
+                    </td>
 
-                {/* Dates Column Search */}
-                <td className="px-3 md:px-4 py-1">
-                  <div className="space-y-1">
+                    {/* PO Status Column Search */}
+                    <td className="px-3 md:px-4 py-1">
+                      <input
+                        type="text"
+                        placeholder="Status..."
+                        value={searchFilters.poStatus}
+                        onChange={(e) =>
+                          handleSearchFilterChange("poStatus", e.target.value)
+                        }
+                        className="w-full px-2 py-1 text-[9px] md:text-xs border border-gray-300 rounded focus:ring-1 focus:ring-blue-500 focus:border-transparent"
+                      />
+                    </td>
+
+                    {/* Material Column Search */}
+                    <td className="px-3 md:px-4 py-1">
+                      <input
+                        type="text"
+                        placeholder="Material..."
+                        value={searchFilters.material}
+                        onChange={(e) =>
+                          handleSearchFilterChange("material", e.target.value)
+                        }
+                        className="w-full px-2 py-1 text-[9px] md:text-xs border border-gray-300 rounded focus:ring-1 focus:ring-blue-500 focus:border-transparent"
+                      />
+                    </td>
+
+                    {/* Payment Column Search */}
+                    <td className="px-3 md:px-4 py-1">
+                      <input
+                        type="text"
+                        placeholder="Payment..."
+                        value={searchFilters.payment}
+                        onChange={(e) =>
+                          handleSearchFilterChange("payment", e.target.value)
+                        }
+                        className="w-full px-2 py-1 text-[9px] md:text-xs border border-gray-300 rounded focus:ring-1 focus:ring-blue-500 focus:border-transparent"
+                      />
+                    </td>
+
+                    {/* Actions Column - Clear Filter Button */}
+                    <td className="px-3 md:px-4 py-1 text-center">
+                      <button
+                        onClick={clearAllFilters}
+                        className="inline-flex items-center px-2 py-1 border border-gray-300 rounded hover:bg-gray-50 transition text-[9px] md:text-xs font-medium text-gray-700"
+                        title="Clear Filters"
+                      >
+                        <XCircle className="w-3 h-3 mr-0.5" />
+                        Clear
+                      </button>
+                    </td>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-gray-200">
+                  {filteredPOs.map((po: any) => (
+                    <tr key={po.id} className="hover:bg-gray-50 transition">
+                      <td className="px-3 md:px-4 py-3">
+                        <span className="font-medium text-blue-600 text-xs md:text-sm">
+                          {po.po_number}
+                        </span>
+                        <p className="text-[10px] md:text-xs text-gray-500 mt-0.5">
+                          {po.po_date
+                            ? new Date(po.po_date).toLocaleDateString()
+                            : ""}
+                        </p>
+                      </td>
+                      <td className="px-3 md:px-4 py-3 text-gray-700 text-xs md:text-sm truncate max-w-[120px]">
+                        {po.vendors?.name || "N/A"}
+                      </td>
+                      <td className="px-3 md:px-4 py-3 text-gray-700 text-xs md:text-sm truncate max-w-[120px]">
+                        {po.projects?.name || "N/A"}
+                      </td>
+                      <td className="px-3 md:px-4 py-3">
+                        <span className="font-semibold text-gray-800 text-xs md:text-sm">
+                          {formatCurrency(po.grand_total)}
+                        </span>
+                      </td>
+                      <td className="px-3 md:px-4 py-3">
+                        <span
+                          className={`px-2 py-0.5 md:px-3 md:py-1 rounded-full text-[10px] md:text-xs font-medium ${getStatusColor(
+                            po.status,
+                          )}`}
+                        >
+                          {po.status?.toUpperCase()}
+                        </span>
+                      </td>
+                      <td className="px-3 md:px-4 py-3">
+                        <span
+                          className={`px-2 py-0.5 md:px-3 md:py-1 rounded-full text-[10px] md:text-xs font-medium ${
+                            po.material_status === "completed"
+                              ? "bg-green-100 text-green-700"
+                              : po.material_status === "partial"
+                                ? "bg-yellow-100 text-yellow-700"
+                                : "bg-red-100 text-red-700"
+                          }`}
+                        >
+                          {po.material_status?.toUpperCase() || "PENDING"}
+                        </span>
+                      </td>
+                      <td className="px-3 md:px-4 py-3">
+                        <span
+                          className={`px-2 py-0.5 md:px-3 md:py-1 rounded-full text-[10px] md:text-xs font-medium ${getPaymentStatusColor(
+                            po.payment_status,
+                          )}`}
+                        >
+                          {po.payment_status?.toUpperCase() || "PENDING"}
+                        </span>
+                        {po.balance_amount! > 0 && (
+                          <p className="text-[10px] md:text-xs text-gray-600 mt-0.5">
+                            Bal: {formatCurrency(po.balance_amount)}
+                          </p>
+                        )}
+                      </td>
+                      <td className="px-3 md:px-4 py-3">
+                        <div className="flex items-center justify-center gap-1.5 md:gap-2">
+                          <button
+                            onClick={() => handleView(po)}
+                            className="p-1.5 md:p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition"
+                            title="View Details"
+                          >
+                            <FileText className="w-3.5 h-3.5 md:w-4 md:h-4" />
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {activeTab === "management" && (
+        <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+          <div className="overflow-x-auto h-[calc(100vh-160px)]">
+            <table className="w-full min-w-[800px]">
+              <thead className="sticky top-0 z-10 bg-gray-200 border-b border-gray-200">
+                {" "}
+                {/* Header Row */}
+                <tr>
+                  <th className="px-3 md:px-4 py-2 text-left">
+                    <div className="text-[10px] md:text-xs font-semibold text-gray-700 uppercase tracking-wider">
+                      SO Number
+                    </div>
+                  </th>
+                  <th className="px-3 md:px-4 py-2 text-left">
+                    <div className="text-[10px] md:text-xs font-semibold text-gray-700 uppercase tracking-wider">
+                      Vendor
+                    </div>
+                  </th>
+                  <th className="px-3 md:px-4 py-2 text-left">
+                    <div className="text-[10px] md:text-xs font-semibold text-gray-700 uppercase tracking-wider">
+                      Project
+                    </div>
+                  </th>
+                  <th className="px-3 md:px-4 py-2 text-left">
+                    <div className="text-[10px] md:text-xs font-semibold text-gray-700 uppercase tracking-wider">
+                      Type
+                    </div>
+                  </th>
+                  <th className="px-3 md:px-4 py-2 text-left">
+                    <div className="text-[10px] md:text-xs font-semibold text-gray-700 uppercase tracking-wider">
+                      Date
+                    </div>
+                  </th>
+                  <th className="px-3 md:px-4 py-2 text-left">
+                    <div className="text-[10px] md:text-xs font-semibold text-gray-700 uppercase tracking-wider">
+                      Amount
+                    </div>
+                  </th>
+                  <th className="px-3 md:px-4 py-2 text-left">
+                    <div className="text-[10px] md:text-xs font-semibold text-gray-700 uppercase tracking-wider">
+                      Status
+                    </div>
+                  </th>
+                  <th className="px-3 md:px-4 py-2 text-left">
+                    <div className="text-[10px] md:text-xs font-semibold text-gray-700 uppercase tracking-wider">
+                      Actions
+                    </div>
+                  </th>
+                </tr>
+                {/* Search Row - Separate Row Below Headers */}
+                {/* Management Tab - Search Row */}
+                <tr className="bg-gray-50 border-b border-gray-200">
+                  {/* PO Number Column Search */}
+                  <td className="px-3 md:px-4 py-1">
                     <input
-                      type="date"
-                      placeholder="Start Date..."
-                      value={searchStartDate}
-                      onChange={(e) => setSearchStartDate(e.target.value)}
+                      type="text"
+                      placeholder="PO Number..."
+                      value={searchFilters.poNumber}
+                      onChange={(e) =>
+                        handleSearchFilterChange("poNumber", e.target.value)
+                      }
                       className="w-full px-2 py-1 text-[9px] md:text-xs border border-gray-300 rounded focus:ring-1 focus:ring-blue-500 focus:border-transparent"
                     />
+                  </td>
+
+                  {/* Vendor Column Search */}
+                  <td className="px-3 md:px-4 py-1">
                     <input
-                      type="date"
-                      placeholder="End Date..."
-                      value={searchEndDate}
-                      onChange={(e) => setSearchEndDate(e.target.value)}
+                      type="text"
+                      placeholder="Vendor..."
+                      value={searchFilters.vendor}
+                      onChange={(e) =>
+                        handleSearchFilterChange("vendor", e.target.value)
+                      }
                       className="w-full px-2 py-1 text-[9px] md:text-xs border border-gray-300 rounded focus:ring-1 focus:ring-blue-500 focus:border-transparent"
                     />
-                  </div>
-                </td>
-
-                {/* Building Column Search */}
-                <td className="px-3 md:px-4 py-1">
-                  <input
-                    type="text"
-                    placeholder="Building..."
-                    value={searchBuilding}
-                    onChange={(e) => setSearchBuilding(e.target.value)}
-                    className="w-full px-2 py-1 text-[9px] md:text-xs border border-gray-300 rounded focus:ring-1 focus:ring-blue-500 focus:border-transparent"
-                  />
-                </td>
-
-                {/* Financials Column - No search */}
-                <td className="px-3 md:px-4 py-1"></td>
-
-                {/* Status Column Search */}
-                <td className="px-3 md:px-4 py-1">
-                  <select
-                    value={searchStatus}
-                    onChange={(e) => setSearchStatus(e.target.value)}
-                    className="w-full px-2 py-1 text-[9px] md:text-xs border border-gray-300 rounded focus:ring-1 focus:ring-blue-500 focus:border-transparent"
-                  >
-                    <option value="">All Status</option>
-                    <option value="draft">Draft</option>
-                    <option value="approve">Approve</option>
-                    <option value="authorize">Authorize</option>
-                    <option value="reject">Reject</option>
-                  </select>
-                </td>
-
-                {/* Service Status Column Search */}
-                <td className="px-3 md:px-4 py-1">
-                  <select
-                    value={searchServiceStatus}
-                    onChange={(e) => setSearchServiceStatus(e.target.value)}
-                    className="w-full px-2 py-1 text-[9px] md:text-xs border border-gray-300 rounded focus:ring-1 focus:ring-blue-500 focus:border-transparent"
-                  >
-                    <option value="">All Service Status</option>
-                    <option value="pending">Pending</option>
-                    <option value="partial">Partial</option>
-                    <option value="completed">Completed</option>
-                  </select>
-                </td>
-
-                {/* Actions Column - Clear Filter Button */}
-                <td className="px-3 md:px-4 py-1 text-center">
-                  <button
-                    onClick={() => {
-                      setSearchSONumber("");
-                      setSearchVendor("");
-                      setSearchProject("");
-                      setSearchServiceType("");
-                      setSearchBuilding("");
-                      setSearchStartDate("");
-                      setSearchEndDate("");
-                      setSearchStatus("");
-                      setSearchServiceStatus("");
-                    }}
-                    className="inline-flex items-center px-2 py-1 border border-gray-300 rounded hover:bg-gray-50 transition text-[9px] md:text-xs font-medium text-gray-700"
-                    title="Clear Filters"
-                  >
-                    <XCircle className="w-3 h-3 mr-0.5" />
-                    Clear
-                  </button>
-                </td>
-              </tr>
-            </thead>
-
-            <tbody className="divide-y divide-gray-200">
-              {serviceOrders.map((so) => (
-                <tr key={so.id} className="hover:bg-gray-50 transition">
-                  <td className="px-3 md:px-4 py-3">
-                    <span className="font-medium text-blue-600 text-xs md:text-sm">
-                      {so.so_number}
-                    </span>
-                    <p className="text-[10px] md:text-xs text-gray-500 mt-0.5">
-                      {so.so_date ? formatDate(so.so_date) : ""}
-                    </p>
                   </td>
-                  
-                 <td className="px-3 md:px-4 py-3 text-gray-700 text-xs md:text-sm truncate max-w-[120px]">
-  {vendors.find((v) => Number(v.id) === Number(so.vendor_id))?.name || "N/A"}
-</td>
 
-<td className="px-3 md:px-4 py-3 text-gray-700 text-xs md:text-sm truncate max-w-[120px]">
-  {projects.find((p) => Number(p.id) === Number(so.project_id))?.name || "N/A"}
-</td>
+                  {/* Project Column Search */}
+                  <td className="px-3 md:px-4 py-1">
+                    <input
+                      type="text"
+                      placeholder="Project..."
+                      value={searchFilters.project}
+                      onChange={(e) =>
+                        handleSearchFilterChange("project", e.target.value)
+                      }
+                      className="w-full px-2 py-1 text-[9px] md:text-xs border border-gray-300 rounded focus:ring-1 focus:ring-blue-500 focus:border-transparent"
+                    />
+                  </td>
 
-<td className="px-3 md:px-4 py-3 text-gray-700 text-xs md:text-sm truncate max-w-[120px]">
-  {serviceTypes.find((s) => Number(s.id) === Number(so.service_type_id))?.name || "N/A"}
-</td>
+                  {/* Type Column Search */}
+                  <td className="px-3 md:px-4 py-1">
+                    <input
+                      type="text"
+                      placeholder="Type..."
+                      value={searchFilters.type}
+                      onChange={(e) =>
+                        handleSearchFilterChange("type", e.target.value)
+                      }
+                      className="w-full px-2 py-1 text-[9px] md:text-xs border border-gray-300 rounded focus:ring-1 focus:ring-blue-500 focus:border-transparent"
+                    />
+                  </td>
 
-<td className="px-3 md:px-4 py-3 text-gray-700 text-xs md:text-sm truncate max-w-[120px]">
-  {buildings.find((b) => Number(b.id) === Number(so.building_id))?.name || "N/A"}
-</td>
-                  
-                  <td className="px-3 md:px-4 py-3 text-gray-700 text-xs md:text-sm">
-                    <div className="space-y-1">
-                      <div className="flex items-center gap-1">
-                        <Calendar className="w-3.5 h-3.5 text-gray-400" />
-                        <span>Start: {formatDate(so.start_date)}</span>
-                      </div>
-                      {so.end_date && (
-                        <div className="flex items-center gap-1">
-                          <Calendar className="w-3.5 h-3.5 text-gray-400" />
-                          <span>End: {formatDate(so.end_date)}</span>
-                        </div>
-                      )}
-                    </div>
+                  {/* Date Column Search */}
+                  <td className="px-3 md:px-4 py-1">
+                    <input
+                      type="text"
+                      placeholder="Date..."
+                      value={searchFilters.date}
+                      onChange={(e) =>
+                        handleSearchFilterChange("date", e.target.value)
+                      }
+                      className="w-full px-2 py-1 text-[9px] md:text-xs border border-gray-300 rounded focus:ring-1 focus:ring-blue-500 focus:border-transparent"
+                    />
                   </td>
-                  
-                  <td className="px-3 md:px-4 py-3 text-gray-700 text-xs md:text-sm truncate max-w-[120px]">
-                    {buildings.find((b) => Number(b.id) === Number(so.building_id))?.name || "N/A"}
+
+                  {/* Amount Column Search */}
+                  <td className="px-3 md:px-4 py-1">
+                    <input
+                      type="text"
+                      placeholder="Amount..."
+                      value={searchFilters.amount}
+                      onChange={(e) =>
+                        handleSearchFilterChange("amount", e.target.value)
+                      }
+                      className="w-full px-2 py-1 text-[9px] md:text-xs border border-gray-300 rounded focus:ring-1 focus:ring-blue-500 focus:border-transparent"
+                    />
                   </td>
-                  
-                  <td className="px-3 md:px-4 py-3">
-                    <div className="space-y-1">
-                      <div className="font-medium text-xs md:text-sm">
-                        {formatCurrency(so.grand_total)}
-                      </div>
-                      <div className="text-[10px] md:text-xs text-gray-500">
-                        Sub: {formatCurrency(so.sub_total)}
-                      </div>
-                      {so.discount_amount > 0 && (
-                        <div className="text-[10px] md:text-xs text-green-600">
-                          Disc: {formatCurrency(so.discount_amount)}
-                        </div>
-                      )}
-                    </div>
+
+                  {/* Status Column Search */}
+                  <td className="px-3 md:px-4 py-1">
+                    <input
+                      type="text"
+                      placeholder="Status..."
+                      value={searchFilters.poStatus}
+                      onChange={(e) =>
+                        handleSearchFilterChange("poStatus", e.target.value)
+                      }
+                      className="w-full px-2 py-1 text-[9px] md:text-xs border border-gray-300 rounded focus:ring-1 focus:ring-blue-500 focus:border-transparent"
+                    />
                   </td>
-                  
-                  <td className="px-3 md:px-4 py-3">
-                    <span
-                      className={`px-2 py-0.5 md:px-3 md:py-1 rounded-full text-[10px] md:text-xs font-medium ${getStatusBadge(so.status)}`}
+
+                  {/* Actions Column - Clear Filter Button */}
+                  <td className="px-3 md:px-4 py-1 text-center">
+                    <button
+                      onClick={clearAllFilters}
+                      className="inline-flex items-center px-2 py-1 border border-gray-300 rounded hover:bg-gray-50 transition text-[9px] md:text-xs font-medium text-gray-700"
+                      title="Clear Filters"
                     >
-                      {so.status?.toUpperCase()}
-                    </span>
-                  </td>
-                  
-                  <td className="px-3 md:px-4 py-3">
-                    <span
-                      className={`px-2 py-0.5 md:px-3 md:py-1 rounded-full text-[10px] md:text-xs font-medium ${getServiceStatusBadge(so.service_status)}`}
-                    >
-                      {so.service_status?.toUpperCase()}
-                    </span>
-                  </td>
-                  
-                  <td className="px-3 md:px-4 py-3">
-                    <div className="flex items-center justify-center gap-1.5 md:gap-2">
-                      <button
-                        onClick={() => handleEdit(so)}
-                        className="p-1.5 md:p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition"
-                        title="Edit"
-                      >
-                        <Edit2 className="w-3.5 h-3.5 md:w-4 md:h-4" />
-                      </button>
-                      <button
-                        onClick={() => window.print()}
-                        className="p-1.5 md:p-2 text-green-600 hover:bg-green-50 rounded-lg transition"
-                        title="Print"
-                      >
-                        <Printer className="w-3.5 h-3.5 md:w-4 md:h-4" />
-                      </button>
-                      <button
-                        onClick={() => {
-                          const url = `${window.location.href}#so=${so.id}`;
-                          navigator.clipboard.writeText(url);
-                          toast.success("Link copied to clipboard");
-                        }}
-                        className="p-1.5 md:p-2 text-purple-600 hover:bg-purple-50 rounded-lg transition"
-                        title="Share"
-                      >
-                        <Share2 className="w-3.5 h-3.5 md:w-4 md:h-4" />
-                      </button>
-                      <button
-                        onClick={async () => {
-                          if (confirm("Are you sure you want to delete this service order?")) {
-                            try {
-                              await deleteServiceOrder(so.id!);
-                              await loadData();
-                              toast.success("Service order deleted");
-                            } catch (err) {
-                              toast.error("Delete failed");
-                            }
-                          }
-                        }}
-                        className="p-1.5 md:p-2 text-red-600 hover:bg-red-50 rounded-lg transition"
-                        title="Delete"
-                      >
-                        <Trash2 className="w-3.5 h-3.5 md:w-4 md:h-4" />
-                      </button>
-                    </div>
+                      <XCircle className="w-3 h-3 mr-0.5" />
+                      Clear
+                    </button>
                   </td>
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody className="divide-y divide-gray-200">
+                {filteredPOs.map((po: any) => (
+                  <tr key={po.id} className="hover:bg-gray-50 transition">
+                    <td className="px-3 md:px-4 py-3">
+                      <span className="font-medium text-blue-600 text-xs md:text-sm">
+                        {po.po_number}
+                      </span>
+                    </td>
+                    <td className="px-3 md:px-4 py-3 text-gray-700 text-xs md:text-sm truncate max-w-[120px]">
+                      {po.vendors?.name || "N/A"}
+                    </td>
+                    <td className="px-3 md:px-4 py-3 text-gray-700 text-xs md:text-sm truncate max-w-[120px]">
+                      {po.projects?.name || "N/A"}
+                    </td>
+                    <td className="px-3 md:px-4 py-3 text-gray-700 text-xs md:text-sm truncate max-w-[80px]">
+                      {po.po_types?.name || "N/A"}
+                    </td>
+                    <td className="px-3 md:px-4 py-3 text-gray-700 text-xs md:text-sm whitespace-nowrap">
+                      {po.po_date
+                        ? new Date(po.po_date).toLocaleDateString()
+                        : ""}
+                    </td>
+                    <td className="px-3 md:px-4 py-3">
+                      <span className="font-semibold text-gray-800 text-xs md:text-sm">
+                        {formatCurrency(po.grand_total)}
+                      </span>
+                    </td>
+                    <td className="px-3 md:px-4 py-3">
+                      <span
+                        className={`px-2 py-0.5 md:px-3 md:py-1 rounded-full text-[10px] md:text-xs font-medium ${getStatusColor(
+                          po.status,
+                        )}`}
+                      >
+                        {po.status?.toUpperCase()}
+                      </span>
+                    </td>
+                    <td className="px-3 md:px-4 py-3">
+                      <div className="flex items-center justify-center gap-1.5 md:gap-2">
+                        <button
+                          onClick={() => {
+                            viewPoPdf(po.id, "download");
+                            setPdfUrl(po.id);
+                          }}
+                          disabled={pdfLoading}
+                          className="p-1.5 md:p-2 text-black hover:bg-blue-50 rounded-lg transition"
+                          title="Download PDF"
+                        >
+                          {pdfLoading && pdfUrl === po.id ? (
+                            <Loader2 className="w-3.5 h-3.5 md:w-4 md:h-4 animate-spin" />
+                          ) : (
+                            <FileDown className="w-3.5 h-3.5 md:w-4 md:h-4" />
+                          )}
+                        </button>
+                        <button
+                          onClick={() => {
+                            viewPoPdf(po.id);
+                          }}
+                          className="p-1.5 md:p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition"
+                          title="View PDF"
+                        >
+                          <FileText className="w-3.5 h-3.5 md:w-4 md:h-4" />
+                        </button>
+                        {can("edit_pos") && po.status === "draft" && (
+                          <button
+                            onClick={async () => {
+                              if (!allPurchaseOrderItems) {
+                                toast.success("wait data is loading");
+                                return;
+                              }
+                              const itemsList = allPurchaseOrderItems.filter(
+                                (d: any) => d.po_id === po.id,
+                              );
+                              const result = itemsList.map((item: any) => {
+                                let materialTrackingId = null;
 
-          {serviceOrders.length === 0 && (
-            <div className="text-center py-12 px-3">
-              <Wrench className="w-16 h-16 text-gray-300 mx-auto mb-4" />
-              <h3 className="text-lg font-semibold text-gray-800 mb-2">
+                                for (
+                                  let i = 0;
+                                  i < filteredTracking.length;
+                                  i++
+                                ) {
+                                  if (
+                                    String(filteredTracking[i].item_id) ===
+                                      String(item.item_id) &&
+                                    String(filteredTracking[i].po_id) ===
+                                      String(item.po_id)
+                                  ) {
+                                    materialTrackingId = filteredTracking[i].id;
+                                    break;
+                                  }
+                                }
+
+                                return {
+                                  ...item,
+                                  materialTrackingId: materialTrackingId,
+                                };
+                              });
+
+                              const vendorTerms: any =
+                                (await TermsConditionsApi.getByIdVendorTC(
+                                  po.vendor_id,
+                                )) || [];
+
+                              const selected_terms_idsData = JSON.parse(
+                                po.selected_terms_ids,
+                              );
+
+                              const terms_and_conditionsData =
+                                JSON.parse(po.terms_and_conditions) || [];
+
+                              const terms =
+                                vendorTerms.filter((term: any) =>
+                                  selected_terms_idsData.includes(term.id),
+                                ) || [];
+
+                              terms_and_conditionsData.forEach(
+                                (element: any) => {
+                                  terms.push(element);
+                                },
+                              );
+
+                              const formatedTerms: any = Object.values(
+                                terms.reduce((acc: any, item: any) => {
+                                  const key = item.category;
+
+                                  if (!acc[key]) {
+                                    acc[key] = {
+                                      id: item.id,
+                                      vendor_id: item.vendor_id,
+                                      category: item.category,
+                                      content: [],
+                                      is_active: item.is_active,
+                                    };
+                                  }
+                                  acc[key].content.push({
+                                    category: item.category,
+                                    content: item.content,
+                                    is_default: Boolean(true),
+                                    term_id: item.id,
+                                  });
+                                  acc[key].isActive = false;
+
+                                  return acc;
+                                }, {}),
+                              );
+
+                              const data = {
+                                poId: po.id,
+                                advance_amount: po.advance_amount,
+                                cgst_amount: po.cgst_amount,
+                                delivery_date: po.delivery_date.slice(0, 10),
+                                due_date: po.due_date,
+                                discount_amount: po.discount_amount,
+                                discount_percentage: po.discount_percentage,
+                                grand_total: po.grand_total,
+                                igst_amount: po.igst_amount,
+                                is_interstate: Boolean(po.is_interstate),
+                                items: result,
+                                notes: po.notes ?? "",
+                                payment_terms_id: po.payment_terms_id ?? "",
+                                po_date: po.po_date.slice(0, 10) ?? "",
+                                po_number: po.po_number ?? "",
+                                po_type_id: Number(po.po_type_id),
+                                project_id: Number(po.project_id),
+                                selected_terms_ids: po.selected_terms_ids,
+                                sgst_amount: po.sgst_amount ?? 0,
+                                subtotal: po.subtotal ?? 0,
+                                taxable_amount: po.taxable_amount ?? 0,
+                                terms_and_conditions: formatedTerms ?? [],
+                                total_gst_amount: po.total_gst_amount ?? 0,
+                                vendor_id: Number(po.vendor_id),
+                              };
+
+                              setSelectedPOForUpdate(data);
+                              setShowEditModal(true);
+                            }}
+                            className="p-1.5 md:p-2 text-yellow-600 hover:bg-yellow-50 rounded-lg transition"
+                            title="Edit"
+                          >
+                            <Edit2 className="w-3.5 h-3.5 md:w-4 md:h-4" />
+                          </button>
+                        )}
+
+                        {can("delete_pos") && po.status === "draft" && (
+                          <button
+                            onClick={() => {
+                              handleDelete(po.id);
+                            }}
+                            className="p-1.5 md:p-2 text-red-600 hover:bg-red-50 rounded-lg transition"
+                            title="Delete"
+                          >
+                            <Trash2 className="w-3.5 h-3.5 md:w-4 md:h-4" />
+                          </button>
+                        )}
+                        {can("make_payments") &&
+                          po.balance_amount! > 0 &&
+                          po.status === "authorize" && (
+                            <button
+                              onClick={() => {
+                                openPaymentModal(po);
+                              }}
+                              className="p-1.5 md:p-2 text-green-600 hover:bg-green-50 rounded-lg transition"
+                              title="Make Payment"
+                            >
+                              <IndianRupee className="w-3.5 h-3.5 md:w-4 md:h-4" />
+                            </button>
+                          )}
+                        <div className="relative">
+                          {showApprovalButtons === po.id && (
+                            <div className="absolute -top-16 right-2 z-50 space-x-3 bg-white flex shadow-xl px-6 py-3 rounded-md border border-slate-300">
+                              {" "}
+                              {can("approve_pos") && po.status === "draft" && (
+                                <button
+                                  onClick={() =>
+                                    updatePurchaseOrderStatus(po.id, "approved")
+                                  }
+                                  className="p-2 px-6 text-white bg-green-600 hover:bg-green-500 rounded-lg transition flex items-center text-xs"
+                                  title="Approve"
+                                >
+                                  <Check size={20} className="w-4 h-4 mr-2" />
+                                  Approve
+                                </button>
+                              )}
+                              {can("authorize_pos") &&
+                                po.status === "approved" && (
+                                  <button
+                                    onClick={() => {
+                                      updatePurchaseOrderStatus(
+                                        po.id,
+                                        "authorize",
+                                      );
+                                    }}
+                                    className="p-2 px-6 text-white bg-green-600 hover:bg-green-500 rounded-lg transition flex items-center text-xs"
+                                    title="Authorize"
+                                  >
+                                    <Check className="w-4 h-4" /> Authorize
+                                  </button>
+                                )}
+                              {(can("approve_pos") || can("authorize_pos")) &&
+                                (po.status === "draft" ||
+                                  po.status === "approved") && (
+                                  <button
+                                    onClick={() =>
+                                      updatePurchaseOrderStatus(
+                                        po.id,
+                                        "rejected",
+                                      )
+                                    }
+                                    className="p-2 px-6 text-white bg-red-600 hover:bg-red-500 rounded-lg transition flex items-center text-xs"
+                                    title="Reject"
+                                  >
+                                    <XCircle className="w-4 h-4 mr-2" /> Reject
+                                  </button>
+                                )}
+                            </div>
+                          )}
+                          {can("edit_pos") &&
+                            po.status !== "authorize" &&
+                            po.status !== "rejected" && (
+                              <button
+                                onClick={() => {
+                                  if (showApprovalButtons === po.id) {
+                                    setShowApprovalButtons(null);
+                                  } else {
+                                    setShowApprovalButtons(po.id);
+                                  }
+                                }}
+                                className="p-1.5 md:p-2 text-green-600 hover:bg-green-100 rounded-lg transition"
+                                title={`${
+                                  (po.status === "approved" && "Authorize") ||
+                                  (po.status === "draft" && "Approve")
+                                }`}
+                              >
+                                <FileCheck2 className="w-3.5 h-3.5 md:w-4 md:h-4" />
+                              </button>
+                            )}
+                        </div>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+
+          {filteredPOs.length === 0 && (
+            <div className="text-center py-12">
+              <FileText className="w-12 h-12 md:w-16 md:h-16 text-gray-300 mx-auto mb-3" />
+              <p className="text-gray-600 text-sm md:text-lg font-medium">
                 No service orders found
-              </h3>
-              <p className="text-gray-600 text-sm">
-                Click "Create Service Order" to get started
+              </p>
+              <p className="text-gray-500 text-xs md:text-sm mt-2">
+                {'Click "Create SO" to get started'}
               </p>
             </div>
           )}
         </div>
-      </div>
+      )}
 
-      {/* Create/Edit Modal (Similar to PO Form) */}
-      {showModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4 overflow-y-auto">
-          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-4xl my-8">
-            {/* Header */}
-            <div
-              className="bg-gradient-to-r from-[#4b4e4b] via-[#5a5d5a] to-[#6b6e6b]
-  px-6 py-4 flex justify-between items-center
-  rounded-t-2xl border-b border-white/10
-  backdrop-blur-md"
-            >
-              <div className="flex items-center gap-3">
-                <div className="p-2 bg-white/20 rounded-xl backdrop-blur-sm">
-                  <Wrench className="w-5 h-5 text-white" />
-                </div>
-
-                <div>
-                  <h2 className="text-lg font-bold text-white leading-tight">
-                    {editingId ? "Edit Service Order" : "Create Service Order"}
-                  </h2>
-                  <p className="text-xs text-white/80 mt-0.5">
-                    Manage and create service orders
-                  </p>
-                </div>
-              </div>
-
+      {/* View Modal */}
+      {showViewModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-4xl max-h-[95vh] overflow-hidden">
+            <div className=" bg-[#C62828] px-6 py-4 flex justify-between items-center">
+              <h2 className="text-2xl font-bold text-white">
+                Service Order PDF Preveiw
+              </h2>
               <button
-                onClick={() => {
-                  setShowModal(false);
-                  resetForm();
-                }}
-                className="text-white hover:bg-white/20 rounded-xl p-2 transition-all duration-200 hover:scale-105 active:scale-95"
+                onClick={() => setShowViewModal(false)}
+                className="text-white hover:bg-white hover:bg-opacity-20 rounded-lg p-2 transition"
               >
-                <X className="w-5 h-5" />
+                <X className="w-6 h-6" />
               </button>
             </div>
+            <div className=" overflow-y-auto max-h-[900px]">
+              {pdfLoading ? (
+                <div className="flex items-center justify-center h-64">
+                  <div className="text-center">
+                    <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+                    <p className="text-gray-600">Loading PDF preview...</p>
+                  </div>
+                </div>
+              ) : (
+                <div>
+                  {pdfUrl && (
+                    <iframe
+                      src={pdfUrl}
+                      width="100%"
+                      height="600"
+                      style={{ border: "none" }}
+                    />
+                  )}
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
 
-            <form
-              onSubmit={handleSubmit}
-              className="p-4 md:p-6 space-y-6 max-h-[calc(100vh-180px)] overflow-y-auto custom-scrollbar"
-            >
-              {/* Basic Information */}
+      {showEditModal && (
+        <UpdateServiceOrderForm
+          setShowEditModal={setShowEditModal}
+          selectedPO={selectedPOForUdate}
+          loadAllData={loadAllData}
+        />
+      )}
+
+      {showChallans && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-4xl">
+            <div className="bg-gradient-to-r rounded-t-2xl from-blue-600 to-blue-700 px-6 py-4 flex justify-between items-center">
+              <h2 className="text-2xl font-bold text-white">View Challans</h2>
+              <button
+                onClick={() => setShowChallans(false)}
+                className="text-white hover:bg-white hover:bg-opacity-20 rounded-lg p-2 transition"
+              >
+                <X className="w-6 h-6" />
+              </button>
+            </div>
+            <div className="h-[600px] overflow-y-scroll">
+              {allChallans.map((d) => (
+                <div>
+                  <img
+                    src={import.meta.env.VITE_API_URL + d}
+                    className="mb-4"
+                  />
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {showUpdateMaterialQuantity && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg">
+            <div className="bg-gradient-to-r rounded-t-2xl from-blue-600 to-blue-700 px-6 py-4 flex justify-between items-center">
+              <h2 className="text-2xl font-bold text-white">
+                Update Material Quantity
+              </h2>
+              <button
+                onClick={() => setShowUpdateMaterialQuantity(false)}
+                className="text-white hover:bg-white hover:bg-opacity-20 rounded-lg p-2 transition"
+              >
+                <X className="w-6 h-6" />
+              </button>
+            </div>
+            <form onSubmit={updateMaterialQuantity} className="p-6">
+              <div className=" mb-6">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    From
+                  </label>
+                  <SearchableSelect
+                    options={vendors.map((v: any) => ({
+                      id: v.id,
+                      name: v.name || v.vendor_name || v.display || "",
+                    }))}
+                    value={from}
+                    onChange={(id) => {
+                      setFrom(id);
+                    }}
+                    placeholder="Select Vendor"
+                    required
+                  />
+                </div>
+              </div>
+              <div className=" mb-6">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    To
+                  </label>
+                  <SearchableSelect
+                    options={allStoreManagementEmployee.map((v: any) => ({
+                      id: v.id,
+                      name: v.full_name || v.vendor_name || v.display || "",
+                    }))}
+                    value={to}
+                    onChange={(id) => {
+                      setTo(id);
+                    }}
+                    placeholder="Select Vendor"
+                    required
+                  />
+                </div>
+              </div>
+              <div className=" mb-6">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Material Quantity Received
+                  </label>
+                  <input
+                    type="number"
+                    min={0}
+                    value={materialQuantity}
+                    className="appearance-none w-full border px-3 py-2 rounded"
+                    onChange={(e) =>
+                      setMaterialQuantity(Number(e.target.value))
+                    }
+                  />
+                </div>
+              </div>
+
+              <div className="mb-4">
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Challan Number
+                </label>
+                <input
+                  type="text"
+                  value={challanNumber}
+                  onChange={(e) => setChallanNumber(e.target.value)}
+                  className="w-full border px-3 py-2 rounded"
+                  placeholder="Enter challan number"
+                />
+              </div>
+
               <div className="mb-6">
-                <h4 className="text-sm font-semibold text-gray-800 mb-4 flex items-center gap-2">
-                  <Info className="w-4 h-4 text-blue-600" />
-                  Basic Information
-                </h4>
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                  {/* Vendor */}
-                 {/* Vendor */}
-<div>
-  <label className="block text-xs font-medium text-gray-700 mb-1.5">
-    Vendor *
-  </label>
-  <SearchableSelect
-    options={vendors.map((v) => ({
-      id: String(v.id),
-      name: v.name || v.vendor_name || "N/A",
-    }))}
-    value={formData.vendor_id}
-    onChange={(id) => {
-      setFormData({ ...formData, vendor_id: id });
-      loadTerms(id);
-    }}
-    placeholder="Select Vendor"
-    required
-  />
-</div>
-
-                  {/* Project */}
-                  <div className="space-y-1.5">
-                    <label className="block text-xs font-semibold text-gray-700 mb-1 flex items-center gap-1.5">
-                      <Building className="w-3 h-3 text-green-600" />
-                      <span>Project</span>
-                      <span className="text-red-500">*</span>
-                    </label>
-                    <div className="relative group">
-                      <div className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 group-focus-within:text-green-600 transition-colors">
-                        <Building className="w-3.5 h-3.5" />
-                      </div>
-                      <SearchableSelect
-                        options={projects.map((p) => ({
-                          id: p.id,
-                          name: p.name,
-                        }))}
-                        value={formData.project_id}
-                        onChange={(id) => setFormData({ ...formData, project_id: id })}
-                        placeholder="Select Project"
-                        required
-                      />
-                    </div>
-                  </div>
-
-                  {/* Service Type */}
-                  <div className="space-y-1.5">
-                    <label className="block text-xs font-semibold text-gray-700 mb-1 flex items-center gap-1.5">
-                      <Layers className="w-3 h-3 text-purple-600" />
-                      <span>Service Type</span>
-                      <span className="text-red-500">*</span>
-                    </label>
-                    <div className="relative group">
-                      <SearchableSelect
-                        options={serviceTypes.map((t: any) => ({
-                          id: String(t.id),
-                          name: t.name,
-                        }))}
-                        value={formData.service_type_id}
-                        onChange={(id) => setFormData({ ...formData, service_type_id: id })}
-                        placeholder="Select Service Type"
-                        required
-                      />
-                    </div>
-                  </div>
-
-                  {/* Building */}
-                  <div className="space-y-1.5">
-                    <label className="block text-xs font-semibold text-gray-700 mb-1 flex items-center gap-1.5">
-                      <Building className="w-3 h-3 text-amber-600" />
-                      <span>Building</span>
-                    </label>
-                    <div className="relative group">
-                      <SearchableSelect
-                        options={buildings.map((b) => ({
-                          id: b.id,
-                          name: b.name,
-                        }))}
-                        value={formData.building_id}
-                        onChange={(id) => setFormData({ ...formData, building_id: id })}
-                        placeholder="Select Building"
-                      />
-                    </div>
-                  </div>
-                  {/* SO Date */}
-                  <div className="space-y-1.5">
-                    <label className="block text-xs font-semibold text-gray-700 mb-1 flex items-center gap-1.5">
-                      <Calendar className="w-3 h-3 text-indigo-600" />
-                      <span>SO Date</span>
-                      <span className="text-red-500">*</span>
-                    </label>
-                    <input
-                      type="date"
-                      value={formData.so_date}
-                      min={today}
-                      onChange={(e) =>
-                        setFormData({ ...formData, so_date: e.target.value })
-                      }
-                      className="w-full px-3 py-2 text-sm border border-gray-300 rounded-xl"
-                      required
-                    />
-                  </div>
-                  {/* Start Date */}
-                  <div className="space-y-1.5">
-                    <label className="block text-xs font-semibold text-gray-700 mb-1 flex items-center gap-1.5">
-                      <Calendar className="w-3 h-3 text-blue-600" />
-                      <span>Start Date</span>
-                      <span className="text-red-500">*</span>
-                    </label>
-                    <input
-                      type="date"
-                      value={formData.start_date}
-                      min={today}
-                      onChange={(e) =>
-                        setFormData({
-                          ...formData,
-                          start_date: e.target.value,
-                          end_date: "" // start date change hone par end date reset
-                        })
-                      }
-                      className="w-full px-3 py-2 text-sm border border-gray-300 rounded-xl"
-                      required
-                    />
-                  </div>
-
-                  {/* End Date */}
-                  <div className="space-y-1.5">
-                    <label className="block text-xs font-semibold text-gray-700 mb-1 flex items-center gap-1.5">
-                      <Calendar className="w-3 h-3 text-red-600" />
-                      <span>End Date</span>
-                    </label>
-                    <input
-                      type="date"
-                      value={formData.end_date}
-                      min={formData.start_date || today}
-                      onChange={(e) =>
-                        setFormData({ ...formData, end_date: e.target.value })
-                      }
-                      className="w-full px-3 py-2 text-sm border border-gray-300 rounded-xl"
-                    />
-                  </div>
-                </div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Upload Challan Photo
+                </label>
+                <input
+                  type="file"
+                  accept="image/*"
+                  onChange={(e) => {
+                    if (e.target.files?.[0]) {
+                      setChallanImage(e.target.files[0]);
+                    }
+                  }}
+                  className="w-full border file:px-3 file:py-2 rounded file:bg-blue-600 file:hover:bg-blue-700 file:border-none file:text-white"
+                />
               </div>
 
-              {/* Service Items Section */}
-              <div className="space-y-4">
-                <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
-                  <div className="flex items-center gap-2">
-                    <div className="p-1.5 bg-blue-100 rounded-lg">
-                      <Package className="w-4 h-4 text-blue-600" />
-                    </div>
-                    <h4 className="text-sm font-semibold text-gray-800">Service Items</h4>
-                    {formData.items.length > 0 && (
-                      <span className="text-xs font-medium text-gray-600 bg-gray-100 px-2 py-1 rounded-full">
-                        {formData.items.length} items
-                      </span>
-                    )}
-                  </div>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      if (!formData.vendor_id) {
-                        toast.warning("Select Vendor First.");
-                        return;
-                      }
-                      setShowItemSelector(true);
-                      setItemSelectorSearch("");
-                    }}
-                    className="bg-gradient-to-r from-green-600 to-green-700 text-white px-3 py-2 rounded-xl hover:from-green-700 hover:to-green-800 transition-all duration-200 text-sm font-medium flex items-center gap-2 group w-full sm:w-auto justify-center"
-                  >
-                    <Plus className="w-4 h-4 group-hover:scale-110 transition-transform" />
-                    Add Service Item from Master
-                  </button>
-                </div>
-
-                {formData.items.length === 0 ? (
-                  <div className="bg-gradient-to-b from-gray-50/50 to-white/50 border-2 border-dashed border-gray-300 rounded-xl p-6 text-center group hover:border-blue-300 transition-all duration-300">
-                    <div className="p-3 bg-blue-50 rounded-xl inline-block mb-3">
-                      <Package className="w-8 h-8 text-blue-400" />
-                    </div>
-                    <p className="text-sm font-semibold text-gray-700 mb-1">
-                      No service items added yet
-                    </p>
-                    <p className="text-xs text-gray-500">
-                      Click "Add Service Item from Master" to start
-                    </p>
-                  </div>
-                ) : (
-                  <div className="space-y-3">
-                    {formData.items.map((item, index) => (
-                      <div
-                        key={item.id}
-                        className="bg-gradient-to-b from-gray-50/30 to-white/30 p-4 rounded-xl border border-gray-300 hover:border-gray-400 transition-all duration-200"
-                      >
-                        <div className="grid grid-cols-12 gap-3 items-center">
-                          {/* Item Details */}
-                          <div className="col-span-4 md:col-span-3">
-                            <div className="flex items-center gap-2">
-                              <div className="p-1.5 bg-blue-100 rounded-lg flex-shrink-0">
-                                <Box className="w-4 h-4 text-blue-600" />
-                              </div>
-                              <div>
-                                <p className="font-semibold text-sm text-gray-800 break-words">
-                                  {item.item_name}
-                                </p>
-                                <div className="flex flex-wrap gap-1 mt-1">
-                                  <span className="text-xs text-gray-500">
-                                    Code: {item.item_code}
-                                  </span>
-                                  <span className="text-xs text-gray-500">
-                                    | HSN: {item.hsn_code}
-                                  </span>
-                                </div>
-                              </div>
-                            </div>
-                          </div>
-
-                          {/* Quantity */}
-                          <div className="col-span-3 md:col-span-2">
-                            <label className="text-xs text-gray-600 mb-1 block">
-                              Qty
-                            </label>
-                            <div className="flex items-center gap-2">
-                              <input
-                                type="text"
-                                value={item.quantity}
-                                onChange={(e) => {
-                                  if (!/^\d*\.?\d*$/.test(e.target.value) || Number(e.target.value) < 0)
-                                    return;
-                                  handleItemChange(
-                                    index,
-                                    "quantity",
-                                    parseFloat(e.target.value) || 0,
-                                  );
-                                }}
-                                className="w-full px-3 py-1.5 text-sm border border-gray-300 rounded-lg focus:border-blue-600 focus:ring-1 focus:ring-blue-600/20 outline-none transition-all duration-200 hover:border-gray-400 text-gray-800"
-                                min="0"
-                                step="0.01"
-                              />
-                            </div>
-                          </div>
-
-                          {/* Unit */}
-                          <div className="col-span-2 md:col-span-1">
-                            <label className="text-xs text-gray-600 mb-1 block">
-                              Unit
-                            </label>
-                            <p className="text-sm text-gray-700">{item.unit}</p>
-                          </div>
-
-                          {/* Rate */}
-                          <div className="col-span-3 md:col-span-2">
-                            <label className="text-xs text-gray-600 mb-1 block">
-                              Rate
-                            </label>
-                            <div className="flex items-center gap-2">
-                              <span className="text-sm text-gray-600">₹</span>
-                              <input
-                                type="text"
-                                value={item.rate}
-                                onChange={(e) => {
-                                  if (!/^\d*\.?\d*$/.test(e.target.value) || Number(e.target.value) < 0)
-                                    return;
-                                  handleItemChange(
-                                    index,
-                                    "rate",
-                                    parseFloat(e.target.value) || 0,
-                                  );
-                                }}
-                                className="w-full px-3 py-1.5 text-sm border border-gray-300 rounded-lg focus:border-green-600 focus:ring-1 focus:ring-green-600/20 outline-none transition-all duration-200 hover:border-gray-400 text-gray-800"
-                                min="0"
-                                step="0.01"
-                              />
-                            </div>
-                          </div>
-
-                          {/* Amount */}
-                          <div className="col-span-3 md:col-span-2">
-                            <label className="text-xs text-gray-600 mb-1 block">
-                              Amount
-                            </label>
-                            <div>
-                              <p className="font-semibold text-sm text-gray-800">
-                                {formatCurrency(item.amount)}
-                              </p>
-                              <p className="text-xs text-gray-500 mt-0.5">
-                                CGST: {item.cgst_rate}% | SGST: {item.sgst_rate}%
-                              </p>
-                            </div>
-                          </div>
-
-                          {/* Delete Button */}
-                          <div className="col-span-1 flex justify-end">
-                            <button
-                              type="button"
-                              onClick={() => removeItem(index)}
-                              className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-all duration-200 hover:scale-105"
-                              title="Remove"
-                            >
-                              <Trash2 className="w-4 h-4" />
-                            </button>
-                          </div>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
-
-              {/* Payment Terms Section */}
-              <div className="space-y-4">
-                <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
-                  <div className="flex items-center gap-2">
-                    <div className="p-1.5 bg-purple-100 rounded-lg">
-                      <CreditCard className="w-4 h-4 text-purple-600" />
-                    </div>
-                    <h4 className="text-sm font-semibold text-gray-800">Payment Terms</h4>
-                    {selectedPaymentTerms.length > 0 && (
-                      <span className="text-xs font-medium text-gray-600 bg-gray-100 px-2 py-1 rounded-full">
-                        {selectedPaymentTerms.length} terms
-                      </span>
-                    )}
-                  </div>
-                  <button
-                    type="button"
-                    onClick={() => setShowPaymentTerms(true)}
-                    className="bg-gradient-to-r from-purple-600 to-purple-700 text-white px-3 py-2 rounded-xl hover:from-purple-700 hover:to-purple-800 transition-all duration-200 text-sm font-medium flex items-center gap-2 group w-full sm:w-auto justify-center"
-                  >
-                    <Plus className="w-4 h-4 group-hover:scale-110 transition-transform" />
-                    Add Payment Terms
-                  </button>
-                </div>
-
-                {selectedPaymentTerms.length === 0 ? (
-                  <div className="bg-gradient-to-b from-gray-50/50 to-white/50 border-2 border-dashed border-gray-300 rounded-xl p-6 text-center group hover:border-purple-300 transition-all duration-300">
-                    <div className="p-3 bg-purple-50 rounded-xl inline-block mb-3">
-                      <CreditCard className="w-8 h-8 text-purple-400" />
-                    </div>
-                    <p className="text-sm font-semibold text-gray-700 mb-1">
-                      No payment terms added yet
-                    </p>
-                    <p className="text-xs text-gray-500">
-                      Click "Add Payment Terms" to set payment conditions
-                    </p>
-                  </div>
-                ) : (
-                  <div className="space-y-3">
-                    {selectedPaymentTerms.map((term, index) => (
-                      <div
-                        key={term.id}
-                        className="bg-gradient-to-b from-purple-50/30 to-white/30 p-4 rounded-xl border border-purple-300 hover:border-purple-400 transition-all duration-200"
-                      >
-                        <div className="flex justify-between items-center">
-                          <div>
-                            <p className="font-semibold text-sm text-gray-800">
-                              {term.name}
-                            </p>
-                            <p className="text-xs text-purple-600 mt-1">
-                              Advance: {term.advance_percentage}%
-                            </p>
-                          </div>
-                          <button
-                            type="button"
-                            onClick={() => removePaymentTerm(term.id)}
-                            className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-all duration-200 hover:scale-105"
-                            title="Remove"
-                          >
-                            <Trash2 className="w-4 h-4" />
-                          </button>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
-
-              {/* Calculation Summary */}
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-                <div className="col-span-2"></div>
-                <div className="bg-gradient-to-b from-gray-50/30 to-white/30 p-4 rounded-xl border border-gray-300">
-                  <div className="space-y-2">
-                    <div className="flex justify-between items-center">
-                      <span className="text-xs text-gray-600">Subtotal</span>
-                      <span className="text-sm font-medium text-gray-800">
-                        {formatCurrency(formData.sub_total)}
-                      </span>
-                    </div>
-                    <div className="flex justify-between items-center">
-                      <span className="text-xs text-gray-600">Total GST</span>
-                      <span className="text-sm font-medium text-gray-800">
-                        {formatCurrency(formData.total_gst_amount)}
-                      </span>
-                    </div>
-                    <div className="flex justify-between items-center pt-3 border-t border-gray-300">
-                      <span className="text-sm font-semibold text-gray-800">
-                        Grand Total
-                      </span>
-                      <span className="text-lg font-bold text-blue-700">
-                        {formatCurrency(formData.grand_total)}
-                      </span>
-                    </div>
-                    {selectedPaymentTerms.length > 0 && (
-                      <div className="flex justify-between items-center pt-2 border-t border-gray-200">
-                        <span className="text-xs text-gray-600">
-                          Advance Amount
-                        </span>
-                        <span className="text-sm font-medium text-blue-600">
-                          {formatCurrency(formData.advance_amount)}
-                        </span>
-                      </div>
-                    )}
-                  </div>
-                </div>
-              </div>
-
-              {/* Terms & Conditions Section */}
-              <div className="pb-6">
-                {terms.length > 0 && (
-                  <div className="mb-6">
-                    <div className="flex items-center gap-2 mb-3">
-                      <div className="p-1.5 bg-amber-100 rounded-lg">
-                        <FileText className="w-4 h-4 text-amber-600" />
-                      </div>
-                      <h4 className="text-sm font-semibold text-gray-800">
-                        Terms & Conditions
-                      </h4>
-                    </div>
-                    <div className="bg-gradient-to-b from-gray-50/30 to-white/30 p-4 rounded-xl border border-gray-300">
-                      <div className="space-y-4">
-                        {terms.map((d, indx: number) => (
-                          <div key={indx} className="space-y-2">
-                            <div className="flex items-center gap-2">
-                              <input
-                                type="checkbox"
-                                onChange={(e) => {
-                                  setTerms((prev) =>
-                                    prev.map((tc) =>
-                                      tc.id === d.id
-                                        ? {
-                                            ...tc,
-                                            isActive: !tc.isActive,
-                                            content: tc.content.map((i: any) => ({
-                                              ...i,
-                                              is_default: !tc.isActive,
-                                            })),
-                                          }
-                                        : tc,
-                                    ),
-                                  );
-                                }}
-                                checked={d.isActive || d.content.filter((ftc: any) => ftc.is_default).length === d.content.length}
-                                className="w-4 h-4 accent-blue-600 cursor-pointer"
-                              />
-                              <h5 className="text-xs font-semibold text-gray-700">
-                                {d.category.charAt(0).toUpperCase() + d.category.slice(1)}
-                              </h5>
-                            </div>
-                            <ul className="space-y-1.5 ml-6">
-                              {d.content.map((term: any, idx: number) => (
-                                <li key={idx} className="flex items-start gap-2">
-                                  <input
-                                    type="checkbox"
-                                    checked={term.is_default}
-                                    onChange={() => {
-                                      setTerms((prev) =>
-                                        prev.map((tc) =>
-                                          tc.id === d.id
-                                            ? {
-                                                ...tc,
-                                                content: tc.content.map((i: any) =>
-                                                  i.term_id === term.term_id
-                                                    ? { ...i, is_default: !i.is_default }
-                                                    : i,
-                                                ),
-                                              }
-                                            : tc,
-                                        ),
-                                      );
-                                    }}
-                                    className="w-3.5 h-3.5 accent-blue-600 cursor-pointer mt-0.5"
-                                  />
-                                  <span className="text-xs text-gray-700">{term.content}</span>
-                                </li>
-                              ))}
-                            </ul>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  </div>
-                )}
-
-                <div className="flex flex-wrap gap-2 pt-3">
-                  <button
-                    onClick={() => {
-                      if (formData.vendor_id) setShowTermsConditions(true);
-                      else toast.warning("Select Vendor first.");
-                    }}
-                    type="button"
-                    className="text-xs font-medium text-blue-700 hover:text-blue-800 px-3 py-2 hover:bg-blue-50 rounded-lg transition-all duration-200 flex items-center gap-2"
-                  >
-                    <Plus className="w-3 h-3" />
-                    Add Terms & Conditions
-                  </button>
-                </div>
-              </div>
-
-              {/* Form Actions */}
-              <div className="flex flex-col sm:flex-row gap-3 pt-6 border-t border-gray-300 sticky bottom-0 bg-white/95 backdrop-blur-sm -mx-4 md:-mx-6 px-4 md:px-6 pb-4">
+              <div className="flex gap-3">
                 <button
                   type="submit"
-                  disabled={formData.items.length === 0}
-                  className="flex-1 bg-gradient-to-r from-red-600 to-red-700 text-white py-3 px-6 rounded-xl hover:from-red-400 hover:to-red-800 transition-all duration-200 font-semibold text-sm shadow-lg hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 group"
+                  disabled={materialQuantity <= 0}
+                  className="flex-1 bg-blue-600 text-white py-3 px-6 rounded-lg hover:bg-blue-700 disabled:bg-blue-400 transition"
                 >
-                  <FileText className="w-4 h-4 group-hover:scale-110 transition-transform" />
-                  {editingId ? "Update Service Order" : "Create Service Order"}
+                  <Save className="w-5 h-5 inline mr-2" />
+                  Save Changes
                 </button>
                 <button
                   type="button"
-                  onClick={() => {
-                    setShowModal(false);
-                    resetForm();
-                  }}
-                  className="px-6 py-3 text-sm border border-gray-300 rounded-xl hover:bg-gray-50/50 hover:border-gray-400 transition-all duration-200 font-medium text-gray-700"
+                  onClick={() => setShowUpdateMaterialQuantity(false)}
+                  className="px-6 py-3 border border-gray-300 rounded-lg hover:bg-gray-50 transition"
                 >
                   Cancel
                 </button>
@@ -1778,430 +2056,265 @@ const loadProjectBuildings = async (projectId: string) => {
         </div>
       )}
 
-      {/* Service Item Selector Modal */}
-      {showItemSelector && (
-        <div className="fixed inset-0 bg-gray-900/70 backdrop-blur-md flex items-center justify-center z-[60] p-2 md:p-4">
-          <div className="bg-gradient-to-br from-gray-50 to-white rounded-2xl shadow-2xl shadow-gray-900/30 w-full max-w-2xl border border-gray-300/50 overflow-hidden max-h-[90vh] flex flex-col">
-            {/* Header */}
-            <div className="bg-gradient-to-r from-[#40423f] via-[#4a4c49] to-[#5a5d5a] px-4 md:px-6 py-4 flex justify-between items-center border-b border-gray-700/30">
-              <div className="flex items-center gap-3">
-                <div className="p-2 bg-white/10 rounded-xl">
-                  <Package className="w-4 h-4 md:w-5 md:h-5 text-gray-100" />
+      {/* Payment Modal */}
+      {showPaymentModal && selectedPO && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-md flex items-center justify-center z-50 p-4">
+          <div className="bg-gradient-to-br from-gray-50 to-white rounded-2xl shadow-2xl shadow-gray-900/20 w-full max-w-2xl border border-gray-200 overflow-hidden">
+            {/* Modal Header */}
+            <div className="bg-gradient-to-r from-[#40423f] via-[#4a4c49] to-[#5a5d5a] px-5 py-3 flex justify-between items-center border-b border-gray-700/30">
+              <div className="flex items-center gap-2.5">
+                <div className="p-1.5 bg-white/20 rounded-xl backdrop-blur-sm">
+                  <IndianRupee className="w-4 h-4 text-white" />
                 </div>
                 <div>
-                  <h3 className="font-bold text-white text-sm md:text-base">
-                    Select Service Items
-                  </h3>
-                  <p className="text-xs text-gray-300/80 hidden md:block">
-                    Choose from service catalog
+                  <h2 className="text-base font-bold text-white">
+                    Record Payment
+                  </h2>
+                  <p className="text-xs text-white/90 font-medium mt-0.5">
+                    PO: {selectedPO?.po_number}
                   </p>
                 </div>
               </div>
               <button
                 onClick={() => {
-                  setShowItemSelector(false);
-                  setItemSelectorSearch("");
+                  setShowPaymentModal(false);
+                  setSelectedPO(null);
+                  setPaymentData({
+                    po_id: null,
+                    transaction_type: "payment",
+                    amount_paid: "",
+                    payment_method: "bank_transfer",
+                    payment_reference_no: "",
+                    payment_proof: null,
+                    payment_date: new Date().toISOString().split("T")[0],
+                    status: "pending",
+                    remarks: "",
+                    created_by: user?.id,
+                  });
                 }}
-                className="text-gray-200 hover:bg-gray-700/40 rounded-xl p-2 transition-all duration-200"
+                className="text-white hover:bg-white/20 rounded-xl p-1.5 transition-all duration-200"
               >
-                <X className="w-4 h-4 md:w-5 md:h-5" />
+                <X className="w-4 h-4" />
               </button>
             </div>
 
-            {/* Search Bar */}
-            <div className="p-4 border-b border-gray-300">
-              <div className="relative group">
-                <div className="absolute left-3 top-1/2 -translate-y-1/2 text-[#5a5d5a]">
-                  <Search className="w-4 h-4" />
-                </div>
-                <input
-                  type="text"
-                  placeholder="Search service items..."
-                  value={itemSelectorSearch}
-                  onChange={(e) => setItemSelectorSearch(e.target.value)}
-                  className="w-full pl-10 pr-4 py-2.5 text-sm border border-gray-300 rounded-xl focus:border-[#b52124] focus:ring-2 focus:ring-[#b52124]/20 outline-none transition-all duration-200 hover:border-gray-400 bg-white/50 text-[#40423f]"
-                />
-              </div>
-            </div>
-
-            {/* Items List */}
-            <div className="p-2 overflow-y-auto flex-grow">
-              <div className="space-y-2">
-                {mockServiceItems.length === 0 ? (
-                  <div className="p-8 text-center">
-                    <div className="p-3 bg-gray-100 rounded-xl inline-block mb-3">
-                      <Package className="w-8 h-8 text-gray-400" />
-                    </div>
-                    <p className="text-sm font-medium text-[#40423f]">
-                      No service items found
-                    </p>
-                    <p className="text-xs text-[#5a5d5a] mt-1">
-                      Try a different search term
+            <form
+              onSubmit={handleMakePayment}
+              className="p-4 max-h-[calc(90vh-80px)] overflow-y-auto"
+            >
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mb-4">
+                <div className="space-y-1">
+                  <p className="text-xs font-semibold text-gray-800">
+                    PO Number
+                  </p>
+                  <div className="p-2 bg-gray-50 border border-gray-200 rounded-lg">
+                    <p className="font-bold text-gray-800">
+                      {selectedPO?.po_number}
                     </p>
                   </div>
-                ) : (
-                  mockServiceItems.map((item) => {
-                    const existingItem = formData.items.find(
-                      (i) => i.service_item_id === item.id,
-                    );
-
-                    return (
-                      <button
-                        type="button"
-                        key={item.id}
-                        onClick={() => addItemFromMaster(item)}
-                        className={`w-full p-3 text-left border rounded-xl transition-all duration-200 ${
-                          existingItem
-                            ? "border-[#b52124]/30 bg-[#b52124]/5"
-                            : "border-gray-300 hover:border-gray-400 hover:bg-gray-50/50"
-                        }`}
-                      >
-                        <div className="flex justify-between items-start gap-3">
-                          <div className="flex-1 min-w-0">
-                            <div className="flex items-start gap-2">
-                              <div className="p-1.5 bg-green-100 rounded-lg flex-shrink-0">
-                                <Package className="w-3.5 h-3.5 text-green-600" />
-                              </div>
-                              <div className="flex-1 min-w-0">
-                                <div className="flex items-baseline gap-2">
-                                  <p className="font-medium text-sm text-[#40423f] truncate">
-                                    {item.item_name}
-                                  </p>
-                                  <span className="text-xs px-2 py-0.5 rounded-full bg-green-100 text-green-700">
-                                    SERVICE
-                                  </span>
-                                </div>
-                                <p className="text-xs text-[#5a5d5a] mt-1">
-                                  {item.description}
-                                </p>
-                                <div className="flex flex-wrap items-center gap-2 mt-1">
-                                  <span className="text-xs text-[#5a5d5a]">
-                                    {item.item_code}
-                                  </span>
-                                  {item.hsn_code && (
-                                    <span className="text-xs px-2 py-0.5 bg-gray-100 text-gray-700 rounded-full">
-                                      HSN: {item.hsn_code}
-                                    </span>
-                                  )}
-                                </div>
-                              </div>
-                            </div>
-                          </div>
-
-                          <div className="flex flex-col items-end gap-2 flex-shrink-0">
-                            <div
-                              className={`px-2.5 py-1 rounded-lg text-xs font-medium ${
-                                existingItem
-                                  ? "bg-[#b52124] text-white"
-                                  : "bg-[#b52124]/10 text-[#b52124]"
-                              }`}
-                            >
-                              {existingItem ? "Add More" : "Add"}
-                            </div>
-                            <div className="text-right">
-                              <div className="text-sm font-semibold text-[#40423f]">
-                                {formatCurrency(item.standard_rate)}
-                              </div>
-                              <div className="text-xs text-[#5a5d5a]">
-                                CGST: {item.cgst_rate}% | SGST: {item.sgst_rate}%
-                              </div>
-                            </div>
-                          </div>
-                        </div>
-                      </button>
-                    );
-                  })
-                )}
-              </div>
-            </div>
-
-            {/* Footer */}
-            <div className="p-4 border-t border-gray-300 bg-gradient-to-r from-gray-50/50 to-transparent flex-shrink-0">
-              <button
-                type="button"
-                onClick={() => {
-                  setShowItemSelector(false);
-                  setItemSelectorSearch("");
-                }}
-                className="w-full px-4 py-2.5 bg-gradient-to-r from-[#b52124] to-[#d43538] text-white rounded-xl hover:from-[#d43538] hover:to-[#b52124] transition-all duration-200 text-sm font-medium"
-              >
-                Done
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Payment Terms Modal */}
-      {showPaymentTerms && (
-        <div className="fixed inset-0 bg-gray-900/70 backdrop-blur-md flex items-center justify-center z-[70] p-2 md:p-4">
-          <div className="bg-gradient-to-br from-gray-50 to-white rounded-2xl shadow-2xl shadow-gray-900/30 w-full max-w-2xl border border-gray-300/50 overflow-hidden max-h-[90vh] flex flex-col">
-            <div className="bg-gradient-to-r from-[#40423f] via-[#4a4c49] to-[#5a5d5a] px-4 md:px-6 py-4 flex justify-between items-center border-b border-gray-700/30">
-              <div className="flex items-center gap-3">
-                <div className="p-2 bg-white/10 rounded-xl">
-                  <CreditCard className="w-4 h-4 md:w-5 md:h-5 text-gray-100" />
                 </div>
-                <div>
-                  <h3 className="font-bold text-white text-sm md:text-base">
-                    Payment Terms
-                  </h3>
-                  <p className="text-xs text-gray-300/80 hidden md:block">
-                    Select payment terms for service order
+
+                <div className="space-y-1">
+                  <p className="text-xs font-semibold text-gray-800">Vendor</p>
+                  <div className="p-2 bg-gray-50 border border-gray-200 rounded-lg">
+                    <p className="font-medium text-gray-800">
+                      {selectedPO?.vendors?.name}
+                    </p>
+                  </div>
+                </div>
+
+                <div className="space-y-1">
+                  <p className="text-xs font-semibold text-gray-800">
+                    Total Amount
                   </p>
+                  <div className="p-2 bg-orange-50 border border-orange-200 rounded-lg">
+                    <p className="text-base font-bold text-orange-600">
+                      {formatCurrency(selectedPO?.grand_total || 0)}
+                    </p>
+                  </div>
+                </div>
+
+                <div className="space-y-1">
+                  <p className="text-xs font-semibold text-gray-800">
+                    Balance Amount
+                  </p>
+                  <div className="p-2 bg-red-50 border border-red-200 rounded-lg">
+                    <p className="text-base font-bold text-red-600">
+                      {formatCurrency(selectedPO?.balance_amount || 0)}
+                    </p>
+                  </div>
                 </div>
               </div>
-              <button
-                onClick={() => setShowPaymentTerms(false)}
-                className="text-gray-200 hover:bg-gray-700/40 rounded-xl p-2 transition-all duration-200"
-              >
-                <X className="w-4 h-4 md:w-5 md:h-5" />
-              </button>
-            </div>
 
-            <div className="p-4 overflow-y-auto flex-grow">
               <div className="space-y-3">
-                {mockPaymentTerms.map((term) => {
-                  const isSelected = selectedPaymentTerms.find(t => t.id === term.id);
-                  return (
-                    <button
-                      type="button"
-                      key={term.id}
-                      onClick={() => addPaymentTerm(term)}
-                      className={`w-full p-4 text-left border rounded-xl transition-all duration-200 ${
-                        isSelected
-                          ? "border-purple-500 bg-purple-50"
-                          : "border-gray-300 hover:border-gray-400 hover:bg-gray-50"
-                      }`}
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div className="space-y-1">
+                    <label className="block text-xs font-semibold text-gray-800">
+                      Payment Method <span className="text-red-500">*</span>
+                    </label>
+                    <select
+                      value={paymentData.payment_method || "bank_transfer"}
+                      onChange={(e) =>
+                        setPaymentData({
+                          ...paymentData,
+                          payment_method: e.target.value,
+                        })
+                      }
+                      className="w-full px-3 py-2 text-sm border-2 border-gray-200 rounded-xl focus:border-[#C62828] focus:ring-2 focus:ring-[#C62828]/20 outline-none"
                     >
-                      <div className="flex justify-between items-center">
-                        <div className="flex-1">
-                          <div className="flex items-center gap-2">
-                            <div className={`p-1.5 rounded-lg ${isSelected ? 'bg-purple-100' : 'bg-gray-100'}`}>
-                              <CreditCard className={`w-4 h-4 ${isSelected ? 'text-purple-600' : 'text-gray-600'}`} />
-                            </div>
-                            <p className="font-medium text-sm text-gray-800">
-                              {term.name}
-                            </p>
-                          </div>
-                          <div className="mt-2 ml-7">
-                            <p className="text-xs text-gray-600">
-                              Advance: <span className="font-semibold">{term.advance_percentage}%</span>
-                            </p>
-                          </div>
-                        </div>
-                        <div className="flex-shrink-0">
-                          {isSelected ? (
-                            <div className="px-3 py-1 bg-purple-100 text-purple-700 rounded-lg text-xs font-medium">
-                              Selected
-                            </div>
-                          ) : (
-                            <div className="px-3 py-1 bg-gray-100 text-gray-700 rounded-lg text-xs font-medium">
-                              Select
-                            </div>
-                          )}
-                        </div>
-                      </div>
-                    </button>
-                  );
-                })}
-              </div>
-            </div>
+                      <option value="bank_transfer">Bank Transfer</option>
+                      <option value="cheque">Cheque</option>
+                      <option value="cash">Cash</option>
+                      <option value="online">Online Payment</option>
+                    </select>
+                  </div>
 
-            <div className="p-4 border-t border-gray-300 bg-gradient-to-r from-gray-50/50 to-transparent flex-shrink-0">
-              <button
-                type="button"
-                onClick={() => setShowPaymentTerms(false)}
-                className="w-full px-4 py-2.5 bg-gradient-to-r from-[#b52124] to-[#d43538] text-white rounded-xl hover:from-[#d43538] hover:to-[#b52124] transition-all duration-200 text-sm font-medium"
-              >
-                Done
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Terms & Conditions Modal */}
-      {showTermsConditions && (
-        <div className="fixed inset-0 bg-gray-900/70 backdrop-blur-md flex items-center justify-center z-[70] p-2 md:p-4">
-          <div className="bg-gradient-to-br from-gray-50 to-white rounded-2xl shadow-2xl shadow-gray-900/30 w-full max-w-md border border-gray-300/50 overflow-hidden max-h-[90vh] flex flex-col">
-            <div className="bg-gradient-to-r from-[#40423f] via-[#4a4c49] to-[#5a5d5a] px-4 md:px-6 py-4 flex justify-between items-center border-b border-gray-700/30">
-              <div className="flex items-center gap-3">
-                <div className="p-2 bg-white/10 rounded-xl">
-                  <ClipboardCheck className="w-4 h-4 md:w-5 md:h-5 text-gray-100" />
-                </div>
-                <div>
-                  <h3 className="font-bold text-white text-sm md:text-base">
-                    Terms & Conditions
-                  </h3>
-                  <p className="text-xs text-gray-300/80 hidden md:block">
-                    Manage terms and conditions
-                  </p>
-                </div>
-              </div>
-              <div className="flex">
-                <button
-                  onClick={() => setShowAddTerm(true)}
-                  className="text-white bg-green-600 hover:bg-green-700 rounded-lg px-2 py-1 font-medium text-xs flex items-center mr-2"
-                >
-                  <Plus className="w-3 h-3 mr-1" /> Add
-                </button>
-                <button
-                  onClick={() => setShowTermsConditions(false)}
-                  className="text-gray-200 hover:bg-gray-700/40 rounded-xl p-2 transition-all duration-200"
-                >
-                  <X className="w-4 h-4 md:w-5 md:h-5" />
-                </button>
-              </div>
-            </div>
-
-            <div className="p-4 overflow-y-scroll flex-grow min-h-32 max-h-96">
-              <ul className="space-y-3">
-                {terms.map((d, indx: number) => (
-                  <li key={indx} className="border border-gray-300 rounded-xl p-3">
-                    <div className="flex items-start gap-2 mb-2">
-                      <input
-                        type="checkbox"
-                        onChange={() => {
-                          const isActive = !d.isActive;
-                          setTerms((prev) =>
-                            prev.map((tc) =>
-                              tc.id === d.id
-                                ? {
-                                    ...tc,
-                                    isActive: isActive,
-                                    content: tc.content.map((i: any) => ({
-                                      ...i,
-                                      is_default: isActive,
-                                    })),
-                                  }
-                                : tc,
-                            ),
+                  <div className="space-y-1">
+                    <label className="block text-xs font-semibold text-gray-800">
+                      Payment Date <span className="text-red-500">*</span>
+                    </label>
+                    <input
+                      type="date"
+                      value={paymentData.payment_date || ""}
+                      onChange={(e) => {
+                        setPaymentData({
+                          ...paymentData,
+                          payment_date: e.target.value,
+                        });
+                      }}
+                      className="w-full px-3 py-2 text-sm border-2 border-gray-200 rounded-xl focus:border-[#C62828] focus:ring-2 focus:ring-[#C62828]/20 outline-none"
+                      required
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <label className="block text-xs font-semibold text-gray-800">
+                      Payment Amount <span className="text-red-500">*</span>
+                    </label>
+                    <input
+                      type="number"
+                      value={paymentData.amount_paid || ""}
+                      onChange={(e) => {
+                        if (
+                          Number(e.target.value) >
+                          Number(selectedPO?.balance_amount)
+                        ) {
+                          toast.warning(
+                            "You can not enter amount greater than balance amount",
                           );
-                        }}
-                        checked={
-                          d.isActive ||
-                          d.content.filter((ftc: any) => ftc.is_default).length === d.content.length
+                          return;
                         }
-                        className="w-4 h-4 accent-[#b52124] cursor-pointer mt-0.5"
-                      />
-                      <h4 className="font-semibold text-sm text-[#40423f]">
-                        {d.category.charAt(0).toUpperCase() + d.category.slice(1) || ""}
-                      </h4>
-                    </div>
+                        setPaymentData({
+                          ...paymentData,
+                          amount_paid: Number(e.target.value) || "",
+                        });
+                      }}
+                      className="w-full px-3 py-2 text-sm border-2 border-gray-200 rounded-xl focus:border-[#C62828] focus:ring-2 focus:ring-[#C62828]/20 outline-none"
+                      min="0.01"
+                      max={selectedPO?.balance_amount}
+                      step="0.01"
+                      required
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <label className="block text-xs font-semibold text-gray-800">
+                      Reference Number <span className="text-red-500">*</span>
+                    </label>
+                    <input
+                      type="text"
+                      value={paymentData.payment_reference_no || ""}
+                      onChange={(e) =>
+                        setPaymentData({
+                          ...paymentData,
+                          payment_reference_no: e.target.value,
+                        })
+                      }
+                      className="w-full px-3 py-2 text-sm border-2 border-gray-200 rounded-xl focus:border-[#C62828] focus:ring-2 focus:ring-[#C62828]/20 outline-none"
+                      placeholder="Transaction reference"
+                      required
+                    />
+                  </div>
 
-                    <ul className="ml-6 space-y-2">
-                      {d.content.map((term: any, idx: number) => (
-                        <li key={idx} className="flex items-start gap-2">
-                          <input
-                            type="checkbox"
-                            checked={term.is_default}
-                            onChange={() => {
-                              setTerms((prev) =>
-                                prev.map((tc) =>
-                                  tc.id === d.id
-                                    ? {
-                                        ...tc,
-                                        content: tc.content.map((i: any) =>
-                                          i.term_id === term.term_id
-                                            ? { ...i, is_default: !i.is_default }
-                                            : i,
-                                        ),
-                                      }
-                                    : tc,
-                                ),
-                              );
-                            }}
-                            className="w-3.5 h-3.5 accent-[#b52124] cursor-pointer mt-0.5"
-                          />
-                          <span className="text-xs text-[#5a5d5a]">{term.content}</span>
-                        </li>
-                      ))}
-                    </ul>
-                  </li>
-                ))}
-              </ul>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Add Term Modal */}
-      {showAddTerm && (
-        <div className="fixed inset-0 bg-gray-900/70 backdrop-blur-md flex items-center justify-center z-[80] p-2 md:p-4">
-          <div className="bg-gradient-to-br from-gray-50 to-white rounded-2xl shadow-2xl shadow-gray-900/30 w-full max-w-md border border-gray-300/50 overflow-hidden max-h-[90vh] flex flex-col">
-            <div className="bg-gradient-to-r from-[#40423f] via-[#4a4c49] to-[#5a5d5a] px-4 md:px-6 py-4 flex justify-between items-center border-b border-gray-700/30">
-              <div className="flex items-center gap-3">
-                <div className="p-2 bg-white/10 rounded-xl">
-                  <Plus className="w-4 h-4 md:w-5 md:h-5 text-gray-100" />
+                  <div className="space-y-1">
+                    <label className="block text-xs font-semibold text-gray-800">
+                      Upload Payment Proof{" "}
+                      <span className="text-red-500">*</span>
+                    </label>
+                    <input
+                      type="file"
+                      required
+                      id="payment_proof"
+                      onChange={handleFileUpload}
+                      className="w-full px-3 py-2 text-sm border-2 border-gray-200 rounded-xl focus:border-[#C62828] focus:ring-2 focus:ring-[#C62828]/20 outline-none file:border-none file:bg-gradient-to-r file:from-[#C62828] file:to-red-600 file:text-white file:font-medium file:px-3 file:py-1.5 file:rounded-lg file:cursor-pointer"
+                      accept=".pdf,.jpg,.jpeg,.png"
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <label className="block text-xs font-semibold text-gray-800">
+                      Payment Status <span className="text-red-500">*</span>
+                    </label>
+                    <select
+                      value={paymentData.status || "pending"}
+                      onChange={(e) =>
+                        setPaymentData({
+                          ...paymentData,
+                          status: e.target.value,
+                        })
+                      }
+                      className="w-full px-3 py-2 text-sm border-2 border-gray-200 rounded-xl focus:border-[#C62828] focus:ring-2 focus:ring-[#C62828]/20 outline-none"
+                    >
+                      <option value="PENDING">Pending</option>
+                      <option value="SUCCESS">Success</option>
+                      <option value="FAILED">Failed</option>
+                      <option value="CANCELLED">Cancelled</option>
+                    </select>
+                  </div>
                 </div>
-                <div>
-                  <h3 className="font-bold text-white text-sm md:text-base">
-                    Add Term
-                  </h3>
-                  <p className="text-xs text-gray-300/80 hidden md:block">
-                    Add new terms & conditions
-                  </p>
+
+                <div className="space-y-1">
+                  <label className="block text-xs font-semibold text-gray-800">
+                    Remarks
+                  </label>
+                  <textarea
+                    value={paymentData.remarks || ""}
+                    onChange={(e) =>
+                      setPaymentData({
+                        ...paymentData,
+                        remarks: e.target.value || "",
+                      })
+                    }
+                    className="w-full px-3 py-2 text-sm border-2 border-gray-200 rounded-xl focus:border-[#C62828] focus:ring-2 focus:ring-[#C62828]/20 outline-none"
+                    rows={2}
+                    placeholder="Add any remarks..."
+                  />
                 </div>
               </div>
-              <button
-                onClick={() => setShowAddTerm(false)}
-                className="text-gray-200 hover:bg-gray-700/40 rounded-xl p-2 transition-all duration-200"
-              >
-                <X className="w-4 h-4 md:w-5 md:h-5" />
-              </button>
-            </div>
 
-            <div className="p-4 space-y-3">
-              <div>
-                <label className="block text-xs font-medium text-[#40423f] mb-1">
-                  Category <span className="text-[#b52124]">*</span>
-                </label>
-                <select
-                  className="w-full px-3 py-2 text-sm border border-gray-300 rounded-xl focus:ring-2 focus:ring-[#b52124]/20 focus:border-[#b52124] outline-none bg-white/50"
-                  required
+              {/* Modal Footer */}
+              <div className="border-t p-3 flex gap-2">
+                <button
+                  type="submit"
+                  disabled={submitting}
+                  className="flex-1 bg-gradient-to-r from-[#C62828] to-red-600 text-white py-2 px-4 rounded-xl hover:from-red-600 hover:to-red-700 transition-all duration-200 font-semibold flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed text-sm"
                 >
-                  <option value="">Select Category</option>
-                  <option value="general">General</option>
-                  <option value="payment">Payment</option>
-                  <option value="delivery">Delivery</option>
-                  <option value="quality">Quality</option>
-                  <option value="warranty">Warranty</option>
-                  <option value="legal">Legal</option>
-                </select>
-              </div>
-
-              <div>
-                <label className="block text-xs font-medium text-[#40423f] mb-1">
-                  Terms & Condition <span className="text-[#b52124]">*</span>
-                </label>
-                <textarea
-                  className="w-full px-3 py-2 text-sm border border-gray-300 rounded-xl focus:ring-2 focus:ring-[#b52124]/20 focus:border-[#b52124] outline-none bg-white/50"
-                  rows={3}
-                  placeholder="Enter the full terms & conditions text..."
-                  required
-                />
-              </div>
-
-              <div className="flex gap-2 pt-2">
+                  {submitting ? (
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                  ) : (
+                    <IndianRupee className="w-4 h-4" />
+                  )}
+                  {submitting ? "Processing..." : "Record Payment"}
+                </button>
                 <button
                   type="button"
                   onClick={() => {
-                    toast.success("Term added successfully");
-                    setShowAddTerm(false);
+                    setShowPaymentModal(false);
+                    setSelectedPO(null);
                   }}
-                  className="flex-1 bg-gradient-to-r from-[#b52124] to-[#d43538] text-white px-4 py-2.5 rounded-xl hover:from-[#d43538] hover:to-[#b52124] transition-all duration-200 text-sm font-medium flex items-center justify-center gap-2"
+                  className="px-4 py-2 text-sm border border-gray-200 rounded-xl hover:bg-gray-50 transition-all duration-200 font-medium text-gray-700"
                 >
-                  <Plus className="w-3 h-3" /> Add Term
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setShowAddTerm(false)}
-                  className="px-4 py-2.5 text-sm border border-gray-300 rounded-xl hover:bg-gray-50/50 hover:border-gray-400 transition-all duration-200 font-medium text-[#40423f]"
-                >
-                  Close
+                  Cancel
                 </button>
               </div>
-            </div>
+            </form>
           </div>
         </div>
       )}
