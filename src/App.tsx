@@ -28,6 +28,7 @@ import Recruitment from "./pages/Recruitment";
 import Attendance from "./pages/Attendance";
 import Leaves from "./pages/Leaves";
 import Payroll from "./pages/Payroll";
+
 import Expenses from "./pages/Expenses";
 import Tickets from "./pages/Tickets";
 import Documents from "./pages/Documents";
@@ -43,6 +44,12 @@ import IntegrationPage from "./pages/settings/IntegrationPage";
 
 // Employee Profile
 import EmployeeProfile from "./pages/EmployeeProfile";
+import CTCConfiguration from "./pages/CTCConfiguration";
+import Advance from "./pages/Advance";
+import Incentives from "./pages/Incentives";
+import Reimbursements from "./pages/Reimbursements";
+import TDS from "./pages/TDS";
+import PaymentHistory from "./pages/PaymentHistory";
 
 function AppContent() {
   const { user, loading } = useAuth();
@@ -141,6 +148,20 @@ function AppContent() {
         return <Leaves />;
       case "payroll":
         return <Payroll />;
+      case "payroll-summary":
+        return <Payroll />;
+      case "ctc-configuration":
+        return <CTCConfiguration />;
+      case "advance":
+        return <Advance />;
+      case "incentives":
+        return <Incentives />;
+      case "reimbursements":
+        return <Reimbursements />;
+      case "tds":
+        return <TDS />;
+      case "payment-history":
+        return <PaymentHistory />;
       case "expenses":
         return <Expenses />;
       case "tickets":

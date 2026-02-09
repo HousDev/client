@@ -89,6 +89,17 @@ const hrmsSubmenuItems = [
   { id: "hr-settings", label: "HR Settings", icon: MdSettings },
 ];
 
+// Payroll submenu items (inside HRMS -> Payroll)
+const payrollSubmenuItems = [
+  { id: "payroll", label: "Payroll Summary", icon: FileText },
+  { id: "ctc-configuration", label: "CTC Configuration", icon: Settings },
+  { id: "advance", label: "Advance", icon: Wallet },
+  { id: "incentives", label: "Incentives", icon: Zap },
+  { id: "reimbursements", label: "Reimbursements", icon: Receipt },
+  { id: "tds", label: "TDS", icon: Calculator },
+  { id: "payment-history", label: "Payment History", icon: Clock },
+];
+
 const settingsSubmenuItems = [
   { id: "general-settings", label: "General Settings", icon: Settings },
   { id: "integration", label: "Integration", icon: Zap },
@@ -100,13 +111,13 @@ export default function Layout({
   activeTab,
   onTabChange,
   activeFormTab = "",
-  setActiveFormTab = () => {},
+  setActiveFormTab = () => { },
 }: LayoutProps) {
   // ── Auth context ──────────────────────────────────────────────────────────
-  const { 
-    profile, 
-    user, 
-    signOut, 
+  const {
+    profile,
+    user,
+    signOut,
     loading: authLoading,
     systemSettings // ✅ Get system settings from context
   } = useAuth();
@@ -128,13 +139,12 @@ export default function Layout({
   const [showRequestMaterial, setShowRequestMaterial] = useState<boolean>(false);
   const [showMaterialActionsMenu, setShowMaterialActionsMenu] = useState<boolean>(false);
   const [openSubmenu, setOpenSubmenu] = useState<string | null>(null);
+  const [openNestedSubmenu, setOpenNestedSubmenu] = useState<string | null>(null);
   const [localActiveFormTab, setLocalActiveFormTab] = useState<string>("");
 
   const profileRef = useRef<HTMLDivElement>(null);
   const notifRef = useRef<HTMLDivElement>(null);
   const materialActionsRef = useRef<HTMLDivElement>(null);
-
-
 
   // ✅ Update favicon dynamically when it changes
   useEffect(() => {
@@ -170,20 +180,20 @@ export default function Layout({
   // ── Menu definitions ─────────────────────────────────────────────────────
   const menuItems = [
     { id: "dashboard", label: "Dashboard", icon: Home, headerIcon: Home, value: ["view_dashboard"], submenu: null },
-    { id: "vendors", label: "Vendors", icon: Handshake, headerIcon: Handshake, value: ["view_vendors","create_vendors","edit_vendors","delete_vendors"], submenu: null },
-    { id: "purchase-orders", label: "Purchase Orders", icon: FileText, headerIcon: FileCheck, value: ["view_pos","create_pos","edit_pos","delete_pos","approve_pos"], submenu: null },
-    { id: "service-orders", label: "Service Orders", icon: Layers, headerIcon: Layers, value: ["edit_service_orders","create_service_orders","view_service_orders"], submenu: null },
-    { id: "store-management", label: "Store Management", icon: Package, headerIcon: Package, value: ["edit_inventory","create_inventory","view_inventory","delete_inventory"], submenu: null },
-    { id: "materials", label: "Material Tracking", icon: PackageSearch, headerIcon: PackageSearch, value: ["view_materials","receive_materials"], submenu: null },
-    { id: "material-requests", label: "Material Requests", icon: ClipboardCheck, headerIcon: ClipboardCheck, value: ["view_materials_requests","update_materials_requests"], submenu: null },
-    { id: "payments", label: "Payments", icon: Calculator, headerIcon: Calculator, value: ["view_payments","make_payments","verify_payments"], submenu: null },
-    { id: "task-management", label: "Task Management", icon: MdChecklist, value: ["view_task","create_task","update_task","delete_task"], submenu: null },
-    { id: "projects", label: "Projects", icon: Building2, value: ["view_project","create_project","update_project","delete_project"], submenu: null },
-    { id: "hrms", label: "HRMS", icon: BsPerson, value: ["view_hrms","create_hrms","update_hrms","delete_hrms"], submenu: hrmsSubmenuItems },
+    { id: "vendors", label: "Vendors", icon: Handshake, headerIcon: Handshake, value: ["view_vendors", "create_vendors", "edit_vendors", "delete_vendors"], submenu: null },
+    { id: "purchase-orders", label: "Purchase Orders", icon: FileText, headerIcon: FileCheck, value: ["view_pos", "create_pos", "edit_pos", "delete_pos", "approve_pos"], submenu: null },
+    { id: "service-orders", label: "Service Orders", icon: Layers, headerIcon: Layers, value: ["edit_service_orders", "create_service_orders", "view_service_orders"], submenu: null },
+    { id: "store-management", label: "Store Management", icon: Package, headerIcon: Package, value: ["edit_inventory", "create_inventory", "view_inventory", "delete_inventory"], submenu: null },
+    { id: "materials", label: "Material Tracking", icon: PackageSearch, headerIcon: PackageSearch, value: ["view_materials", "receive_materials"], submenu: null },
+    { id: "material-requests", label: "Material Requests", icon: ClipboardCheck, headerIcon: ClipboardCheck, value: ["view_materials_requests", "update_materials_requests"], submenu: null },
+    { id: "payments", label: "Payments", icon: Calculator, headerIcon: Calculator, value: ["view_payments", "make_payments", "verify_payments"], submenu: null },
+    { id: "task-management", label: "Task Management", icon: MdChecklist, value: ["view_task", "create_task", "update_task", "delete_task"], submenu: null },
+    { id: "projects", label: "Projects", icon: Building2, value: ["view_project", "create_project", "update_project", "delete_project"], submenu: null },
+    { id: "hrms", label: "HRMS", icon: BsPerson, value: ["view_hrms", "create_hrms", "update_hrms", "delete_hrms"], submenu: hrmsSubmenuItems },
     { id: "notifications", label: "Notifications", icon: FaConciergeBell, headerIcon: FaConciergeBell, value: ["view_notifications"], submenu: null },
-    { id: "reports", label: "Reports", icon: BarChart3, headerIcon: BarChart3, value: ["view_reports","export_reports"], submenu: null },
-    { id: "settings", label: "Settings", icon: FaCog, headerIcon: FaCog, value: ["view_settings","edit_settings","full_access"], submenu: settingsSubmenuItems },
-    { id: "masters", label: "Masters", icon: Users, headerIcon: Users, value: ["manage_users","manage_roles"], submenu: null },
+    { id: "reports", label: "Reports", icon: BarChart3, headerIcon: BarChart3, value: ["view_reports", "export_reports"], submenu: null },
+    { id: "settings", label: "Settings", icon: FaCog, headerIcon: FaCog, value: ["view_settings", "edit_settings", "full_access"], submenu: settingsSubmenuItems },
+    { id: "masters", label: "Masters", icon: Users, headerIcon: Users, value: ["manage_users", "manage_roles"], submenu: null },
     { id: "users", label: "Users", icon: MdAccountCircle, value: ["manage_users"], submenu: null },
     { id: "permissions", label: "Permissions", icon: Shield, headerIcon: Shield, value: ["manage_permissions"], submenu: null },
   ];
@@ -193,10 +203,16 @@ export default function Layout({
 
   // ── Active menu label for the header ─────────────────────────────────────
   const activeMenuLabel = useMemo(() => {
+    // Check payroll submenu first
+    const payrollSubItem = payrollSubmenuItems.find((item) => item.id === activeTab);
+    if (payrollSubItem) return payrollSubItem.label;
+
     const hrmsSubItem = hrmsSubmenuItems.find((item) => item.id === activeTab);
     if (hrmsSubItem) return hrmsSubItem.label;
+
     const settingsSubItem = settingsSubmenuItems.find((item) => item.id === activeTab);
     if (settingsSubItem) return settingsSubItem.label;
+
     const activeItem = menuItems.find((item) => item.id === activeTab);
     return activeItem ? activeItem.label : "Dashboard";
   }, [activeTab]);
@@ -249,7 +265,6 @@ export default function Layout({
   }, [displayName]);
 
   // ── Avatar URL ────────────────────────────────────────────────────────────
-// ── Avatar URL ────────────────────────────────────────────────────────────
   const avatarUrl = useMemo(() => {
     const raw = (profile && (profile as any).avatar) || (user && (user as any).avatar) || (user && (user as any).profile_picture) || null;
     if (!raw) return null;
@@ -259,6 +274,7 @@ export default function Layout({
     const base = import.meta.env.VITE_API_URL || 'http://localhost:4000/api';
     return `${base}/uploads/avatars/${raw}`;
   }, [profile, user]);
+
   // ── Notifications ────────────────────────────────────────────────────────
   const fetchNotifications = async () => {
     try {
@@ -342,21 +358,44 @@ export default function Layout({
   const handleMenuItemClick = (item: any) => {
     if (item.submenu) {
       setOpenSubmenu(openSubmenu === item.id ? null : item.id);
-    } else {
-      onTabChange(item.id);
-      setMobileSidebarOpen(false);
-      setOpenSubmenu(null);
+      return; // ✅ yahin ruk jao
     }
+
+    // ✅ HRMS ke bahar click
+    onTabChange(item.id);
+    setMobileSidebarOpen(false);
+    setOpenSubmenu(null);
+    setOpenNestedSubmenu(null);
   };
+
 
   const handleHRMSSubmenuClick = (subItemId: string) => {
+    if (subItemId === "payroll") {
+      setOpenNestedSubmenu(
+        openNestedSubmenu === "payroll" ? null : "payroll"
+      );
+      return;
+    }
+
+    // 🔥🔥 YAHI MAIN FIX HAI 🔥🔥
+    setOpenNestedSubmenu(null);   // payroll close hoga
+
     onTabChange(subItemId);
     setMobileSidebarOpen(false);
   };
 
-  const handleSettingsSubmenuClick = (subItemId: string) => {
+
+  const handlePayrollSubmenuClick = (subItemId: string) => {
     onTabChange(subItemId);
     setMobileSidebarOpen(false);
+  };
+
+
+  const handleSettingsSubmenuClick = (subItemId: string) => {
+    setOpenNestedSubmenu(null)
+    onTabChange(subItemId);
+    setMobileSidebarOpen(false);
+    setOpenNestedSubmenu(null);
   };
 
   // ── Filtered settings submenu ────────────────────────────────────────────
@@ -386,64 +425,28 @@ export default function Layout({
       >
         {/* ✅ Logo - Dynamic from system settings */}
         <div className={`h-20 border-b border-gray-700 flex items-center ${sidebarOpen ? "justify-start px-4" : "justify-center"} transition-all bg-[#2D2D2D]`}>
-       {/* In Layout.tsx sidebar logo section */}
-{sidebarOpen ? (
-  // Just remove the style line completely
-<img 
-  src={logoUrl ? `${logoUrl}?t=${Date.now()}` : DefaultLogo} 
-  alt="Company Logo" 
-  className="h-16 w-auto object-contain" 
-  key={logoUrl}
-  onError={(e) => {
-    (e.target as HTMLImageElement).src = DefaultLogo;
-  }}
-/>
-) : (
-  <img 
-    src={logoUrl ? `${logoUrl}?t=${Date.now()}` : DefaultLogo} 
-    alt="Logo" 
-    className="h-10 w-10 object-contain" 
-    // style={{ filter: "brightness(0) invert(1)" }}
-    key={logoUrl} // Force re-render when URL changes
-    onError={(e) => {
-      (e.target as HTMLImageElement).src = DefaultLogo;
-    }}
-  />
-)}
+          {sidebarOpen ? (
+            <img
+              src={logoUrl ? `${logoUrl}?t=${Date.now()}` : DefaultLogo}
+              alt="Company Logo"
+              className="h-16 w-auto object-contain"
+              key={logoUrl}
+              onError={(e) => {
+                (e.target as HTMLImageElement).src = DefaultLogo;
+              }}
+            />
+          ) : (
+            <img
+              src={logoUrl ? `${logoUrl}?t=${Date.now()}` : DefaultLogo}
+              alt="Logo"
+              className="h-10 w-10 object-contain"
+              key={logoUrl}
+              onError={(e) => {
+                (e.target as HTMLImageElement).src = DefaultLogo;
+              }}
+            />
+          )}
         </div>
-
-        {/* Mobile Profile Section */}
-        {/* {sidebarOpen && (
-          <div className="p-4 border-b border-gray-700 lg:hidden">
-            <div className="flex items-center justify-between gap-3 px-3 py-2 bg-[#3D3D3D] rounded-lg">
-              <div className="flex items-center gap-3">
-                {avatarUrl ? (
-                  <img src={`${import.meta.env.VITE_API_URL + user.profile_picture}`} alt="avatar" className="w-10 h-10 rounded-full object-cover border-2 border-[#C62828]" />
-                ) : (
-                  <div className="w-10 h-10 bg-[#C62828] rounded-full flex items-center justify-center shadow-sm">
-                    <span className="text-white font-semibold text-sm">{initials}</span>
-                  </div>
-                )}
-                <div className="flex-1 min-w-0">
-                  {authLoading ? (
-                    <div className="animate-pulse">
-                      <div className="h-4 bg-gray-600 rounded w-32 mb-1" />
-                      <div className="h-3 bg-gray-600 rounded w-20" />
-                    </div>
-                  ) : (
-                    <>
-                      <p className="text-sm font-semibold text-white truncate">{displayName}</p>
-                      <p className="text-xs text-gray-400 capitalize truncate">{displayRole}</p>
-                    </>
-                  )}
-                </div>
-              </div>
-              <button onClick={() => setMobileSidebarOpen(false)} className="p-1 hover:bg-gray-700 rounded-md">
-                <MdClose className="w-5 h-5 text-gray-400" />
-              </button>
-            </div>
-          </div>
-        )} */}
 
         {/* Navigation */}
         <nav className="flex-1 overflow-y-auto py-4 px-3 scrollbar-thin scrollbar-thumb-gray-600 scrollbar-track-transparent">
@@ -479,6 +482,7 @@ export default function Layout({
                 const isActive =
                   activeTab === item.id ||
                   (item.id === "hrms" && item.submenu && item.submenu.some((sub: any) => sub.id === activeTab)) ||
+                  (item.id === "hrms" && payrollSubmenuItems.some((sub: any) => sub.id === activeTab)) ||
                   (item.id === "settings" && item.submenu && item.submenu.some((sub: any) => sub.id === activeTab));
                 const hasPermission = item.value.some((d) => userMenus.includes(d)) || userMenus.includes("full_access");
                 if (!hasPermission) return null;
@@ -504,17 +508,47 @@ export default function Layout({
                     {/* HRMS submenu */}
                     {item.id === "hrms" && item.submenu && openSubmenu === item.id && (
                       <div className="ml-8 pl-2 border-l border-gray-600 space-y-1">
-                        {item.submenu.map((subItem: any) => (
-                          <button
-                            key={subItem.id}
-                            onClick={() => handleHRMSSubmenuClick(subItem.id)}
-                            className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg transition-all
-                              ${activeTab === subItem.id ? "bg-[#C62828] text-white" : "text-gray-400 hover:bg-[#3D3D3D] hover:text-white"}`}
-                          >
-                            <subItem.icon className="w-4 h-4 flex-shrink-0" />
-                            <span className="font-medium text-xs truncate">{subItem.label}</span>
-                          </button>
-                        ))}
+                        {item.submenu.map((subItem: any) => {
+                          const isPayrollActive = subItem.id === "payroll" &&
+                            (payrollSubmenuItems.some(p => p.id === activeTab) || openNestedSubmenu === "payroll");
+
+                          return (
+                            <div key={subItem.id}>
+                              <button
+                                onClick={() => handleHRMSSubmenuClick(subItem.id)}
+                                className={`w-full flex items-center justify-between px-3 py-2 rounded-lg transition-all
+                                  ${activeTab === subItem.id || isPayrollActive ? "bg-[#C62828] text-white" : "text-gray-400 hover:bg-[#3D3D3D] hover:text-white"}`}
+                              >
+                                <div className="flex items-center gap-3">
+                                  <subItem.icon className="w-4 h-4 flex-shrink-0" />
+                                  <span className="font-medium text-xs truncate">{subItem.label}</span>
+                                </div>
+                                {subItem.id === "payroll" && (
+                                  <div className="flex-shrink-0">
+                                    {openNestedSubmenu === "payroll" ? <FaChevronDown className="w-3 h-3" /> : <FaChevronRight className="w-3 h-3" />}
+                                  </div>
+                                )}
+                              </button>
+
+                              {/* Payroll nested submenu */}
+                              {subItem.id === "payroll" && openNestedSubmenu === "payroll" && (
+                                <div className="ml-6 pl-2 border-l border-gray-500 space-y-1 mt-1">
+                                  {payrollSubmenuItems.map((payrollItem) => (
+                                    <button
+                                      key={payrollItem.id}
+                                      onClick={() => handlePayrollSubmenuClick(payrollItem.id)}
+                                      className={`w-full flex items-center gap-3 px-3 py-1.5 rounded-lg transition-all text-xs
+                                        ${activeTab === payrollItem.id ? "bg-[#C62828] text-white" : "text-gray-400 hover:bg-[#3D3D3D] hover:text-white"}`}
+                                    >
+                                      <payrollItem.icon className="w-3.5 h-3.5 flex-shrink-0" />
+                                      <span className="font-medium truncate">{payrollItem.label}</span>
+                                    </button>
+                                  ))}
+                                </div>
+                              )}
+                            </div>
+                          );
+                        })}
                       </div>
                     )}
 
@@ -713,7 +747,7 @@ export default function Layout({
                 </div>
 
                 {/* ── Profile Dropdown ── */}
-               <div className="relative" ref={profileRef}>
+                <div className="relative" ref={profileRef}>
                   <button
                     onClick={() => { setProfileOpen(!profileOpen); setNotifOpen(false); setShowMaterialActionsMenu(false); }}
                     className="flex items-center gap-2 p-1 rounded-lg hover:bg-gray-100 transition"
