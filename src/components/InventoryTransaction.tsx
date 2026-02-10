@@ -1142,7 +1142,7 @@ export default function RolesMaster() {
         <div className="bg-gradient-to-r from-blue-600 to-blue-700 px-6 py-4 flex justify-between items-center rounded-t-2xl sticky top-0 z-10 ">
           <h2 className="text-xl font-bold text-white flex items-center gap-2">
             <Truck className="w-5 h-5" />
-            Material{" "}
+            Material Take{" "}
             {activeFormTab.charAt(0).toUpperCase() + activeFormTab.slice(1)}
           </h2>
           <button

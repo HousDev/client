@@ -34,6 +34,7 @@ import TermsConditionsApi from "../lib/termsConditionsApi";
 import poPaymentApi from "../lib/poPaymentApi";
 import CreateServiceOrderForm from "../components/ServiceOrder/CreateServiceOrder";
 import UpdateServiceOrderForm from "../components/ServiceOrder/UpdateServiceOrders";
+import ServiceOrdersApi from "../lib/serviceOrderApi";
 
 type Vendor = {
   id: string;
@@ -173,9 +174,10 @@ export default function ServiceOrders() {
     poNumber: string;
     vendor: string;
     project: string;
+    building: string;
     amount: string;
     poStatus: string;
-    material: string;
+    service: string;
     payment: string;
     type: string;
     date: string;
@@ -183,13 +185,15 @@ export default function ServiceOrders() {
     poNumber: "",
     vendor: "",
     project: "",
+    building: "",
     amount: "",
     poStatus: "",
-    material: "",
+    service: "",
     payment: "",
     type: "",
     date: "",
   });
+
   useEffect(() => {
     if (activeTab === "tracking") {
       // Tracking tab filters
@@ -222,10 +226,10 @@ export default function ServiceOrders() {
               .includes(searchFilters.poStatus.toLowerCase())
           : true;
 
-        const matchesMaterial = searchFilters.material
+        const matchesMaterial = searchFilters.service
           ? po.material_status
               ?.toLowerCase()
-              .includes(searchFilters.material.toLowerCase())
+              .includes(searchFilters.service.toLowerCase())
           : true;
 
         const matchesPayment = searchFilters.payment
@@ -321,9 +325,10 @@ export default function ServiceOrders() {
       poNumber: "",
       vendor: "",
       project: "",
+      building: "",
       amount: "",
       poStatus: "",
-      material: "",
+      service: "",
       payment: "",
       type: "",
       date: "",
@@ -473,6 +478,7 @@ export default function ServiceOrders() {
       console.log(error);
     }
   };
+
   const loadPO_Type = async () => {
     try {
       const response = await poTypeApi.getPOTypes();
@@ -481,9 +487,11 @@ export default function ServiceOrders() {
       console.log(error);
     }
   };
-  const loadPOS = async () => {
+
+  const loadSOS = async () => {
     try {
-      const response = await poApi.getPOs();
+      const response = await ServiceOrdersApi.getAll();
+      // console.log("Service Orders : ", response);
       return response;
     } catch (error) {
       console.log(error);
@@ -514,7 +522,7 @@ export default function ServiceOrders() {
     loadPO_Type().then((d) => {
       st = d;
     });
-    loadPOS().then((d) => {
+    loadSOS().then((d) => {
       spo = d;
     });
     loadTrackings().then((d) => {
@@ -808,16 +816,19 @@ export default function ServiceOrders() {
     });
 
     if (!result.isConfirmed) return;
-    await poApi.deletePurchaseOrder(id);
-    const filterdData = filteredPOs.filter((item: any) => item.id != id);
-    const filterdTrackingData = filteredTracking.filter(
-      (item: any) => item.po_id != id,
-    );
-    setFilteredPOs(filterdData);
-    setFilteredTracking(filterdTrackingData);
-    // const updated = pos.filter((p) => p.id !== id);
-    // setPOs(updated);
-    toast.success("PO deleted successfully!");
+    try {
+      const deleteRes = await ServiceOrdersApi.delete(id);
+
+      console.log("delete res", deleteRes);
+      if (deleteRes.success) {
+        loadAllData();
+        toast.success(deleteRes.message);
+      } else {
+        toast.error(deleteRes.message);
+      }
+    } catch (error: any) {
+      toast.error(error.response.data.message);
+    }
   };
 
   const updatePurchaseOrderStatus = async (id: string, status: string) => {
@@ -1196,6 +1207,11 @@ export default function ServiceOrders() {
                     </th>
                     <th className="px-3 md:px-4 py-2 text-left">
                       <div className="text-[10px] md:text-xs font-semibold text-gray-700 uppercase tracking-wider">
+                        Building
+                      </div>
+                    </th>
+                    <th className="px-3 md:px-4 py-2 text-left">
+                      <div className="text-[10px] md:text-xs font-semibold text-gray-700 uppercase tracking-wider">
                         Amount
                       </div>
                     </th>
@@ -1206,7 +1222,7 @@ export default function ServiceOrders() {
                     </th>
                     <th className="px-3 md:px-4 py-2 text-left">
                       <div className="text-[10px] md:text-xs font-semibold text-gray-700 uppercase tracking-wider">
-                        Material
+                        Service
                       </div>
                     </th>
                     <th className="px-3 md:px-4 py-2 text-left">
@@ -1261,6 +1277,17 @@ export default function ServiceOrders() {
                         className="w-full px-2 py-1 text-[9px] md:text-xs border border-gray-300 rounded focus:ring-1 focus:ring-blue-500 focus:border-transparent"
                       />
                     </td>
+                    <td className="px-3 md:px-4 py-1">
+                      <input
+                        type="text"
+                        placeholder="Building..."
+                        value={searchFilters.project}
+                        onChange={(e) =>
+                          handleSearchFilterChange("building", e.target.value)
+                        }
+                        className="w-full px-2 py-1 text-[9px] md:text-xs border border-gray-300 rounded focus:ring-1 focus:ring-blue-500 focus:border-transparent"
+                      />
+                    </td>
 
                     {/* Amount Column Search */}
                     <td className="px-3 md:px-4 py-1">
@@ -1292,10 +1319,10 @@ export default function ServiceOrders() {
                     <td className="px-3 md:px-4 py-1">
                       <input
                         type="text"
-                        placeholder="Material..."
-                        value={searchFilters.material}
+                        placeholder="Service..."
+                        value={searchFilters.service}
                         onChange={(e) =>
-                          handleSearchFilterChange("material", e.target.value)
+                          handleSearchFilterChange("service", e.target.value)
                         }
                         className="w-full px-2 py-1 text-[9px] md:text-xs border border-gray-300 rounded focus:ring-1 focus:ring-blue-500 focus:border-transparent"
                       />
@@ -1332,19 +1359,22 @@ export default function ServiceOrders() {
                     <tr key={po.id} className="hover:bg-gray-50 transition">
                       <td className="px-3 md:px-4 py-3">
                         <span className="font-medium text-blue-600 text-xs md:text-sm">
-                          {po.po_number}
+                          {po.so_number}
                         </span>
                         <p className="text-[10px] md:text-xs text-gray-500 mt-0.5">
                           {po.po_date
-                            ? new Date(po.po_date).toLocaleDateString()
+                            ? new Date(po.so_date).toLocaleDateString()
                             : ""}
                         </p>
                       </td>
                       <td className="px-3 md:px-4 py-3 text-gray-700 text-xs md:text-sm truncate max-w-[120px]">
-                        {po.vendors?.name || "N/A"}
+                        {po.vendor || "N/A"}
                       </td>
                       <td className="px-3 md:px-4 py-3 text-gray-700 text-xs md:text-sm truncate max-w-[120px]">
-                        {po.projects?.name || "N/A"}
+                        {po.project || "N/A"}
+                      </td>
+                      <td className="px-3 md:px-4 py-3 text-gray-700 text-xs md:text-sm truncate max-w-[120px]">
+                        {po.building || "N/A"}
                       </td>
                       <td className="px-3 md:px-4 py-3">
                         <span className="font-semibold text-gray-800 text-xs md:text-sm">
@@ -1432,12 +1462,17 @@ export default function ServiceOrders() {
                   </th>
                   <th className="px-3 md:px-4 py-2 text-left">
                     <div className="text-[10px] md:text-xs font-semibold text-gray-700 uppercase tracking-wider">
+                      Building
+                    </div>
+                  </th>
+                  <th className="px-3 md:px-4 py-2 text-left">
+                    <div className="text-[10px] md:text-xs font-semibold text-gray-700 uppercase tracking-wider">
                       Type
                     </div>
                   </th>
                   <th className="px-3 md:px-4 py-2 text-left">
                     <div className="text-[10px] md:text-xs font-semibold text-gray-700 uppercase tracking-wider">
-                      Date
+                      SO Date
                     </div>
                   </th>
                   <th className="px-3 md:px-4 py-2 text-left">
@@ -1493,6 +1528,19 @@ export default function ServiceOrders() {
                       value={searchFilters.project}
                       onChange={(e) =>
                         handleSearchFilterChange("project", e.target.value)
+                      }
+                      className="w-full px-2 py-1 text-[9px] md:text-xs border border-gray-300 rounded focus:ring-1 focus:ring-blue-500 focus:border-transparent"
+                    />
+                  </td>
+
+                  {/* Project Column Search */}
+                  <td className="px-3 md:px-4 py-1">
+                    <input
+                      type="text"
+                      placeholder="Building..."
+                      value={searchFilters.project}
+                      onChange={(e) =>
+                        handleSearchFilterChange("building", e.target.value)
                       }
                       className="w-full px-2 py-1 text-[9px] md:text-xs border border-gray-300 rounded focus:ring-1 focus:ring-blue-500 focus:border-transparent"
                     />
@@ -1568,21 +1616,24 @@ export default function ServiceOrders() {
                   <tr key={po.id} className="hover:bg-gray-50 transition">
                     <td className="px-3 md:px-4 py-3">
                       <span className="font-medium text-blue-600 text-xs md:text-sm">
-                        {po.po_number}
+                        {po.so_number}
                       </span>
                     </td>
                     <td className="px-3 md:px-4 py-3 text-gray-700 text-xs md:text-sm truncate max-w-[120px]">
-                      {po.vendors?.name || "N/A"}
+                      {po.vendor || "N/A"}
                     </td>
                     <td className="px-3 md:px-4 py-3 text-gray-700 text-xs md:text-sm truncate max-w-[120px]">
-                      {po.projects?.name || "N/A"}
+                      {po.project || "N/A"}
+                    </td>
+                    <td className="px-3 md:px-4 py-3 text-gray-700 text-xs md:text-sm truncate max-w-[120px]">
+                      {po.building || "N/A"}
                     </td>
                     <td className="px-3 md:px-4 py-3 text-gray-700 text-xs md:text-sm truncate max-w-[80px]">
-                      {po.po_types?.name || "N/A"}
+                      {po.service_type || "Service"}
                     </td>
                     <td className="px-3 md:px-4 py-3 text-gray-700 text-xs md:text-sm whitespace-nowrap">
-                      {po.po_date
-                        ? new Date(po.po_date).toLocaleDateString()
+                      {po.so_date
+                        ? new Date(po.so_date).toLocaleDateString()
                         : ""}
                     </td>
                     <td className="px-3 md:px-4 py-3">

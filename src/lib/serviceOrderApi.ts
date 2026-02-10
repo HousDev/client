@@ -65,15 +65,12 @@ const ServiceOrdersApi = {
     id: number;
     so_number: string;
     last_number: number;
-    }> =>
-    unwrap(api.get(`/service-orders/next`)),
+  }> => unwrap(api.get(`/service-orders/next`)),
 
   /**
    * CREATE service order
    */
-  create: async (
-    payload: Partial<ServiceOrder>
-  ): Promise<ServiceOrder> =>
+  create: async (payload: Partial<any>): Promise<ServiceOrder> =>
     unwrap(api.post("/service-orders", payload)),
 
   /**
@@ -81,16 +78,15 @@ const ServiceOrdersApi = {
    */
   update: async (
     id: number | string,
-    payload: Partial<ServiceOrder>
-  ): Promise<ServiceOrder> =>
-    unwrap(api.put(`/service-orders/${id}`, payload)),
+    payload: Partial<ServiceOrder>,
+  ): Promise<ServiceOrder> => unwrap(api.put(`/service-orders/${id}`, payload)),
 
   /**
    * UPDATE service order status
    */
   updateStatus: async (
     id: number | string,
-    status: ServiceOrder["status"]
+    status: ServiceOrder["status"],
   ): Promise<any> =>
     unwrap(api.put(`/service-orders/status/${id}`, { status })),
 
