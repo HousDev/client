@@ -1,145 +1,104 @@
-// // src/lib/serviceOrderApi.ts
-// import { api, unwrap } from './Api';
+import { api, unwrap } from "../lib/Api";
 
-// export interface ServiceOrderPayload {
-//   id?: string;
-//   so_number?: string;
-//   vendor_id: string;
-//   project_id: string;
-//   service_type_id?: string;
-//   service_name: string;
-//   description?: string;
-//   start_date: string;
-//   end_date?: string;
-//   duration_days?: number;
-//   estimated_cost?: number;
-//   actual_cost?: number;
-//   status?: string;
-//   priority?: string;
-//   location?: string;
-//   supervisor_name?: string;
-//   supervisor_phone?: string;
-//   notes?: string;
-//   created_by?: string | null;
-//   created_at?: string;
-// }
+export type ServiceOrder = {
+  id: number;
+  so_number: string;
+  vendor_id: number;
+  project_id: number;
+  service_type_id: number;
+  building_id?: number | null;
 
-// // ---------- Service Orders ----------
-// export async function getServiceOrders(search?: string) {
-//   const url = search ? `/service-orders?q=${encodeURIComponent(search)}` : `/service-orders`;
-//   return unwrap(api.get(url));
-// }
+  so_date?: string | null;
+  delivery_date: string;
 
-// export async function getServiceOrder(id: string) {
-//   return unwrap(api.get(`/service-orders/${id}`));
-// }
-
-// export async function createServiceOrder(payload: ServiceOrderPayload) {
-//   return unwrap(api.post(`/service-orders`, payload));
-// }
-
-// export async function updateServiceOrder(id: string, payload: ServiceOrderPayload) {
-//   return unwrap(api.put(`/service-orders/${id}`, payload));
-// }
-
-// export async function deleteServiceOrder(id: string) {
-//   return unwrap(api.delete(`/service-orders/${id}`));
-// }
-
-// export async function bulkUpdateStatus(ids: string[], status: string) {
-//   return unwrap(api.post(`/service-orders/bulk/status`, { ids, status }));
-// }
-
-// export async function bulkDeleteServiceOrders(ids: string[]) {
-//   return unwrap(api.post(`/service-orders/bulk/delete`, { ids }));
-// }
-
-// // ---------- Lookups (vendors/projects/serviceTypes) ----------
-// /**
-//  * Expected response shape:
-//  * {
-//  *   vendors: [{ id, name }, ...],
-//  *   projects: [{ id, name }, ...],
-//  *   serviceTypes: [{ id, name }, ...]
-//  * }
-//  *
-//  * Backend endpoint: GET /api/lookups
-//  * If you don't have this backend route yet, the frontend will fallback to seeded lookups.
-//  */
-// export async function getLookups() {
-//   return unwrap(api.get('/lookups'));
-// }
-
-
-
-// src/lib/serviceOrderApi.ts
-import { api, unwrap } from './Api';
-
-export interface ServiceOrderPayload {
-  id?: string;
-  so_number?: string;
-  vendor_id: string | number;
-  project_id: string | number;
-  service_type_id: string | number;
-  building_id?: string | number | null;
-  so_date: string;
-  start_date: string;
-  end_date?: string;
-  
-  // Financial fields
   sub_total: number;
-  discount_percentage: number;
-  discount_amount: number;
-  taxable_amount: number;
-  cgst_amount: number;
-  sgst_amount: number;
-  igst_amount: number;
-  total_gst_amount: number;
+  discount_percentage?: number;
+  discount_amount?: number;
+  taxable_amount?: number;
+
+  cgst_amount?: number;
+  sgst_amount?: number;
+  igst_amount?: number;
+  total_gst_amount?: number;
   grand_total: number;
-  
-  // Payment fields
-  payment_terms?: string;
-  terms_and_conditions?: string;
-  advance_amount: number;
-  total_paid: number;
-  balance_amount: number;
-  
-  // Status fields
-  status: 'draft' | 'approve' | 'authorize' | 'reject';
-  service_status: 'pending' | 'partial' | 'completed';
-  selected_terms_ids?: string;
-  note?: string;
-  
-  created_by?: string | null;
+
+  payment_terms?: string | null;
+  terms_and_conditions?: string | null;
+
+  advance_amount?: number;
+  total_paid?: number;
+  balance_amount?: number;
+
+  status: "draft" | "approve" | "authorize" | "reject";
+  service_status: "pending" | "partial" | "completed";
+
+  selected_terms_ids?: string | null;
+  note?: string | null;
+
+  created_by: string;
+
   created_at?: string;
-}
+  updated_at?: string;
+};
 
-// ---------- Service Orders ----------
-export async function getServiceOrders(search?: string) {
-  const url = search ? `/service-orders?q=${encodeURIComponent(search)}` : `/service-orders`;
-  return unwrap(api.get(url));
-}
+const ServiceOrdersApi = {
+  /**
+   * GET all service orders
+   */
+  getAll: async (): Promise<ServiceOrder[]> =>
+    unwrap(api.get("/service-orders")),
 
-export async function getServiceOrder(id: string) {
-  return unwrap(api.get(`/service-orders/${id}`));
-}
+  /**
+   * GET service order by ID
+   */
+  getById: async (id: number | string): Promise<ServiceOrder> =>
+    unwrap(api.get(`/service-orders/${id}`)),
 
-export async function createServiceOrder(payload: ServiceOrderPayload) {
-  return unwrap(api.post(`/service-orders`, payload));
-}
+  /**
+   * GET service orders by vendor
+   */
+  getByVendor: async (vendor_id: number | string): Promise<ServiceOrder[]> =>
+    unwrap(api.get(`/service-orders/vendor/${vendor_id}`)),
 
-export async function updateServiceOrder(id: string, payload: Partial<ServiceOrderPayload>) {
-  return unwrap(api.put(`/service-orders/${id}`, payload));
-}
+  nextSequence: async (): Promise<{
+    ok: boolean;
+    id: number;
+    so_number: string;
+    last_number: number;
+    }> =>
+    unwrap(api.get(`/service-orders/next`)),
 
-export async function deleteServiceOrder(id: string) {
-  return unwrap(api.delete(`/service-orders/${id}`));
-}
+  /**
+   * CREATE service order
+   */
+  create: async (
+    payload: Partial<ServiceOrder>
+  ): Promise<ServiceOrder> =>
+    unwrap(api.post("/service-orders", payload)),
 
-export async function bulkUpdateStatus(ids: string[], status: string, field: string = 'status') {
-  return unwrap(api.post(`/service-orders/bulk/status`, { ids, status, field }));
-}
+  /**
+   * UPDATE service order
+   */
+  update: async (
+    id: number | string,
+    payload: Partial<ServiceOrder>
+  ): Promise<ServiceOrder> =>
+    unwrap(api.put(`/service-orders/${id}`, payload)),
 
-export async function bulkDeleteServiceOrders(ids: string[]) {
-  return unwrap(api.post(`/service-orders/bulk/delete`, { ids }));
-}
+  /**
+   * UPDATE service order status
+   */
+  updateStatus: async (
+    id: number | string,
+    status: ServiceOrder["status"]
+  ): Promise<any> =>
+    unwrap(api.put(`/service-orders/status/${id}`, { status })),
+
+  /**
+   * DELETE service order
+   */
+  delete: async (id: number | string): Promise<any> =>
+    unwrap(api.delete(`/service-orders/${id}`)),
+};
+
+export default ServiceOrdersApi;

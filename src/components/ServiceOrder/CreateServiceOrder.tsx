@@ -26,6 +26,7 @@ import { toast } from "sonner";
 import PaymentMastersApi from "../../lib/paymentMasterApi";
 import SearchableSelect from "../SearchableSelect";
 import projectApi from "../../lib/projectApi";
+import ServiceOrdersApi from "../../lib/serviceOrderApi";
 
 /* --- types (updated to include individual GST rates) --- */
 interface POItem {
@@ -46,14 +47,13 @@ interface POItem {
 }
 
 interface POFormData {
-  po_number: string;
+  so_number: string;
   vendor_id: string;
   project_id: string;
   building_id: string;
-  po_type_id: string;
-  po_date: string;
+  service_type_id: string;
+  so_date: string;
   delivery_date: string;
-  due_date: string;
   is_interstate: boolean;
   items: POItem[];
   subtotal: number;
@@ -97,7 +97,6 @@ export default function CreateServiceOrderForm({
   const [selectedPaymentTermId, setSelectedPaymentTermId] = useState<any>("");
   const [selectedPaymentTerm, setSelectedPaymentTerm] = useState<any>("");
   const [poPaymentTerms, setPoPaymentTerms] = useState<any[]>([]);
-  const [showTermDropdown, setShowTermDropdown] = useState(false);
   const [displayTerms, setDisplayTerms] = useState<any>([]);
   const [projectBuildings, setProjectBuildings] = useState<any>([]);
 
@@ -116,14 +115,13 @@ export default function CreateServiceOrderForm({
   const [itemSelectorSearch, setItemSelectorSearch] = useState("");
 
   const [formData, setFormData] = useState<POFormData>({
-    po_number: "",
+    so_number: "",
     vendor_id: "",
     project_id: "",
     building_id: "",
-    po_type_id: "",
-    po_date: new Date().toISOString().split("T")[0],
+    service_type_id: "",
+    so_date: new Date().toISOString().split("T")[0],
     delivery_date: "",
-    due_date: "",
     is_interstate: false,
     items: [],
     subtotal: 0,
@@ -158,7 +156,7 @@ export default function CreateServiceOrderForm({
   }, []);
 
   useEffect(() => {
-    loadPOTypes(formData.project_id || undefined);
+    loadPOTypes();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [formData.project_id]);
 
@@ -214,7 +212,7 @@ export default function CreateServiceOrderForm({
     }
   };
 
-  const loadPOTypes = async (projectId?: string) => {
+  const loadPOTypes = async () => {
     setPOTypesLoading(true);
     try {
       const data = await poTypeApi.getPOTypes();
@@ -229,7 +227,7 @@ export default function CreateServiceOrderForm({
         console.log(String(data.find((d: any) => d.name === "Material")?.id));
         setFormData({
           ...formData,
-          po_type_id: String(
+          service_type_id: String(
             data.find((d: any) => d.name === "Service")?.id ?? "",
           ),
         });
@@ -477,61 +475,61 @@ export default function CreateServiceOrderForm({
     }));
   };
 
-  const handleDiscountChange = (percentage: number) => {
-    setFormData({ ...formData, discount_percentage: percentage });
-    calculateTotals(formData.items, percentage, formData.is_interstate);
-  };
+  // const handleDiscountChange = (percentage: number) => {
+  //   setFormData({ ...formData, discount_percentage: percentage });
+  //   calculateTotals(formData.items, percentage, formData.is_interstate);
+  // };
 
-  const handleInterstateChange = (isInterstate: boolean) => {
-    // When interstate status changes, we need to recalculate GST for all items
-    const updatedItems = formData.items.map((item) => {
-      let gstAmount = 0;
-      if (isInterstate) {
-        gstAmount = (item.amount * (item.igst_rate || 0)) / 100;
-      } else {
-        gstAmount =
-          (item.amount * ((item.cgst_rate || 0) + (item.sgst_rate || 0))) / 100;
-      }
-      return { ...item, gst_amount: gstAmount };
-    });
+  // const handleInterstateChange = (isInterstate: boolean) => {
+  //   // When interstate status changes, we need to recalculate GST for all items
+  //   const updatedItems = formData.items.map((item) => {
+  //     let gstAmount = 0;
+  //     if (isInterstate) {
+  //       gstAmount = (item.amount * (item.igst_rate || 0)) / 100;
+  //     } else {
+  //       gstAmount =
+  //         (item.amount * ((item.cgst_rate || 0) + (item.sgst_rate || 0))) / 100;
+  //     }
+  //     return { ...item, gst_amount: gstAmount };
+  //   });
 
-    setFormData({
-      ...formData,
-      is_interstate: isInterstate,
-      items: updatedItems,
-    });
-    calculateTotals(updatedItems, formData.discount_percentage, isInterstate);
-  };
+  //   setFormData({
+  //     ...formData,
+  //     is_interstate: isInterstate,
+  //     items: updatedItems,
+  //   });
+  //   calculateTotals(updatedItems, formData.discount_percentage, isInterstate);
+  // };
 
-  const toggleTerm = (termId: string) => {
-    const currentTerms = [...formData.selected_terms_ids];
-    const idx = currentTerms.indexOf(termId);
-    if (idx > -1) currentTerms.splice(idx, 1);
-    else currentTerms.push(termId);
-    setFormData({ ...formData, selected_terms_ids: currentTerms });
-  };
+  // const toggleTerm = (termId: string) => {
+  //   const currentTerms = [...formData.selected_terms_ids];
+  //   const idx = currentTerms.indexOf(termId);
+  //   if (idx > -1) currentTerms.splice(idx, 1);
+  //   else currentTerms.push(termId);
+  //   setFormData({ ...formData, selected_terms_ids: currentTerms });
+  // };
 
-  const handlePaymentTermsChange = (paymentTermsId: string) => {
-    const selectedPaymentTerms = paymentTerms.find(
-      (pt) => pt.id === paymentTermsId,
-    );
-    const advanceAmount =
-      selectedPaymentTerms && formData.grand_total
-        ? (formData.grand_total *
-            (selectedPaymentTerms.advance_percentage || 0)) /
-          100
-        : 0;
-    setFormData({
-      ...formData,
-      payment_terms_id: paymentTermsId,
-      advance_amount: advanceAmount,
-    });
-  };
+  // const handlePaymentTermsChange = (paymentTermsId: string) => {
+  //   const selectedPaymentTerms = paymentTerms.find(
+  //     (pt) => pt.id === paymentTermsId,
+  //   );
+  //   const advanceAmount =
+  //     selectedPaymentTerms && formData.grand_total
+  //       ? (formData.grand_total *
+  //           (selectedPaymentTerms.advance_percentage || 0)) /
+  //         100
+  //       : 0;
+  //   setFormData({
+  //     ...formData,
+  //     payment_terms_id: paymentTermsId,
+  //     advance_amount: advanceAmount,
+  //   });
+  // };
 
   // Helper: derive 'material' or 'service' from selected PO Type
   const getSelectedPOTypeCategory = (): string | null => {
-    if (!formData.po_type_id) return null;
-    const selected = poTypes.find((t: any) => t.id === formData.po_type_id);
+    if (!formData.service_type_id) return null;
+    const selected = poTypes.find((t: any) => t.id === formData.service_type_id);
     if (!selected) return null;
     // prefer explicit category field if API provides it
     if (selected.category) return String(selected.category).toLowerCase();
@@ -563,7 +561,8 @@ export default function CreateServiceOrderForm({
   // server-side sequence with fallback
   const generatePONumber = async () => {
     try {
-      const res: any = await poApi.nextSequence();
+      const res: any = await ServiceOrdersApi.nextSequence();
+      console.log(res,"res of sequense")
       if (res && res.po_number) {
         return res.po_number;
       }
@@ -586,137 +585,135 @@ export default function CreateServiceOrderForm({
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    try {
+    console.log(formData,"this is handlesubmit formdata.")
+    // try {
       const poNumber = await generatePONumber();
+    console.log("generated po number : ",poNumber)
+    //   if (
+    //     formData.vendor_id === "" ||
+    //     formData.project_id === "" ||
+    //     formData.service_type_id === "" ||
+    //     formData.so_date === "" ||
+    //     formData.delivery_date === "" 
+    //   ) {
+    //     toast.error("Fill all required fields.");
+    //     return;
+    //   }
+    //   if (formData.items.length === 0) {
+    //     toast.error("Add Items.");
+    //     return;
+    //   }
 
-      if (
-        formData.vendor_id === "" ||
-        formData.project_id === "" ||
-        formData.po_type_id === "" ||
-        formData.po_date === "" ||
-        formData.delivery_date === "" ||
-        formData.due_date === ""
-      ) {
-        toast.error("Fill all required fields.");
-        return;
-      }
-      if (formData.items.length === 0) {
-        toast.error("Add Items.");
-        return;
-      }
+    //   const selected_terms_idsData: any = [];
+    //   const terms_and_conditionsData: any = [];
 
-      const selected_terms_idsData: any = [];
-      const terms_and_conditionsData: any = [];
+    //   terms.forEach((tc) => {
+    //     tc.content.forEach((cont: any) => {
+    //       if (cont.is_default) {
+    //         selected_terms_idsData.push(cont.term_id);
+    //       }
+    //     });
+    //   });
+    //   extraTerms.forEach((tc: any) => {
+    //     if (tc.is_default) {
+    //       terms_and_conditionsData.push(tc);
+    //     }
+    //   });
 
-      terms.forEach((tc) => {
-        tc.content.forEach((cont: any) => {
-          if (cont.is_default) {
-            selected_terms_idsData.push(cont.term_id);
-          }
-        });
-      });
-      extraTerms.forEach((tc: any) => {
-        if (tc.is_default) {
-          terms_and_conditionsData.push(tc);
-        }
-      });
+    //   if (
+    //     selected_terms_idsData.length === 0 ||
+    //     terms_and_conditionsData.length === 0
+    //   ) {
+    //     toast.error("Select Terms & Conditions For Service Order.");
+    //     return;
+    //   }
 
-      if (
-        selected_terms_idsData.length === 0 ||
-        terms_and_conditionsData.length === 0
-      ) {
-        toast.error("Select Terms & Conditions For Service Order.");
-        return;
-      }
+    //   const payload = {
+    //     po_number: poNumber,
+    //     vendor_id: formData.vendor_id,
+    //     project_id: formData.project_id,
+    //     po_type_id: formData.service_type_id,
+    //     po_date: formData.so_date,
+    //     delivery_date: formData.delivery_date,
+    //     is_interstate: formData.is_interstate,
+    //     items: formData.items,
+    //     subtotal: formData.subtotal,
+    //     discount_percentage: formData.discount_percentage,
+    //     discount_amount: formData.discount_amount,
+    //     taxable_amount: formData.taxable_amount,
+    //     cgst_amount: formData.cgst_amount,
+    //     sgst_amount: formData.sgst_amount,
+    //     igst_amount: formData.igst_amount,
+    //     total_gst_amount: formData.total_gst_amount,
+    //     grand_total: formData.grand_total,
+    //     payment_terms_id: formData.payment_terms_id,
+    //     advance_amount: formData.advance_amount,
+    //     total_paid: 0,
+    //     balance_amount: formData.grand_total,
+    //     selected_terms_ids: JSON.stringify(selected_terms_idsData),
+    //     terms_and_conditions: JSON.stringify(terms_and_conditionsData),
+    //     notes: formData.notes,
+    //     status: "draft",
+    //     material_status: "pending",
+    //     payment_status: "pending",
+    //     created_by: user?.id,
+    //   };
 
-      const payload = {
-        po_number: poNumber,
-        vendor_id: formData.vendor_id,
-        project_id: formData.project_id,
-        po_type_id: formData.po_type_id,
-        po_date: formData.po_date,
-        delivery_date: formData.delivery_date,
-        due_date: formData.due_date,
-        is_interstate: formData.is_interstate,
-        items: formData.items,
-        subtotal: formData.subtotal,
-        discount_percentage: formData.discount_percentage,
-        discount_amount: formData.discount_amount,
-        taxable_amount: formData.taxable_amount,
-        cgst_amount: formData.cgst_amount,
-        sgst_amount: formData.sgst_amount,
-        igst_amount: formData.igst_amount,
-        total_gst_amount: formData.total_gst_amount,
-        grand_total: formData.grand_total,
-        payment_terms_id: formData.payment_terms_id,
-        advance_amount: formData.advance_amount,
-        total_paid: 0,
-        balance_amount: formData.grand_total,
-        selected_terms_ids: JSON.stringify(selected_terms_idsData),
-        terms_and_conditions: JSON.stringify(terms_and_conditionsData),
-        notes: formData.notes,
-        status: "draft",
-        material_status: "pending",
-        payment_status: "pending",
-        created_by: user?.id,
-      };
+    //   console.log(payload);
 
-      console.log(payload);
+    //   const created: any = await poApi.createPO(payload);
 
-      const created: any = await poApi.createPO(payload);
+    //   if (created && created.id && formData.items.length) {
+    //     const trackingRecords = formData.items.map((item) => ({
+    //       po_id: created.id,
+    //       item_id: item.item_id,
+    //       item_description: item.item_name,
+    //       quantity_ordered: item.quantity,
+    //       quantity_received: 0,
+    //       quantity_pending: item.quantity,
+    //       status: "pending",
+    //     }));
+    //     try {
+    //       await poApi.createTracking(trackingRecords);
+    //     } catch (err) {
+    //       console.warn("tracking creation failed", err);
+    //     }
 
-      if (created && created.id && formData.items.length) {
-        const trackingRecords = formData.items.map((item) => ({
-          po_id: created.id,
-          item_id: item.item_id,
-          item_description: item.item_name,
-          quantity_ordered: item.quantity,
-          quantity_received: 0,
-          quantity_pending: item.quantity,
-          status: "pending",
-        }));
-        try {
-          await poApi.createTracking(trackingRecords);
-        } catch (err) {
-          console.warn("tracking creation failed", err);
-        }
+    //     if (formData.advance_amount > 0) {
+    //       try {
+    //         await poApi.createPayment({
+    //           po_id: created.id,
+    //           payment_type: "advance",
+    //           amount: formData.advance_amount,
+    //           due_date: formData.so_date,
+    //           status: "pending",
+    //           created_by: user?.id,
+    //         });
+    //       } catch (err) {
+    //         console.warn("advance payment creation failed", err);
+    //       }
+    //     }
+    //   }
 
-        if (formData.advance_amount > 0) {
-          try {
-            await poApi.createPayment({
-              po_id: created.id,
-              payment_type: "advance",
-              amount: formData.advance_amount,
-              due_date: formData.po_date,
-              status: "pending",
-              created_by: user?.id,
-            });
-          } catch (err) {
-            console.warn("advance payment creation failed", err);
-          }
-        }
-      }
-
-      toast.success("Service Order created successfully!");
-      setShowCreatePro(false);
-      resetForm();
-      loadAllData();
-    } catch (err) {
-      console.error("Error creating PO:", err);
-      toast.error("Error creating service order");
-    }
+    //   toast.success("Service Order created successfully!");
+    //   setShowCreatePro(false);
+    //   resetForm();
+    //   loadAllData();
+    // } catch (err) {
+    //   console.error("Error creating PO:", err);
+    //   toast.error("Error creating service order");
+    // }
   };
 
   const resetForm = () => {
     setFormData({
-      po_number: "",
+      so_number: "",
       vendor_id: "",
       project_id: "",
       building_id: "",
-      po_type_id: "",
-      po_date: new Date().toISOString().split("T")[0],
+      service_type_id: "",
+      so_date: new Date().toISOString().split("T")[0],
       delivery_date: "",
-      due_date: "",
       is_interstate: false,
       items: [],
       subtotal: 0,
@@ -823,7 +820,7 @@ export default function CreateServiceOrderForm({
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 {/* Vendor Selection */}
                 <div className="space-y-1.5">
-                  <label className="block text-xs font-semibold text-gray-700 mb-1 flex items-center gap-1.5">
+                  <label className=" text-xs font-semibold text-gray-700 mb-1 flex items-center gap-1.5">
                     <User className="w-3 h-3 text-blue-600" />
                     <span>Vendor</span>
                     <span className="text-red-500">*</span>
@@ -857,7 +854,7 @@ export default function CreateServiceOrderForm({
 
                 {/* Project Selection */}
                 <div className="space-y-1.5">
-                  <label className="block text-xs font-semibold text-gray-700 mb-1 flex items-center gap-1.5">
+                  <label className=" text-xs font-semibold text-gray-700 mb-1 flex items-center gap-1.5">
                     <Building2 className="w-3 h-3 text-green-600" />
                     <span>Project</span>
                     <span className="text-red-500">*</span>
@@ -886,7 +883,7 @@ export default function CreateServiceOrderForm({
 
                 {/* Building Selection */}
                 <div className="space-y-1.5">
-                  <label className="block text-xs font-semibold text-gray-700 mb-1 flex items-center gap-1.5">
+                  <label className=" text-xs font-semibold text-gray-700 mb-1 flex items-center gap-1.5">
                     <Building2 className="w-3 h-3 text-green-600" />
                     <span>Building</span>
                     <span className="text-red-500">*</span>
@@ -912,7 +909,7 @@ export default function CreateServiceOrderForm({
 
                 {/* PO Type Selection */}
                 <div className="space-y-1.5">
-                  <label className="block text-xs font-semibold text-gray-700 mb-1 flex items-center gap-1.5">
+                  <label className=" text-xs font-semibold text-gray-700 mb-1 flex items-center gap-1.5">
                     <Tag className="w-3 h-3 text-purple-600" />
                     <span>PO Type</span>
                     <span className="text-red-500">*</span>
@@ -923,7 +920,7 @@ export default function CreateServiceOrderForm({
                         id: String(t.id),
                         name: t.name,
                       }))}
-                      value={formData.po_type_id}
+                      value={formData.service_type_id}
                       onChange={(id) => {
                         console.log(id);
                         handlePOTypeChange(id);
@@ -939,7 +936,7 @@ export default function CreateServiceOrderForm({
 
                 {/* PO Date */}
                 <div className="space-y-1.5">
-                  <label className="block text-xs font-semibold text-gray-700 mb-1 flex items-center gap-1.5">
+                  <label className=" text-xs font-semibold text-gray-700 mb-1 flex items-center gap-1.5">
                     <Calendar className="w-3 h-3 text-amber-600" />
                     <span>PO Date</span>
                     <span className="text-red-500">*</span>
@@ -950,9 +947,10 @@ export default function CreateServiceOrderForm({
                     </div>
                     <input
                       type="date"
-                      value={formData.po_date}
+                      value={formData.so_date}
+                      max={formData.delivery_date} 
                       onChange={(e) =>
-                        setFormData({ ...formData, po_date: e.target.value })
+                        setFormData({ ...formData, so_date: e.target.value })
                       }
                       className="w-full pl-10 pr-4 py-2 text-sm border border-gray-300 rounded-xl focus:border-amber-600 focus:ring-2 focus:ring-amber-600/20 outline-none transition-all duration-200 hover:border-gray-400"
                       required
@@ -962,7 +960,7 @@ export default function CreateServiceOrderForm({
 
                 {/* Delivery Date */}
                 <div className="space-y-1.5">
-                  <label className="block text-xs font-semibold text-gray-700 mb-1 flex items-center gap-1.5">
+                  <label className=" text-xs font-semibold text-gray-700 mb-1 flex items-center gap-1.5">
                     <Truck className="w-3 h-3 text-indigo-600" />
                     <span>Delivery Date</span>
                     <span className="text-red-500">*</span>
@@ -974,6 +972,7 @@ export default function CreateServiceOrderForm({
                     <input
                       type="date"
                       value={formData.delivery_date}
+                      min={formData.so_date} 
                       onChange={(e) =>
                         setFormData({
                           ...formData,
@@ -1738,7 +1737,7 @@ export default function CreateServiceOrderForm({
                           return;
                         }
                         console.log(poPaymentTerms);
-                        let data = poPaymentTerms;
+                        const data = poPaymentTerms;
                         console.log("this is payment terms", data);
                         data.push(selectedPaymentTermData);
                         setPoPaymentTerms(data);
