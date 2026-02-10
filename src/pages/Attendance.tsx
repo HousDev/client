@@ -1258,7 +1258,7 @@ export default function Attendance() {
   };
 
   return (
-    <div className="space-y-5 h-screen">
+    <div className="space-y-5 ">
       {/* Header with Action Buttons - Sticky */}
       <div className="sticky top-20 z-20 px-2 py-2 -mt-2 -mb-2">
         {/* MOBILE VIEW */}
@@ -1336,15 +1336,15 @@ export default function Attendance() {
             )}
           </div>
 
-          <div className="flex flex-col sm:flex-row gap-2 w-full lg:w-auto">
-            <Button
+          <div className=" sticky top-14 z-10 flex flex-col sm:flex-row gap-2 w-full lg:w-auto">
+            {/* <Button
               variant="secondary"
               onClick={() => setShowFilterSidebar(true)}
               className="text-sm w-full sm:w-auto"
             >
               <Filter className="h-4 w-4 mr-1.5" />
               Filters
-            </Button>
+            </Button> */}
             <Button
               variant="secondary"
               onClick={exportToCSV}
@@ -1365,7 +1365,7 @@ export default function Attendance() {
       </div>
 
       {/* Statistics Cards - Sticky & Compact */}
-      <div className="sticky top-20 z-10 grid grid-cols-2 sm:grid-cols-2 md:grid-cols-4 gap-2 md:gap-3">
+      <div className="sticky top-32 z-10 grid grid-cols-2 sm:grid-cols-2 md:grid-cols-4 gap-2 md:gap-3">
         <Card className="p-2 sm:p-3 md:p-3.5">
           <div className="flex items-center justify-between">
             <div>
@@ -1453,9 +1453,9 @@ export default function Attendance() {
       </div>
 
       {/* Main Table - Responsive with sticky header */}
-      <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+      <div className="sticky top-44 z-10 bg-white rounded-xl shadow-sm border border-gray-200 ">
         <div className="overflow-y-auto max-h-[calc(100vh-295px)] md:max-h-[calc(100vh-260px)]">
-          <table className="w-full min-w-[1200px]">
+          <table className="w-full min-w-[800px]">
             <thead className="sticky top-0 z-10 bg-gray-200 border-b border-gray-200">
               {/* Header Row */}
               <tr>

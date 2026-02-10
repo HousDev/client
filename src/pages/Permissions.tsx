@@ -794,7 +794,6 @@
 //     </div>
 //   );
 // }
-
 import { useState, useEffect } from "react";
 import { Shield, Users, Search } from "lucide-react";
 import { toast } from "sonner";
@@ -826,6 +825,7 @@ export default function Permissions() {
   const [userPermissions, setUserPermissions] = useState<Record<string, boolean>>({});
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
+  const [selectAllEnabled, setSelectAllEnabled] = useState(false);
 
   // COMPLETE PERMISSIONS LIST
   const permissionsList = [
@@ -987,6 +987,23 @@ export default function Permissions() {
     }
   };
 
+  const handleGlobalSelectAll = () => {
+    const newSelectAllState = !selectAllEnabled;
+    setSelectAllEnabled(newSelectAllState);
+    
+    const newPermissions: Record<string, boolean> = {};
+    
+    permissionsList.forEach(perm => {
+      newPermissions[perm.action] = newSelectAllState;
+    });
+    
+    if (activeTab === "role-permissions") {
+      setRolePermissions(newPermissions);
+    } else {
+      setUserPermissions(newPermissions);
+    }
+  };
+
   const updateRolePermissions = async () => {
     try {
       const rolePermissionRes = await rolesApi.updateRolePermissions(
@@ -1028,29 +1045,10 @@ export default function Permissions() {
   const currentPermissions = activeTab === "role-permissions" ? rolePermissions : userPermissions;
 
   return (
-    <div className="min-h-screen bg-gray-50 p-4 md:p-6 lg:p-8">
-      {/* Header */}
-      {/* <div className="mb-6">
-        <h1 className="text-2xl md:text-3xl font-bold text-gray-900">Access Control</h1>
-        <p className="text-sm text-gray-600 mt-1">Manage hierarchical roles and granular user-specific permissions.</p>
-      </div> */}
-
-      {/* Search Bar */}
-      {/* <div className="mb-6">
-        <div className="relative max-w-md">
-          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
-          <input
-            type="text"
-            placeholder="Search permissions..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full pl-10 pr-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-          />
-        </div>
-      </div> */}
-
-      {/* Tabs */}
-      <div className="bg-white rounded-t-lg border-b">
+    // ✅ REMOVED ALL PADDING - Changed from "p-4 md:p-6 lg:p-8" to NO padding classes
+    <div className="min-h-screen px-0 mx-0 bg-gray-50">
+      {/* Tabs - NO padding */}
+      <div className="bg-white border-b">
         <div className="flex">
           <button
             onClick={() => setActiveTab("role-permissions")}
@@ -1084,46 +1082,56 @@ export default function Permissions() {
         </div>
       </div>
 
-      {/* Content */}
-      <div className="bg-white rounded-b-lg shadow-sm p-6">
-        {/* Role/User Selection */}
-        <div className="mb-8">
-          <label className="block text-xs font-semibold text-gray-700 mb-2 uppercase tracking-wider">
-            TARGET ROLE
-          </label>
-          <select
-            value={activeTab === "role-permissions" ? selectedRole : selectedUser}
-            onChange={(e) => {
-              if (activeTab === "role-permissions") {
-                const newRole = e.target.value;
-                setSelectedRole(newRole);
-                const r = roles.find((x: any) => x.id === Number(newRole));
-                setRolePermissions(r?.permissions || {});
-              } else {
-                const uid = e.target.value;
-                setSelectedUser(uid);
-                const u = users.find((x) => x.id === uid);
-                setUserPermissions(u?.permissions || {});
-              }
-            }}
-            className="w-full max-w-md border-2 border-blue-500 rounded-lg px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white"
+      {/* Content - Reduced padding from p-6 to p-4 */}
+      <div className="bg-white shadow-sm p-4">
+        {/* Role/User Selection with Global Select All Button - Reduced margin */}
+        <div className="mb-4 flex flex-col md:flex-row md:items-center justify-between gap-4">
+          <div>
+            <label className="block text-xs font-semibold text-gray-700 mb-2 uppercase tracking-wider">
+              TARGET ROLE
+            </label>
+            <select
+              value={activeTab === "role-permissions" ? selectedRole : selectedUser}
+              onChange={(e) => {
+                if (activeTab === "role-permissions") {
+                  const newRole = e.target.value;
+                  setSelectedRole(newRole);
+                  const r = roles.find((x: any) => x.id === Number(newRole));
+                  setRolePermissions(r?.permissions || {});
+                } else {
+                  const uid = e.target.value;
+                  setSelectedUser(uid);
+                  const u = users.find((x) => x.id === uid);
+                  setUserPermissions(u?.permissions || {});
+                }
+              }}
+              className="w-full md:w-auto max-w-md border-2 border-blue-500 rounded-lg px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white"
+            >
+              {activeTab === "role-permissions"
+                ? roles.map((r) => (
+                    <option key={r.id} value={r.id}>
+                      {r.name}
+                    </option>
+                  ))
+                : users.map((u) => (
+                    <option key={u.id} value={u.id}>
+                      {u.full_name}
+                    </option>
+                  ))}
+            </select>
+          </div>
+          
+          {/* Global Select All Button */}
+          <button
+            onClick={handleGlobalSelectAll}
+            className={`px-6 py-3 text-sm font-semibold rounded-lg transition-colors shadow-sm ${selectAllEnabled ? 'bg-[#C62828] text-white hover:bg-red-700' : 'bg-[#C62828] text-white hover:bg-red-700'}`}
           >
-            {activeTab === "role-permissions"
-              ? roles.map((r) => (
-                  <option key={r.id} value={r.id}>
-                    {r.name}
-                  </option>
-                ))
-              : users.map((u) => (
-                  <option key={u.id} value={u.id}>
-                    {u.full_name}
-                  </option>
-                ))}
-          </select>
+            {selectAllEnabled ? 'Deselect All' : 'Select All'}
+          </button>
         </div>
 
-        {/* ✅ Permissions Grid - VERTICAL CARDS LIKE IMAGE */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        {/* ✅ Permissions Grid - Reduced gap from gap-6 to gap-4 */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {Object.entries(groupedPermissions).map(([module, perms]: [any, any]) => {
             const moduleAllChecked = perms.every((perm: any) => currentPermissions[perm.action]);
             const actionsCount = perms.length;
@@ -1133,7 +1141,7 @@ export default function Permissions() {
                 key={module}
                 className="border border-gray-200 rounded-xl overflow-hidden bg-white hover:shadow-lg transition-all"
               >
-                {/* ✅ Module Header - Horizontal layout with SELECT ALL */}
+                {/* Module Header */}
                 <div className="bg-white px-4 py-3 border-b border-gray-200 flex items-center justify-between">
                   <div className="flex items-center gap-2">
                     <h3 className="font-semibold text-gray-900 text-sm">{module}</h3>
@@ -1142,7 +1150,7 @@ export default function Permissions() {
                     </span>
                   </div>
                   
-                  {/* ✅ SELECT ALL with Checkbox (like image) */}
+                  {/* SELECT ALL with Checkbox */}
                   <label className="flex items-center gap-2 cursor-pointer">
                     <span className="text-xs font-semibold text-blue-600 uppercase">
                       SELECT ALL
@@ -1156,7 +1164,7 @@ export default function Permissions() {
                   </label>
                 </div>
 
-                {/* ✅ Permissions List - VERTICAL with checkboxes on RIGHT */}
+                {/* Permissions List */}
                 <div className="p-4 bg-gray-50">
                   <div className="space-y-0 divide-y divide-gray-100">
                     {perms.map((perm: any) => {
@@ -1168,7 +1176,7 @@ export default function Permissions() {
                         >
                           <span className="text-sm text-gray-700">{perm.label}</span>
                           
-                          {/* ✅ Checkbox on RIGHT (custom styled like image) */}
+                          {/* Checkbox on RIGHT */}
                           <div className="relative">
                             <input
                               type="checkbox"
@@ -1198,8 +1206,8 @@ export default function Permissions() {
           })}
         </div>
 
-        {/* Save Button */}
-        <div className="mt-8 pt-6 border-t border-gray-200">
+        {/* Save Button - Reduced margin */}
+        <div className="mt-6 pt-4 border-t border-gray-200">
           <button
             onClick={activeTab === "role-permissions" ? updateRolePermissions : saveUserPermissions}
             className="px-8 py-3 bg-blue-600 text-white text-sm font-semibold rounded-lg hover:bg-blue-700 transition-colors shadow-sm"

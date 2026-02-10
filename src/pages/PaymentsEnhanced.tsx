@@ -2042,7 +2042,7 @@ export default function PaymentsEnhanced() {
 
       {/* Bulk Payment Button - Fixed positioning */}
       {selectedItems.size > 0 && activeTab === "payments" && (
-        <div className="sticky top-[250px] md:top-[250px] z-30 mb-4">
+        <div className="sticky top-[250px] md:top-[250px] z-30 mb-2">
           <div className="bg-blue-50 border border-blue-200 rounded-xl p-3 flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-sm">
             <div className="flex items-center gap-3">
               <div className="bg-blue-100 p-2 rounded-lg">
@@ -2070,7 +2070,7 @@ export default function PaymentsEnhanced() {
       {/* Payments Tab */}
       {activeTab === "payments" && (
         <div className="bg-white rounded-xl shadow-sm border border-gray-200">
-          <div className="overflow-y-auto max-h-[calc(100vh-340px)] md:max-h-[calc(100vh-310px)]">
+          <div className="overflow-y-auto max-h-[calc(100vh-340px)] md:max-h-[calc(100vh-300px)]">
             <table className="sticky top-0 z-10 w-full min-w-[820px] lg:min-w-full">
               <thead className="sticky top-0 z-10 bg-gray-200 border-b border-gray-200">
                 <tr>

@@ -75,7 +75,7 @@ interface SystemSettings {
 
 // ═══════════════════════════════════════════════════════════════════════════
 const GeneralSettings: React.FC = () => {
-const { user, profile, updateProfileLocally, updateSystemSettingsLocally, refreshSystemSettings, refreshUser } = useAuth();
+const { user, profile, updateProfileLocally,updateAvatarLocally, updateSystemSettingsLocally, refreshSystemSettings, refreshUser } = useAuth();
 
   const [activeTab, setActiveTab] = useState<string>("profile");
   const [loading, setLoading] = useState<boolean>(true);
@@ -215,27 +215,62 @@ const { user, profile, updateProfileLocally, updateSystemSettingsLocally, refres
     }
   };
 
-  const handleAvatarUpload = async (file: File) => {
-    try {
-      const result = await SettingsApi.uploadAvatar(file);
-      setUserProfile((prev) => ({ ...prev, avatar: result.avatar }));
-      updateProfileLocally({ avatar: result.avatar });
-      toast.success("Profile picture updated");
-    } catch (error: any) {
-      toast.error("Failed to upload profile picture");
-    }
-  };
+  // const handleAvatarUpload = async (file: File) => {
+  //   try {
+  //     const result = await SettingsApi.uploadAvatar(file);
+  //     setUserProfile((prev) => ({ ...prev, avatar: result.avatar }));
+  //     updateProfileLocally({ avatar: result.avatar });
+  //     toast.success("Profile picture updated");
+  //   } catch (error: any) {
+  //     toast.error("Failed to upload profile picture");
+  //   }
+  // };
 
-  const handleRemoveAvatar = async () => {
-    try {
-      await SettingsApi.removeAvatar();
-      setUserProfile((prev) => ({ ...prev, avatar: null }));
-      updateProfileLocally({ avatar: null });
-      toast.success("Profile picture removed");
-    } catch (error: any) {
-      toast.error("Failed to remove profile picture");
-    }
-  };
+  // const handleRemoveAvatar = async () => {
+  //   try {
+  //     await SettingsApi.removeAvatar();
+  //     setUserProfile((prev) => ({ ...prev, avatar: null }));
+  //     updateProfileLocally({ avatar: null });
+  //     toast.success("Profile picture removed");
+  //   } catch (error: any) {
+  //     toast.error("Failed to remove profile picture");
+  //   }
+  // };
+  // GeneralSettings.tsx
+
+const handleAvatarUpload = async (file: File) => {
+  try {
+    const result = await SettingsApi.uploadAvatar(file);
+    console.log('📤 Avatar upload result:', result); // Debug log
+    
+    // ✅ Update local settings state
+    setUserProfile((prev) => ({ ...prev, avatar: result.avatar }));
+    
+    // ✅ Update header avatar immediately via context
+    updateAvatarLocally(result.avatar);
+    
+    toast.success("Profile picture updated");
+  } catch (error: any) {
+    console.error('❌ Avatar upload error:', error);
+    toast.error("Failed to upload profile picture");
+  }
+};
+
+// 3. Fix handleRemoveAvatar:
+const handleRemoveAvatar = async () => {
+  try {
+    await SettingsApi.removeAvatar();
+    setUserProfile((prev) => ({ ...prev, avatar: null }));
+    
+    // ✅ Clear header avatar immediately
+    updateAvatarLocally(null);
+    
+    toast.success("Profile picture removed");
+  } catch (error: any) {
+    toast.error("Failed to remove profile picture");
+  }
+};
+
 
   // ═══ NOTIFICATIONS ════════════════════════════════════════════════════════
   const handleSaveNotifications = async () => {
@@ -591,10 +626,9 @@ const { user, profile, updateProfileLocally, updateSystemSettingsLocally, refres
                     {/* Avatar */}
                     <div className="relative">
                       <div className="w-40 h-40 rounded-full border-8 border-white shadow-xl overflow-hidden bg-gradient-to-br from-gray-100 to-gray-200">
-                        {user.profile_picture ? (
+{userProfile.avatar ? (
                           <img
-                            src={`${import.meta.env.VITE_API_URL + user.profile_picture}`}
-                            alt="Profile"
+src={userProfile.avatar}                            alt="Profile"
                             className="w-full h-full object-cover"
                           />
                         ) : (
@@ -1341,7 +1375,7 @@ const { user, profile, updateProfileLocally, updateSystemSettingsLocally, refres
                         </div>
 
                         {/* Primary Color */}
-                        <div className="space-y-3">
+                        {/* <div className="space-y-3">
                           <label className="text-sm font-medium text-gray-700">
                             Primary Color
                           </label>
@@ -1372,7 +1406,7 @@ const { user, profile, updateProfileLocally, updateSystemSettingsLocally, refres
                               </p>
                             </div>
                           </div>
-                        </div>
+                        </div> */}
                       </div>
                     </div>
 
@@ -1561,7 +1595,7 @@ const { user, profile, updateProfileLocally, updateSystemSettingsLocally, refres
                     </div>
 
                     {/* ── Preferences ── */}
-                    <div className="space-y-4">
+                    {/* <div className="space-y-4">
                       <h3 className="text-base font-semibold text-gray-900">
                         Preferences
                       </h3>
@@ -1622,7 +1656,7 @@ const { user, profile, updateProfileLocally, updateSystemSettingsLocally, refres
                           </select>
                         </div>
                       </div>
-                    </div>
+                    </div> */}
 
                     {/* Note */}
                     <div className="p-3 bg-blue-50 rounded-lg border border-blue-100">
