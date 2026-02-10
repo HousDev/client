@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 // src/components/Layout.tsx
 import { ReactNode, useState, useMemo, useEffect, useRef } from "react";
 import { useAuth } from "../contexts/AuthContext";
@@ -121,7 +122,6 @@ export default function Layout({
     loading: authLoading,
     systemSettings // ✅ Get system settings from context
   } = useAuth();
-  console.log(user)
   // ✅ Use logo/favicon from systemSettings, fallback to defaults
   const logoUrl = systemSettings?.logo || DefaultLogo;
   const faviconUrl = systemSettings?.favicon;
@@ -147,18 +147,27 @@ export default function Layout({
   const materialActionsRef = useRef<HTMLDivElement>(null);
 
   // ✅ Update favicon dynamically when it changes
-  useEffect(() => {
-    if (faviconUrl) {
-      // Update existing favicon or create new one
-      let link = document.querySelector("link[rel~='icon']") as HTMLLinkElement;
-      if (!link) {
-        link = document.createElement('link');
-        link.rel = 'icon';
-        document.head.appendChild(link);
-      }
-      link.href = faviconUrl;
-    }
-  }, [faviconUrl]);
+  // Layout.tsx — replace the favicon useEffect:
+
+useEffect(() => {
+  if (faviconUrl) {
+    // ✅ Remove ALL existing favicon links to prevent caching issues
+    document.querySelectorAll("link[rel*='icon']").forEach(el => el.remove());
+    
+    // ✅ Create fresh link with cache buster
+    const link = document.createElement('link');
+    link.rel = 'icon';
+    link.type = 'image/png';
+    link.href = `${faviconUrl}?v=${Date.now()}`;
+    document.head.appendChild(link);
+    
+    // ✅ Also add apple-touch-icon for iOS/mobile
+    const appleLink = document.createElement('link');
+    appleLink.rel = 'apple-touch-icon';
+    appleLink.href = faviconUrl;
+    document.head.appendChild(appleLink);
+  }
+}, [faviconUrl]);
 
   // ✅ Update primary color dynamically (optional - for theme)
   useEffect(() => {
@@ -265,15 +274,31 @@ export default function Layout({
   }, [displayName]);
 
   // ── Avatar URL ────────────────────────────────────────────────────────────
-  const avatarUrl = useMemo(() => {
-    const raw = (profile && (profile as any).avatar) || (user && (user as any).avatar) || (user && (user as any).profile_picture) || null;
-    if (!raw) return null;
-    // Already a full URL → use as-is
-    if (raw.startsWith('http')) return raw;
-    // Just a filename → build the full URL
-    const base = import.meta.env.VITE_API_URL || 'http://localhost:4000/api';
-    return `${base}/uploads/avatars/${raw}`;
-  }, [profile, user]);
+  // ✅ FIXED - Will update when avatar changes
+const avatarUrl = useMemo(() => {
+  // Get the latest avatar from either user or profile
+  const raw = (profile as any)?.profile_picture || 
+              (profile as any)?.avatar || 
+              (user as any)?.profile_picture || 
+              (user as any)?.avatar || 
+              null;
+  
+  
+  if (!raw) return null;
+  
+  // Already full URL - use as is
+  if (raw.startsWith('http')) return raw;
+  
+  // Just filename - build full URL
+  const base = import.meta.env.VITE_API_URL || 'http://localhost:4000/api';
+  
+  // Handle both formats: "/uploads/filename" or just "filename"
+  if (raw.startsWith('/uploads/')) {
+    return `${base}${raw}`; // Already has /uploads/
+  } else {
+    return `${base}/uploads/${raw}`; // Add /uploads/
+  }
+}, [profile, user]); // ✅ This will trigger when profile or user changes
 
   // ── Notifications ────────────────────────────────────────────────────────
   const fetchNotifications = async () => {
@@ -753,11 +778,13 @@ export default function Layout({
                     className="flex items-center gap-2 p-1 rounded-lg hover:bg-gray-100 transition"
                   >
                     {avatarUrl ? (
-                      <img src={`${import.meta.env.VITE_API_URL + user.profile_picture}`} alt="avatar" className="w-9 h-9 rounded-full object-cover border-2 border-[#C62828]" />) : (
-                      <div className="w-9 h-9 bg-[#C62828] rounded-full flex items-center justify-center shadow-sm">
-                        <span className="text-white font-semibold text-sm">{initials}</span>
-                      </div>
-                    )}
+  <img src={avatarUrl} alt="avatar" 
+    className="w-10 h-10 rounded-full object-cover border-2 border-[#C62828] shadow" />
+) : (
+  <div className="w-10 h-10 bg-[#C62828] rounded-full flex items-center justify-center shadow">
+    <span className="text-white font-semibold text-sm">{initials}</span>
+  </div>
+)}
                     <div className="hidden md:flex flex-col items-start">
                       <span className="text-sm font-semibold text-[#2D2D2D]">{displayName}</span>
                       <span className="text-xs text-gray-500">{displayRole}</span>
@@ -769,13 +796,23 @@ export default function Layout({
                       {/* Header */}
                       <div className="p-4 bg-[#2D2D2D] border-b border-gray-700">
                         <div className="flex items-center gap-3">
-                          {avatarUrl ? (
-                            <img src={`${import.meta.env.VITE_API_URL + user.profile_picture}`} alt="avatar" className="w-10 h-10 rounded-full object-cover border-2 border-[#C62828] shadow" />
-                          ) : (
-                            <div className="w-10 h-10 bg-[#C62828] rounded-full flex items-center justify-center shadow">
-                              <span className="text-white font-semibold text-sm">{initials}</span>
-                            </div>
-                          )}
+                         
+{avatarUrl ? (
+  <img 
+    src={`${avatarUrl}?t=${Date.now()}`}  // ✅ Add cache buster
+    alt="avatar" 
+    className="w-10 h-10 rounded-full object-cover border-2 border-[#C62828] shadow"
+    key={avatarUrl} // ✅ Force re-render when URL changes
+    onError={(e) => {
+      console.error('❌ Avatar load error:', avatarUrl);
+      (e.target as HTMLImageElement).src = DefaultLogo;
+    }}
+  />
+) : (
+  <div className="w-10 h-10 bg-[#C62828] rounded-full flex items-center justify-center shadow">
+    <span className="text-white font-semibold text-sm">{initials}</span>
+  </div>
+)}
                           <div className="flex-1 min-w-0">
                             <p className="text-sm font-semibold text-white truncate">{displayName}</p>
                             <p className="text-xs text-gray-300 truncate">{displayRole}</p>

@@ -850,7 +850,7 @@ export default function Notifications() {
 
         {/* Notifications List */}
         <div className="sticky top-32 z-10 p-2">
-          <div className="overflow-y-auto max-h-[calc(100vh-260px)]">           
+          <div className="overflow-y-auto max-h-[calc(100vh-240px)] md:max-h-[calc(100vh-210px)]">           
 
           {filteredNotifications.length === 0 ? (
             <div className="bg-white rounded-lg border border-gray-200 p-8 text-center">

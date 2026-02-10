@@ -329,6 +329,8 @@ interface AuthContextValue {
   systemSettings: SystemSettings | null;
   updateSystemSettingsLocally: (patch: Partial<SystemSettings>) => void;
   refreshSystemSettings: () => Promise<void>;
+    updateAvatarLocally: (avatarUrl: string | null) => void; // ✅ ADD THIS
+
 }
 
 const AuthContext = createContext<AuthContextValue | undefined>(undefined);
@@ -412,12 +414,34 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
     setSystemSettings(null); // Clear system settings
   };
 
-  const refreshUser = async () => {
-    if (!apiGetToken()) return;
-    const data = await UsersApi.me();
-    setUser(data.user);
-    setProfile(data.user);
-  };
+  // const refreshUser = async () => {
+  //   if (!apiGetToken()) return;
+  //   const data = await UsersApi.me();
+  //   setUser(data.user);
+  //   setProfile(data.user);
+  // };
+  // src/contexts/AuthContext.tsx
+
+const refreshUser = async () => {
+  if (!apiGetToken()) return;
+  const data = await UsersApi.me();
+  
+  // ✅ Normalize profile_picture to full URL if it's just a path
+  if (data.user?.profile_picture) {
+    const pic = data.user.profile_picture;
+    if (!pic.startsWith('http')) {
+      const base = (import.meta.env.VITE_API_URL || 'http://localhost:4000/api')
+        .replace('/api', '');
+      data.user.profile_picture = `${base}${pic}`;
+      data.user.avatar = data.user.profile_picture; // ✅ sync avatar too
+    } else {
+      data.user.avatar = pic; // ✅ sync avatar too
+    }
+  }
+  
+  setUser(data.user);
+  setProfile(data.user);
+};
 
   // ── NEW: Refresh system settings ──────────────────────────────────────
   const refreshSystemSettings = async () => {
@@ -439,6 +463,28 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
   const updateSystemSettingsLocally = (patch: Partial<SystemSettings>) => {
     setSystemSettings((prev) => (prev ? { ...prev, ...patch } : prev));
   };
+ 
+
+// Add this function inside AuthProvider:
+// ✅ FIXED VERSION
+const updateAvatarLocally = (avatarUrl: string | null) => {
+  console.log('🔄 Updating avatar locally:', avatarUrl); // Debug log
+  
+  setUser((prev) => prev ? { 
+    ...prev, 
+    avatar: avatarUrl, 
+    profile_picture: avatarUrl 
+  } : prev);
+  
+  setProfile((prev: any) => prev ? { 
+    ...prev, 
+    avatar: avatarUrl, 
+    profile_picture: avatarUrl 
+  } : prev);
+};
+
+// Add it to the Provider value:
+
 
   return (
     <AuthContext.Provider
@@ -455,6 +501,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
         systemSettings,
         updateSystemSettingsLocally,
         refreshSystemSettings,
+          updateAvatarLocally, // ✅ ADD THIS
+
       }}
     >
       {children}
