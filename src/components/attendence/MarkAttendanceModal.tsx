@@ -5,6 +5,7 @@ import { useAuth } from "../../contexts/AuthContext";
 import securityApi from "../../lib/securityApi";
 import HrmsEmployeesApi from "../../lib/employeeApi";
 import companyApi from "../../lib/companyApi";
+import { toast } from "sonner";
 
 // Types
 export enum PunchStatus {
@@ -447,11 +448,11 @@ const AttendanceTracker: React.FC<AttendanceTrackerProps> = ({
 
   const handleSubmit = async () => {
     if (!selfie) {
-      alert("Please capture a photo first!");
+      toast.error("Please capture a photo first!");
       return;
     }
     if (!location) {
-      alert("Waiting for GPS coordinates...");
+      toast.error("Waiting for GPS coordinates...");
       return;
     }
 
@@ -485,7 +486,7 @@ const AttendanceTracker: React.FC<AttendanceTrackerProps> = ({
         setShowCamera(true);
       }
     } catch (err) {
-      alert("Submission failed. Please try again.");
+      toast.error("Submission failed. Please try again.");
       console.log(err);
     } finally {
       setLoading(false);

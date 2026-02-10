@@ -13,6 +13,7 @@ import {
 import poApi from "../../lib/poApi";
 import vendorApi from "../../lib/vendorApi";
 import po_trackingApi from "../../lib/po_tracking";
+import { toast } from "sonner";
 
 interface MaterialInpoTransaction {
   po_id: string;
@@ -350,7 +351,7 @@ export default function ViewPOTransaction({
                                     Number(item.issued_quantity);
 
                                   if (t < Number(e.target.value)) {
-                                    alert(
+                                   toast.error(
                                       "Received Qty. is greater than pending Qty.",
                                     );
                                     return;

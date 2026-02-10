@@ -693,10 +693,11 @@
 // }
 
 import { useState } from 'react';
-import { X, Calendar, DollarSign, FileText, CheckCircle, Upload, Plus, Trash2, Clock, AlertCircle, Save, ChevronRight, ChevronLeft, Users, Award, TrendingUp } from 'lucide-react';
+import { X, Calendar, FileText, CheckCircle, Upload, Plus, Trash2, Clock, AlertCircle, Save, ChevronRight, ChevronLeft, Users, Award, TrendingUp, IndianRupee } from 'lucide-react';
 import Button from '../ui/Button';
 import Badge from '../ui/Badge';
 import Input from '../ui/Input';
+import { toast } from 'sonner';
 
 interface FinalizeEmployeeModalProps {
   employee: any;
@@ -820,7 +821,7 @@ export default function FinalizeEmployeeModal({ employee, payrollRun, onClose, o
 
   const handleAddComponent = () => {
     if (!newComponent.category || newComponent.amount <= 0) {
-      alert('Please fill all fields');
+      toast.error('Please fill all fields');
       return;
     }
 
@@ -859,7 +860,7 @@ export default function FinalizeEmployeeModal({ employee, payrollRun, onClose, o
 
   const handleFinalize = () => {
     onFinalize();
-    alert('Employee salary finalized successfully!');
+    toast.error('Employee salary finalized successfully!');
     onClose();
   };
 
@@ -891,7 +892,7 @@ export default function FinalizeEmployeeModal({ employee, payrollRun, onClose, o
         <div className="bg-gradient-to-r from-[#C62828] to-red-600 px-4 md:px-6 py-3 md:py-4 flex justify-between items-center border-b border-gray-700/30">
           <div className="flex items-center gap-3">
             <div className="p-2 bg-white/20 rounded-xl backdrop-blur-sm">
-              <DollarSign className="w-5 h-5 text-white" />
+              <IndianRupee className="w-5 h-5 text-white" />
             </div>
             <div>
               <h2 className="text-lg font-bold text-white">Finalize Salary</h2>
@@ -1109,7 +1110,7 @@ export default function FinalizeEmployeeModal({ employee, payrollRun, onClose, o
                       <p className="text-xl font-bold text-blue-900">₹{netSalary.toLocaleString()}</p>
                     </div>
                     <div className="w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center">
-                      <DollarSign className="w-4 h-4 text-blue-600" />
+                      <IndianRupee className="w-4 h-4 text-blue-600" />
                     </div>
                   </div>
                 </div>
@@ -1292,7 +1293,7 @@ export default function FinalizeEmployeeModal({ employee, payrollRun, onClose, o
                 {/* Salary Summary */}
                 <div className="bg-gradient-to-br from-gray-50 to-white border border-gray-200 rounded-xl p-4">
                   <h4 className="text-sm font-semibold text-gray-800 mb-3 flex items-center gap-2">
-                    <DollarSign className="w-4 h-4 text-[#C62828]" />
+                    <IndianRupee className="w-4 h-4 text-[#C62828]" />
                     Salary Breakdown
                   </h4>
                   <div className="space-y-3">

@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { CreditCard, Clock, AlertCircle, CheckCircle } from 'lucide-react';
+import { toast } from 'sonner';
 
 type Payment = {
   id: string;
@@ -161,19 +162,19 @@ export default function Payments() {
       p.id === paymentId ? { ...p, status: 'paid', payment_date: new Date().toISOString() } : p
     );
     persistPayments(updated);
-    alert('Payment marked as paid (mock).');
+    toast.error('Payment marked as paid (mock).');
   };
 
   const verifyPayment = (paymentId: string) => {
     const updated = payments.map((p) => (p.id === paymentId ? { ...p, status: 'verified' } : p));
     persistPayments(updated);
-    alert('Payment marked as verified (mock).');
+    toast.error('Payment marked as verified (mock).');
   };
 
   const markTermAsPaid = (termId: string) => {
     const updated = paymentTerms.map((t) => (t.id === termId ? { ...t, status: 'paid' } : t));
     persistPaymentTerms(updated);
-    alert('Payment term marked as paid (mock).');
+    toast.error('Payment term marked as paid (mock).');
   };
 
   const resetDemoData = () => {

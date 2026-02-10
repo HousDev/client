@@ -11,8 +11,10 @@ import {
   X,
   Search,
   Trash2,
+  IndianRupee,
 } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
+import { toast } from 'sonner';
 
 export default function PurchaseOrdersEnhanced() {
   const { user, profile } = useAuth();
@@ -201,41 +203,41 @@ export default function PurchaseOrdersEnhanced() {
 
   const handleDelete = (id: string) => {
     if (!can('delete_pos')) {
-      alert('You do not have permission to delete POs');
+      toast.error('You do not have permission to delete POs');
       return;
     }
     if (!confirm('Are you sure you want to delete this PO?')) return;
     const updated = pos.filter((p) => p.id !== id);
     persistPOs(updated);
-    alert('PO deleted successfully!');
+    toast.error('PO deleted successfully!');
   };
 
   const handleStatusUpdate = (id: string, status: string) => {
     if (!can('edit_pos')) {
-      alert('You do not have permission to update PO status');
+      toast.error('You do not have permission to update PO status');
       return;
     }
     const updated = pos.map((p) => (p.id === id ? { ...p, status } : p));
     persistPOs(updated);
-    alert('Status updated successfully!');
+    toast.error('Status updated successfully!');
   };
 
   const handleApprove = (id: string) => {
     if (!can('approve_pos')) {
-      alert('You do not have permission to approve POs');
+      toast.error('You do not have permission to approve POs');
       return;
     }
     const updated = pos.map((p) =>
       p.id === id ? { ...p, status: 'approved', approved_by: user?.id, approved_at: new Date().toISOString() } : p
     );
     persistPOs(updated);
-    alert('PO approved successfully!');
+    toast.error('PO approved successfully!');
   };
 
   const handlePayment = (e: React.FormEvent) => {
     e.preventDefault();
     if (!can('make_payments')) {
-      alert('You do not have permission to make payments');
+      toast.error('You do not have permission to make payments');
       return;
     }
     if (!selectedPO) return;
@@ -252,7 +254,7 @@ export default function PurchaseOrdersEnhanced() {
         : p
     );
     persistPOs(updated);
-    alert('Payment recorded successfully!');
+    toast.error('Payment recorded successfully!');
     setShowPaymentModal(false);
     setPaymentAmount(0);
     setSelectedPO(null);
@@ -260,7 +262,7 @@ export default function PurchaseOrdersEnhanced() {
 
   const handleReceiveMaterial = (trackingId: string, quantityReceived: number) => {
     if (!can('receive_materials')) {
-      alert('You do not have permission to receive materials');
+      toast.error('You do not have permission to receive materials');
       return;
     }
     const track = trackingData.find((t) => t.id === trackingId);
@@ -287,7 +289,7 @@ export default function PurchaseOrdersEnhanced() {
       p.id === poId ? { ...p, material_status: materialStatus, material_received_percentage: Math.round((allForPO.filter((t) => t.status === 'completed').length / allForPO.length) * 100) } : p
     );
     persistPOs(updatedPOs);
-    alert('Material received successfully!');
+    toast.error('Material received successfully!');
   };
 
   const filteredPOs = pos.filter(
@@ -461,7 +463,7 @@ export default function PurchaseOrdersEnhanced() {
                             className="p-2 text-green-600 hover:bg-green-50 rounded-lg transition"
                             title="Make Payment"
                           >
-                            <DollarSign className="w-4 h-4" />
+                            <IndianRupee className="w-4 h-4" />
                           </button>
                         )}
                         {can('delete_pos') && (
@@ -538,7 +540,7 @@ export default function PurchaseOrdersEnhanced() {
                               if (!qtyStr) return;
                               const qty = parseInt(qtyStr, 10);
                               if (isNaN(qty) || qty <= 0 || qty > track.quantity_pending) {
-                                alert('Invalid quantity');
+                                toast.error('Invalid quantity');
                                 return;
                               }
                               handleReceiveMaterial(track.id, qty);

@@ -1,9 +1,10 @@
 import { useState, useEffect } from 'react';
-import { X, DollarSign, TrendingUp, TrendingDown, Plus } from 'lucide-react';
+import { X, TrendingUp, TrendingDown, Plus, IndianRupee } from 'lucide-react';
 import Modal from '../ui/Modal';
 import Button from '../ui/Button';
 import Input from '../ui/Input';
 import { payrollRunAPI } from '../../lib/payroll-run';
+import { toast } from 'sonner';
 
 interface SalaryComponent {
   component_name: string;
@@ -58,7 +59,7 @@ export default function EmployeeSalaryDetailModal({
 
   const handleAddAdjustment = async () => {
     if (!newAdjustment.description || newAdjustment.amount === 0) {
-      alert('Please fill in all fields');
+      toast.error('Please fill in all fields');
       return;
     }
 
@@ -77,7 +78,7 @@ export default function EmployeeSalaryDetailModal({
       loadSalaryDetails();
     } catch (error) {
       console.error('Error adding adjustment:', error);
-      alert('Failed to add adjustment');
+      toast.error('Failed to add adjustment');
     }
   };
 
@@ -275,7 +276,7 @@ export default function EmployeeSalaryDetailModal({
                       ₹{payrollItem.net_salary?.toLocaleString()}
                     </p>
                   </div>
-                  <DollarSign className="h-12 w-12 text-blue-300" />
+                  <IndianRupee className="h-12 w-12 text-blue-300" />
                 </div>
               </div>
             </div>
