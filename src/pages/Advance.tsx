@@ -677,7 +677,8 @@ import {
   Phone, Save, UserRound, Upload, ChevronDown, Hash, CheckSquare, 
   Package, UserCheck, CreditCard, Calculator, Briefcase, 
   TrendingDown, Percent, FileText, ChevronRight,
-  Building
+  Building,
+  IndianRupee
 } from 'lucide-react';
 import Card from '../components/ui/Card';
 import Button from '../components/ui/Button';
@@ -686,6 +687,8 @@ import Badge from '../components/ui/Badge';
 import Modal from '../components/ui/Modal';
 import { toast } from 'sonner';
 import { api } from '../../lib/Api';
+import HrmsEmployeesApi, { HrmsEmployee as ApiHrmsEmployee } from '../lib/employeeApi';
+
 
 interface AdvanceRequest {
   id: string;
@@ -720,12 +723,12 @@ interface HrmsEmployee {
   employee_code: string;
   email: string;
   phone: string;
-  department_name: string;
-  designation: string;
-  ctc: number;
+  department_name?: string;
+  designation?: string;
+  ctc?: number;
+  salary?: string | number;  // Monthly salary from API
   monthly_salary: number;
 }
-
 export default function Advance() {
   const [advances, setAdvances] = useState<AdvanceRequest[]>([]);
   const [employees, setEmployees] = useState<HrmsEmployee[]>([]);
@@ -743,7 +746,7 @@ export default function Advance() {
   // Checkbox states
   const [selectedItems, setSelectedItems] = useState<Set<string>>(new Set());
   const [selectAll, setSelectAll] = useState(false);
-  
+  const [loadingEmployees, setLoadingEmployees] = useState(false);
   // Modal states
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [showDetailsModal, setShowDetailsModal] = useState(false);
@@ -779,53 +782,44 @@ export default function Advance() {
     loadEmployees();
   }, []);
 
-  const loadEmployees = async () => {
-    try {
-      // API call would go here
-      const mockEmployees: HrmsEmployee[] = [
-        {
-          id: 1,
-          first_name: 'Abhishek',
-          last_name: 'Patil',
-          employee_code: 'EMP001',
-          email: 'abhishek@example.com',
-          phone: '+91 9876543210',
-          department_name: 'Engineering',
-          designation: 'Senior Developer',
-          ctc: 1500000,
-          monthly_salary: 125000
-        },
-        {
-          id: 2,
-          first_name: 'Guru',
-          last_name: 'Kandgavalkar',
-          employee_code: 'EMP002',
-          email: 'guru@example.com',
-          phone: '+91 9876543211',
-          department_name: 'Sales',
-          designation: 'Sales Manager',
-          ctc: 1100000,
-          monthly_salary: 91667
-        },
-        {
-          id: 3,
-          first_name: 'Heena',
-          last_name: 'Bagwan',
-          employee_code: 'EMP003',
-          email: 'heena@example.com',
-          phone: '+91 9876543212',
-          department_name: 'HR',
-          designation: 'HR Manager',
-          ctc: 1200000,
-          monthly_salary: 100000
-        }
-      ];
-      setEmployees(mockEmployees);
-    } catch (error) {
-      console.error('Error loading employees:', error);
+ const loadEmployees = async () => {
+  setLoadingEmployees(true); // ✅ Add this
+  try {
+    console.log('🔄 Fetching employees from API...');
+    const employeesData = await HrmsEmployeesApi.getEmployees();
+    console.log('✅ Employees fetched:', employeesData);
+    
+    // Filter only active employees and map to required format
+    const activeEmployees = employeesData
+      .filter((emp: any) => emp.employee_status === 'active')
+      .map((emp: any) => ({
+        id: emp.id,
+        first_name: emp.first_name,
+        last_name: emp.last_name,
+        employee_code: emp.employee_code,
+        email: emp.email,
+        phone: emp.phone || 'N/A',
+        department_name: emp.department_name || 'N/A',
+        designation: emp.designation || 'N/A',
+        ctc: parseFloat(emp.salary?.toString() || '0') * 12, // Annual CTC
+        salary: emp.salary,
+        monthly_salary: parseFloat(emp.salary?.toString() || '0') // Monthly salary
+      }));
+    
+    setEmployees(activeEmployees);
+    console.log(`✅ Loaded ${activeEmployees.length} active employees`);
+    
+    if (activeEmployees.length === 0) {
+      toast.info('No active employees found');
     }
-  };
-
+  } catch (error: any) {
+    console.error('❌ Error loading employees:', error);
+    toast.error('Failed to load employees: ' + (error.message || 'Unknown error'));
+    setEmployees([]); // Set empty array on error
+  } finally {
+    setLoadingEmployees(false); // ✅ Add this
+  }
+};
   const loadAdvances = async () => {
     setLoading(true);
     try {
@@ -1010,9 +1004,8 @@ export default function Advance() {
   };
 
   const handleDisburse = async (advance: AdvanceRequest) => {
-    if (!confirm(`Disburse ₹${advance.amount.toLocaleString()} to ${advance.employee_name}?`)) {
-      return;
-    }
+   toast.success(`Advance of ₹${advance.amount.toLocaleString()} disbursed to ${advance.employee_name}!`);
+
 
     try {
       // API call would go here
@@ -1068,9 +1061,9 @@ export default function Advance() {
       return;
     }
 
-    if (!confirm(`Delete ${selectedItems.size} advance(s)? This action cannot be undone.`)) {
-      return;
-    }
+    // if (!confirm(`Delete ${selectedItems.size} advance(s)? This action cannot be undone.`)) {
+    //   return;
+    // }
 
     try {
       // API call would go here
@@ -1257,7 +1250,7 @@ export default function Advance() {
               <p className="text-lg sm:text-xl md:text-xl font-bold text-blue-600 mt-0.5">{stats.disbursed}</p>
             </div>
             <div className="w-8 h-8 sm:w-9 sm:h-9 md:w-9 md:h-9 bg-blue-100 rounded-md flex items-center justify-center">
-              <DollarSign className="h-4 w-4 text-blue-600" />
+              <IndianRupee className="h-4 w-4 text-blue-600" />
             </div>
           </div>
         </Card>
@@ -1271,7 +1264,7 @@ export default function Advance() {
               </p>
             </div>
             <div className="w-8 h-8 sm:w-9 sm:h-9 md:w-9 md:h-9 bg-slate-100 rounded-md flex items-center justify-center">
-              <DollarSign className="h-4 w-4 text-slate-600" />
+              <IndianRupee className="h-4 w-4 text-slate-600" />
             </div>
           </div>
         </Card>
@@ -1461,7 +1454,7 @@ export default function Advance() {
               ) : filteredAdvances.length === 0 ? (
                 <tr>
                   <td colSpan={9} className="px-3 md:px-4 py-8 text-center">
-                    <DollarSign className="w-12 h-12 md:w-16 md:h-16 text-gray-300 mx-auto mb-3" />
+                    <IndianRupee className="w-12 h-12 md:w-16 md:h-16 text-gray-300 mx-auto mb-3" />
                     <p className="text-gray-600 text-sm md:text-lg font-medium">No Advance Requests Found</p>
                     <p className="text-gray-500 text-xs md:text-sm mt-2">
                       {searchEmployee || searchStatus !== 'all' ? "Try a different search term" : "No advance requests available"}
@@ -1602,7 +1595,7 @@ export default function Advance() {
                                     }}
                                     className="w-full flex items-center gap-2 px-4 py-2 hover:bg-gray-100 text-blue-600 text-left"
                                   >
-                                    <DollarSign className="w-4 h-4" />
+                                    <IndianRupee className="w-4 h-4" />
                                     Disburse
                                   </button>
                                 </li>
@@ -1612,12 +1605,13 @@ export default function Advance() {
 
                               <li>
                                 <button
-                                  onClick={() => {
-                                    if (confirm(`Delete advance request for ${advance.employee_name}?`)) {
-                                      console.log('Delete advance:', advance.id);
-                                      setOpenMenuId(null);
-                                    }
-                                  }}
+                                 onClick={() => {
+    // Immediate deletion with toast
+    console.log('Delete advance:', advance.id);
+    toast.success(`Advance request for ${advance.employee_name} deleted!`);
+    setOpenMenuId(null);
+    // You might want to update state or make API call here
+}}
                                   className="w-full flex items-center gap-2 px-4 py-2 hover:bg-red-50 text-red-600 text-left"
                                 >
                                   <Trash2 className="w-4 h-4" />
@@ -1693,22 +1687,38 @@ export default function Advance() {
                     <div className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 group-focus-within:text-[#C62828] transition-colors">
                       <UserRound className="w-4 h-4" />
                     </div>
-                    <select
-                      value={formData.employee_id}
-                      onChange={(e) => {
-                        const empId = e.target.value;
-                        setFormData({ ...formData, employee_id: empId });
-                      }}
-                      className="w-full pl-10 pr-10 py-2.5 text-sm border-2 border-gray-200 rounded-xl focus:border-[#C62828] focus:ring-2 focus:ring-[#C62828]/20 bg-white outline-none transition-all duration-200 appearance-none hover:border-gray-300"
-                      required
-                    >
-                      <option value="" className="text-gray-400">Select Employee</option>
-                      {employees.map((emp) => (
-                        <option key={emp.id} value={emp.id} className="py-2">
-                          {emp.first_name} {emp.last_name} ({emp.employee_code}) - ₹{emp.monthly_salary.toLocaleString()}/month
-                        </option>
-                      ))}
-                    </select>
+                  <select
+  value={formData.employee_id}
+  onChange={(e) => {
+    const empId = e.target.value;
+    setFormData({ ...formData, employee_id: empId });
+  }}
+  className="w-full pl-10 pr-10 py-2.5 text-sm border-2 border-gray-200 rounded-xl focus:border-[#C62828] focus:ring-2 focus:ring-[#C62828]/20 bg-white outline-none transition-all duration-200 appearance-none hover:border-gray-300"
+  required
+  disabled={loadingEmployees} // ✅ Add this
+>
+  <option value="" className="text-gray-400">
+    {loadingEmployees ? 'Loading employees...' : 'Select Employee'} {/* ✅ Update this */}
+  </option>
+  {employees.map((emp) => (
+    <option key={emp.id} value={emp.id} className="py-2">
+      {emp.first_name} {emp.last_name} ({emp.employee_code}) - ₹{emp.monthly_salary.toLocaleString()}/month
+    </option>
+  ))}
+</select>
+{/* ✅ Add this after the select dropdown */}
+{loadingEmployees && (
+  <p className="text-xs text-blue-600 mt-1 flex items-center gap-1">
+    <div className="animate-spin h-3 w-3 border-2 border-blue-600 border-t-transparent rounded-full"></div>
+    Loading employees from database...
+  </p>
+)}
+{!loadingEmployees && employees.length === 0 && (
+  <p className="text-xs text-red-600 mt-1 flex items-center gap-1">
+    <AlertCircle className="w-3 h-3" />
+    No active employees found. Please add employees first.
+  </p>
+)}
                     <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none">
                       <ChevronDown className="w-4 h-4 text-gray-400" />
                     </div>
@@ -1753,12 +1763,12 @@ export default function Advance() {
                   {/* Amount */}
                   <div className="space-y-1.5">
                     <label className="block text-sm font-semibold text-gray-800 mb-1 flex items-center gap-2">
-                      <DollarSign className="w-4 h-4 text-[#C62828]" />
+                      <IndianRupee className="w-4 h-4 text-[#C62828]" />
                       Advance Amount (₹) <span className="text-red-500">*</span>
                     </label>
                     <div className="relative group">
                       <div className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 group-focus-within:text-[#C62828] transition-colors">
-                        <DollarSign className="w-4 h-4" />
+                        <IndianRupee className="w-4 h-4" />
                       </div>
                       <input
                         type="number"
@@ -1813,7 +1823,7 @@ export default function Advance() {
                     </label>
                     <div className="relative">
                       <div className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500">
-                        <DollarSign className="w-4 h-4" />
+                        <IndianRupee className="w-4 h-4" />
                       </div>
                       <div className="w-full pl-10 pr-4 py-2.5 text-sm border-2 border-gray-200 rounded-xl bg-gradient-to-r from-blue-50 to-white">
                         <div className="flex items-center justify-between">
@@ -2267,7 +2277,7 @@ export default function Advance() {
         {/* Amount Range */}
         <div className="space-y-2">
           <label className="block text-xs md:text-sm font-semibold text-gray-700 flex items-center gap-2">
-            <DollarSign className="w-4 h-4 text-[#C62828]" />
+            <IndianRupee className="w-4 h-4 text-[#C62828]" />
             Amount Range (₹)
           </label>
           <div className="grid grid-cols-2 gap-3">

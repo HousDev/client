@@ -4,6 +4,7 @@ import {
   MessageSquare, MessageCircle, RefreshCw, Cloud, Zap, Activity, Settings, 
   AlertTriangle, Smartphone, ShieldCheck
 } from "lucide-react";
+import { toast } from "sonner";
 
 export default function SystemSettings() {
   const [activeTab, setActiveTab] = useState("general");
@@ -93,15 +94,15 @@ export default function SystemSettings() {
 
   const handleSave = () => {
     console.log("Saving system settings:", systemSettings);
-    alert("✅ System Settings saved successfully!");
+    toast.error("✅ System Settings saved successfully!");
   };
 
   const testConnection = (type: string) => {
-    alert(`Testing ${type} connection...`);
+    toast.error(`Testing ${type} connection...`);
   };
 
   const backupDatabase = () => {
-    alert("Starting database backup...");
+    toast.error("Starting database backup...");
   };
 
   const renderContent = () => {

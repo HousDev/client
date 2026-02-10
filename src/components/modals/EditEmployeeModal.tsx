@@ -2479,36 +2479,40 @@ const handleDesignationChange = useCallback((designationId: string) => {
                     <User className="w-10 h-10 text-gray-500" />
                   )}
                 </div>
-                <div className="flex-1">
-                  <p className="text-sm font-semibold text-gray-700">Profile Picture</p>
-                  <p className="text-xs text-gray-500 mb-2">JPG, PNG, WebP (Max 5MB)</p>
-                  <div className="flex gap-3">
-                    <input
-                      type="file"
-                      ref={fileInputRef}
-                      onChange={handleFileChange}
-                      accept="image/jpeg,image/png,image/webp"
-                      className="hidden"
-                      id="profile-upload-edit"
-                    />
-                    <label
-                      htmlFor="profile-upload-edit"
-                      className="px-4 py-2 bg-[#C62828] text-white rounded-lg hover:bg-[#A62222] transition text-sm font-medium flex items-center gap-2 cursor-pointer"
-                    >
-                      <Upload className="w-4 h-4" />
-                      {displayImage ? "Change Photo" : "Upload Photo"}
-                    </label>
-                    {displayImage && (
-                      <button
-                        type="button"
-                        onClick={handleRemoveProfilePicture}
-                        className="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition text-sm font-medium"
-                      >
-                        Remove
-                      </button>
-                    )}
-                  </div>
-                </div>
+               <div className="flex-1">
+  <p className="text-sm font-semibold text-gray-700">Profile Picture</p>
+  <p className="text-xs text-gray-500 mb-2">JPG, PNG, WebP (Max 5MB)</p>
+
+  <div className="flex flex-wrap gap-2 sm:gap-3">
+    <input
+      type="file"
+      ref={fileInputRef}
+      onChange={handleFileChange}
+      accept="image/jpeg,image/png,image/webp"
+      className="hidden"
+      id="profile-upload-edit"
+    />
+
+    <label
+      htmlFor="profile-upload-edit"
+      className="px-2.5 sm:px-4 py-1.5 sm:py-2 bg-[#C62828] text-white rounded-md sm:rounded-lg hover:bg-[#A62222] transition text-[11px] sm:text-sm font-medium flex items-center gap-1.5 sm:gap-2 cursor-pointer"
+    >
+      <Upload className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+      {displayImage ? "Change Photo" : "Upload Photo"}
+    </label>
+
+    {displayImage && (
+      <button
+        type="button"
+        onClick={handleRemoveProfilePicture}
+        className="px-2.5 sm:px-4 py-1.5 sm:py-2 border border-gray-300 text-gray-700 rounded-md sm:rounded-lg hover:bg-gray-50 transition text-[11px] sm:text-sm font-medium"
+      >
+        Remove
+      </button>
+    )}
+  </div>
+</div>
+
               </div>
 
               {/* Basic Details Grid */}

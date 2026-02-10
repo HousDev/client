@@ -4,6 +4,7 @@ import { api, unwrap } from "../lib/Api";
 import poTypeApi from "../lib/poTypeApi"; // existing
 import serviceTypeApi from "../lib/serviceTypeApi"; // newly integrated
 import { Plus, Edit2, Trash2, X, Search, AlertCircle, CheckCircle } from "lucide-react";
+import { toast } from "sonner";
 
 type Props = {
   tableName: string; // e.g. "po_types" or "service_types"
@@ -143,22 +144,22 @@ export default function GenericMaster({ tableName, title, description, icon: Ico
   const handleSubmit = async (e?: React.FormEvent) => {
     if (e) e.preventDefault();
     if (!form.name || form.name.trim() === "") {
-      alert("Name is required");
+      toast.error("Name is required");
       return;
     }
     try {
       if (editing) {
         await doUpdate(editing.id, { ...form });
-        alert("Updated");
+        toast.error("Updated");
       } else {
         await doCreate({ ...form });
-        alert("Created");
+        toast.error("Created");
       }
       setShowModal(false);
       load();
     } catch (err) {
       console.error("GenericMaster save error", err);
-      alert("Error saving record");
+      toast.error("Error saving record");
     }
   };
 
@@ -167,10 +168,10 @@ export default function GenericMaster({ tableName, title, description, icon: Ico
     try {
       await doDelete(row.id);
       load();
-      alert("Deleted");
+      toast.error("Deleted");
     } catch (err) {
       console.error("GenericMaster delete error", err);
-      alert("Error deleting record");
+      toast.error("Error deleting record");
     }
   };
 

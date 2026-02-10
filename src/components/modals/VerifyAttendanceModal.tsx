@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { X, Edit2, Save, Check, AlertCircle, Clock, Calendar as CalendarIcon } from 'lucide-react';
 import Button from '../ui/Button';
 import Badge from '../ui/Badge';
+import { toast } from 'sonner';
 
 interface AttendanceDay {
   date: string;
@@ -192,7 +193,7 @@ export default function VerifyAttendanceModal({
   const handleSaveChanges = () => {
     onUpdate();
     onClose();
-    alert('Attendance updated successfully! Salary will be recalculated.');
+    toast.error('Attendance updated successfully! Salary will be recalculated.');
   };
 
   const getDayTypeColor = (dayType: string) => {

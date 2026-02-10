@@ -12,6 +12,7 @@ import {
 import { useAuth } from "../contexts/AuthContext";
 import poApi from "../lib/poApi";
 import poTypeApi from "../lib/poTypeApi";
+import { toast } from "sonner";
 
 /* --- types (same as yours) --- */
 interface POItem {
@@ -626,13 +627,13 @@ export default function PurchaseOrdersPro(): JSX.Element {
         }
       }
 
-      alert("Purchase Order created successfully!");
+      toast.error("Purchase Order created successfully!");
       setShowModal(false);
       resetForm();
       loadPOs();
     } catch (err) {
       console.error("Error creating PO:", err);
-      alert("Error creating purchase order");
+      toast.error("Error creating purchase order");
     }
   };
 

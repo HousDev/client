@@ -8,7 +8,6 @@ import {
     ChevronDown,
     UserRound,
     CreditCard,
-    DollarSign,
     Receipt,
     Tag,
     UserCheck,

@@ -1252,7 +1252,7 @@ export default function RequestMaterial({
   const validateMaterials = () => {
     for (const material of formData.materials) {
       if (!material.quantity || parseFloat(material.quantity) <= 0) {
-        alert(`Please enter a valid quantity for ${material.materialName}`);
+        toast.error(`Please enter a valid quantity for ${material.materialName}`);
         return false;
       }
 
@@ -1260,7 +1260,7 @@ export default function RequestMaterial({
         (item: any) => item.id === material.materialId,
       );
       if (stockItem && parseFloat(material.quantity) > stockItem.quantity) {
-        alert(
+        toast.error(
           `Insufficient stock for ${material.materialName}! Available: ${stockItem.quantity} ${stockItem.unit}`,
         );
         return false;

@@ -224,6 +224,7 @@ import inventoryTransactionApi from "../../lib/inventoryTransactionApi";
 import projectApi from "../../lib/projectApi";
 import vendorApi from "../../lib/vendorApi";
 import ViewTransaction from "../StoreManagement/ViewTransaction";
+import { toast } from "sonner";
 
 const MaterialIssueTransactions = (loadTableData: any) => {
   const [filteredTransactions, setFilteredTransactions] = useState<any>([]);
@@ -271,7 +272,7 @@ const MaterialIssueTransactions = (loadTableData: any) => {
       return Array.isArray(poRes) ? poRes : [];
     } catch (error) {
       console.log(error);
-      alert("Something wrong.");
+     toast.error("Something wrong.");
     }
   };
 
@@ -281,7 +282,7 @@ const MaterialIssueTransactions = (loadTableData: any) => {
       return Array.isArray(vendorsRes) ? vendorsRes : [];
     } catch (error) {
       console.log(error);
-      alert("Something wrong.");
+     toast.error("Something wrong.");
     }
   };
 
@@ -301,7 +302,7 @@ const MaterialIssueTransactions = (loadTableData: any) => {
       return transactions;
     } catch (error) {
       console.error("Error loading transactions:", error);
-      alert("Failed to load transaction data");
+     toast.error("Failed to load transaction data");
       return [];
     }
   };
@@ -429,7 +430,7 @@ const MaterialIssueTransactions = (loadTableData: any) => {
 
   const handleBulkDelete = async () => {
     if (selectedItems.size === 0) {
-      alert("Please select transactions to delete");
+     toast.error("Please select transactions to delete");
       return;
     }
 
@@ -441,13 +442,13 @@ const MaterialIssueTransactions = (loadTableData: any) => {
       await Promise.all(
         Array.from(selectedItems).map((id) => inventoryTransactionApi.getIssueMaterialTransactions(id))
       );
-      alert(`${selectedItems.size} transaction(s) deleted successfully!`);
+      toast.error(`${selectedItems.size} transaction(s) deleted successfully!`);
       setSelectedItems(new Set());
       setSelectAll(false);
       await loadTransactions();
     } catch (error) {
       console.error("Error deleting transactions:", error);
-      alert("Failed to delete transactions");
+      toast.error("Failed to delete transactions");
     }
   };
 
