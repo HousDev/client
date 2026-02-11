@@ -910,7 +910,7 @@ interface MaterialInpoTransaction {
 // ADD THIS INTERFACE
 interface StoreManagementProps {
   activeFormTab?: string;
-  setActiveFormTab?: React.Dispatch<SetStateAction<String>>;
+  setActiveFormTab?: React.Dispatch<SetStateAction<string>>;
 }
 
 export default function StoreManagement({
@@ -994,18 +994,6 @@ export default function StoreManagement({
       return Boolean(perms[permission]);
     }
     return false;
-  };
-
-  // --- Helper to find item by ID ---
-  const findItemById = (itemId: string): Item | undefined => {
-    return allItems.find((item) => item.id === itemId);
-  };
-
-  // --- Helper to find inventory item by ID ---
-  const findInventoryItemById = (
-    inventoryItemId: number,
-  ): InventoryItem | undefined => {
-    return inventory.find((item) => item.id === inventoryItemId);
   };
 
   // --- Load Items First (Prerequisite for Inventory) ---
@@ -1633,11 +1621,11 @@ export default function StoreManagement({
       {/* Management Table */}
       {activeTab === "management" && (
         <div className="   sticky top-40 z-10 bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden mx-0 md:mx-0">
-    {/* Change 1: Updated container with max height */}
-      <div className="overflow-y-auto max-h-[calc(100vh-310px)] md:max-h-[calc(100vh-250px)] ">
-      <table className=" sticky top-48 z-10 w-full min-w-[1000px]">
-        {/* Change 2: Added sticky to thead */}
-        <thead className="sticky top-0 z-10 bg-gray-200 border-b border-gray-200">
+          {/* Change 1: Updated container with max height */}
+          <div className="overflow-y-auto max-h-[calc(100vh-310px)] md:max-h-[calc(100vh-250px)] ">
+            <table className=" sticky top-48 z-10 w-full min-w-[1000px]">
+              {/* Change 2: Added sticky to thead */}
+              <thead className="sticky top-0 z-10 bg-gray-200 border-b border-gray-200">
                 {/* Column Headers */}
                 <tr>
                   <th className="px-2 md:px-4 py-2 text-left w-72">
@@ -1913,131 +1901,128 @@ export default function StoreManagement({
 
           {/* Pagination Controls */}
           {filteredInventory.length > 0 && (
-          <div className="border-t border-gray-200 bg-white p-3 md:p-4">
-  <div className="flex flex-col md:flex-row md:items-center justify-between gap-3 md:gap-4">
+            <div className="border-t border-gray-200 bg-white p-3 md:p-4">
+              <div className="flex flex-col md:flex-row md:items-center justify-between gap-3 md:gap-4">
+                {/* Items per page selector */}
+                <div className="flex flex-wrap items-center gap-2 justify-between md:justify-start">
+                  <span className="text-xs md:text-sm text-gray-600">Show</span>
 
-    {/* Items per page selector */}
-    <div className="flex flex-wrap items-center gap-2 justify-between md:justify-start">
-      <span className="text-xs md:text-sm text-gray-600">Show</span>
+                  <select
+                    onChange={(e) => handleItemsPerPageChange(e.target.value)}
+                    className="border border-slate-400 px-2 md:px-3 py-1 rounded-lg text-xs md:text-sm"
+                    value={itemsPerPage}
+                  >
+                    <option value={10}>10</option>
+                    <option value={25}>25</option>
+                    <option value={50}>50</option>
+                    <option value={100}>100</option>
+                  </select>
 
-      <select
-        onChange={(e) => handleItemsPerPageChange(e.target.value)}
-        className="border border-slate-400 px-2 md:px-3 py-1 rounded-lg text-xs md:text-sm"
-        value={itemsPerPage}
-      >
-        <option value={10}>10</option>
-        <option value={25}>25</option>
-        <option value={50}>50</option>
-        <option value={100}>100</option>
-      </select>
+                  <span className="text-xs md:text-sm text-gray-600 whitespace-nowrap">
+                    items per page
+                  </span>
+                </div>
 
-      <span className="text-xs md:text-sm text-gray-600 whitespace-nowrap">
-        items per page
-      </span>
-    </div>
+                {/* Page info */}
+                <div className="text-xs md:text-sm text-gray-700 text-center md:text-left">
+                  Showing{" "}
+                  <span className="font-semibold">
+                    {Math.min(
+                      (currentPage - 1) * itemsPerPage + 1,
+                      filteredInventory.length,
+                    )}
+                  </span>{" "}
+                  to{" "}
+                  <span className="font-semibold">
+                    {Math.min(
+                      currentPage * itemsPerPage,
+                      filteredInventory.length,
+                    )}
+                  </span>{" "}
+                  of{" "}
+                  <span className="font-semibold">
+                    {filteredInventory.length}
+                  </span>{" "}
+                  items
+                </div>
 
-    {/* Page info */}
-    <div className="text-xs md:text-sm text-gray-700 text-center md:text-left">
-      Showing{" "}
-      <span className="font-semibold">
-        {Math.min(
-          (currentPage - 1) * itemsPerPage + 1,
-          filteredInventory.length,
-        )}
-      </span>{" "}
-      to{" "}
-      <span className="font-semibold">
-        {Math.min(
-          currentPage * itemsPerPage,
-          filteredInventory.length,
-        )}
-      </span>{" "}
-      of{" "}
-      <span className="font-semibold">
-        {filteredInventory.length}
-      </span>{" "}
-      items
-    </div>
+                {/* Pagination buttons */}
+                <div className="flex items-center justify-center md:justify-end gap-1 md:gap-2 flex-wrap">
+                  <button
+                    onClick={() => goToPage(1)}
+                    disabled={currentPage === 1}
+                    className={`p-1.5 md:p-2 rounded border ${
+                      currentPage === 1
+                        ? "border-gray-200 text-gray-400 cursor-not-allowed"
+                        : "border-gray-300 text-gray-700 hover:bg-gray-50"
+                    }`}
+                  >
+                    <ChevronsLeft className="w-3.5 h-3.5 md:w-4 md:h-4" />
+                  </button>
 
-    {/* Pagination buttons */}
-    <div className="flex items-center justify-center md:justify-end gap-1 md:gap-2 flex-wrap">
-      <button
-        onClick={() => goToPage(1)}
-        disabled={currentPage === 1}
-        className={`p-1.5 md:p-2 rounded border ${
-          currentPage === 1
-            ? "border-gray-200 text-gray-400 cursor-not-allowed"
-            : "border-gray-300 text-gray-700 hover:bg-gray-50"
-        }`}
-      >
-        <ChevronsLeft className="w-3.5 h-3.5 md:w-4 md:h-4" />
-      </button>
+                  <button
+                    onClick={() => goToPage(currentPage - 1)}
+                    disabled={currentPage === 1}
+                    className={`p-1.5 md:p-2 rounded border ${
+                      currentPage === 1
+                        ? "border-gray-200 text-gray-400 cursor-not-allowed"
+                        : "border-gray-300 text-gray-700 hover:bg-gray-50"
+                    }`}
+                  >
+                    <ChevronLeft className="w-3.5 h-3.5 md:w-4 md:h-4" />
+                  </button>
 
-      <button
-        onClick={() => goToPage(currentPage - 1)}
-        disabled={currentPage === 1}
-        className={`p-1.5 md:p-2 rounded border ${
-          currentPage === 1
-            ? "border-gray-200 text-gray-400 cursor-not-allowed"
-            : "border-gray-300 text-gray-700 hover:bg-gray-50"
-        }`}
-      >
-        <ChevronLeft className="w-3.5 h-3.5 md:w-4 md:h-4" />
-      </button>
+                  <div className="flex items-center gap-1 flex-wrap justify-center">
+                    {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+                      let pageNum;
+                      if (totalPages <= 5) pageNum = i + 1;
+                      else if (currentPage <= 3) pageNum = i + 1;
+                      else if (currentPage >= totalPages - 2)
+                        pageNum = totalPages - 4 + i;
+                      else pageNum = currentPage - 2 + i;
 
-      <div className="flex items-center gap-1 flex-wrap justify-center">
-        {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
-          let pageNum;
-          if (totalPages <= 5) pageNum = i + 1;
-          else if (currentPage <= 3) pageNum = i + 1;
-          else if (currentPage >= totalPages - 2)
-            pageNum = totalPages - 4 + i;
-          else pageNum = currentPage - 2 + i;
+                      return (
+                        <button
+                          key={pageNum}
+                          onClick={() => goToPage(pageNum)}
+                          className={`w-7 h-7 md:w-8 md:h-8 rounded border text-xs md:text-sm font-medium ${
+                            currentPage === pageNum
+                              ? "bg-[#C62828] text-white border-[#C62828]"
+                              : "border-gray-300 text-gray-700 hover:bg-gray-50"
+                          }`}
+                        >
+                          {pageNum}
+                        </button>
+                      );
+                    })}
+                  </div>
 
-          return (
-            <button
-              key={pageNum}
-              onClick={() => goToPage(pageNum)}
-              className={`w-7 h-7 md:w-8 md:h-8 rounded border text-xs md:text-sm font-medium ${
-                currentPage === pageNum
-                  ? "bg-[#C62828] text-white border-[#C62828]"
-                  : "border-gray-300 text-gray-700 hover:bg-gray-50"
-              }`}
-            >
-              {pageNum}
-            </button>
-          );
-        })}
-      </div>
+                  <button
+                    onClick={() => goToPage(currentPage + 1)}
+                    disabled={currentPage === totalPages}
+                    className={`p-1.5 md:p-2 rounded border ${
+                      currentPage === totalPages
+                        ? "border-gray-200 text-gray-400 cursor-not-allowed"
+                        : "border-gray-300 text-gray-700 hover:bg-gray-50"
+                    }`}
+                  >
+                    <ChevronRight className="w-3.5 h-3.5 md:w-4 md:h-4" />
+                  </button>
 
-      <button
-        onClick={() => goToPage(currentPage + 1)}
-        disabled={currentPage === totalPages}
-        className={`p-1.5 md:p-2 rounded border ${
-          currentPage === totalPages
-            ? "border-gray-200 text-gray-400 cursor-not-allowed"
-            : "border-gray-300 text-gray-700 hover:bg-gray-50"
-        }`}
-      >
-        <ChevronRight className="w-3.5 h-3.5 md:w-4 md:h-4" />
-      </button>
-
-      <button
-        onClick={() => goToPage(totalPages)}
-        disabled={currentPage === totalPages}
-        className={`p-1.5 md:p-2 rounded border ${
-          currentPage === totalPages
-            ? "border-gray-200 text-gray-400 cursor-not-allowed"
-            : "border-gray-300 text-gray-700 hover:bg-gray-50"
-        }`}
-      >
-        <ChevronsRight className="w-3.5 h-3.5 md:w-4 md:h-4" />
-      </button>
-    </div>
-
-  </div>
-</div>
-
+                  <button
+                    onClick={() => goToPage(totalPages)}
+                    disabled={currentPage === totalPages}
+                    className={`p-1.5 md:p-2 rounded border ${
+                      currentPage === totalPages
+                        ? "border-gray-200 text-gray-400 cursor-not-allowed"
+                        : "border-gray-300 text-gray-700 hover:bg-gray-50"
+                    }`}
+                  >
+                    <ChevronsRight className="w-3.5 h-3.5 md:w-4 md:h-4" />
+                  </button>
+                </div>
+              </div>
+            </div>
           )}
 
           {/* Bulk Actions Bar */}

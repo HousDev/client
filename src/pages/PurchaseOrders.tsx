@@ -309,122 +309,121 @@ export default function PurchaseOrders() {
   //   setFilteredPOs(filtered);
   // }, [pos, searchFilters]);
 
-
   // REPLACE BOTH useEffect hooks with this SINGLE one:
-useEffect(() => {
-  if (activeTab === "tracking") {
-    // Tracking tab filters
-    const filtered = pos.filter((po) => {
-      const matchesPoNumber = searchFilters.poNumber
-        ? po.po_number
-            ?.toLowerCase()
-            .includes(searchFilters.poNumber.toLowerCase())
-        : true;
+  useEffect(() => {
+    if (activeTab === "tracking") {
+      // Tracking tab filters
+      const filtered = pos.filter((po) => {
+        const matchesPoNumber = searchFilters.poNumber
+          ? po.po_number
+              ?.toLowerCase()
+              .includes(searchFilters.poNumber.toLowerCase())
+          : true;
 
-      const matchesVendor = searchFilters.vendor
-        ? po.vendors?.name
-            ?.toLowerCase()
-            .includes(searchFilters.vendor.toLowerCase())
-        : true;
+        const matchesVendor = searchFilters.vendor
+          ? po.vendors?.name
+              ?.toLowerCase()
+              .includes(searchFilters.vendor.toLowerCase())
+          : true;
 
-      const matchesProject = searchFilters.project
-        ? po.projects?.name
-            ?.toLowerCase()
-            .includes(searchFilters.project.toLowerCase())
-        : true;
+        const matchesProject = searchFilters.project
+          ? po.projects?.name
+              ?.toLowerCase()
+              .includes(searchFilters.project.toLowerCase())
+          : true;
 
-      const matchesAmount = searchFilters.amount
-        ? String(po.grand_total).includes(searchFilters.amount)
-        : true;
+        const matchesAmount = searchFilters.amount
+          ? String(po.grand_total).includes(searchFilters.amount)
+          : true;
 
-      const matchesPoStatus = searchFilters.poStatus
-        ? po.status
-            ?.toLowerCase()
-            .includes(searchFilters.poStatus.toLowerCase())
-        : true;
+        const matchesPoStatus = searchFilters.poStatus
+          ? po.status
+              ?.toLowerCase()
+              .includes(searchFilters.poStatus.toLowerCase())
+          : true;
 
-      const matchesMaterial = searchFilters.material
-        ? po.material_status
-            ?.toLowerCase()
-            .includes(searchFilters.material.toLowerCase())
-        : true;
+        const matchesMaterial = searchFilters.material
+          ? po.material_status
+              ?.toLowerCase()
+              .includes(searchFilters.material.toLowerCase())
+          : true;
 
-      const matchesPayment = searchFilters.payment
-        ? po.payment_status
-            ?.toLowerCase()
-            .includes(searchFilters.payment.toLowerCase())
-        : true;
+        const matchesPayment = searchFilters.payment
+          ? po.payment_status
+              ?.toLowerCase()
+              .includes(searchFilters.payment.toLowerCase())
+          : true;
 
-      return (
-        matchesPoNumber &&
-        matchesVendor &&
-        matchesProject &&
-        matchesAmount &&
-        matchesPoStatus &&
-        matchesMaterial &&
-        matchesPayment
-      );
-    });
+        return (
+          matchesPoNumber &&
+          matchesVendor &&
+          matchesProject &&
+          matchesAmount &&
+          matchesPoStatus &&
+          matchesMaterial &&
+          matchesPayment
+        );
+      });
 
-    setFilteredPOs(filtered);
-  } else if (activeTab === "management") {
-    // Management tab filters
-    const filtered = pos.filter((po) => {
-      const matchesPoNumber = searchFilters.poNumber
-        ? po.po_number
-            ?.toLowerCase()
-            .includes(searchFilters.poNumber.toLowerCase())
-        : true;
+      setFilteredPOs(filtered);
+    } else if (activeTab === "management") {
+      // Management tab filters
+      const filtered = pos.filter((po) => {
+        const matchesPoNumber = searchFilters.poNumber
+          ? po.po_number
+              ?.toLowerCase()
+              .includes(searchFilters.poNumber.toLowerCase())
+          : true;
 
-      const matchesVendor = searchFilters.vendor
-        ? po.vendors?.name
-            ?.toLowerCase()
-            .includes(searchFilters.vendor.toLowerCase())
-        : true;
+        const matchesVendor = searchFilters.vendor
+          ? po.vendors?.name
+              ?.toLowerCase()
+              .includes(searchFilters.vendor.toLowerCase())
+          : true;
 
-      const matchesProject = searchFilters.project
-        ? po.projects?.name
-            ?.toLowerCase()
-            .includes(searchFilters.project.toLowerCase())
-        : true;
+        const matchesProject = searchFilters.project
+          ? po.projects?.name
+              ?.toLowerCase()
+              .includes(searchFilters.project.toLowerCase())
+          : true;
 
-      const matchesType = searchFilters.type
-        ? po.po_types?.name
-            ?.toLowerCase()
-            .includes(searchFilters.type.toLowerCase())
-        : true;
+        const matchesType = searchFilters.type
+          ? po.po_types?.name
+              ?.toLowerCase()
+              .includes(searchFilters.type.toLowerCase())
+          : true;
 
-      const matchesDate = searchFilters.date
-        ? (po.po_date
-            ? new Date(po.po_date).toLocaleDateString()
-            : ""
-          ).includes(searchFilters.date)
-        : true;
+        const matchesDate = searchFilters.date
+          ? (po.po_date
+              ? new Date(po.po_date).toLocaleDateString()
+              : ""
+            ).includes(searchFilters.date)
+          : true;
 
-      const matchesAmount = searchFilters.amount
-        ? String(po.grand_total).includes(searchFilters.amount)
-        : true;
+        const matchesAmount = searchFilters.amount
+          ? String(po.grand_total).includes(searchFilters.amount)
+          : true;
 
-      const matchesStatus = searchFilters.poStatus
-        ? po.status
-            ?.toLowerCase()
-            .includes(searchFilters.poStatus.toLowerCase())
-        : true;
+        const matchesStatus = searchFilters.poStatus
+          ? po.status
+              ?.toLowerCase()
+              .includes(searchFilters.poStatus.toLowerCase())
+          : true;
 
-      return (
-        matchesPoNumber &&
-        matchesVendor &&
-        matchesProject &&
-        matchesType &&
-        matchesDate &&
-        matchesAmount &&
-        matchesStatus
-      );
-    });
+        return (
+          matchesPoNumber &&
+          matchesVendor &&
+          matchesProject &&
+          matchesType &&
+          matchesDate &&
+          matchesAmount &&
+          matchesStatus
+        );
+      });
 
-    setFilteredPOs(filtered);
-  }
-}, [pos, searchFilters, activeTab]); // ✅ ADD activeTab to dependencies
+      setFilteredPOs(filtered);
+    }
+  }, [pos, searchFilters, activeTab]); // ✅ ADD activeTab to dependencies
   // Handler for search filter changes
   const handleSearchFilterChange = (
     column: keyof typeof searchFilters,
@@ -1297,9 +1296,11 @@ useEffect(() => {
         <div className="space-y-6">
           {/* PO Overview */}
           <div className="     bg-white rounded-xl shadow-sm border border-gray-200 ">
-      <div className="overflow-y-auto max-h-[calc(100vh-200px)] md:max-h-[calc(100vh-170px)] ">
-    <table className="w-full min-w-[800px]">
-<thead className="sticky top-0 z-10 bg-gray-200 border-b border-gray-200">                  {/* Header Row */}
+            <div className="overflow-y-auto max-h-[calc(100vh-200px)] md:max-h-[calc(100vh-170px)] ">
+              <table className="w-full min-w-[800px]">
+                <thead className="sticky top-0 z-10 bg-gray-200 border-b border-gray-200">
+                  {" "}
+                  {/* Header Row */}
                   <tr>
                     <th className="px-3 md:px-4 py-2 text-left">
                       <div className="text-[10px] md:text-xs font-semibold text-gray-700 uppercase tracking-wider">
@@ -1342,7 +1343,6 @@ useEffect(() => {
                       </div>
                     </th>
                   </tr>
-
                   {/* Search Row - Separate Row Below Headers */}
                   {/* Tracking Tab - Search Row */}
                   <tr className="bg-gray-50 border-b border-gray-200">
@@ -1532,9 +1532,11 @@ useEffect(() => {
 
       {activeTab === "management" && (
         <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
-      <div className="overflow-y-auto max-h-[calc(100vh-190px)] md:max-h-[calc(100vh-170px)] ">
-         <table className="w-full min-w-[800px]">
-<thead className="sticky top-0 z-10 bg-gray-200 border-b border-gray-200">                {/* Header Row */}
+          <div className="overflow-y-auto max-h-[calc(100vh-190px)] md:max-h-[calc(100vh-170px)] ">
+            <table className="w-full min-w-[800px]">
+              <thead className="sticky top-0 z-10 bg-gray-200 border-b border-gray-200">
+                {" "}
+                {/* Header Row */}
                 <tr>
                   <th className="px-3 md:px-4 py-2 text-left">
                     <div className="text-[10px] md:text-xs font-semibold text-gray-700 uppercase tracking-wider">
@@ -1577,7 +1579,6 @@ useEffect(() => {
                     </div>
                   </th>
                 </tr>
-
                 {/* Search Row - Separate Row Below Headers */}
                 {/* Management Tab - Search Row */}
                 <tr className="bg-gray-50 border-b border-gray-200">
@@ -1893,7 +1894,9 @@ useEffect(() => {
                           )}
                         <div className="relative">
                           {showApprovalButtons === po.id && (
-<div className="absolute -top-16 right-2 z-50 space-x-3 bg-white flex shadow-xl px-6 py-3 rounded-md border border-slate-300">                              {can("approve_pos") && po.status === "draft" && (
+                            <div className="absolute -top-16 right-2 z-50 space-x-3 bg-white flex shadow-xl px-6 py-3 rounded-md border border-slate-300">
+                              {" "}
+                              {can("approve_pos") && po.status === "draft" && (
                                 <button
                                   onClick={() =>
                                     updatePurchaseOrderStatus(po.id, "approved")
@@ -1905,7 +1908,6 @@ useEffect(() => {
                                   Approve
                                 </button>
                               )}
-
                               {can("authorize_pos") &&
                                 po.status === "approved" && (
                                   <button

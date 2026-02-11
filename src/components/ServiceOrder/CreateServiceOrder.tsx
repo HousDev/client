@@ -775,7 +775,7 @@ export default function CreateServiceOrderForm({
     <div className="p-6">
       {/* Create Modal (with SearchableSelects) */}
       <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4 overflow-y-auto">
-        <div className="bg-white rounded-2xl shadow-2xl w-full max-w-4xl my-8">
+        <div className="bg-white rounded-2xl shadow-2xl w-full max-w-3xl my-8">
           {/* Header */}
           <div
             className="bg-gradient-to-r from-[#4b4e4b] via-[#5a5d5a] to-[#6b6e6b]

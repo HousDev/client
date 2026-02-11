@@ -33,7 +33,7 @@ export default function ViewPOTransaction({
   setActiveFormTab,
 }: {
   viewPOTransaction: any;
-  setActiveFormTab: React.Dispatch<SetStateAction<String>>;
+  setActiveFormTab: React.Dispatch<SetStateAction<string>>;
 }) {
   console.log(viewPOTransaction);
   const [vendors, setVendors] = useState<any>([]);
