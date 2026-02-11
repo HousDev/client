@@ -12,6 +12,7 @@ import {
   Calendar,
   User,
   Search,
+  Building2,
 } from "lucide-react";
 import { useAuth } from "../../contexts/AuthContext";
 import poApi from "../../lib/poApi";
@@ -19,15 +20,18 @@ import poTypeApi from "../../lib/poTypeApi";
 import TermsConditionsApi from "../../lib/termsConditionsApi";
 import { toast } from "sonner";
 import MySwal from "../../utils/swal";
+import SearchableSelect from "../SearchableSelect";
+import projectApi from "../../lib/projectApi";
+import ServiceOrdersApi from "../../lib/serviceOrderApi";
 
 /* --- types (same as yours) --- */
-interface POItem {
+interface SOService {
   id: string;
-  item_id: string;
-  item_code: string;
-  item_name: string;
+  service_id: string;
+  service_code: string;
+  service_name: string;
   description: string;
-  hsn_code: string;
+  sac_code: string;
   quantity: number;
   unit: string;
   rate: number;
@@ -47,6 +51,7 @@ interface POFormData {
   po_number: string;
   vendor_id: string;
   project_id: string;
+  building_id: string;
   po_type_id: string;
   po_date: string;
   delivery_date: string;
@@ -68,165 +73,8 @@ interface POFormData {
   terms_and_conditions: any[];
   notes: string;
 }
+
 type addTermType = { category: string; content: string; is_default: boolean };
-type Option = { id: string; name: string } | string;
-
-/* ------------------ SearchableSelect component (inline) ------------------ */
-function SearchableSelect({
-  options,
-  value,
-  onChange,
-  placeholder = "Select...",
-  disabled = false,
-  id,
-}: {
-  options: Option[];
-  value: string;
-  onChange: (id: string) => void;
-  placeholder?: string;
-  required?: boolean;
-  disabled?: boolean;
-  id?: string;
-}) {
-  const [open, setOpen] = useState(false);
-  const [filter, setFilter] = useState("");
-  const [highlight, setHighlight] = useState(0);
-  const containerRef = useRef<HTMLDivElement | null>(null);
-
-  // Normalize options to {id,name}
-  const normalized = options.map((opt) =>
-    typeof opt === "string" ? { id: opt, name: opt } : opt,
-  );
-
-  const selected = normalized.find((o) => o.id === value) || null;
-
-  const filtered = normalized.filter((o) =>
-    o.name.toLowerCase().includes(filter.toLowerCase()),
-  );
-
-  useEffect(() => {
-    if (!open) setFilter("");
-    setHighlight(0);
-  }, [open]);
-
-  // close on outside click
-  useEffect(() => {
-    function onDocClick(e: MouseEvent) {
-      if (!containerRef.current) return;
-      if (!containerRef.current.contains(e.target as Node)) {
-        setOpen(false);
-      }
-    }
-    document.addEventListener("mousedown", onDocClick);
-    return () => document.removeEventListener("mousedown", onDocClick);
-  }, []);
-
-  const onKeyDown: React.KeyboardEventHandler<HTMLInputElement> = (e) => {
-    if (e.key === "ArrowDown") {
-      e.preventDefault();
-      setHighlight((h) => Math.min(h + 1, filtered.length - 1));
-    } else if (e.key === "ArrowUp") {
-      e.preventDefault();
-      setHighlight((h) => Math.max(h - 1, 0));
-    } else if (e.key === "Enter") {
-      e.preventDefault();
-      const opt = filtered[highlight];
-      if (opt) {
-        onChange(opt.id);
-        setOpen(false);
-      }
-    } else if (e.key === "Escape") {
-      setOpen(false);
-    }
-  };
-
-  return (
-    <div ref={containerRef} className="relative">
-      <div
-        className={`w-full flex items-center gap-2 px-3 py-2 ${disabled ? "border" : "border border-slate-400"} border-gray-300 rounded-xl bg-white/50 cursor-pointer text-sm ${
-          disabled
-            ? "opacity-90 cursor-not-allowed"
-            : "hover:shadow-sm hover:border-gray-400"
-        }`}
-        onClick={() => !disabled && setOpen((s) => !s)}
-        role="button"
-        aria-haspopup="listbox"
-        aria-expanded={open}
-        id={id}
-      >
-        <div className="flex-1 text-left">
-          {selected ? (
-            <div className="text-sm text-gray-800">{selected.name}</div>
-          ) : (
-            <div className="text-sm text-gray-500">{placeholder}</div>
-          )}
-        </div>
-        <div>
-          <svg
-            className={`w-4 h-4 transform transition text-[#5a5d5a] ${
-              open ? "rotate-180" : ""
-            }`}
-            viewBox="0 0 20 20"
-            fill="currentColor"
-          >
-            <path d="M5.23 7.21a.75.75 0 011.06-.02L10 10.585l3.71-3.396a.75.75 0 111.02 1.1l-4.185 3.833a.75.75 0 01-1.02 0L5.25 8.29a.75.75 0 01-.02-1.08z" />
-          </svg>
-        </div>
-      </div>
-
-      {/* dropdown */}
-      {open && (
-        <div className="absolute z-50 mt-1 w-full bg-white border border-gray-300 rounded-xl shadow-lg">
-          {/* search input */}
-          <div className="p-2">
-            <input
-              autoFocus
-              value={filter}
-              onChange={(e) => setFilter(e.target.value)}
-              onKeyDown={onKeyDown}
-              placeholder="Search..."
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#b52124]/20 focus:border-[#b52124] outline-none text-sm"
-            />
-          </div>
-
-          <ul
-            role="listbox"
-            aria-labelledby={id}
-            className="max-h-60 overflow-y-auto divide-y divide-gray-200"
-          >
-            {filtered.length === 0 ? (
-              <li className="p-3 text-sm text-gray-500">No results</li>
-            ) : (
-              filtered.map((opt, idx) => (
-                <li
-                  key={opt.id}
-                  role="option"
-                  aria-selected={opt.id === value}
-                  className={`px-3 py-2 cursor-pointer text-sm ${
-                    idx === highlight ? "bg-[#b52124]/10" : "hover:bg-gray-50"
-                  } ${
-                    opt.id === value
-                      ? "font-medium text-[#40423f]"
-                      : "text-[#5a5d5a]"
-                  }`}
-                  onMouseEnter={() => setHighlight(idx)}
-                  onClick={() => {
-                    onChange(opt.id);
-                    setOpen(false);
-                  }}
-                >
-                  {opt.name}
-                </li>
-              ))
-            )}
-          </ul>
-        </div>
-      )}
-      {/* hidden input to keep form semantics if you want to submit native form */}
-      <input type="hidden" value={value} />
-    </div>
-  );
-}
 
 /* ------------------ Main component ------------------ */
 
@@ -250,6 +98,7 @@ export default function UpdateServiceOrderForm({
   const [paymentTerms, setPaymentTerms] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [showItemSelector, setShowItemSelector] = useState(false);
+  const [projectBuildings, setProjectBuildings] = useState([]);
 
   const [showAddTerm, setShowAddTerm] = useState<boolean>(false);
   const [extraTermData, setExtraTermData] = useState<addTermType>({
@@ -308,7 +157,7 @@ export default function UpdateServiceOrderForm({
       const data = await poApi.getVendors(true);
       setVendors(
         Array.isArray(data)
-          ? data.filter((d: any) => d.category_name === "Material")
+          ? data.filter((d: any) => d.category_name === "Service")
           : [],
       );
     } catch (err) {
@@ -447,10 +296,10 @@ export default function UpdateServiceOrderForm({
   // --- Items helpers (keep existing functions) ---
   const addItemFromMaster = (item: any) => {
     const existingIndex = formData.items.findIndex(
-      (i) => Number(i.item_id) === item.id,
+      (i) => Number(i.service_id) === item.id,
     );
 
-    let updatedItems: POItem[];
+    let updatedItems: SOService[];
 
     if (existingIndex !== -1) {
       updatedItems = formData.items.map((i, index) => {
@@ -468,13 +317,13 @@ export default function UpdateServiceOrderForm({
         return i;
       });
     } else {
-      const newItem: POItem = {
+      const newItem: SOService = {
         id: crypto.randomUUID(),
-        item_id: item.id,
-        item_code: item.item_code || "",
-        item_name: item.item_name || "",
+        service_id: item.id,
+        service_code: item.item_code || "",
+        service_name: item.item_name || "",
         description: item.description || "",
-        hsn_code: item.hsn_code || "",
+        sac_code: item.hsn_code || "",
         quantity: 1,
         unit: item.unit || "nos",
         rate: Number(item.standard_rate || 0),
@@ -502,7 +351,11 @@ export default function UpdateServiceOrderForm({
 
     setShowItemSelector(false);
   };
-  const handleItemChange = (index: number, field: keyof POItem, value: any) => {
+  const handleItemChange = (
+    index: number,
+    field: keyof SOService,
+    value: any,
+  ) => {
     const newItems = [...formData.items];
     newItems[index] = { ...newItems[index], [field]: value };
 
@@ -521,15 +374,23 @@ export default function UpdateServiceOrderForm({
     );
   };
 
-  const deletePOItems = async (poItemId: any, poMaterialTrackingId: any) => {
-    // console.log("ids for delete", poItemId, poMaterialTrackingId);
+  useEffect(() => {
+    console.log(formData.items);
+  }, [formData]);
+
+  const deleteSOItems = async (
+    soId: number | string,
+    serviceId: number | string,
+  ) => {
+    // console.log("ids for delete", soId, serviceId);
     try {
-      const response: any = await poApi.deletePurchaseOrderItem(
-        poItemId,
-        poMaterialTrackingId,
+      const response: any = await ServiceOrdersApi.deleteServiceOrderService(
+        soId,
+        serviceId,
       );
 
       await loadAllData();
+
       if (response.status === "Completed") {
         toast.success(response.message);
       } else {
@@ -540,7 +401,7 @@ export default function UpdateServiceOrderForm({
     }
   };
   const calculateTotals = (
-    itemsList: POItem[],
+    itemsList: SOService[],
     discountPercentage: number,
     isInterstate: boolean,
   ) => {
@@ -635,15 +496,15 @@ export default function UpdateServiceOrderForm({
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-
+    console.log("form data : ", formData);
     try {
       if (
         formData.vendor_id === "" ||
         formData.project_id === "" ||
+        formData.building_id === "" ||
         formData.po_type_id === "" ||
         formData.po_date === "" ||
-        formData.delivery_date === "" ||
-        formData.due_date === ""
+        formData.delivery_date === ""
       ) {
         toast.error("Fill all required fields.");
         return;
@@ -667,7 +528,7 @@ export default function UpdateServiceOrderForm({
       });
 
       if (
-        selected_terms_idsData.length === 0 ||
+        selected_terms_idsData.length === 0 &&
         terms_and_conditionsData.length === 0
       ) {
         toast.error("Select Terms & Conditions For Service Order.");
@@ -675,15 +536,15 @@ export default function UpdateServiceOrderForm({
       }
 
       const payload = {
-        po_number: formData.po_number,
+        so_number: formData.po_number,
         vendor_id: formData.vendor_id,
         project_id: formData.project_id,
-        po_type_id: formData.po_type_id,
-        po_date: formData.po_date,
+        building_id: formData.building_id,
+        service_type_id: formData.po_type_id,
+        so_date: formData.po_date,
         delivery_date: formData.delivery_date,
-        due_date: formData.due_date,
         is_interstate: formData.is_interstate,
-        items: formData.items,
+        services: formData.items,
         subtotal: formData.subtotal,
         discount_percentage: formData.discount_percentage,
         discount_amount: formData.discount_amount,
@@ -701,12 +562,15 @@ export default function UpdateServiceOrderForm({
         terms_and_conditions: JSON.stringify(terms_and_conditionsData),
         notes: formData.notes,
         status: "draft",
-        material_status: "pending",
+        service_status: "pending",
         payment_status: "pending",
         created_by: user?.id,
       };
 
-      const updatePORes: any = await poApi.updatePO(selectedPO.poId, payload);
+      const updatePORes: any = await ServiceOrdersApi.update(
+        selectedPO.poId,
+        payload,
+      );
       console.log(updatePORes);
       if (updatePORes.success) toast.success("PO Updated Successfully.");
       else toast.error("Faild to update PO.");
@@ -727,6 +591,7 @@ export default function UpdateServiceOrderForm({
       po_number: "",
       vendor_id: "",
       project_id: "",
+      building_id: "",
       po_type_id: "",
       po_date: new Date().toISOString().split("T")[0],
       delivery_date: "",
@@ -750,6 +615,17 @@ export default function UpdateServiceOrderForm({
     });
     setItemSelectorSearch("");
   };
+  const loadProjectBuildings = async (id = formData.project_id) => {
+    try {
+      const projectDetailsRes: any = await projectApi.getProjectById(id);
+      setProjectBuildings(projectDetailsRes.data.buildings);
+    } catch (error: any) {
+      toast.error("Error  : ", error.response.data.message);
+    }
+  };
+  useEffect(() => {
+    loadProjectBuildings();
+  }, []);
 
   const formatCurrency = (amount: number) =>
     new Intl.NumberFormat("en-IN", {
@@ -860,12 +736,41 @@ export default function UpdateServiceOrderForm({
                     name: p.name || p.project_name || "",
                   }))}
                   value={formData.project_id}
-                  onChange={(id) =>
-                    setFormData({ ...formData, project_id: id })
-                  }
+                  onChange={async (id) => {
+                    const projectDetailsRes: any =
+                      await projectApi.getProjectById(id);
+                    setProjectBuildings(projectDetailsRes.data.buildings);
+                    setFormData({ ...formData, project_id: id });
+                  }}
                   placeholder="Select Project"
                   required
                 />
+              </div>
+
+              {/* Building Selection */}
+              <div className="space-y-1.5">
+                <label className=" text-xs font-semibold text-gray-700 mb-1 flex items-center gap-1.5">
+                  <Building2 className="w-3 h-3 text-green-600" />
+                  <span>Building</span>
+                  <span className="text-red-500">*</span>
+                </label>
+                <div className="relative group">
+                  <div className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 group-focus-within:text-green-600 transition-colors">
+                    <Building2 className="w-3.5 h-3.5" />
+                  </div>
+                  <SearchableSelect
+                    options={projectBuildings.map((p: any) => ({
+                      id: p.id,
+                      name: p.name || p.building_name || "",
+                    }))}
+                    value={formData.building_id}
+                    onChange={(id) =>
+                      setFormData({ ...formData, building_id: id })
+                    }
+                    placeholder="Select Building"
+                    required
+                  />
+                </div>
               </div>
 
               <div className="space-y-1.5">
@@ -888,13 +793,14 @@ export default function UpdateServiceOrderForm({
               </div>
 
               <div className="space-y-1.5">
-                <label className="block text-xs font-medium text-[#40423f] mb-1 flex items-center gap-1">
+                <label className=" text-xs font-medium text-[#40423f] mb-1 flex items-center gap-1">
                   <Calendar className="w-3 h-3 text-[#b52124]" />
                   PO Date <span className="text-[#b52124]">*</span>
                 </label>
                 <input
                   type="date"
                   value={formData.po_date}
+                  max={formData.delivery_date}
                   onChange={(e) => {
                     setFormData({ ...formData, po_date: e.target.value });
                   }}
@@ -904,35 +810,18 @@ export default function UpdateServiceOrderForm({
               </div>
 
               <div className="space-y-1.5">
-                <label className="block text-xs font-medium text-[#40423f] mb-1 flex items-center gap-1">
+                <label className=" text-xs font-medium text-[#40423f] mb-1 flex items-center gap-1">
                   <Calendar className="w-3 h-3 text-[#b52124]" />
                   Delivery Date
                 </label>
                 <input
                   type="date"
                   value={formData.delivery_date}
+                  min={formData.po_date}
                   onChange={(e) =>
                     setFormData({
                       ...formData,
                       delivery_date: e.target.value,
-                    })
-                  }
-                  className="w-full px-3 py-2 border border-gray-300 rounded-xl focus:ring-2 focus:ring-[#b52124]/20 focus:border-[#b52124] outline-none text-sm bg-white/50"
-                />
-              </div>
-
-              <div className="space-y-1.5">
-                <label className="block text-xs font-medium text-[#40423f] mb-1 flex items-center gap-1">
-                  <Calendar className="w-3 h-3 text-[#b52124]" />
-                  Payment Due Date
-                </label>
-                <input
-                  type="date"
-                  value={formData.due_date}
-                  onChange={(e) =>
-                    setFormData({
-                      ...formData,
-                      due_date: e.target.value,
                     })
                   }
                   className="w-full px-3 py-2 border border-gray-300 rounded-xl focus:ring-2 focus:ring-[#b52124]/20 focus:border-[#b52124] outline-none text-sm bg-white/50"
@@ -946,7 +835,7 @@ export default function UpdateServiceOrderForm({
             <div className="flex justify-between items-center mb-3">
               <h3 className="text-base font-semibold text-[#40423f] flex items-center gap-2">
                 <Layers className="w-4 h-4 text-[#b52124]" />
-                Items
+                Services
               </h3>
               <button
                 type="button"
@@ -982,14 +871,14 @@ export default function UpdateServiceOrderForm({
                     <div className="flex justify-between items-start mb-2">
                       <div>
                         <p className="font-medium text-sm text-[#40423f]">
-                          {item.item_name}
+                          {item.service_name}
                         </p>
                         <div className="flex flex-wrap gap-2 mt-1">
                           <span className="text-xs px-2 py-0.5 bg-gray-100 text-[#5a5d5a] rounded-full">
-                            Code: {item.item_code}
+                            Code: {item.service_code}
                           </span>
                           <span className="text-xs px-2 py-0.5 bg-gray-100 text-[#5a5d5a] rounded-full">
-                            HSN: {item.hsn_code}
+                            SAC: {item.sac_code}
                           </span>
                         </div>
                       </div>
@@ -1004,8 +893,8 @@ export default function UpdateServiceOrderForm({
                           });
 
                           if (!result.isConfirmed) return;
-                          if (result.isConfirmed && item.materialTrackingId) {
-                            deletePOItems(item.id, item.materialTrackingId);
+                          if (result.isConfirmed && item.so_id) {
+                            deleteSOItems(item.so_id, item.service_id);
                             const items = formData.items.filter(
                               (i: any) => i.id !== item.id,
                             );

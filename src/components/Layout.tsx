@@ -112,7 +112,7 @@ export default function Layout({
   activeTab,
   onTabChange,
   activeFormTab = "",
-  setActiveFormTab = () => { },
+  setActiveFormTab = () => {},
 }: LayoutProps) {
   // ── Auth context ──────────────────────────────────────────────────────────
   const {
@@ -120,8 +120,9 @@ export default function Layout({
     user,
     signOut,
     loading: authLoading,
-    systemSettings // ✅ Get system settings from context
+    systemSettings, // ✅ Get system settings from context
   } = useAuth();
+  console.log(user);
   // ✅ Use logo/favicon from systemSettings, fallback to defaults
   const logoUrl = systemSettings?.logo || DefaultLogo;
   const faviconUrl = systemSettings?.favicon;
@@ -136,10 +137,14 @@ export default function Layout({
   const [userMenus, setUserMenus] = useState<string[]>([]);
   const [notifications, setNotifications] = useState<NotificationType[]>([]);
   const [unreadCount, setUnreadCount] = useState(0);
-  const [showRequestMaterial, setShowRequestMaterial] = useState<boolean>(false);
-  const [showMaterialActionsMenu, setShowMaterialActionsMenu] = useState<boolean>(false);
+  const [showRequestMaterial, setShowRequestMaterial] =
+    useState<boolean>(false);
+  const [showMaterialActionsMenu, setShowMaterialActionsMenu] =
+    useState<boolean>(false);
   const [openSubmenu, setOpenSubmenu] = useState<string | null>(null);
-  const [openNestedSubmenu, setOpenNestedSubmenu] = useState<string | null>(null);
+  const [openNestedSubmenu, setOpenNestedSubmenu] = useState<string | null>(
+    null,
+  );
   const [localActiveFormTab, setLocalActiveFormTab] = useState<string>("");
 
   const profileRef = useRef<HTMLDivElement>(null);
@@ -147,32 +152,26 @@ export default function Layout({
   const materialActionsRef = useRef<HTMLDivElement>(null);
 
   // ✅ Update favicon dynamically when it changes
-  // Layout.tsx — replace the favicon useEffect:
-
-useEffect(() => {
-  if (faviconUrl) {
-    // ✅ Remove ALL existing favicon links to prevent caching issues
-    document.querySelectorAll("link[rel*='icon']").forEach(el => el.remove());
-    
-    // ✅ Create fresh link with cache buster
-    const link = document.createElement('link');
-    link.rel = 'icon';
-    link.type = 'image/png';
-    link.href = `${faviconUrl}?v=${Date.now()}`;
-    document.head.appendChild(link);
-    
-    // ✅ Also add apple-touch-icon for iOS/mobile
-    const appleLink = document.createElement('link');
-    appleLink.rel = 'apple-touch-icon';
-    appleLink.href = faviconUrl;
-    document.head.appendChild(appleLink);
-  }
-}, [faviconUrl]);
+  useEffect(() => {
+    if (faviconUrl) {
+      // Update existing favicon or create new one
+      let link = document.querySelector("link[rel~='icon']") as HTMLLinkElement;
+      if (!link) {
+        link = document.createElement("link");
+        link.rel = "icon";
+        document.head.appendChild(link);
+      }
+      link.href = faviconUrl;
+    }
+  }, [faviconUrl]);
 
   // ✅ Update primary color dynamically (optional - for theme)
   useEffect(() => {
     if (primaryColor) {
-      document.documentElement.style.setProperty('--primary-color', primaryColor);
+      document.documentElement.style.setProperty(
+        "--primary-color",
+        primaryColor,
+      );
     }
   }, [primaryColor]);
 
@@ -188,38 +187,183 @@ useEffect(() => {
 
   // ── Menu definitions ─────────────────────────────────────────────────────
   const menuItems = [
-    { id: "dashboard", label: "Dashboard", icon: Home, headerIcon: Home, value: ["view_dashboard"], submenu: null },
-    { id: "vendors", label: "Vendors", icon: Handshake, headerIcon: Handshake, value: ["view_vendors", "create_vendors", "edit_vendors", "delete_vendors"], submenu: null },
-    { id: "purchase-orders", label: "Purchase Orders", icon: FileText, headerIcon: FileCheck, value: ["view_pos", "create_pos", "edit_pos", "delete_pos", "approve_pos"], submenu: null },
-    { id: "service-orders", label: "Service Orders", icon: Layers, headerIcon: Layers, value: ["edit_service_orders", "create_service_orders", "view_service_orders"], submenu: null },
-    { id: "store-management", label: "Store Management", icon: Package, headerIcon: Package, value: ["edit_inventory", "create_inventory", "view_inventory", "delete_inventory"], submenu: null },
-    { id: "materials", label: "Material Tracking", icon: PackageSearch, headerIcon: PackageSearch, value: ["view_materials", "receive_materials"], submenu: null },
-    { id: "material-requests", label: "Material Requests", icon: ClipboardCheck, headerIcon: ClipboardCheck, value: ["view_materials_requests", "update_materials_requests"], submenu: null },
-    { id: "payments", label: "Payments", icon: Calculator, headerIcon: Calculator, value: ["view_payments", "make_payments", "verify_payments"], submenu: null },
-    { id: "task-management", label: "Task Management", icon: MdChecklist, value: ["view_task", "create_task", "update_task", "delete_task"], submenu: null },
-    { id: "projects", label: "Projects", icon: Building2, value: ["view_project", "create_project", "update_project", "delete_project"], submenu: null },
-    { id: "hrms", label: "HRMS", icon: BsPerson, value: ["view_hrms", "create_hrms", "update_hrms", "delete_hrms"], submenu: hrmsSubmenuItems },
-    { id: "notifications", label: "Notifications", icon: FaConciergeBell, headerIcon: FaConciergeBell, value: ["view_notifications"], submenu: null },
-    { id: "reports", label: "Reports", icon: BarChart3, headerIcon: BarChart3, value: ["view_reports", "export_reports"], submenu: null },
-    { id: "settings", label: "Settings", icon: FaCog, headerIcon: FaCog, value: ["view_settings", "edit_settings", "full_access"], submenu: settingsSubmenuItems },
-    { id: "masters", label: "Masters", icon: Users, headerIcon: Users, value: ["manage_users", "manage_roles"], submenu: null },
-    { id: "users", label: "Users", icon: MdAccountCircle, value: ["manage_users"], submenu: null },
-    { id: "permissions", label: "Permissions", icon: Shield, headerIcon: Shield, value: ["manage_permissions"], submenu: null },
+    {
+      id: "dashboard",
+      label: "Dashboard",
+      icon: Home,
+      headerIcon: Home,
+      value: ["view_dashboard"],
+      submenu: null,
+    },
+    {
+      id: "vendors",
+      label: "Vendors",
+      icon: Handshake,
+      headerIcon: Handshake,
+      value: [
+        "view_vendors",
+        "create_vendors",
+        "edit_vendors",
+        "delete_vendors",
+      ],
+      submenu: null,
+    },
+    {
+      id: "purchase-orders",
+      label: "Purchase Orders",
+      icon: FileText,
+      headerIcon: FileCheck,
+      value: [
+        "view_pos",
+        "create_pos",
+        "edit_pos",
+        "delete_pos",
+        "approve_pos",
+      ],
+      submenu: null,
+    },
+    {
+      id: "service-orders",
+      label: "Service Orders",
+      icon: Layers,
+      headerIcon: Layers,
+      value: [
+        "edit_service_orders",
+        "create_service_orders",
+        "view_service_orders",
+      ],
+      submenu: null,
+    },
+    {
+      id: "store-management",
+      label: "Store Management",
+      icon: Package,
+      headerIcon: Package,
+      value: [
+        "edit_inventory",
+        "create_inventory",
+        "view_inventory",
+        "delete_inventory",
+      ],
+      submenu: null,
+    },
+    {
+      id: "tracking",
+      label: "Tracking",
+      icon: PackageSearch,
+      headerIcon: PackageSearch,
+      value: ["view_materials", "receive_materials"],
+      submenu: null,
+    },
+    {
+      id: "material-requests",
+      label: "Material Requests",
+      icon: ClipboardCheck,
+      headerIcon: ClipboardCheck,
+      value: ["view_materials_requests", "update_materials_requests"],
+      submenu: null,
+    },
+    {
+      id: "payments",
+      label: "Payments",
+      icon: Calculator,
+      headerIcon: Calculator,
+      value: ["view_payments", "make_payments", "verify_payments"],
+      submenu: null,
+    },
+    {
+      id: "task-management",
+      label: "Task Management",
+      icon: MdChecklist,
+      value: ["view_task", "create_task", "update_task", "delete_task"],
+      submenu: null,
+    },
+    {
+      id: "projects",
+      label: "Projects",
+      icon: Building2,
+      value: [
+        "view_project",
+        "create_project",
+        "update_project",
+        "delete_project",
+      ],
+      submenu: null,
+    },
+    {
+      id: "hrms",
+      label: "HRMS",
+      icon: BsPerson,
+      value: ["view_hrms", "create_hrms", "update_hrms", "delete_hrms"],
+      submenu: hrmsSubmenuItems,
+    },
+    {
+      id: "notifications",
+      label: "Notifications",
+      icon: FaConciergeBell,
+      headerIcon: FaConciergeBell,
+      value: ["view_notifications"],
+      submenu: null,
+    },
+    {
+      id: "reports",
+      label: "Reports",
+      icon: BarChart3,
+      headerIcon: BarChart3,
+      value: ["view_reports", "export_reports"],
+      submenu: null,
+    },
+    {
+      id: "settings",
+      label: "Settings",
+      icon: FaCog,
+      headerIcon: FaCog,
+      value: ["view_settings", "edit_settings", "full_access"],
+      submenu: settingsSubmenuItems,
+    },
+    {
+      id: "masters",
+      label: "Masters",
+      icon: Users,
+      headerIcon: Users,
+      value: ["manage_users", "manage_roles"],
+      submenu: null,
+    },
+    {
+      id: "users",
+      label: "Users",
+      icon: MdAccountCircle,
+      value: ["manage_users"],
+      submenu: null,
+    },
+    {
+      id: "permissions",
+      label: "Permissions",
+      icon: Shield,
+      headerIcon: Shield,
+      value: ["manage_permissions"],
+      submenu: null,
+    },
   ];
 
-  const currentActiveFormTab = activeFormTab !== undefined ? activeFormTab : localActiveFormTab;
+  const currentActiveFormTab =
+    activeFormTab !== undefined ? activeFormTab : localActiveFormTab;
   const currentSetActiveFormTab = setActiveFormTab || setLocalActiveFormTab;
 
   // ── Active menu label for the header ─────────────────────────────────────
   const activeMenuLabel = useMemo(() => {
     // Check payroll submenu first
-    const payrollSubItem = payrollSubmenuItems.find((item) => item.id === activeTab);
+    const payrollSubItem = payrollSubmenuItems.find(
+      (item) => item.id === activeTab,
+    );
     if (payrollSubItem) return payrollSubItem.label;
 
     const hrmsSubItem = hrmsSubmenuItems.find((item) => item.id === activeTab);
     if (hrmsSubItem) return hrmsSubItem.label;
 
-    const settingsSubItem = settingsSubmenuItems.find((item) => item.id === activeTab);
+    const settingsSubItem = settingsSubmenuItems.find(
+      (item) => item.id === activeTab,
+    );
     if (settingsSubItem) return settingsSubItem.label;
 
     const activeItem = menuItems.find((item) => item.id === activeTab);
@@ -228,7 +372,11 @@ useEffect(() => {
 
   // ── Sign out ─────────────────────────────────────────────────────────────
   const handleSignOut = async () => {
-    try { await signOut(); } catch (error) { console.error("Error signing out:", error); }
+    try {
+      await signOut();
+    } catch (error) {
+      console.error("Error signing out:", error);
+    }
   };
 
   // ── Display name ──────────────────────────────────────────────────────────
@@ -247,7 +395,9 @@ useEffect(() => {
   useEffect(() => {
     if (contextAuth.user?.permissions) {
       const result = Object.fromEntries(
-        Object.entries(contextAuth.user.permissions).filter(([_, value]) => value === true)
+        Object.entries(contextAuth.user.permissions).filter(
+          ([_, value]) => value === true,
+        ),
       );
       setUserMenus(Object.keys(result) ?? []);
       setUserPermissions(contextAuth.user.permissions);
@@ -274,31 +424,19 @@ useEffect(() => {
   }, [displayName]);
 
   // ── Avatar URL ────────────────────────────────────────────────────────────
-  // ✅ FIXED - Will update when avatar changes
-const avatarUrl = useMemo(() => {
-  // Get the latest avatar from either user or profile
-  const raw = (profile as any)?.profile_picture || 
-              (profile as any)?.avatar || 
-              (user as any)?.profile_picture || 
-              (user as any)?.avatar || 
-              null;
-  
-  
-  if (!raw) return null;
-  
-  // Already full URL - use as is
-  if (raw.startsWith('http')) return raw;
-  
-  // Just filename - build full URL
-  const base = import.meta.env.VITE_API_URL || 'http://localhost:4000/api';
-  
-  // Handle both formats: "/uploads/filename" or just "filename"
-  if (raw.startsWith('/uploads/')) {
-    return `${base}${raw}`; // Already has /uploads/
-  } else {
-    return `${base}/uploads/${raw}`; // Add /uploads/
-  }
-}, [profile, user]); // ✅ This will trigger when profile or user changes
+  const avatarUrl = useMemo(() => {
+    const raw =
+      (profile && (profile as any).avatar) ||
+      (user && (user as any).avatar) ||
+      (user && (user as any).profile_picture) ||
+      null;
+    if (!raw) return null;
+    // Already a full URL → use as-is
+    if (raw.startsWith("http")) return raw;
+    // Just a filename → build the full URL
+    const base = import.meta.env.VITE_API_URL || "http://localhost:4000/api";
+    return `${base}/uploads/avatars/${raw}`;
+  }, [profile, user]);
 
   // ── Notifications ────────────────────────────────────────────────────────
   const fetchNotifications = async () => {
@@ -321,7 +459,9 @@ const avatarUrl = useMemo(() => {
       const result = await NotificationsApi.markAllAsSeen();
       if (result.success) fetchNotifications();
       else toast.error("Failed to mark all notifications as seen.");
-    } catch (err) { console.error("Error marking all as read:", err); }
+    } catch (err) {
+      console.error("Error marking all as read:", err);
+    }
   };
 
   useEffect(() => {
@@ -338,10 +478,12 @@ const avatarUrl = useMemo(() => {
     const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
     if (diffMins < 1) return "Just now";
     if (diffMins < 60) return `${diffMins} min ago`;
-    if (diffHours < 24) return `${diffHours} hour${diffHours > 1 ? "s" : ""} ago`;
+    if (diffHours < 24)
+      return `${diffHours} hour${diffHours > 1 ? "s" : ""} ago`;
     if (diffDays < 7) return `${diffDays} day${diffDays > 1 ? "s" : ""} ago`;
     return date.toLocaleDateString("en-US", {
-      month: "short", day: "numeric",
+      month: "short",
+      day: "numeric",
       year: date.getFullYear() !== now.getFullYear() ? "numeric" : undefined,
     });
   };
@@ -349,9 +491,18 @@ const avatarUrl = useMemo(() => {
   // ── Close dropdowns on outside click ─────────────────────────────────────
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
-      if (profileRef.current && !profileRef.current.contains(event.target as Node)) setProfileOpen(false);
-      if (notifRef.current && !notifRef.current.contains(event.target as Node)) setNotifOpen(false);
-      if (materialActionsRef.current && !materialActionsRef.current.contains(event.target as Node)) setShowMaterialActionsMenu(false);
+      if (
+        profileRef.current &&
+        !profileRef.current.contains(event.target as Node)
+      )
+        setProfileOpen(false);
+      if (notifRef.current && !notifRef.current.contains(event.target as Node))
+        setNotifOpen(false);
+      if (
+        materialActionsRef.current &&
+        !materialActionsRef.current.contains(event.target as Node)
+      )
+        setShowMaterialActionsMenu(false);
     };
     document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
@@ -359,9 +510,14 @@ const avatarUrl = useMemo(() => {
 
   // ── Permission helper ────────────────────────────────────────────────────
   const can = (permission: string) => {
-    const role = (profile as any)?.role_name ?? (profile as any)?.role ?? (user as any)?.role ?? null;
+    const role =
+      (profile as any)?.role_name ??
+      (profile as any)?.role ??
+      (user as any)?.role ??
+      null;
     if (role === "admin") return true;
-    const perms: Record<string, boolean> | null = (profile as any)?.permissions ?? null;
+    const perms: Record<string, boolean> | null =
+      (profile as any)?.permissions ?? null;
     if (perms && typeof perms === "object") return Boolean(perms[permission]);
     return false;
   };
@@ -393,31 +549,26 @@ const avatarUrl = useMemo(() => {
     setOpenNestedSubmenu(null);
   };
 
-
   const handleHRMSSubmenuClick = (subItemId: string) => {
     if (subItemId === "payroll") {
-      setOpenNestedSubmenu(
-        openNestedSubmenu === "payroll" ? null : "payroll"
-      );
+      setOpenNestedSubmenu(openNestedSubmenu === "payroll" ? null : "payroll");
       return;
     }
 
     // 🔥🔥 YAHI MAIN FIX HAI 🔥🔥
-    setOpenNestedSubmenu(null);   // payroll close hoga
+    setOpenNestedSubmenu(null); // payroll close hoga
 
     onTabChange(subItemId);
     setMobileSidebarOpen(false);
   };
-
 
   const handlePayrollSubmenuClick = (subItemId: string) => {
     onTabChange(subItemId);
     setMobileSidebarOpen(false);
   };
 
-
   const handleSettingsSubmenuClick = (subItemId: string) => {
-    setOpenNestedSubmenu(null)
+    setOpenNestedSubmenu(null);
     onTabChange(subItemId);
     setMobileSidebarOpen(false);
     setOpenNestedSubmenu(null);
@@ -438,7 +589,10 @@ const avatarUrl = useMemo(() => {
     <div className="min-h-screen bg-gray-50">
       {/* Mobile Sidebar Overlay */}
       {mobileSidebarOpen && (
-        <div className="lg:hidden fixed inset-0 bg-black/50 z-40" onClick={() => setMobileSidebarOpen(false)} />
+        <div
+          className="lg:hidden fixed inset-0 bg-black/50 z-40"
+          onClick={() => setMobileSidebarOpen(false)}
+        />
       )}
 
       {/* ── Sidebar ── */}
@@ -449,7 +603,9 @@ const avatarUrl = useMemo(() => {
           bg-[#2D2D2D] border-r border-gray-700 flex flex-col shadow-lg`}
       >
         {/* ✅ Logo - Dynamic from system settings */}
-        <div className={`h-20 border-b border-gray-700 flex items-center ${sidebarOpen ? "justify-start px-4" : "justify-center"} transition-all bg-[#2D2D2D]`}>
+        <div
+          className={`h-20 border-b border-gray-700 flex items-center ${sidebarOpen ? "justify-start px-4" : "justify-center"} transition-all bg-[#2D2D2D]`}
+        >
           {sidebarOpen ? (
             <img
               src={logoUrl ? `${logoUrl}?t=${Date.now()}` : DefaultLogo}
@@ -481,7 +637,9 @@ const avatarUrl = useMemo(() => {
               {menuItems.map((item) => {
                 const Icon = item.icon;
                 const isActive = activeTab === item.id;
-                const hasPermission = item.value.some((d) => userMenus.includes(d)) || userMenus.includes("full_access");
+                const hasPermission =
+                  item.value.some((d) => userMenus.includes(d)) ||
+                  userMenus.includes("full_access");
                 if (!hasPermission) return null;
                 return (
                   <button
@@ -506,10 +664,19 @@ const avatarUrl = useMemo(() => {
                 const Icon = item.icon;
                 const isActive =
                   activeTab === item.id ||
-                  (item.id === "hrms" && item.submenu && item.submenu.some((sub: any) => sub.id === activeTab)) ||
-                  (item.id === "hrms" && payrollSubmenuItems.some((sub: any) => sub.id === activeTab)) ||
-                  (item.id === "settings" && item.submenu && item.submenu.some((sub: any) => sub.id === activeTab));
-                const hasPermission = item.value.some((d) => userMenus.includes(d)) || userMenus.includes("full_access");
+                  (item.id === "hrms" &&
+                    item.submenu &&
+                    item.submenu.some((sub: any) => sub.id === activeTab)) ||
+                  (item.id === "hrms" &&
+                    payrollSubmenuItems.some(
+                      (sub: any) => sub.id === activeTab,
+                    )) ||
+                  (item.id === "settings" &&
+                    item.submenu &&
+                    item.submenu.some((sub: any) => sub.id === activeTab));
+                const hasPermission =
+                  item.value.some((d) => userMenus.includes(d)) ||
+                  userMenus.includes("full_access");
                 if (!hasPermission) return null;
 
                 return (
@@ -521,78 +688,113 @@ const avatarUrl = useMemo(() => {
                     >
                       <div className="flex items-center gap-3">
                         <Icon className="w-5 h-5 flex-shrink-0" />
-                        <span className="font-medium text-sm truncate">{item.label}</span>
+                        <span className="font-medium text-sm truncate">
+                          {item.label}
+                        </span>
                       </div>
                       {item.submenu && (
                         <div className="flex-shrink-0">
-                          {openSubmenu === item.id ? <FaChevronDown className="w-4 h-4" /> : <FaChevronRight className="w-4 h-4" />}
+                          {openSubmenu === item.id ? (
+                            <FaChevronDown className="w-4 h-4" />
+                          ) : (
+                            <FaChevronRight className="w-4 h-4" />
+                          )}
                         </div>
                       )}
                     </button>
 
                     {/* HRMS submenu */}
-                    {item.id === "hrms" && item.submenu && openSubmenu === item.id && (
-                      <div className="ml-8 pl-2 border-l border-gray-600 space-y-1">
-                        {item.submenu.map((subItem: any) => {
-                          const isPayrollActive = subItem.id === "payroll" &&
-                            (payrollSubmenuItems.some(p => p.id === activeTab) || openNestedSubmenu === "payroll");
+                    {item.id === "hrms" &&
+                      item.submenu &&
+                      openSubmenu === item.id && (
+                        <div className="ml-8 pl-2 border-l border-gray-600 space-y-1">
+                          {item.submenu.map((subItem: any) => {
+                            const isPayrollActive =
+                              subItem.id === "payroll" &&
+                              (payrollSubmenuItems.some(
+                                (p) => p.id === activeTab,
+                              ) ||
+                                openNestedSubmenu === "payroll");
 
-                          return (
-                            <div key={subItem.id}>
-                              <button
-                                onClick={() => handleHRMSSubmenuClick(subItem.id)}
-                                className={`w-full flex items-center justify-between px-3 py-2 rounded-lg transition-all
+                            return (
+                              <div key={subItem.id}>
+                                <button
+                                  onClick={() =>
+                                    handleHRMSSubmenuClick(subItem.id)
+                                  }
+                                  className={`w-full flex items-center justify-between px-3 py-2 rounded-lg transition-all
                                   ${activeTab === subItem.id || isPayrollActive ? "bg-[#C62828] text-white" : "text-gray-400 hover:bg-[#3D3D3D] hover:text-white"}`}
-                              >
-                                <div className="flex items-center gap-3">
-                                  <subItem.icon className="w-4 h-4 flex-shrink-0" />
-                                  <span className="font-medium text-xs truncate">{subItem.label}</span>
-                                </div>
-                                {subItem.id === "payroll" && (
-                                  <div className="flex-shrink-0">
-                                    {openNestedSubmenu === "payroll" ? <FaChevronDown className="w-3 h-3" /> : <FaChevronRight className="w-3 h-3" />}
+                                >
+                                  <div className="flex items-center gap-3">
+                                    <subItem.icon className="w-4 h-4 flex-shrink-0" />
+                                    <span className="font-medium text-xs truncate">
+                                      {subItem.label}
+                                    </span>
                                   </div>
-                                )}
-                              </button>
+                                  {subItem.id === "payroll" && (
+                                    <div className="flex-shrink-0">
+                                      {openNestedSubmenu === "payroll" ? (
+                                        <FaChevronDown className="w-3 h-3" />
+                                      ) : (
+                                        <FaChevronRight className="w-3 h-3" />
+                                      )}
+                                    </div>
+                                  )}
+                                </button>
 
-                              {/* Payroll nested submenu */}
-                              {subItem.id === "payroll" && openNestedSubmenu === "payroll" && (
-                                <div className="ml-6 pl-2 border-l border-gray-500 space-y-1 mt-1">
-                                  {payrollSubmenuItems.map((payrollItem) => (
-                                    <button
-                                      key={payrollItem.id}
-                                      onClick={() => handlePayrollSubmenuClick(payrollItem.id)}
-                                      className={`w-full flex items-center gap-3 px-3 py-1.5 rounded-lg transition-all text-xs
+                                {/* Payroll nested submenu */}
+                                {subItem.id === "payroll" &&
+                                  openNestedSubmenu === "payroll" && (
+                                    <div className="ml-6 pl-2 border-l border-gray-500 space-y-1 mt-1">
+                                      {payrollSubmenuItems.map(
+                                        (payrollItem) => (
+                                          <button
+                                            key={payrollItem.id}
+                                            onClick={() =>
+                                              handlePayrollSubmenuClick(
+                                                payrollItem.id,
+                                              )
+                                            }
+                                            className={`w-full flex items-center gap-3 px-3 py-1.5 rounded-lg transition-all text-xs
                                         ${activeTab === payrollItem.id ? "bg-[#C62828] text-white" : "text-gray-400 hover:bg-[#3D3D3D] hover:text-white"}`}
-                                    >
-                                      <payrollItem.icon className="w-3.5 h-3.5 flex-shrink-0" />
-                                      <span className="font-medium truncate">{payrollItem.label}</span>
-                                    </button>
-                                  ))}
-                                </div>
-                              )}
-                            </div>
-                          );
-                        })}
-                      </div>
-                    )}
+                                          >
+                                            <payrollItem.icon className="w-3.5 h-3.5 flex-shrink-0" />
+                                            <span className="font-medium truncate">
+                                              {payrollItem.label}
+                                            </span>
+                                          </button>
+                                        ),
+                                      )}
+                                    </div>
+                                  )}
+                              </div>
+                            );
+                          })}
+                        </div>
+                      )}
 
                     {/* Settings submenu */}
-                    {item.id === "settings" && item.submenu && openSubmenu === item.id && (
-                      <div className="ml-8 pl-2 border-l border-gray-600 space-y-1">
-                        {filteredSettingsSubmenuItems.map((subItem) => (
-                          <button
-                            key={subItem.id}
-                            onClick={() => handleSettingsSubmenuClick(subItem.id)}
-                            className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg transition-all
+                    {item.id === "settings" &&
+                      item.submenu &&
+                      openSubmenu === item.id && (
+                        <div className="ml-8 pl-2 border-l border-gray-600 space-y-1">
+                          {filteredSettingsSubmenuItems.map((subItem) => (
+                            <button
+                              key={subItem.id}
+                              onClick={() =>
+                                handleSettingsSubmenuClick(subItem.id)
+                              }
+                              className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg transition-all
                               ${activeTab === subItem.id ? "bg-[#C62828] text-white" : "text-gray-400 hover:bg-[#3D3D3D] hover:text-white"}`}
-                          >
-                            <subItem.icon className="w-4 h-4 flex-shrink-0" />
-                            <span className="font-medium text-xs truncate">{subItem.label}</span>
-                          </button>
-                        ))}
-                      </div>
-                    )}
+                            >
+                              <subItem.icon className="w-4 h-4 flex-shrink-0" />
+                              <span className="font-medium text-xs truncate">
+                                {subItem.label}
+                              </span>
+                            </button>
+                          ))}
+                        </div>
+                      )}
                   </div>
                 );
               })}
@@ -603,7 +805,10 @@ const avatarUrl = useMemo(() => {
         {/* Mobile Sign-Out */}
         {sidebarOpen && (
           <div className="p-4 border-t border-gray-700 lg:hidden">
-            <button onClick={handleSignOut} className="w-full flex items-center gap-3 px-4 py-3 text-gray-400 hover:bg-[#C62828] hover:text-white rounded-lg transition">
+            <button
+              onClick={handleSignOut}
+              className="w-full flex items-center gap-3 px-4 py-3 text-gray-400 hover:bg-[#C62828] hover:text-white rounded-lg transition"
+            >
               <FaSignOutAlt className="w-5 h-5" />
               <span className="font-medium text-sm">Sign Out</span>
             </button>
@@ -612,21 +817,35 @@ const avatarUrl = useMemo(() => {
       </aside>
 
       {/* ── Main Content ── */}
-      <div className={`transition-all duration-300 ease-in-out min-h-screen ${sidebarOpen ? "lg:ml-56" : "lg:ml-20"}`}>
+      <div
+        className={`transition-all duration-300 ease-in-out min-h-screen ${sidebarOpen ? "lg:ml-56" : "lg:ml-20"}`}
+      >
         {/* ── Top Navigation Bar ── */}
         <header className="sticky top-0 z-30 h-16 bg-white border-b border-gray-200 shadow-sm">
           <div className="px-4 sm:px-6 h-full">
             <div className="flex items-center justify-between h-full">
               {/* Left */}
               <div className="flex items-center space-x-2 sm:space-x-3">
-                <button onClick={() => setSidebarOpen(!sidebarOpen)} className="hidden lg:flex p-2 rounded-lg hover:bg-gray-100 transition">
-                  {sidebarOpen ? <Menu className="w-5 h-5 text-[#2D2D2D]" /> : <ChevronRight className="w-5 h-5 text-[#2D2D2D]" />}
+                <button
+                  onClick={() => setSidebarOpen(!sidebarOpen)}
+                  className="hidden lg:flex p-2 rounded-lg hover:bg-gray-100 transition"
+                >
+                  {sidebarOpen ? (
+                    <Menu className="w-5 h-5 text-[#2D2D2D]" />
+                  ) : (
+                    <ChevronRight className="w-5 h-5 text-[#2D2D2D]" />
+                  )}
                 </button>
-                <button onClick={() => setMobileSidebarOpen(true)} className="lg:hidden p-2 rounded-lg hover:bg-gray-100 transition">
+                <button
+                  onClick={() => setMobileSidebarOpen(true)}
+                  className="lg:hidden p-2 rounded-lg hover:bg-gray-100 transition"
+                >
                   <FaBars className="w-5 h-5 text-[#2D2D2D]" />
                 </button>
                 <div className="flex items-center gap-2 sm:gap-3">
-                  <h1 className="font-bold text-[#2D2D2D] text-lg leading-tight">{activeMenuLabel}</h1>
+                  <h1 className="font-bold text-[#2D2D2D] text-lg leading-tight">
+                    {activeMenuLabel}
+                  </h1>
                 </div>
               </div>
 
@@ -634,41 +853,65 @@ const avatarUrl = useMemo(() => {
               <div className="flex items-center gap-2 sm:gap-3">
                 {/* Request Material – Desktop (not on store-management) */}
                 {activeTab !== "store-management" && (
-                  <button onClick={() => setShowRequestMaterial(true)} className="hidden sm:flex items-center px-4 py-2 bg-[#C62828] text-white rounded-lg hover:bg-[#A62222] hover:shadow-lg transition text-sm font-medium whitespace-nowrap">
+                  <button
+                    onClick={() => setShowRequestMaterial(true)}
+                    className="hidden sm:flex items-center px-4 py-2 bg-[#C62828] text-white rounded-lg hover:bg-[#A62222] hover:shadow-lg transition text-sm font-medium whitespace-nowrap"
+                  >
                     Request Material
                   </button>
                 )}
                 {/* Request Material – Desktop on store-management */}
                 {activeTab === "store-management" && (
-                  <button onClick={() => setShowRequestMaterial(true)} className="hidden lg:flex items-center px-4 py-2 bg-[#C62828] text-white rounded-lg hover:bg-[#A62222] hover:shadow-lg transition text-sm font-medium whitespace-nowrap ml-4">
+                  <button
+                    onClick={() => setShowRequestMaterial(true)}
+                    className="hidden lg:flex items-center px-4 py-2 bg-[#C62828] text-white rounded-lg hover:bg-[#A62222] hover:shadow-lg transition text-sm font-medium whitespace-nowrap ml-4"
+                  >
                     Request Material
                   </button>
                 )}
 
                 {/* Store Management quick actions – Desktop */}
-                {activeTab === "store-management" && (can("create_inventory") || can("full_access")) && (
-                  <div className="hidden lg:flex items-center gap-2 ml-4 border-l border-gray-300 pl-4">
-                    <button onClick={() => handleMaterialButtonClick("in")} className={`px-4 py-2 rounded-lg font-medium transition-all flex items-center gap-2 ${currentActiveFormTab === "in" ? "bg-[#C62828] text-white shadow-sm" : "bg-white border border-gray-300 text-gray-700 hover:bg-gray-50"}`}>
-                      <PackagePlus className="w-5 h-5" /> Material In
-                    </button>
-                    <button onClick={() => handleMaterialButtonClick("out")} className={`px-4 py-2 rounded-lg font-medium transition-all flex items-center gap-2 ${currentActiveFormTab === "out" ? "bg-[#C62828] text-white shadow-sm" : "bg-white border border-gray-300 text-gray-700 hover:bg-gray-50"}`}>
-                      <PackageMinus className="w-5 h-5" /> Material Out
-                    </button>
-                    <button onClick={() => handleMaterialButtonClick("issue")} className={`px-4 py-2 rounded-lg font-medium transition-all flex items-center gap-2 ${currentActiveFormTab === "issue" ? "bg-[#C62828] text-white shadow-sm" : "bg-white border border-gray-300 text-gray-700 hover:bg-gray-50"}`}>
-                      <UserCheck className="w-5 h-5" /> Issue Material
-                    </button>
-                  </div>
-                )}
+                {activeTab === "store-management" &&
+                  (can("create_inventory") || can("full_access")) && (
+                    <div className="hidden lg:flex items-center gap-2 ml-4 border-l border-gray-300 pl-4">
+                      <button
+                        onClick={() => handleMaterialButtonClick("in")}
+                        className={`px-4 py-2 rounded-lg font-medium transition-all flex items-center gap-2 ${currentActiveFormTab === "in" ? "bg-[#C62828] text-white shadow-sm" : "bg-white border border-gray-300 text-gray-700 hover:bg-gray-50"}`}
+                      >
+                        <PackagePlus className="w-5 h-5" /> Material In
+                      </button>
+                      <button
+                        onClick={() => handleMaterialButtonClick("out")}
+                        className={`px-4 py-2 rounded-lg font-medium transition-all flex items-center gap-2 ${currentActiveFormTab === "out" ? "bg-[#C62828] text-white shadow-sm" : "bg-white border border-gray-300 text-gray-700 hover:bg-gray-50"}`}
+                      >
+                        <PackageMinus className="w-5 h-5" /> Material Out
+                      </button>
+                      <button
+                        onClick={() => handleMaterialButtonClick("issue")}
+                        className={`px-4 py-2 rounded-lg font-medium transition-all flex items-center gap-2 ${currentActiveFormTab === "issue" ? "bg-[#C62828] text-white shadow-sm" : "bg-white border border-gray-300 text-gray-700 hover:bg-gray-50"}`}
+                      >
+                        <UserCheck className="w-5 h-5" /> Issue Material
+                      </button>
+                    </div>
+                  )}
 
                 {/* Request Material – Mobile (not on store-management) */}
                 {activeTab !== "store-management" && (
-                  <button onClick={() => setShowRequestMaterial(true)} className="sm:hidden p-2 rounded-lg bg-[#C62828] text-white hover:bg-[#A62222] transition" title="Request Material">
+                  <button
+                    onClick={() => setShowRequestMaterial(true)}
+                    className="sm:hidden p-2 rounded-lg bg-[#C62828] text-white hover:bg-[#A62222] transition"
+                    title="Request Material"
+                  >
                     <MdRequestQuote className="w-5 h-5" />
                   </button>
                 )}
                 {/* Request Material – Mobile on store-management */}
                 {activeTab === "store-management" && (
-                  <button onClick={() => setShowRequestMaterial(true)} className="lg:hidden p-2 rounded-lg bg-[#C62828] text-white hover:bg-[#A62222] transition" title="Request Material">
+                  <button
+                    onClick={() => setShowRequestMaterial(true)}
+                    className="lg:hidden p-2 rounded-lg bg-[#C62828] text-white hover:bg-[#A62222] transition"
+                    title="Request Material"
+                  >
                     <MdRequestQuote className="w-5 h-5" />
                   </button>
                 )}
@@ -676,7 +919,11 @@ const avatarUrl = useMemo(() => {
                 {/* ── Notification Bell ── */}
                 <div className="relative" ref={notifRef}>
                   <button
-                    onClick={() => { setNotifOpen(!notifOpen); setProfileOpen(false); setShowMaterialActionsMenu(false); }}
+                    onClick={() => {
+                      setNotifOpen(!notifOpen);
+                      setProfileOpen(false);
+                      setShowMaterialActionsMenu(false);
+                    }}
                     className="p-2 rounded-lg hover:bg-gray-100 transition relative"
                   >
                     <FaBell className="w-5 h-5 text-[#2D2D2D]" />
@@ -692,32 +939,56 @@ const avatarUrl = useMemo(() => {
                       {/* Desktop dropdown */}
                       <div className="hidden lg:block absolute right-0 top-full mt-2 w-80 bg-white rounded-lg shadow-xl border border-gray-200 overflow-hidden z-50">
                         <div className="flex items-center justify-between px-4 py-3 border-b bg-[#2D2D2D]">
-                          <h4 className="text-sm font-semibold text-white">Notifications</h4>
+                          <h4 className="text-sm font-semibold text-white">
+                            Notifications
+                          </h4>
                           <div className="flex items-center gap-3">
-                            <span className="text-xs text-gray-300 bg-[#C62828] px-2 py-1 rounded-full">{unreadCount} new</span>
-                            <button onClick={() => setNotifOpen(false)} className="p-1 hover:bg-[#3D3D3D] rounded"><FaTimes className="w-4 h-4 text-white" /></button>
+                            <span className="text-xs text-gray-300 bg-[#C62828] px-2 py-1 rounded-full">
+                              {unreadCount} new
+                            </span>
+                            <button
+                              onClick={() => setNotifOpen(false)}
+                              className="p-1 hover:bg-[#3D3D3D] rounded"
+                            >
+                              <FaTimes className="w-4 h-4 text-white" />
+                            </button>
                           </div>
                         </div>
                         <div className="max-h-96 overflow-y-auto">
                           {notifications.length === 0 ? (
                             <div className="p-8 text-center">
                               <FaBell className="w-12 h-12 text-gray-300 mx-auto mb-3" />
-                              <p className="text-gray-500 text-sm">No notifications yet</p>
+                              <p className="text-gray-500 text-sm">
+                                No notifications yet
+                              </p>
                             </div>
                           ) : (
                             notifications.map((n) => (
-                              <div key={n.id} className={`p-4 border-b border-gray-100 hover:bg-gray-50 transition cursor-pointer ${!n.seen ? "bg-red-50/40" : ""}`}>
+                              <div
+                                key={n.id}
+                                className={`p-4 border-b border-gray-100 hover:bg-gray-50 transition cursor-pointer ${!n.seen ? "bg-red-50/40" : ""}`}
+                              >
                                 <div className="flex items-start gap-3">
-                                  <div className="w-10 h-10 rounded-full bg-[#C62828] flex items-center justify-center text-white font-semibold shadow-sm flex-shrink-0">{n.title.charAt(0)}</div>
+                                  <div className="w-10 h-10 rounded-full bg-[#C62828] flex items-center justify-center text-white font-semibold shadow-sm flex-shrink-0">
+                                    {n.title.charAt(0)}
+                                  </div>
                                   <div className="flex-1 min-w-0">
                                     <div className="flex items-start justify-between gap-2">
-                                      <p className="text-sm font-semibold text-gray-900">{n.title}</p>
-                                      {!n.seen && <span className="w-2 h-2 bg-[#C62828] rounded-full flex-shrink-0 mt-1"></span>}
+                                      <p className="text-sm font-semibold text-gray-900">
+                                        {n.title}
+                                      </p>
+                                      {!n.seen && (
+                                        <span className="w-2 h-2 bg-[#C62828] rounded-full flex-shrink-0 mt-1"></span>
+                                      )}
                                     </div>
-                                    <p className="text-xs text-gray-600 mt-1 line-clamp-2">{n.description}</p>
+                                    <p className="text-xs text-gray-600 mt-1 line-clamp-2">
+                                      {n.description}
+                                    </p>
                                     <div className="flex items-center gap-1.5 mt-2">
                                       <Clock className="w-3.5 h-3.5 text-gray-400" />
-                                      <p className="text-xs text-gray-400">{formatDateTime(n.created_at)}</p>
+                                      <p className="text-xs text-gray-400">
+                                        {formatDateTime(n.created_at)}
+                                      </p>
                                     </div>
                                   </div>
                                 </div>
@@ -727,33 +998,68 @@ const avatarUrl = useMemo(() => {
                         </div>
                         {notifications.length > 0 && (
                           <div className="px-4 py-3 border-t bg-gray-50 flex items-center justify-between">
-                            <button onClick={() => { markAllRead(); setNotifOpen(false); }} className="text-sm text-[#C62828] hover:text-[#A62222] font-medium">Mark all as read</button>
-                            <button onClick={() => setNotifOpen(false)} className="px-3 py-1.5 rounded-md bg-white border border-gray-300 hover:bg-gray-100 text-sm text-gray-700">Close</button>
+                            <button
+                              onClick={() => {
+                                markAllRead();
+                                setNotifOpen(false);
+                              }}
+                              className="text-sm text-[#C62828] hover:text-[#A62222] font-medium"
+                            >
+                              Mark all as read
+                            </button>
+                            <button
+                              onClick={() => setNotifOpen(false)}
+                              className="px-3 py-1.5 rounded-md bg-white border border-gray-300 hover:bg-gray-100 text-sm text-gray-700"
+                            >
+                              Close
+                            </button>
                           </div>
                         )}
                       </div>
 
                       {/* Mobile notification panel */}
-                      <div className={`lg:hidden fixed top-16 right-2 w-[88vw] max-w-sm bg-white rounded-xl shadow-2xl border border-gray-200 z-50 transform transition-all duration-300 ease-out ${notifOpen ? "translate-x-0 opacity-100" : "translate-x-6 opacity-0 pointer-events-none"}`}>
+                      <div
+                        className={`lg:hidden fixed top-16 right-2 w-[88vw] max-w-sm bg-white rounded-xl shadow-2xl border border-gray-200 z-50 transform transition-all duration-300 ease-out ${notifOpen ? "translate-x-0 opacity-100" : "translate-x-6 opacity-0 pointer-events-none"}`}
+                      >
                         <div className="flex items-center justify-between px-4 py-3 bg-[#2D2D2D] rounded-t-xl">
-                          <h4 className="text-sm font-semibold text-white">Notifications</h4>
-                          <button onClick={() => setNotifOpen(false)} className="p-1 rounded hover:bg-[#3D3D3D]"><FaTimes className="w-4 h-4 text-white" /></button>
+                          <h4 className="text-sm font-semibold text-white">
+                            Notifications
+                          </h4>
+                          <button
+                            onClick={() => setNotifOpen(false)}
+                            className="p-1 rounded hover:bg-[#3D3D3D]"
+                          >
+                            <FaTimes className="w-4 h-4 text-white" />
+                          </button>
                         </div>
                         <div className="divide-y max-h-[60vh] overflow-y-auto">
                           {notifications.length === 0 ? (
                             <div className="p-6 text-center">
                               <FaBell className="w-10 h-10 text-gray-300 mx-auto mb-2" />
-                              <p className="text-gray-500 text-sm">No notifications</p>
+                              <p className="text-gray-500 text-sm">
+                                No notifications
+                              </p>
                             </div>
                           ) : (
                             notifications.map((n) => (
-                              <div key={n.id} className={`px-3 py-3 hover:bg-gray-50 ${!n.seen ? "bg-red-50/40" : ""}`}>
+                              <div
+                                key={n.id}
+                                className={`px-3 py-3 hover:bg-gray-50 ${!n.seen ? "bg-red-50/40" : ""}`}
+                              >
                                 <div className="flex gap-2">
-                                  <div className="w-9 h-9 rounded-full bg-[#C62828] flex items-center justify-center text-white text-sm font-semibold">{n.title.charAt(0)}</div>
+                                  <div className="w-9 h-9 rounded-full bg-[#C62828] flex items-center justify-center text-white text-sm font-semibold">
+                                    {n.title.charAt(0)}
+                                  </div>
                                   <div className="flex-1">
-                                    <p className="text-sm font-semibold text-gray-800 truncate">{n.title}</p>
-                                    <p className="text-xs text-gray-600 line-clamp-2">{n.description}</p>
-                                    <p className="text-[11px] text-gray-400 mt-1">{formatDateTime(n.created_at)}</p>
+                                    <p className="text-sm font-semibold text-gray-800 truncate">
+                                      {n.title}
+                                    </p>
+                                    <p className="text-xs text-gray-600 line-clamp-2">
+                                      {n.description}
+                                    </p>
+                                    <p className="text-[11px] text-gray-400 mt-1">
+                                      {formatDateTime(n.created_at)}
+                                    </p>
                                   </div>
                                 </div>
                               </div>
@@ -762,8 +1068,18 @@ const avatarUrl = useMemo(() => {
                         </div>
                         {notifications.length > 0 && (
                           <div className="px-3 py-2 border-t bg-gray-50 flex justify-between rounded-b-xl">
-                            <button onClick={markAllRead} className="text-xs text-[#C62828] font-medium">Mark all read</button>
-                            <button onClick={() => setNotifOpen(false)} className="text-xs text-gray-600">Close</button>
+                            <button
+                              onClick={markAllRead}
+                              className="text-xs text-[#C62828] font-medium"
+                            >
+                              Mark all read
+                            </button>
+                            <button
+                              onClick={() => setNotifOpen(false)}
+                              className="text-xs text-gray-600"
+                            >
+                              Close
+                            </button>
                           </div>
                         )}
                       </div>
@@ -774,48 +1090,63 @@ const avatarUrl = useMemo(() => {
                 {/* ── Profile Dropdown ── */}
                 <div className="relative" ref={profileRef}>
                   <button
-                    onClick={() => { setProfileOpen(!profileOpen); setNotifOpen(false); setShowMaterialActionsMenu(false); }}
+                    onClick={() => {
+                      setProfileOpen(!profileOpen);
+                      setNotifOpen(false);
+                      setShowMaterialActionsMenu(false);
+                    }}
                     className="flex items-center gap-2 p-1 rounded-lg hover:bg-gray-100 transition"
                   >
                     {avatarUrl ? (
-  <img src={avatarUrl} alt="avatar" 
-    className="w-10 h-10 rounded-full object-cover border-2 border-[#C62828] shadow" />
-) : (
-  <div className="w-10 h-10 bg-[#C62828] rounded-full flex items-center justify-center shadow">
-    <span className="text-white font-semibold text-sm">{initials}</span>
-  </div>
-)}
+                      <img
+                        src={`${import.meta.env.VITE_API_URL + user.profile_picture}`}
+                        alt="avatar"
+                        className="w-9 h-9 rounded-full object-cover border-2 border-[#C62828]"
+                      />
+                    ) : (
+                      <div className="w-9 h-9 bg-[#C62828] rounded-full flex items-center justify-center shadow-sm">
+                        <span className="text-white font-semibold text-sm">
+                          {initials}
+                        </span>
+                      </div>
+                    )}
                     <div className="hidden md:flex flex-col items-start">
-                      <span className="text-sm font-semibold text-[#2D2D2D]">{displayName}</span>
-                      <span className="text-xs text-gray-500">{displayRole}</span>
+                      <span className="text-sm font-semibold text-[#2D2D2D]">
+                        {displayName}
+                      </span>
+                      <span className="text-xs text-gray-500">
+                        {displayRole}
+                      </span>
                     </div>
                   </button>
 
                   {profileOpen && (
-                    <div className={`fixed lg:absolute top-16 lg:top-full right-2 lg:right-0 lg:mt-2 w-64 bg-white rounded-xl shadow-2xl border border-gray-200 overflow-hidden z-50 transform transition-all duration-300 ease-out ${profileOpen ? "translate-x-0 opacity-100" : "translate-x-4 opacity-0 pointer-events-none"}`}>
+                    <div
+                      className={`fixed lg:absolute top-16 lg:top-full right-2 lg:right-0 lg:mt-2 w-64 bg-white rounded-xl shadow-2xl border border-gray-200 overflow-hidden z-50 transform transition-all duration-300 ease-out ${profileOpen ? "translate-x-0 opacity-100" : "translate-x-4 opacity-0 pointer-events-none"}`}
+                    >
                       {/* Header */}
                       <div className="p-4 bg-[#2D2D2D] border-b border-gray-700">
                         <div className="flex items-center gap-3">
-                         
-{avatarUrl ? (
-  <img 
-    src={`${avatarUrl}?t=${Date.now()}`}  // ✅ Add cache buster
-    alt="avatar" 
-    className="w-10 h-10 rounded-full object-cover border-2 border-[#C62828] shadow"
-    key={avatarUrl} // ✅ Force re-render when URL changes
-    onError={(e) => {
-      console.error('❌ Avatar load error:', avatarUrl);
-      (e.target as HTMLImageElement).src = DefaultLogo;
-    }}
-  />
-) : (
-  <div className="w-10 h-10 bg-[#C62828] rounded-full flex items-center justify-center shadow">
-    <span className="text-white font-semibold text-sm">{initials}</span>
-  </div>
-)}
+                          {avatarUrl ? (
+                            <img
+                              src={`${import.meta.env.VITE_API_URL + user.profile_picture}`}
+                              alt="avatar"
+                              className="w-10 h-10 rounded-full object-cover border-2 border-[#C62828] shadow"
+                            />
+                          ) : (
+                            <div className="w-10 h-10 bg-[#C62828] rounded-full flex items-center justify-center shadow">
+                              <span className="text-white font-semibold text-sm">
+                                {initials}
+                              </span>
+                            </div>
+                          )}
                           <div className="flex-1 min-w-0">
-                            <p className="text-sm font-semibold text-white truncate">{displayName}</p>
-                            <p className="text-xs text-gray-300 truncate">{displayRole}</p>
+                            <p className="text-sm font-semibold text-white truncate">
+                              {displayName}
+                            </p>
+                            <p className="text-xs text-gray-300 truncate">
+                              {displayRole}
+                            </p>
                           </div>
                         </div>
                       </div>
@@ -823,13 +1154,19 @@ const avatarUrl = useMemo(() => {
                       {/* Actions */}
                       <div className="p-2">
                         <button
-                          onClick={() => { setProfileOpen(false); onTabChange("general-settings"); }}
+                          onClick={() => {
+                            setProfileOpen(false);
+                            onTabChange("general-settings");
+                          }}
                           className="w-full text-left px-3 py-2.5 rounded-lg hover:bg-gray-100 text-sm text-gray-700 flex items-center gap-3 transition"
                         >
                           <FaCog className="w-4 h-4 text-gray-500" />
                           Settings
                         </button>
-                        <button onClick={handleSignOut} className="w-full text-left px-3 py-2.5 rounded-lg hover:bg-red-50 hover:text-[#C62828] text-sm text-gray-700 flex items-center gap-3 transition">
+                        <button
+                          onClick={handleSignOut}
+                          className="w-full text-left px-3 py-2.5 rounded-lg hover:bg-red-50 hover:text-[#C62828] text-sm text-gray-700 flex items-center gap-3 transition"
+                        >
                           <FaSignOutAlt className="w-4 h-4" />
                           Sign out
                         </button>
@@ -837,7 +1174,12 @@ const avatarUrl = useMemo(() => {
 
                       {/* Footer */}
                       <div className="p-2 border-t bg-gray-50 text-right">
-                        <button onClick={() => setProfileOpen(false)} className="text-sm text-gray-600 px-3 py-1.5 rounded hover:bg-gray-100">Close</button>
+                        <button
+                          onClick={() => setProfileOpen(false)}
+                          className="text-sm text-gray-600 px-3 py-1.5 rounded hover:bg-gray-100"
+                        >
+                          Close
+                        </button>
                       </div>
                     </div>
                   )}
@@ -847,24 +1189,39 @@ const avatarUrl = useMemo(() => {
           </div>
 
           {/* Mobile Quick Actions Bar (store-management only) */}
-          {activeTab === "store-management" && (can("create_inventory") || can("full_access")) && (
-            <div className="lg:hidden bg-gray-50 border-t border-gray-200 px-4 py-2">
-              <div className="flex items-center justify-between gap-2">
-                <span className="text-sm font-medium text-gray-700">Quick Actions:</span>
-                <div className="flex items-center gap-1">
-                  <button onClick={() => handleMaterialButtonClick("in")} className={`px-3 py-1.5 rounded-lg text-xs font-medium flex items-center gap-1 transition ${currentActiveFormTab === "in" ? "bg-[#C62828] text-white shadow-sm" : "bg-white border border-gray-300 text-gray-700 hover:bg-gray-50"}`}>
-                    <PackagePlus className="w-3.5 h-3.5" /><span>In</span>
-                  </button>
-                  <button onClick={() => handleMaterialButtonClick("out")} className={`px-3 py-1.5 rounded-lg text-xs font-medium flex items-center gap-1 transition ${currentActiveFormTab === "out" ? "bg-[#C62828] text-white shadow-sm" : "bg-white border border-gray-300 text-gray-700 hover:bg-gray-50"}`}>
-                    <PackageMinus className="w-3.5 h-3.5" /><span>Out</span>
-                  </button>
-                  <button onClick={() => handleMaterialButtonClick("issue")} className={`px-3 py-1.5 rounded-lg text-xs font-medium flex items-center gap-1 transition ${currentActiveFormTab === "issue" ? "bg-[#C62828] text-white shadow-sm" : "bg-white border border-gray-300 text-gray-700 hover:bg-gray-50"}`}>
-                    <UserCheck className="w-3.5 h-3.5" /><span>Issue</span>
-                  </button>
+          {activeTab === "store-management" &&
+            (can("create_inventory") || can("full_access")) && (
+              <div className="lg:hidden bg-gray-50 border-t border-gray-200 px-4 py-2">
+                <div className="flex items-center justify-between gap-2">
+                  <span className="text-sm font-medium text-gray-700">
+                    Quick Actions:
+                  </span>
+                  <div className="flex items-center gap-1">
+                    <button
+                      onClick={() => handleMaterialButtonClick("in")}
+                      className={`px-3 py-1.5 rounded-lg text-xs font-medium flex items-center gap-1 transition ${currentActiveFormTab === "in" ? "bg-[#C62828] text-white shadow-sm" : "bg-white border border-gray-300 text-gray-700 hover:bg-gray-50"}`}
+                    >
+                      <PackagePlus className="w-3.5 h-3.5" />
+                      <span>In</span>
+                    </button>
+                    <button
+                      onClick={() => handleMaterialButtonClick("out")}
+                      className={`px-3 py-1.5 rounded-lg text-xs font-medium flex items-center gap-1 transition ${currentActiveFormTab === "out" ? "bg-[#C62828] text-white shadow-sm" : "bg-white border border-gray-300 text-gray-700 hover:bg-gray-50"}`}
+                    >
+                      <PackageMinus className="w-3.5 h-3.5" />
+                      <span>Out</span>
+                    </button>
+                    <button
+                      onClick={() => handleMaterialButtonClick("issue")}
+                      className={`px-3 py-1.5 rounded-lg text-xs font-medium flex items-center gap-1 transition ${currentActiveFormTab === "issue" ? "bg-[#C62828] text-white shadow-sm" : "bg-white border border-gray-300 text-gray-700 hover:bg-gray-50"}`}
+                    >
+                      <UserCheck className="w-3.5 h-3.5" />
+                      <span>Issue</span>
+                    </button>
+                  </div>
                 </div>
               </div>
-            </div>
-          )}
+            )}
         </header>
 
         {/* ── Page Content ── */}
@@ -872,7 +1229,9 @@ const avatarUrl = useMemo(() => {
       </div>
 
       {/* Request Material Modal */}
-      {showRequestMaterial && <RequestMaterial setShowRequestMaterial={setShowRequestMaterial} />}
+      {showRequestMaterial && (
+        <RequestMaterial setShowRequestMaterial={setShowRequestMaterial} />
+      )}
     </div>
   );
 }

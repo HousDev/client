@@ -55,7 +55,9 @@ function AppContent() {
   const { user, loading } = useAuth();
   const [activeTab, setActiveTab] = useState("dashboard");
   const [activeFormTab, setActiveFormTab] = useState("");
-  const [selectedEmployeeId, setSelectedEmployeeId] = useState<string | null>(null);
+  const [selectedEmployeeId, setSelectedEmployeeId] = useState<string | null>(
+    null,
+  );
 
   // Reset activeFormTab when switching tabs
   const handleTabChange = (tab: string) => {
@@ -125,7 +127,7 @@ function AppContent() {
             setActiveFormTab={setActiveFormTab}
           />
         );
-      case "materials":
+      case "tracking":
         return <MaterialsEnhanced />;
       case "material-requests":
         return <MaterialRequests />;
@@ -176,8 +178,8 @@ function AppContent() {
         return <HrSettings />;
       // Settings Submenu Pages
       case "settings":
-      // When settings is clicked from profile dropdown or sidebar, show General Settings
-      return <GeneralSettings />;
+        // When settings is clicked from profile dropdown or sidebar, show General Settings
+        return <GeneralSettings />;
       case "general-settings":
         return <GeneralSettings />;
       case "integration":

@@ -49,10 +49,24 @@ const ServiceOrdersApi = {
     unwrap(api.get("/service-orders")),
 
   /**
+   * GET all service orders
+   */
+  getTrackings: async (): Promise<ServiceOrder[]> =>
+    unwrap(api.get("/service-orders/service-order-tracking")),
+
+  /**
    * GET service order by ID
    */
   getById: async (id: number | string): Promise<ServiceOrder> =>
     unwrap(api.get(`/service-orders/${id}`)),
+
+  /**
+   * GET service order by ID
+   */
+  getServiceOrderServicesById: async (
+    id: number | string,
+  ): Promise<ServiceOrder> =>
+    unwrap(api.get(`/service-orders/service-order-services/${id}`)),
 
   /**
    * GET service orders by vendor
@@ -65,15 +79,12 @@ const ServiceOrdersApi = {
     id: number;
     so_number: string;
     last_number: number;
-    }> =>
-    unwrap(api.get(`/service-orders/next`)),
+  }> => unwrap(api.get(`/service-orders/next`)),
 
   /**
    * CREATE service order
    */
-  create: async (
-    payload: Partial<ServiceOrder>
-  ): Promise<ServiceOrder> =>
+  create: async (payload: Partial<any>): Promise<ServiceOrder> =>
     unwrap(api.post("/service-orders", payload)),
 
   /**
@@ -81,24 +92,33 @@ const ServiceOrdersApi = {
    */
   update: async (
     id: number | string,
-    payload: Partial<ServiceOrder>
-  ): Promise<ServiceOrder> =>
-    unwrap(api.put(`/service-orders/${id}`, payload)),
+    payload: Partial<any>,
+  ): Promise<ServiceOrder> => unwrap(api.put(`/service-orders/${id}`, payload)),
 
   /**
    * UPDATE service order status
    */
   updateStatus: async (
     id: number | string,
-    status: ServiceOrder["status"]
-  ): Promise<any> =>
-    unwrap(api.put(`/service-orders/status/${id}`, { status })),
+    payload: { status: string; note: string },
+  ): Promise<any> => unwrap(api.put(`/service-orders/status/${id}`, payload)),
 
   /**
    * DELETE service order
    */
   delete: async (id: number | string): Promise<any> =>
     unwrap(api.delete(`/service-orders/${id}`)),
+
+  /**
+   * DELETE service order services
+   */
+  deleteServiceOrderService: async (
+    soId: number | string,
+    serviceId: number | string,
+  ): Promise<any> =>
+    unwrap(
+      api.delete(`/service-orders/serviceOrderService/${soId}/${serviceId}`),
+    ),
 };
 
 export default ServiceOrdersApi;

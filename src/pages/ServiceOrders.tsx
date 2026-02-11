@@ -16,6 +16,7 @@ import {
   IndianRupee,
   FileDown,
   Loader2,
+  CircleX,
 } from "lucide-react";
 import { useAuth } from "../contexts/AuthContext";
 import vendorApi from "../lib/vendorApi";
@@ -34,6 +35,7 @@ import TermsConditionsApi from "../lib/termsConditionsApi";
 import poPaymentApi from "../lib/poPaymentApi";
 import CreateServiceOrderForm from "../components/ServiceOrder/CreateServiceOrder";
 import UpdateServiceOrderForm from "../components/ServiceOrder/UpdateServiceOrders";
+import ServiceOrdersApi from "../lib/serviceOrderApi";
 
 type Vendor = {
   id: string;
@@ -163,6 +165,14 @@ export default function ServiceOrders() {
   const [selectedPOForUdate, setSelectedPOForUpdate] = useState<any>();
   const [allPurchaseOrderItems, setAllPurchaseOrderItems] = useState<any>([]);
   const [pdfLoading, setPdfLoading] = useState(false);
+  const [showRejectionModule, setShowRejectionModule] =
+    useState<boolean>(false);
+
+  const [serviceOrderRejection, setServiceOrderRejection] = useState<{
+    id: number | string;
+    status: string;
+    note: string;
+  }>({ id: "", status: "", note: "" });
 
   const [items, setItems] = useState<any>([]);
   // Add these state variables near your other state declarations
@@ -173,9 +183,10 @@ export default function ServiceOrders() {
     poNumber: string;
     vendor: string;
     project: string;
+    building: string;
     amount: string;
     poStatus: string;
-    material: string;
+    service: string;
     payment: string;
     type: string;
     date: string;
@@ -183,13 +194,15 @@ export default function ServiceOrders() {
     poNumber: "",
     vendor: "",
     project: "",
+    building: "",
     amount: "",
     poStatus: "",
-    material: "",
+    service: "",
     payment: "",
     type: "",
     date: "",
   });
+
   useEffect(() => {
     if (activeTab === "tracking") {
       // Tracking tab filters
@@ -222,10 +235,10 @@ export default function ServiceOrders() {
               .includes(searchFilters.poStatus.toLowerCase())
           : true;
 
-        const matchesMaterial = searchFilters.material
+        const matchesMaterial = searchFilters.service
           ? po.material_status
               ?.toLowerCase()
-              .includes(searchFilters.material.toLowerCase())
+              .includes(searchFilters.service.toLowerCase())
           : true;
 
         const matchesPayment = searchFilters.payment
@@ -321,9 +334,10 @@ export default function ServiceOrders() {
       poNumber: "",
       vendor: "",
       project: "",
+      building: "",
       amount: "",
       poStatus: "",
-      material: "",
+      service: "",
       payment: "",
       type: "",
       date: "",
@@ -473,6 +487,7 @@ export default function ServiceOrders() {
       console.log(error);
     }
   };
+
   const loadPO_Type = async () => {
     try {
       const response = await poTypeApi.getPOTypes();
@@ -481,9 +496,11 @@ export default function ServiceOrders() {
       console.log(error);
     }
   };
-  const loadPOS = async () => {
+
+  const loadSOS = async () => {
     try {
-      const response = await poApi.getPOs();
+      const response = await ServiceOrdersApi.getAll();
+      // console.log("Service Orders : ", response);
       return response;
     } catch (error) {
       console.log(error);
@@ -514,7 +531,7 @@ export default function ServiceOrders() {
     loadPO_Type().then((d) => {
       st = d;
     });
-    loadPOS().then((d) => {
+    loadSOS().then((d) => {
       spo = d;
     });
     loadTrackings().then((d) => {
@@ -808,19 +825,78 @@ export default function ServiceOrders() {
     });
 
     if (!result.isConfirmed) return;
-    await poApi.deletePurchaseOrder(id);
-    const filterdData = filteredPOs.filter((item: any) => item.id != id);
-    const filterdTrackingData = filteredTracking.filter(
-      (item: any) => item.po_id != id,
-    );
-    setFilteredPOs(filterdData);
-    setFilteredTracking(filterdTrackingData);
-    // const updated = pos.filter((p) => p.id !== id);
-    // setPOs(updated);
-    toast.success("PO deleted successfully!");
+    try {
+      const deleteRes = await ServiceOrdersApi.delete(id);
+
+      console.log("delete res", deleteRes);
+      if (deleteRes.success) {
+        loadAllData();
+        toast.success(deleteRes.message);
+      } else {
+        toast.error(deleteRes.message);
+      }
+    } catch (error: any) {
+      toast.error(error.response.data.message);
+    }
   };
 
-  const updatePurchaseOrderStatus = async (id: string, status: string) => {
+  const rejectServiceOrderStatus = async (e: React.FormEvent) => {
+    e.preventDefault();
+    try {
+      if (serviceOrderRejection.note.length === 0) {
+        toast.error("Please Enter Rejection Reason.");
+        return;
+      }
+
+      const result: any = await MySwal.fire({
+        title:
+          serviceOrderRejection.status.charAt(0).toUpperCase() +
+          serviceOrderRejection.status.slice(1),
+        text: `Are you sure you want to ${
+          serviceOrderRejection.status === "authorize"
+            ? serviceOrderRejection.status
+            : serviceOrderRejection.status === "approved"
+              ? "approve"
+              : "reject"
+        } this service order`,
+        icon: "warning",
+        showCancelButton: true,
+      });
+
+      if (!result.isConfirmed) return;
+
+      const payload = {
+        status: serviceOrderRejection.status,
+        note: serviceOrderRejection.note,
+      };
+
+      const approveRes: any = await ServiceOrdersApi.updateStatus(
+        serviceOrderRejection.id,
+        payload,
+      );
+
+      if (approveRes.success) {
+        toast.success(
+          "service order status updated to " + status.toLocaleUpperCase() + ".",
+        );
+        setShowRejectionModule(false);
+        setServiceOrderRejection({ id: "", status: "", note: "" });
+        setShowApprovalButtons(null);
+        loadAllData();
+      } else {
+        toast.error(
+          "Failed to update service order status." + status.toLocaleUpperCase(),
+        );
+      }
+    } catch (error: any) {
+      toast.error(error.response.data.message);
+    }
+  };
+
+  const updateServiceOrderStatus = async (
+    id: number | string,
+    status: string,
+  ) => {
     try {
       const result: any = await MySwal.fire({
         title: status.charAt(0).toUpperCase() + status.slice(1),
@@ -837,11 +913,19 @@ export default function ServiceOrders() {
 
       if (!result.isConfirmed) return;
 
-      const approveRes: any = await poApi.updatePurchaseOrderStatus(id, status);
-      if (approveRes.status) {
+      const payload = {
+        status: status,
+        note: "",
+      };
+
+      const approveRes: any = await ServiceOrdersApi.updateStatus(id, payload);
+
+      if (approveRes.success) {
         toast.success(
           "service order status updated to " + status.toLocaleUpperCase() + ".",
         );
+        setShowRejectionModule(false);
+        setServiceOrderRejection({ id: "", status: "", note: "" });
         setShowApprovalButtons(null);
         loadAllData();
       } else {
@@ -849,8 +933,8 @@ export default function ServiceOrders() {
           "Failed to update service order status." + status.toLocaleUpperCase(),
         );
       }
-    } catch (error) {
-      console.log(error);
+    } catch (error: any) {
+      toast.error(error.response.data.message);
     }
   };
 
@@ -936,6 +1020,7 @@ export default function ServiceOrders() {
   }, []);
 
   const getStatusColor = (status?: string) => {
+    console.log(status);
     const colors: Record<string, string> = {
       draft: "bg-gray-100 text-gray-700",
       pending: "bg-yellow-100 text-yellow-700",
@@ -950,8 +1035,8 @@ export default function ServiceOrders() {
 
   const getPaymentStatusColor = (status?: string) => {
     const colors: Record<string, string> = {
-      pending: "bg-red-100 text-red-700",
-      partial: "bg-yellow-100 text-yellow-700",
+      pending: "bg-yellow-100 text-yellow-700",
+      partial: "bg-orange-100 text-orange-700",
       paid: "bg-green-100 text-green-700",
       completed: "bg-green-100 text-green-700",
     };
@@ -970,7 +1055,7 @@ export default function ServiceOrders() {
       setPdfLoading(true);
       setShowViewModal(type === "view");
       const res = await axios.get(
-        import.meta.env.VITE_API_URL + "/pdf/po/" + id,
+        import.meta.env.VITE_API_URL + "/pdf/so/" + id,
         {
           responseType: "blob", // IMPORTANT: treat response as binary
         },
@@ -982,7 +1067,7 @@ export default function ServiceOrders() {
       } else {
         const a = document.createElement("a");
         a.href = fileURL;
-        a.download = `PO_${id}.pdf`; // filename
+        a.download = `SO_${id}.pdf`; // filename
         document.body.appendChild(a);
 
         // 4️⃣ Trigger click to download
@@ -1097,6 +1182,17 @@ export default function ServiceOrders() {
     );
   }
 
+  const loadServiceOrderServices = async (id: number | string) => {
+    try {
+      const servicesRes =
+        await ServiceOrdersApi.getServiceOrderServicesById(id);
+      console.log("servicesRes  : ", servicesRes);
+      return servicesRes;
+    } catch (error: any) {
+      toast.error("Error : ", error.response.data.message);
+    }
+  };
+
   // --- Render main UI ---
   return (
     <div className="p-1 -mt-2">
@@ -1196,6 +1292,11 @@ export default function ServiceOrders() {
                     </th>
                     <th className="px-3 md:px-4 py-2 text-left">
                       <div className="text-[10px] md:text-xs font-semibold text-gray-700 uppercase tracking-wider">
+                        Building
+                      </div>
+                    </th>
+                    <th className="px-3 md:px-4 py-2 text-left">
+                      <div className="text-[10px] md:text-xs font-semibold text-gray-700 uppercase tracking-wider">
                         Amount
                       </div>
                     </th>
@@ -1206,7 +1307,7 @@ export default function ServiceOrders() {
                     </th>
                     <th className="px-3 md:px-4 py-2 text-left">
                       <div className="text-[10px] md:text-xs font-semibold text-gray-700 uppercase tracking-wider">
-                        Material
+                        Service
                       </div>
                     </th>
                     <th className="px-3 md:px-4 py-2 text-left">
@@ -1261,6 +1362,17 @@ export default function ServiceOrders() {
                         className="w-full px-2 py-1 text-[9px] md:text-xs border border-gray-300 rounded focus:ring-1 focus:ring-blue-500 focus:border-transparent"
                       />
                     </td>
+                    <td className="px-3 md:px-4 py-1">
+                      <input
+                        type="text"
+                        placeholder="Building..."
+                        value={searchFilters.project}
+                        onChange={(e) =>
+                          handleSearchFilterChange("building", e.target.value)
+                        }
+                        className="w-full px-2 py-1 text-[9px] md:text-xs border border-gray-300 rounded focus:ring-1 focus:ring-blue-500 focus:border-transparent"
+                      />
+                    </td>
 
                     {/* Amount Column Search */}
                     <td className="px-3 md:px-4 py-1">
@@ -1292,10 +1404,10 @@ export default function ServiceOrders() {
                     <td className="px-3 md:px-4 py-1">
                       <input
                         type="text"
-                        placeholder="Material..."
-                        value={searchFilters.material}
+                        placeholder="Service..."
+                        value={searchFilters.service}
                         onChange={(e) =>
-                          handleSearchFilterChange("material", e.target.value)
+                          handleSearchFilterChange("service", e.target.value)
                         }
                         className="w-full px-2 py-1 text-[9px] md:text-xs border border-gray-300 rounded focus:ring-1 focus:ring-blue-500 focus:border-transparent"
                       />
@@ -1332,19 +1444,22 @@ export default function ServiceOrders() {
                     <tr key={po.id} className="hover:bg-gray-50 transition">
                       <td className="px-3 md:px-4 py-3">
                         <span className="font-medium text-blue-600 text-xs md:text-sm">
-                          {po.po_number}
+                          {po.so_number}
                         </span>
                         <p className="text-[10px] md:text-xs text-gray-500 mt-0.5">
                           {po.po_date
-                            ? new Date(po.po_date).toLocaleDateString()
+                            ? new Date(po.so_date).toLocaleDateString()
                             : ""}
                         </p>
                       </td>
                       <td className="px-3 md:px-4 py-3 text-gray-700 text-xs md:text-sm truncate max-w-[120px]">
-                        {po.vendors?.name || "N/A"}
+                        {po.vendor || "N/A"}
                       </td>
                       <td className="px-3 md:px-4 py-3 text-gray-700 text-xs md:text-sm truncate max-w-[120px]">
-                        {po.projects?.name || "N/A"}
+                        {po.project || "N/A"}
+                      </td>
+                      <td className="px-3 md:px-4 py-3 text-gray-700 text-xs md:text-sm truncate max-w-[120px]">
+                        {po.building || "N/A"}
                       </td>
                       <td className="px-3 md:px-4 py-3">
                         <span className="font-semibold text-gray-800 text-xs md:text-sm">
@@ -1367,7 +1482,7 @@ export default function ServiceOrders() {
                               ? "bg-green-100 text-green-700"
                               : po.material_status === "partial"
                                 ? "bg-yellow-100 text-yellow-700"
-                                : "bg-red-100 text-red-700"
+                                : "bg-orange-100 text-orange-700"
                           }`}
                         >
                           {po.material_status?.toUpperCase() || "PENDING"}
@@ -1432,12 +1547,17 @@ export default function ServiceOrders() {
                   </th>
                   <th className="px-3 md:px-4 py-2 text-left">
                     <div className="text-[10px] md:text-xs font-semibold text-gray-700 uppercase tracking-wider">
+                      Building
+                    </div>
+                  </th>
+                  <th className="px-3 md:px-4 py-2 text-left">
+                    <div className="text-[10px] md:text-xs font-semibold text-gray-700 uppercase tracking-wider">
                       Type
                     </div>
                   </th>
                   <th className="px-3 md:px-4 py-2 text-left">
                     <div className="text-[10px] md:text-xs font-semibold text-gray-700 uppercase tracking-wider">
-                      Date
+                      SO Date
                     </div>
                   </th>
                   <th className="px-3 md:px-4 py-2 text-left">
@@ -1493,6 +1613,19 @@ export default function ServiceOrders() {
                       value={searchFilters.project}
                       onChange={(e) =>
                         handleSearchFilterChange("project", e.target.value)
+                      }
+                      className="w-full px-2 py-1 text-[9px] md:text-xs border border-gray-300 rounded focus:ring-1 focus:ring-blue-500 focus:border-transparent"
+                    />
+                  </td>
+
+                  {/* Project Column Search */}
+                  <td className="px-3 md:px-4 py-1">
+                    <input
+                      type="text"
+                      placeholder="Building..."
+                      value={searchFilters.project}
+                      onChange={(e) =>
+                        handleSearchFilterChange("building", e.target.value)
                       }
                       className="w-full px-2 py-1 text-[9px] md:text-xs border border-gray-300 rounded focus:ring-1 focus:ring-blue-500 focus:border-transparent"
                     />
@@ -1568,21 +1701,24 @@ export default function ServiceOrders() {
                   <tr key={po.id} className="hover:bg-gray-50 transition">
                     <td className="px-3 md:px-4 py-3">
                       <span className="font-medium text-blue-600 text-xs md:text-sm">
-                        {po.po_number}
+                        {po.so_number}
                       </span>
                     </td>
                     <td className="px-3 md:px-4 py-3 text-gray-700 text-xs md:text-sm truncate max-w-[120px]">
-                      {po.vendors?.name || "N/A"}
+                      {po.vendor || "N/A"}
                     </td>
                     <td className="px-3 md:px-4 py-3 text-gray-700 text-xs md:text-sm truncate max-w-[120px]">
-                      {po.projects?.name || "N/A"}
+                      {po.project || "N/A"}
+                    </td>
+                    <td className="px-3 md:px-4 py-3 text-gray-700 text-xs md:text-sm truncate max-w-[120px]">
+                      {po.building || "N/A"}
                     </td>
                     <td className="px-3 md:px-4 py-3 text-gray-700 text-xs md:text-sm truncate max-w-[80px]">
-                      {po.po_types?.name || "N/A"}
+                      {po.service_type || "Service"}
                     </td>
                     <td className="px-3 md:px-4 py-3 text-gray-700 text-xs md:text-sm whitespace-nowrap">
-                      {po.po_date
-                        ? new Date(po.po_date).toLocaleDateString()
+                      {po.so_date
+                        ? new Date(po.so_date).toLocaleDateString()
                         : ""}
                     </td>
                     <td className="px-3 md:px-4 py-3">
@@ -1632,33 +1768,9 @@ export default function ServiceOrders() {
                                 toast.success("wait data is loading");
                                 return;
                               }
-                              const itemsList = allPurchaseOrderItems.filter(
-                                (d: any) => d.po_id === po.id,
+                              const services = await loadServiceOrderServices(
+                                po.id,
                               );
-                              const result = itemsList.map((item: any) => {
-                                let materialTrackingId = null;
-
-                                for (
-                                  let i = 0;
-                                  i < filteredTracking.length;
-                                  i++
-                                ) {
-                                  if (
-                                    String(filteredTracking[i].item_id) ===
-                                      String(item.item_id) &&
-                                    String(filteredTracking[i].po_id) ===
-                                      String(item.po_id)
-                                  ) {
-                                    materialTrackingId = filteredTracking[i].id;
-                                    break;
-                                  }
-                                }
-
-                                return {
-                                  ...item,
-                                  materialTrackingId: materialTrackingId,
-                                };
-                              });
 
                               const vendorTerms: any =
                                 (await TermsConditionsApi.getByIdVendorTC(
@@ -1719,13 +1831,14 @@ export default function ServiceOrders() {
                                 grand_total: po.grand_total,
                                 igst_amount: po.igst_amount,
                                 is_interstate: Boolean(po.is_interstate),
-                                items: result,
+                                items: services,
                                 notes: po.notes ?? "",
                                 payment_terms_id: po.payment_terms_id ?? "",
-                                po_date: po.po_date.slice(0, 10) ?? "",
-                                po_number: po.po_number ?? "",
-                                po_type_id: Number(po.po_type_id),
+                                po_date: po.so_date.slice(0, 10) ?? "",
+                                po_number: po.so_number ?? "",
+                                po_type_id: Number(po.service_type_id),
                                 project_id: Number(po.project_id),
+                                building_id: Number(po.building_id),
                                 selected_terms_ids: po.selected_terms_ids,
                                 sgst_amount: po.sgst_amount ?? 0,
                                 subtotal: po.subtotal ?? 0,
@@ -1775,9 +1888,9 @@ export default function ServiceOrders() {
                               {" "}
                               {can("approve_pos") && po.status === "draft" && (
                                 <button
-                                  onClick={() =>
-                                    updatePurchaseOrderStatus(po.id, "approved")
-                                  }
+                                  onClick={() => {
+                                    updateServiceOrderStatus(po.id, "approved");
+                                  }}
                                   className="p-2 px-6 text-white bg-green-600 hover:bg-green-500 rounded-lg transition flex items-center text-xs"
                                   title="Approve"
                                 >
@@ -1789,7 +1902,7 @@ export default function ServiceOrders() {
                                 po.status === "approved" && (
                                   <button
                                     onClick={() => {
-                                      updatePurchaseOrderStatus(
+                                      updateServiceOrderStatus(
                                         po.id,
                                         "authorize",
                                       );
@@ -1804,12 +1917,15 @@ export default function ServiceOrders() {
                                 (po.status === "draft" ||
                                   po.status === "approved") && (
                                   <button
-                                    onClick={() =>
-                                      updatePurchaseOrderStatus(
-                                        po.id,
-                                        "rejected",
-                                      )
-                                    }
+                                    onClick={() => {
+                                      setServiceOrderRejection({
+                                        ...serviceOrderRejection,
+                                        status: "rejected",
+                                        id: po.id,
+                                      });
+                                      setShowRejectionModule(true);
+                                      setShowApprovalButtons(null);
+                                    }}
                                     className="p-2 px-6 text-white bg-red-600 hover:bg-red-500 rounded-lg transition flex items-center text-xs"
                                     title="Reject"
                                   >
@@ -2047,6 +2163,85 @@ export default function ServiceOrders() {
                   type="button"
                   onClick={() => setShowUpdateMaterialQuantity(false)}
                   className="px-6 py-3 border border-gray-300 rounded-lg hover:bg-gray-50 transition"
+                >
+                  Cancel
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Rejection Module */}
+      {showRejectionModule && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-md flex items-center justify-center z-50 p-4">
+          <div className="bg-gradient-to-br from-gray-50 to-white rounded-2xl shadow-2xl shadow-gray-900/20 w-full max-w-2xl border border-gray-200 overflow-hidden">
+            {/* Modal Header */}
+            <div className="bg-gradient-to-r from-[#40423f] via-[#4a4c49] to-[#5a5d5a] px-5 py-3 flex justify-between items-center border-b border-gray-700/30">
+              <div className="flex items-center gap-2.5">
+                <div className="p-1.5 bg-white/20 rounded-xl backdrop-blur-sm">
+                  <IndianRupee className="w-4 h-4 text-white" />
+                </div>
+                <div>
+                  <h2 className="text-base font-bold text-white">
+                    Record Payment
+                  </h2>
+                  <p className="text-xs text-white/90 font-medium mt-0.5">
+                    PO: {selectedPO?.po_number}
+                  </p>
+                </div>
+              </div>
+              <button
+                onClick={() => {
+                  setShowRejectionModule(false);
+                  setServiceOrderRejection({ id: "", status: "", note: "" });
+                  setShowApprovalButtons(null);
+                }}
+                className="text-white hover:bg-white/20 rounded-xl p-1.5 transition-all duration-200"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            <form
+              onSubmit={rejectServiceOrderStatus}
+              className="p-4 max-h-[calc(90vh-80px)] overflow-y-auto"
+            >
+              <div className="space-y-1">
+                <label className="block text-xs font-semibold text-gray-800">
+                  Service Order Rejection Reason
+                </label>
+                <textarea
+                  value={serviceOrderRejection.note || ""}
+                  onChange={(e) =>
+                    setServiceOrderRejection({
+                      ...serviceOrderRejection,
+                      note: e.target.value || "",
+                    })
+                  }
+                  className="w-full px-3 py-2 text-sm border-2 border-gray-200 rounded-xl focus:border-[#C62828] focus:ring-2 focus:ring-[#C62828]/20 outline-none"
+                  rows={2}
+                  placeholder="Add any remarks..."
+                />
+              </div>
+
+              {/* Modal Footer */}
+              <div className="border-t p-3 flex gap-2">
+                <button
+                  type="submit"
+                  disabled={submitting}
+                  className="flex-1 bg-gradient-to-r from-[#C62828] to-red-600 text-white py-2 px-4 rounded-xl hover:from-red-600 hover:to-red-700 transition-all duration-200 font-semibold flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed text-sm"
+                >
+                  <CircleX className="w-4 h-4" /> Reject Service Order
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowRejectionModule(false);
+                    setServiceOrderRejection({ id: "", status: "", note: "" });
+                    setShowApprovalButtons(null);
+                  }}
+                  className="px-4 py-2 text-sm border border-gray-200 rounded-xl hover:bg-gray-50 transition-all duration-200 font-medium text-gray-700"
                 >
                   Cancel
                 </button>
