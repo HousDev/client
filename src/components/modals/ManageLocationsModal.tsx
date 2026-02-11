@@ -3,6 +3,7 @@ import { X, Plus, Trash2, MapPin } from 'lucide-react';
 import Modal from '../ui/Modal';
 import Button from '../ui/Button';
 import Input from '../ui/Input';
+import { toast } from 'sonner';
 
 interface AttendanceLocation {
   id: string;
@@ -124,7 +125,7 @@ export default function ManageLocationsModal({ branchId, branchName, onClose }: 
         is_active: true,
       });
 
-      alert('Attendance location added successfully!');
+     toast.error('Attendance location added successfully!');
       setFormData({
         name: '',
         location_type: 'punch_point',
@@ -136,7 +137,7 @@ export default function ManageLocationsModal({ branchId, branchName, onClose }: 
       loadLocations();
     } catch (error: any) {
       console.error('Error adding location:', error);
-      alert(error.message || 'Failed to add location');
+     toast.error(error.message || 'Failed to add location');
     } finally {
       setLoading(false);
     }
@@ -147,11 +148,11 @@ export default function ManageLocationsModal({ branchId, branchName, onClose }: 
 
     try {
       await api.deleteAttendanceLocation(id);
-      alert('Attendance location deleted successfully!');
+     toast.error('Attendance location deleted successfully!');
       loadLocations();
     } catch (error: any) {
       console.error('Error deleting location:', error);
-      alert(error.message || 'Failed to delete location');
+     toast.error(error.message || 'Failed to delete location');
     }
   };
 

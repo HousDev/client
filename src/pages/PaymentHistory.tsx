@@ -672,11 +672,13 @@
 
 
 import { useState, useEffect } from 'react';
-import { Search, Filter, Download, DollarSign, Calendar, CheckCircle, Clock, X, Eye, FileText, MoreVertical, Trash2, Users, ChevronDown, AlertCircle } from 'lucide-react';
+import { Search, Filter, Download, DollarSign, Calendar, CheckCircle, Clock, X, Eye, FileText, MoreVertical, Trash2, Users, ChevronDown, AlertCircle, IndianRupee } from 'lucide-react';
 import Card from '../components/ui/Card';
 import Button from '../components/ui/Button';
 import Input from '../components/ui/Input';
 import Badge from '../components/ui/Badge';
+import { toast } from 'sonner';
+import Swal from 'sweetalert2';
 
 interface Payment {
   id: string;
@@ -864,7 +866,7 @@ export default function PaymentHistory() {
   };
 
   const handleExport = () => {
-    alert(`Exporting payment report as ${exportFormat.toUpperCase()}...`);
+toast.success(`Exporting payment report as ${exportFormat.toUpperCase()}...`);
     setShowExportModal(false);
   };
 
@@ -874,7 +876,7 @@ export default function PaymentHistory() {
   };
 
   const handleDownloadReceipt = (payment: Payment) => {
-    alert(`Downloading payment receipt for ${payment.employee_name}...`);
+toast.success(`Downloading payment receipt for ${payment.employee_name}...`);
   };
 
   // Checkbox handlers
@@ -990,20 +992,32 @@ export default function PaymentHistory() {
             <div className="flex items-center gap-2 bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 rounded-md px-3 py-2">
               <div className="flex items-center gap-2">
                 <div className="bg-blue-100 p-1 rounded">
-                  <DollarSign className="w-3 h-3 text-blue-600" />
+                  <IndianRupee className="w-3 h-3 text-blue-600" />
                 </div>
                 <p className="font-medium text-xs text-gray-800">
                   {selectedItems.size} selected
                 </p>
               </div>
               <button
-                onClick={() => {
-                  if (window.confirm(`Are you sure you want to delete ${selectedItems.size} payment(s)?`)) {
-                    setPayments(payments.filter(p => !selectedItems.has(p.id)));
-                    setSelectedItems(new Set());
-                    setSelectAll(false);
-                  }
-                }}
+               onClick={async () => {
+  const result = await Swal.fire({
+    title: 'Are you sure?',
+    text: `Are you sure you want to delete ${selectedItems.size} payment(s)?`,
+    icon: 'warning',
+    showCancelButton: true,
+    confirmButtonColor: '#d33',
+    cancelButtonColor: '#3085d6',
+    confirmButtonText: 'Yes, delete!',
+    cancelButtonText: 'Cancel'
+  });
+
+  if (result.isConfirmed) {
+    setPayments(payments.filter(p => !selectedItems.has(p.id)));
+    setSelectedItems(new Set());
+    setSelectAll(false);
+    toast.success(`${selectedItems.size} payment(s) deleted successfully!`);
+  }
+}}
                 className="bg-red-600 hover:bg-red-700 text-white px-2 py-1 rounded text-xs font-medium transition"
               >
                 <Trash2 className="w-3 h-3 inline mr-1" />
@@ -1051,7 +1065,7 @@ export default function PaymentHistory() {
               </p>
             </div>
             <div className="w-8 h-8 sm:w-9 sm:h-9 md:w-9 md:h-9 bg-blue-100 rounded-md flex items-center justify-center">
-              <DollarSign className="h-4 w-4 text-blue-600" />
+              <IndianRupee className="h-4 w-4 text-blue-600" />
             </div>
           </div>
         </Card>
@@ -1099,7 +1113,7 @@ export default function PaymentHistory() {
               </p>
             </div>
             <div className="w-8 h-8 sm:w-9 sm:h-9 md:w-9 md:h-9 bg-slate-100 rounded-md flex items-center justify-center">
-              <DollarSign className="h-4 w-4 text-slate-600" />
+              <IndianRupee className="h-4 w-4 text-slate-600" />
             </div>
           </div>
         </Card>
@@ -1298,7 +1312,7 @@ export default function PaymentHistory() {
               ) : filteredPayments.length === 0 ? (
                 <tr>
                   <td colSpan={10} className="px-3 md:px-4 py-8 text-center">
-                    <DollarSign className="w-12 h-12 md:w-16 md:h-16 text-gray-300 mx-auto mb-3" />
+                    <IndianRupee className="w-12 h-12 md:w-16 md:h-16 text-gray-300 mx-auto mb-3" />
                     <p className="text-gray-600 text-sm md:text-lg font-medium">No Payment Records Found</p>
                     <p className="text-gray-500 text-xs md:text-sm mt-2">
                       {searchEmployee || searchTxnId || statusFilter !== 'all' || methodFilter !== 'all' || monthFilter !== '' || yearFilter !== '' ? "Try a different search term" : "No payments available"}
@@ -1420,12 +1434,24 @@ export default function PaymentHistory() {
 
                                 <li>
                                   <button
-                                    onClick={() => {
-                                      if (window.confirm('Are you sure you want to delete this payment record?')) {
-                                        setPayments(payments.filter(p => p.id !== payment.id));
-                                        setOpenMenuId(null);
-                                      }
-                                    }}
+                                    onClick={async () => {
+  const result = await Swal.fire({
+    title: 'Are you sure?',
+    text: 'Are you sure you want to delete this payment record?',
+    icon: 'warning',
+    showCancelButton: true,
+    confirmButtonColor: '#d33',
+    cancelButtonColor: '#3085d6',
+    confirmButtonText: 'Yes, delete!',
+    cancelButtonText: 'Cancel'
+  });
+
+  if (result.isConfirmed) {
+    setPayments(payments.filter(p => p.id !== payment.id));
+    setOpenMenuId(null);
+    toast.success('Payment record deleted successfully!');
+  }
+}}
                                     className="w-full flex items-center gap-2 px-4 py-2 hover:bg-red-50 text-red-600 text-left"
                                   >
                                     <Trash2 className="w-4 h-4" />

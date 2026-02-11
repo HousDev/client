@@ -1,11 +1,10 @@
-
-
-
 import { useState, useEffect } from 'react';
-import { Plus, Search, Download, Settings, Users, DollarSign, CheckCircle, Clock, Edit, Eye, X, Trash2, MoreVertical, Save, ChevronDown, AlertCircle, ChevronRight, Upload, FileText, Calendar } from 'lucide-react';
+import { Plus, Settings, Users,  CheckCircle, Clock, Edit, Eye, X, Trash2, MoreVertical, Save, ChevronDown, AlertCircle, ChevronRight, FileText, IndianRupee, Calendar } from 'lucide-react';
 import Card from '../components/ui/Card';
 import Button from '../components/ui/Button';
 import Badge from '../components/ui/Badge';
+import { toast } from 'sonner';
+import HrmsEmployeesApi, { HrmsEmployee } from '../lib/employeeApi';
 
 interface Employee {
   id: string;
@@ -53,12 +52,6 @@ interface TemplateComponent {
   percentage: number;
   is_taxable: boolean;
 }
-
-const mockEmployees: Employee[] = [
-  { id: 'EMP001', name: 'Rajesh Kumar', code: 'EMP001', job_title: 'Senior Developer', department: 'IT', branch: 'Mumbai', status: 'active' },
-  { id: 'EMP002', name: 'Priya Sharma', code: 'EMP002', job_title: 'Sales Manager', department: 'Sales', branch: 'Delhi', status: 'active' },
-  { id: 'EMP003', name: 'Amit Patel', code: 'EMP003', job_title: 'Project Manager', department: 'IT', branch: 'Bangalore', status: 'active' },
-];
 
 const initialTemplates: CTCTemplate[] = [
   {
@@ -115,6 +108,10 @@ export default function CTCConfiguration() {
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
   
+  // Employee state
+  const [employees, setEmployees] = useState<Employee[]>([]);
+  const [employeesLoading, setEmployeesLoading] = useState(false);
+  
   // Selection states
   const [selectedItems, setSelectedItems] = useState<Set<string>>(new Set());
   const [selectAll, setSelectAll] = useState(false);
@@ -153,6 +150,7 @@ export default function CTCConfiguration() {
 
   useEffect(() => {
     loadData();
+    fetchEmployees();
   }, []);
 
   // Close menu when clicking outside
@@ -176,17 +174,46 @@ export default function CTCConfiguration() {
       await new Promise(resolve => setTimeout(resolve, 500));
     } catch (error) {
       console.error('Error loading data:', error);
+      toast.error('Failed to load data');
     } finally {
       setLoading(false);
     }
   };
 
+  // Fetch employees from API
+  const fetchEmployees = async () => {
+    setEmployeesLoading(true);
+    try {
+      const response = await HrmsEmployeesApi.getEmployees();
+      console.log('Fetched employees:', response);
+      
+      // Transform HrmsEmployee to Employee format
+      const transformedEmployees: Employee[] = response.map((emp: HrmsEmployee) => ({
+        id: emp.id.toString(),
+        name: `${emp.first_name} ${emp.last_name}`,
+        code: emp.employee_code,
+        job_title: emp.designation || emp.job_title || 'N/A',
+        department: emp.department_name || 'N/A',
+        branch: emp.branch || emp.office_location || 'N/A',
+        status: emp.employee_status || 'active'
+      }));
+      
+      setEmployees(transformedEmployees);
+    } catch (error) {
+      console.error('Error fetching employees:', error);
+      toast.error('Failed to fetch employees');
+      setEmployees([]);
+    } finally {
+      setEmployeesLoading(false);
+    }
+  };
+
   const handleAssignCTC = () => {
-    const employee = mockEmployees.find(e => e.id === configForm.employee_id);
+    const employee = employees.find(e => e.id === configForm.employee_id);
     const template = templates.find(t => t.id === configForm.template_id);
 
     if (!employee || !template || !configForm.annual_ctc || parseFloat(configForm.annual_ctc) <= 0) {
-      alert('Please fill all required fields');
+      toast.error('Please fill all required fields');
       return;
     }
 
@@ -222,17 +249,18 @@ export default function CTCConfiguration() {
       annual_ctc: '',
       effective_from: new Date().toISOString().split('T')[0]
     });
+    toast.success('CTC assigned successfully!');
   };
 
   const handleCreateTemplate = () => {
     if (!templateForm.name || !templateForm.description || templateForm.components.length === 0) {
-      alert('Please fill all required fields and add at least one component');
+      toast.error('Please fill all required fields and add at least one component');
       return;
     }
 
     const totalPercentage = templateForm.components.reduce((sum, comp) => sum + comp.percentage, 0);
     if (totalPercentage !== 100) {
-      alert(`Total percentage must be 100%. Current: ${totalPercentage}%`);
+      toast.error(`Total percentage must be 100%. Current: ${totalPercentage}%`);
       return;
     }
 
@@ -253,11 +281,12 @@ export default function CTCConfiguration() {
       template_type: 'custom',
       components: []
     });
+    toast.success('Template created successfully!');
   };
 
   const handleAddComponent = () => {
     if (!newComponent.name || !newComponent.percentage || parseFloat(newComponent.percentage) <= 0) {
-      alert('Please fill all component fields');
+      toast.error('Please fill all component fields');
       return;
     }
 
@@ -279,6 +308,7 @@ export default function CTCConfiguration() {
       percentage: '',
       is_taxable: true
     });
+    toast.success('Component added');
   };
 
   const handleRemoveComponent = (index: number) => {
@@ -286,6 +316,7 @@ export default function CTCConfiguration() {
       ...templateForm,
       components: templateForm.components.filter((_, i) => i !== index)
     });
+    toast.success('Component removed');
   };
 
   const handleViewTemplate = (template: CTCTemplate) => {
@@ -308,13 +339,13 @@ export default function CTCConfiguration() {
     if (!selectedTemplate) return;
 
     if (!templateForm.name || !templateForm.description || templateForm.components.length === 0) {
-      alert('Please fill all required fields');
+      toast.error('Please fill all required fields');
       return;
     }
-
+    
     const totalPercentage = templateForm.components.reduce((sum, comp) => sum + comp.percentage, 0);
     if (totalPercentage !== 100) {
-      alert(`Total percentage must be 100%. Current: ${totalPercentage}%`);
+      toast.error(`Total percentage must be 100%. Current: ${totalPercentage}%`);
       return;
     }
 
@@ -332,6 +363,7 @@ export default function CTCConfiguration() {
       template_type: 'custom',
       components: []
     });
+    toast.success('Template updated successfully!');
   };
 
   const handleViewConfig = (config: CTCConfig) => {
@@ -340,9 +372,26 @@ export default function CTCConfiguration() {
   };
 
   const handleDeleteConfig = (id: string) => {
-    if (window.confirm('Are you sure you want to delete this CTC configuration?')) {
-      setConfigurations(configurations.filter(config => config.id !== id));
-    }
+    setConfigurations(configurations.filter(config => config.id !== id));
+    toast.success('CTC configuration deleted successfully!');
+  };
+
+  const handleBulkDelete = () => {
+    toast.promise(
+      new Promise((resolve) => {
+        setTimeout(() => {
+          setConfigurations(configurations.filter(config => !selectedItems.has(config.id)));
+          setSelectedItems(new Set());
+          setSelectAll(false);
+          resolve(true);
+        }, 500);
+      }),
+      {
+        loading: `Deleting ${selectedItems.size} configuration(s)...`,
+        success: `${selectedItems.size} configuration(s) deleted successfully`,
+        error: 'Failed to delete configurations',
+      }
+    );
   };
 
   // Checkbox handlers
@@ -370,6 +419,7 @@ export default function CTCConfiguration() {
   const clearFilters = () => {
     setSearchTerm('');
     setStatusFilter('all');
+    toast.success('Filters cleared');
   };
 
   const stats = {
@@ -413,7 +463,7 @@ export default function CTCConfiguration() {
             <div className="flex items-center gap-2 bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 rounded-md px-3 py-2">
               <div className="flex items-center gap-2">
                 <div className="bg-blue-100 p-1 rounded">
-                  <DollarSign className="w-3 h-3 text-blue-600" />
+                  <IndianRupee className="w-3 h-3 text-blue-600" />
                 </div>
                 <p className="font-medium text-xs text-gray-800">
                   {selectedItems.size} selected
@@ -422,13 +472,7 @@ export default function CTCConfiguration() {
 
               <div className="flex items-center gap-1">
                 <button
-                  onClick={() => {
-                    if (window.confirm(`Are you sure you want to delete ${selectedItems.size} configuration(s)?`)) {
-                      setConfigurations(configurations.filter(config => !selectedItems.has(config.id)));
-                      setSelectedItems(new Set());
-                      setSelectAll(false);
-                    }
-                  }}
+                  onClick={handleBulkDelete}
                   className="bg-red-600 hover:bg-red-700 text-white px-2 py-1 rounded text-xs font-medium transition"
                 >
                   <Trash2 className="w-3 h-3 inline mr-1" />
@@ -518,7 +562,7 @@ export default function CTCConfiguration() {
               </p>
             </div>
             <div className="w-8 h-8 sm:w-9 sm:h-9 md:w-9 md:h-9 bg-slate-100 rounded-md flex items-center justify-center">
-              <DollarSign className="h-4 w-4 text-slate-600" />
+              <IndianRupee className="h-4 w-4 text-slate-600" />
             </div>
           </div>
         </Card>
@@ -648,7 +692,7 @@ export default function CTCConfiguration() {
               ) : filteredConfigurations.length === 0 ? (
                 <tr>
                   <td colSpan={8} className="px-3 md:px-4 py-8 text-center">
-                    <DollarSign className="w-12 h-12 md:w-16 md:h-16 text-gray-300 mx-auto mb-3" />
+                    <IndianRupee className="w-12 h-12 md:w-16 md:h-16 text-gray-300 mx-auto mb-3" />
                     <p className="text-gray-600 text-sm md:text-lg font-medium">No CTC Configurations</p>
                     <p className="text-gray-500 text-xs md:text-sm mt-2">
                       {searchTerm ? "Try a different search term" : "Start by assigning CTC structures"}
@@ -717,7 +761,7 @@ export default function CTCConfiguration() {
                         </button>
 
                         {openMenuId === config.id && (
-<div className="absolute right-4 bottom-10 z-50 w-44 bg-white border border-gray-200 rounded-lg shadow-lg">
+                          <div className="absolute right-4 bottom-10 z-50 w-44 bg-white border border-gray-200 rounded-lg shadow-lg">
                             <ul className="py-1 text-sm text-gray-700">
                               <li>
                                 <button
@@ -1299,7 +1343,7 @@ export default function CTCConfiguration() {
             <div className="bg-gradient-to-r from-[#40423f] via-[#4a4c49] to-[#5a5d5a] px-6 py-4 flex justify-between items-center border-b border-gray-700/30 relative overflow-hidden">
               <div className="flex items-center gap-3">
                 <div className="p-2 bg-white/20 rounded-xl backdrop-blur-sm">
-                  <DollarSign className="w-5 h-5 text-white" />
+                  <IndianRupee className="w-5 h-5 text-white" />
                 </div>
                 <div>
                   <h2 className="text-lg font-bold text-white flex items-center gap-2">
@@ -1334,9 +1378,12 @@ export default function CTCConfiguration() {
                       value={configForm.employee_id}
                       onChange={(e) => setConfigForm({ ...configForm, employee_id: e.target.value })}
                       className="w-full pl-10 pr-4 py-2.5 text-sm border-2 border-gray-200 rounded-xl focus:border-[#C62828] focus:ring-2 focus:ring-[#C62828]/20 outline-none transition-all duration-200 hover:border-gray-300 appearance-none"
+                      disabled={employeesLoading}
                     >
-                      <option value="">Choose an employee...</option>
-                      {mockEmployees.map(emp => (
+                      <option value="">
+                        {employeesLoading ? 'Loading employees...' : 'Choose an employee...'}
+                      </option>
+                      {employees.map(emp => (
                         <option key={emp.id} value={emp.id}>
                           {emp.name} ({emp.code}) - {emp.job_title}
                         </option>
@@ -1346,6 +1393,9 @@ export default function CTCConfiguration() {
                       <ChevronDown className="w-4 h-4 text-gray-400" />
                     </div>
                   </div>
+                  {employees.length === 0 && !employeesLoading && (
+                    <p className="text-xs text-red-600 mt-1">No employees found. Please add employees first.</p>
+                  )}
                 </div>
 
                 <div>
@@ -1375,12 +1425,12 @@ export default function CTCConfiguration() {
 
                 <div>
                   <label className="block text-sm font-semibold text-gray-800 mb-1 flex items-center gap-2">
-                    <DollarSign className="w-4 h-4 text-[#C62828]" />
+                    <IndianRupee className="w-4 h-4 text-[#C62828]" />
                     Annual CTC (₹) <span className="text-red-500">*</span>
                   </label>
                   <div className="relative">
                     <div className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500">
-                      <DollarSign className="w-4 h-4" />
+                      <IndianRupee className="w-4 h-4" />
                     </div>
                     <input
                       type="number"
@@ -1459,7 +1509,7 @@ export default function CTCConfiguration() {
               <button
                 type="button"
                 onClick={handleAssignCTC}
-                disabled={!configForm.employee_id || !configForm.template_id || !configForm.annual_ctc || parseFloat(configForm.annual_ctc) <= 0}
+                disabled={!configForm.employee_id || !configForm.template_id || !configForm.annual_ctc || parseFloat(configForm.annual_ctc) <= 0 || employeesLoading}
                 className="flex-1 bg-gradient-to-r from-[#C62828] to-red-600 text-white py-2.5 px-4 rounded-xl hover:from-red-600 hover:to-red-700 transition-all duration-200 font-semibold disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
               >
                 <Save className="w-5 h-5" />
@@ -1480,7 +1530,7 @@ export default function CTCConfiguration() {
             <div className="bg-gradient-to-r from-[#40423f] via-[#4a4c49] to-[#5a5d5a] px-6 py-4 flex justify-between items-center border-b border-gray-700/30 relative overflow-hidden">
               <div className="flex items-center gap-3">
                 <div className="p-2 bg-white/20 rounded-xl backdrop-blur-sm">
-                  <DollarSign className="w-5 h-5 text-white" />
+                  <IndianRupee className="w-5 h-5 text-white" />
                 </div>
                 <div>
                   <h2 className="text-lg font-bold text-white flex items-center gap-2">

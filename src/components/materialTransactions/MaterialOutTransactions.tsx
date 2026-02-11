@@ -275,7 +275,7 @@ const MaterialOutTransactions = (loadTableData: any) => {
       return Array.isArray(poRes) ? poRes : [];
     } catch (error) {
       console.log(error);
-      alert("Something wrong.");
+      toast.error("Something wrong.");
     }
   };
 
@@ -285,7 +285,7 @@ const MaterialOutTransactions = (loadTableData: any) => {
       return Array.isArray(vendorsRes) ? vendorsRes : [];
     } catch (error) {
       console.log(error);
-      alert("Something wrong.");
+      toast.error("Something wrong.");
     }
   };
 
@@ -313,7 +313,7 @@ const MaterialOutTransactions = (loadTableData: any) => {
       return enhancedTransactions;
     } catch (error) {
       console.error("Error loading transactions:", error);
-      alert("Failed to load transaction data");
+      toast.error("Failed to load transaction data");
       return [];
     }
   };
@@ -431,7 +431,7 @@ const MaterialOutTransactions = (loadTableData: any) => {
 
   const handleBulkDelete = async () => {
     if (selectedItems.size === 0) {
-      alert("Please select transactions to delete");
+      toast.error("Please select transactions to delete");
       return;
     }
 
@@ -449,13 +449,13 @@ const MaterialOutTransactions = (loadTableData: any) => {
           inventoryTransactionApi.deleteTransaction(id),
         ),
       );
-      alert(`${selectedItems.size} transaction(s) deleted successfully!`);
+      toast.error(`${selectedItems.size} transaction(s) deleted successfully!`);
       setSelectedItems(new Set());
       setSelectAll(false);
       await loadTransactions();
     } catch (error) {
       console.error("Error deleting transactions:", error);
-      alert("Failed to delete transactions");
+      toast.error("Failed to delete transactions");
     }
   };
 

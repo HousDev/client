@@ -611,11 +611,12 @@
 // }
 
 import { useState, useEffect, useRef } from 'react';
-import { Search, Filter, Download, FileText, DollarSign, Users, Calendar, X, Eye, CheckCircle, AlertCircle, ChevronDown } from 'lucide-react';
+import { Search, Filter, Download, FileText, DollarSign, Users, Calendar, X, Eye, CheckCircle, AlertCircle, ChevronDown, IndianRupee } from 'lucide-react';
 import Card from '../components/ui/Card';
 import Button from '../components/ui/Button';
 import Input from '../components/ui/Input';
 import Badge from '../components/ui/Badge';
+import { toast } from 'sonner';
 
 interface TDSRecord {
   id: string;
@@ -782,10 +783,10 @@ export default function TDS() {
   const handleSubmitDeposit = () => {
     if (!selectedRecord) return;
 
-    if (!depositForm.challan_number || !depositForm.deposit_date) {
-      alert('Please fill all required fields');
-      return;
-    }
+   if (!depositForm.challan_number || !depositForm.deposit_date) {
+  toast.error('Please fill all required fields');
+  return;
+}
 
     setTdsRecords(records =>
       records.map(r =>
@@ -803,7 +804,7 @@ export default function TDS() {
 
     setShowDepositModal(false);
     setSelectedRecord(null);
-    alert('TDS deposit marked successfully!');
+toast.success('TDS deposit marked successfully!');
   };
 
   const handleMarkFiled = (recordId: string) => {
@@ -812,16 +813,16 @@ export default function TDS() {
         r.id === recordId ? { ...r, status: 'filed' } : r
       )
     );
-    alert('TDS return filed successfully!');
+toast.success('TDS return filed successfully!');
   };
 
   const handleGenerateForm16 = (record: TDSRecord) => {
-    alert(`Generating Form 16 for ${record.employee_name}...`);
+toast.success(`Generating Form 16 for ${record.employee_name}...`);
   };
 
   const handleDownloadReturn = () => {
     const quarter = quarterFilter === 'all' ? 'All_Quarters' : quarterFilter;
-    alert(`Downloading TDS return for FY ${yearFilter} ${quarter}...`);
+toast.success(`Downloading TDS return for FY ${yearFilter} ${quarter}...`);
   };
 
   const clearFilters = () => {
@@ -946,7 +947,7 @@ export default function TDS() {
               </p>
             </div>
             <div className="w-8 h-8 sm:w-9 sm:h-9 md:w-9 md:h-9 bg-yellow-100 rounded-md flex items-center justify-center">
-              <DollarSign className="h-4 w-4 text-yellow-600" />
+              <IndianRupee className="h-4 w-4 text-yellow-600" />
             </div>
           </div>
         </Card>
@@ -962,7 +963,7 @@ export default function TDS() {
               </p>
             </div>
             <div className="w-8 h-8 sm:w-9 sm:h-9 md:w-9 md:h-9 bg-green-100 rounded-md flex items-center justify-center">
-              <DollarSign className="h-4 w-4 text-green-600" />
+              <IndianRupee className="h-4 w-4 text-green-600" />
             </div>
           </div>
         </Card>

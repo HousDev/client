@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 // src/components/Layout.tsx
 import { ReactNode, useState, useMemo, useEffect, useRef } from "react";
 import { useAuth } from "../contexts/AuthContext";

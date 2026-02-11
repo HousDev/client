@@ -1602,69 +1602,70 @@ const toggleEmployeeStatus = async (id: string, currentStatus: string) => {
 
       
         
-          <div className=" sticky top-44 z-10 flex flex-col md:flex-row gap-3 items-center justify-end">
-            
-
-            {/* Action Buttons */}
-            <div className="flex gap-2 w-full md:w-auto">
-              {/* Bulk Actions */}
-              {selectedItems.size > 0 && (
-                <div className="flex items-center gap-2 bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 rounded-md px-3 py-2">
-                  <div className="flex items-center gap-2">
-                    <div className="bg-blue-100 p-1 rounded">
-                      <Users className="w-3 h-3 text-blue-600" />
-                    </div>
-                    <p className="font-medium text-xs text-gray-800">
-                      {selectedItems.size} selected
-                    </p>
-                  </div>
-
-                  <div className="flex items-center gap-1">
-                    <button
-                      onClick={() => handleBulkToggleActive(true)}
-                      className="bg-green-600 hover:bg-green-700 text-white px-2 py-1 rounded text-xs font-medium transition"
-                    >
-                      Activate
-                    </button>
-                    <button
-                      onClick={() => handleBulkToggleActive(false)}
-                      className="bg-gray-600 hover:bg-gray-700 text-white px-2 py-1 rounded text-xs font-medium transition"
-                    >
-                      Deactivate
-                    </button>
-                    <button
-                      onClick={handleBulkDelete}
-                      className="bg-red-600 hover:bg-red-700 text-white px-2 py-1 rounded text-xs font-medium transition"
-                    >
-                      <Trash2 className="w-3 h-3 inline mr-1" />
-                      Delete
-                    </button>
-                  </div>
-                </div>
-              )}
-
-              {/* Export Button */}
-              <Button
-                variant="secondary"
-                className="text-sm h-9"
-                onClick={() => {
-                  const exportData = filteredEmployees.map((emp) => ({
-                    Code: emp.employee_code,
-                    "First Name": emp.first_name,
-                    "Last Name": emp.last_name,
-                    Email: emp.email,
-                    Department: emp.department?.name || "N/A",
-                    Role: emp.role?.name || "N/A",
-                    Status: emp.employee_status,
-                  }));
-                  exportToCSV(exportData, "employees");
-                }}
-              >
-                <Download className="h-4 w-4 mr-1.5" />
-                Export
-              </Button>
-            </div>
+         <div className="sticky top-44 z-10 flex flex-col md:flex-row gap-2 md:gap-3 items-stretch md:items-center justify-end px-2 md:px-0">
+  {/* Action Buttons */}
+  <div className="flex flex-col sm:flex-row gap-2 w-full md:w-auto">
+    {/* Bulk Actions */}
+    {selectedItems.size > 0 && (
+      <div className="flex flex-wrap items-center gap-1 md:gap-2 bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 rounded-md px-2 md:px-3 py-1.5 md:py-2 w-full md:w-auto">
+        <div className="flex items-center gap-1 md:gap-2">
+          <div className="bg-blue-100 p-1 rounded">
+            <Users className="w-3 h-3 text-blue-600" />
           </div>
+          <p className="font-medium text-[10px] sm:text-xs text-gray-800">
+            {selectedItems.size} selected
+          </p>
+        </div>
+
+        <div className="flex flex-wrap items-center gap-1">
+          <button
+            onClick={() => handleBulkToggleActive(true)}
+            className="bg-green-600 hover:bg-green-700 text-white px-1.5 sm:px-2 py-1 rounded text-[10px] sm:text-xs font-medium transition"
+          >
+            Activate
+          </button>
+
+          <button
+            onClick={() => handleBulkToggleActive(false)}
+            className="bg-gray-600 hover:bg-gray-700 text-white px-1.5 sm:px-2 py-1 rounded text-[10px] sm:text-xs font-medium transition"
+          >
+            Deactivate
+          </button>
+
+          <button
+            onClick={handleBulkDelete}
+            className="bg-red-600 hover:bg-red-700 text-white px-1.5 sm:px-2 py-1 rounded text-[10px] sm:text-xs font-medium transition flex items-center"
+          >
+            <Trash2 className="w-3 h-3 mr-1" />
+            Delete
+          </button>
+        </div>
+      </div>
+    )}
+
+    {/* Export Button */}
+    <Button
+      variant="secondary"
+      className="text-[10px] sm:text-xs md:text-sm h-8 md:h-9 w-full md:w-auto"
+      onClick={() => {
+        const exportData = filteredEmployees.map((emp) => ({
+          Code: emp.employee_code,
+          "First Name": emp.first_name,
+          "Last Name": emp.last_name,
+          Email: emp.email,
+          Department: emp.department?.name || "N/A",
+          Role: emp.role?.name || "N/A",
+          Status: emp.employee_status,
+        }));
+        exportToCSV(exportData, "employees");
+      }}
+    >
+      <Download className="h-3 w-3 sm:h-4 sm:w-4 mr-1.5" />
+      Export
+    </Button>
+  </div>
+</div>
+
       
 
         <div className="sticky top-32 bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden md:-mt-1">

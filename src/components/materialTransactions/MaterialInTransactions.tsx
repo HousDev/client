@@ -812,6 +812,7 @@ import inventoryTransactionApi from "../../lib/inventoryTransactionApi";
 import poApi from "../../lib/poApi";
 import vendorApi from "../../lib/vendorApi";
 import ViewTransaction from "../StoreManagement/ViewTransaction";
+import { toast } from "sonner";
 
 registerLocale("en-GB", enGB);
 
@@ -855,7 +856,7 @@ const MaterialInTransactions = (loadTableData: any) => {
       return Array.isArray(poRes) ? poRes : [];
     } catch (error) {
       console.log(error);
-      alert("Something wrong.");
+      toast.error("Something wrong.");
     }
   };
 
@@ -866,7 +867,7 @@ const MaterialInTransactions = (loadTableData: any) => {
       return Array.isArray(vendorsRes) ? vendorsRes : [];
     } catch (error) {
       console.log(error);
-      alert("Something wrong.");
+      toast.error("Something wrong.");
     }
   };
 
@@ -895,7 +896,7 @@ const MaterialInTransactions = (loadTableData: any) => {
       return enhancedTransactions;
     } catch (error) {
       console.error("Error loading transactions:", error);
-      alert("Failed to load transaction data");
+      toast.error("Failed to load transaction data");
       return [];
     }
   };

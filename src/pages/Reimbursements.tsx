@@ -671,11 +671,14 @@
 
 
 import { useState, useEffect, useRef } from 'react';
-import { Plus, Search, Filter, Download, Receipt, CheckCircle, Clock, XCircle, Upload, X, FileText, MoreVertical, Eye, Trash2, Calendar, ChevronDown, AlertCircle, ChevronRight, Users, DollarSign, Building, Save, Mail, Phone, CreditCard, Percent, ChevronLeft, UserCheck } from 'lucide-react';
+import { Plus, Search, Filter, Download, Receipt, CheckCircle, Clock, XCircle, Upload, X, FileText, MoreVertical, Eye, Trash2, Calendar, ChevronDown, AlertCircle, ChevronRight, Users, IndianRupee, Building, Save, Mail, Phone, CreditCard, Percent, ChevronLeft, UserCheck } from 'lucide-react';
 import Card from '../components/ui/Card';
 import Button from '../components/ui/Button';
 import Input from '../components/ui/Input';
 import Badge from '../components/ui/Badge';
+import Swal from 'sweetalert2';
+import { toast } from 'sonner';
+import HrmsEmployeesApi, { HrmsEmployee } from '../lib/employeeApi'; // ✅ Import Employee API
 
 interface Reimbursement {
   id: string;
@@ -696,13 +699,6 @@ interface Reimbursement {
   payment_date?: string;
   rejection_reason?: string;
 }
-
-const mockEmployees = [
-  { id: 'EMP001', name: 'Rajesh Kumar', code: 'EMP001', department: 'Engineering', email: 'rajesh@example.com', phone: '+91 9876543210' },
-  { id: 'EMP002', name: 'Priya Sharma', code: 'EMP002', department: 'Sales', email: 'priya@example.com', phone: '+91 9876543211' },
-  { id: 'EMP003', name: 'Amit Patel', code: 'EMP003', department: 'Marketing', email: 'amit@example.com', phone: '+91 9876543212' },
-  { id: 'EMP004', name: 'Sneha Verma', code: 'EMP004', department: 'HR', email: 'sneha@example.com', phone: '+91 9876543213' },
-];
 
 const mockReimbursements: Reimbursement[] = [
   {
@@ -841,6 +837,10 @@ export default function Reimbursements() {
   const [reimbursements, setReimbursements] = useState<Reimbursement[]>(mockReimbursements);
   const [loading, setLoading] = useState(false);
   
+  // ✅ NEW: Employee states
+  const [employees, setEmployees] = useState<HrmsEmployee[]>([]);
+  const [loadingEmployees, setLoadingEmployees] = useState(false);
+  
   // Search states for each column
   const [searchEmployee, setSearchEmployee] = useState('');
   const [searchCategory, setSearchCategory] = useState('all');
@@ -877,6 +877,34 @@ export default function Reimbursements() {
   const [filePreview, setFilePreview] = useState<string | null>(null);
   const formRef = useRef<HTMLDivElement>(null);
 
+  // ✅ NEW: Load employees from API
+  const loadEmployees = async () => {
+    setLoadingEmployees(true);
+    try {
+      console.log('🔄 Fetching employees from API...');
+      const employeesData = await HrmsEmployeesApi.getEmployees();
+      console.log('✅ Employees fetched:', employeesData);
+      
+      // Filter only active employees
+      const activeEmployees = employeesData.filter(
+        (emp: HrmsEmployee) => emp.employee_status === 'active'
+      );
+      
+      setEmployees(activeEmployees);
+      console.log(`✅ Loaded ${activeEmployees.length} active employees`);
+      
+      if (activeEmployees.length === 0) {
+        toast.info('No active employees found');
+      }
+    } catch (error: any) {
+      console.error('❌ Error loading employees:', error);
+      toast.error('Failed to load employees: ' + (error.message || 'Unknown error'));
+      setEmployees([]); // Set empty array on error
+    } finally {
+      setLoadingEmployees(false);
+    }
+  };
+
   // Close menu when clicking outside
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -892,6 +920,11 @@ export default function Reimbursements() {
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, [openMenuId]);
 
+  // ✅ Load employees on mount
+  useEffect(() => {
+    loadEmployees();
+  }, []);
+
   const loadReimbursements = async () => {
     setLoading(true);
     try {
@@ -904,21 +937,27 @@ export default function Reimbursements() {
     }
   };
 
+  // ✅ UPDATED: Handle add reimbursement with API employees
   const handleAddReimbursement = () => {
-    const selectedEmployee = mockEmployees.find(e => e.id === formData.employee_id);
+    // Find employee from API data instead of mockEmployees
+    const selectedEmployee = employees.find(e => e.id.toString() === formData.employee_id);
+    
     if (!selectedEmployee || !formData.amount || parseFloat(formData.amount) <= 0) {
-      alert('Please fill all required fields with valid values');
+      toast.error('Please fill all required fields with valid values');
       return;
     }
 
+    // Get employee full name and department
+    const employeeName = `${selectedEmployee.first_name} ${selectedEmployee.last_name}`.trim();
+
     const newReimbursement: Reimbursement = {
       id: `REIMB${Date.now()}`,
-      employee_id: selectedEmployee.id,
-      employee_name: selectedEmployee.name,
-      employee_code: selectedEmployee.code,
-      employee_department: selectedEmployee.department,
+      employee_id: selectedEmployee.id.toString(),
+      employee_name: employeeName,
+      employee_code: selectedEmployee.employee_code,
+      employee_department: selectedEmployee.department_name || 'N/A', // ✅ Use department_name from API
       employee_email: selectedEmployee.email,
-      employee_phone: selectedEmployee.phone,
+      employee_phone: selectedEmployee.phone || 'N/A',
       category: formData.category,
       amount: parseFloat(formData.amount),
       description: formData.description,
@@ -929,6 +968,7 @@ export default function Reimbursements() {
 
     setReimbursements([newReimbursement, ...reimbursements]);
     setShowAddModal(false);
+    toast.success('Reimbursement request submitted successfully!');
     resetForm();
   };
 
@@ -938,11 +978,12 @@ export default function Reimbursements() {
         ? { ...reimb, status: 'approved', approved_by: 'Manager', approved_date: new Date().toISOString().split('T')[0] }
         : reimb
     ));
+    toast.success('Reimbursement approved successfully!');
   };
 
   const handleRejectSubmit = () => {
     if (!selectedReimbursement || !rejectionReason.trim()) {
-      alert('Please provide a reason for rejection');
+      toast.error('Please provide a reason for rejection');
       return;
     }
     setReimbursements(reimbursements.map(reimb =>
@@ -953,6 +994,7 @@ export default function Reimbursements() {
     setShowRejectModal(false);
     setRejectionReason('');
     setSelectedReimbursement(null);
+    toast.success('Reimbursement rejected');
   };
 
   const handlePay = (id: string) => {
@@ -961,6 +1003,7 @@ export default function Reimbursements() {
         ? { ...reimb, status: 'paid', payment_date: new Date().toISOString().split('T')[0] }
         : reimb
     ));
+    toast.success('Payment processed successfully!');
   };
 
   const handleViewDetails = (reimbursement: Reimbursement) => {
@@ -973,9 +1016,21 @@ export default function Reimbursements() {
     setShowRejectModal(true);
   };
 
-  const handleDeleteReimbursement = (id: string) => {
-    if (window.confirm('Are you sure you want to delete this reimbursement?')) {
+  const handleDeleteReimbursement = async (id: string) => {
+    const result = await Swal.fire({
+      title: 'Are you sure?',
+      text: 'Are you sure you want to delete this reimbursement?',
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonColor: '#d33',
+      cancelButtonColor: '#3085d6',
+      confirmButtonText: 'Yes, delete!',
+      cancelButtonText: 'Cancel'
+    });
+
+    if (result.isConfirmed) {
       setReimbursements(reimbursements.filter(reimb => reimb.id !== id));
+      toast.success('Reimbursement deleted successfully!');
     }
   };
 
@@ -1003,11 +1058,22 @@ export default function Reimbursements() {
 
   const handleBulkDelete = async () => {
     if (selectedItems.size === 0) {
-      alert("Please select reimbursements to delete");
+      toast.error("Please select reimbursements to delete");
       return;
     }
 
-    if (!confirm(`Delete ${selectedItems.size} reimbursement(s)? This action cannot be undone.`)) {
+    const result = await Swal.fire({
+      title: 'Are you sure?',
+      text: `Delete ${selectedItems.size} reimbursement(s)? This action cannot be undone.`,
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonColor: '#d33',
+      cancelButtonColor: '#3085d6',
+      confirmButtonText: 'Yes, delete!',
+      cancelButtonText: 'Cancel'
+    });
+
+    if (!result.isConfirmed) {
       return;
     }
 
@@ -1015,10 +1081,10 @@ export default function Reimbursements() {
       setReimbursements(reimbursements.filter(reimb => !selectedItems.has(reimb.id)));
       setSelectedItems(new Set());
       setSelectAll(false);
-      alert(`${selectedItems.size} reimbursement(s) deleted successfully!`);
+      toast.success(`${selectedItems.size} reimbursement(s) deleted successfully!`);
     } catch (error) {
       console.error('Error deleting reimbursements:', error);
-      alert('Failed to delete reimbursements');
+      toast.error('Failed to delete reimbursements');
     }
   };
 
@@ -1084,7 +1150,7 @@ export default function Reimbursements() {
     if (file) {
       // Validate file size (max 5MB)
       if (file.size > 5 * 1024 * 1024) {
-        alert('File size must be less than 5MB');
+        toast.error('File size must be less than 5MB');
         e.target.value = '';
         return;
       }
@@ -1092,7 +1158,7 @@ export default function Reimbursements() {
       // Validate file type
       const allowedTypes = ['application/pdf', 'image/jpeg', 'image/png', 'image/jpg'];
       if (!allowedTypes.includes(file.type)) {
-        alert('Only PDF, JPEG, and PNG files are allowed');
+        toast.error('Only PDF, JPEG, and PNG files are allowed');
         e.target.value = '';
         return;
       }
@@ -1572,7 +1638,7 @@ export default function Reimbursements() {
                                     }}
                                     className="w-full flex items-center gap-2 px-4 py-2 hover:bg-gray-100 text-blue-600 text-left"
                                   >
-                                    <DollarSign className="w-4 h-4" />
+                                    <IndianRupee className="w-4 h-4" />
                                     Pay Now
                                   </button>
                                 </li>
@@ -1650,7 +1716,7 @@ export default function Reimbursements() {
             {/* Content */}
             <div className="p-6 max-h-[70vh] overflow-y-auto custom-scrollbar">
               <form onSubmit={(e) => { e.preventDefault(); handleAddReimbursement(); }} className="space-y-6">
-                {/* Employee Selection */}
+                {/* ✅ UPDATED: Employee Selection - Now from API */}
                 <div className="space-y-1.5">
                   <label className="block text-sm font-semibold text-gray-800 mb-1 flex items-center gap-2">
                     <Users className="w-4 h-4 text-[#C62828]" />
@@ -1666,18 +1732,38 @@ export default function Reimbursements() {
                       onChange={(e) => setFormData({ ...formData, employee_id: e.target.value })}
                       className="w-full pl-10 pr-10 py-2.5 text-sm border-2 border-gray-200 rounded-xl focus:border-[#C62828] focus:ring-2 focus:ring-[#C62828]/20 bg-white outline-none transition-all duration-200 appearance-none hover:border-gray-300"
                       required
+                      disabled={loadingEmployees}
                     >
-                      <option value="" className="text-gray-400">Select Employee</option>
-                      {mockEmployees.map((emp) => (
-                        <option key={emp.id} value={emp.id} className="py-2">
-                          {emp.name} ({emp.code}) - {emp.department}
-                        </option>
-                      ))}
+                      <option value="" className="text-gray-400">
+                        {loadingEmployees ? 'Loading employees...' : 'Select Employee'}
+                      </option>
+                      {employees.map((emp) => {
+                        const fullName = `${emp.first_name} ${emp.last_name}`.trim();
+                        return (
+                          <option key={emp.id} value={emp.id.toString()} className="py-2">
+                            {fullName} ({emp.employee_code}) - {emp.department_name || 'N/A'}
+                          </option>
+                        );
+                      })}
                     </select>
                     <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none">
                       <ChevronDown className="w-4 h-4 text-gray-400" />
                     </div>
                   </div>
+                  
+                  {/* ✅ Show loading or empty state */}
+                  {loadingEmployees && (
+                    <p className="text-xs text-blue-600 mt-1 flex items-center gap-1">
+                      <div className="animate-spin h-3 w-3 border-2 border-blue-600 border-t-transparent rounded-full"></div>
+                      Loading employees from database...
+                    </p>
+                  )}
+                  {!loadingEmployees && employees.length === 0 && (
+                    <p className="text-xs text-red-600 mt-1 flex items-center gap-1">
+                      <AlertCircle className="w-3 h-3" />
+                      No active employees found. Please add employees first.
+                    </p>
+                  )}
                 </div>
 
                 {/* Category & Amount Grid */}
@@ -1716,12 +1802,12 @@ export default function Reimbursements() {
                   {/* Amount */}
                   <div className="space-y-1.5">
                     <label className="block text-sm font-semibold text-gray-800 mb-1 flex items-center gap-2">
-                      <DollarSign className="w-4 h-4 text-[#C62828]" />
+                      <IndianRupee className="w-4 h-4 text-[#C62828]" />
                       Amount (₹) <span className="text-red-500">*</span>
                     </label>
                     <div className="relative group">
                       <div className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 group-focus-within:text-[#C62828] transition-colors">
-                        <DollarSign className="w-4 h-4" />
+                        <IndianRupee className="w-4 h-4" />
                       </div>
                       <input
                         type="number"
@@ -1890,7 +1976,7 @@ export default function Reimbursements() {
                   </button>
                   <button
                     type="submit"
-                    disabled={!isFormValid()}
+                    disabled={!isFormValid() || loadingEmployees}
                     className="flex-1 bg-gradient-to-r from-[#C62828] to-red-600 text-white py-3 px-6 rounded-xl hover:from-red-600 hover:to-red-700 transition-all duration-200 font-semibold shadow-lg hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 group transform hover:-translate-y-0.5 active:translate-y-0"
                   >
                     <Save className="w-5 h-5 group-hover:scale-110 transition-transform" />
@@ -1901,7 +1987,7 @@ export default function Reimbursements() {
             </div>
 
             {/* Custom Scrollbar Styles */}
-            <style >{`
+            <style>{`
               .custom-scrollbar::-webkit-scrollbar {
                 width: 6px;
               }
@@ -2009,7 +2095,7 @@ export default function Reimbursements() {
                   
                   <div>
                     <p className="text-sm font-semibold text-gray-800 mb-1 flex items-center gap-2">
-                      <DollarSign className="w-4 h-4 text-[#C62828]" />
+                      <IndianRupee className="w-4 h-4 text-[#C62828]" />
                       Amount
                     </p>
                     <p className="text-2xl font-bold text-green-600">₹{selectedReimbursement.amount.toLocaleString()}</p>

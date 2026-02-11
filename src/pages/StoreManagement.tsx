@@ -841,6 +841,7 @@ import IssueMaterial from "../components/StoreManagement/IssueMaterial";
 import MaterialInTransactions from "../components/materialTransactions/MaterialInTransactions";
 import MaterialOutTransactions from "../components/materialTransactions/MaterialOutTransactions";
 import MaterialIssueTransactions from "../components/materialTransactions/MaterialIssueTransactions";
+import { toast } from "sonner";
 
 type InventoryItem = {
   id: number;
@@ -1432,12 +1433,12 @@ export default function StoreManagement({
       };
       const result: any = await NotificationsApi.createNotification(payload);
       if (result.success) {
-        alert("Reminder sent successfully.");
+        toast.error("Reminder sent successfully.");
       } else {
-        alert("Failed to send reminder.");
+        toast.error("Failed to send reminder.");
       }
     } catch (error) {
-      alert("Something went wrong.");
+      toast.error("Something went wrong.");
     }
   };
 
