@@ -1,21 +1,14 @@
-import React, { useState, useEffect, useRef } from "react";
+import { useState, useEffect } from "react";
 import {
   Calendar,
   Plus,
-  Search,
-  Filter,
   CheckCircle,
   XCircle,
   Clock,
-  User,
-  ChevronDown,
-  FileText,
   Download,
   Eye,
   Trash2,
   Mail,
-  Phone,
-  Building,
   MoreVertical,
   X,
 } from "lucide-react";
@@ -24,7 +17,6 @@ import Button from "../components/ui/Button";
 import Badge from "../components/ui/Badge";
 import ApplyLeaveForm from "../components/modals/ApplyLeaveModal";
 import ViewLeaveDetails from "../components/modals/ViewLeaveDetails";
-import DatePicker from "react-datepicker";
 import { registerLocale } from "react-datepicker";
 import { enGB } from "date-fns/locale/en-GB";
 import "react-datepicker/dist/react-datepicker.css";
@@ -143,24 +135,43 @@ export default function Leaves() {
   // Load leaves data
   const loadLeaves = async () => {
     setLoading(true);
-    try {
-      const response = await LeaveApi.getLeaves();
-      if (response.data) {
-        const leavesData: LeaveRequest[] = response.data;
-        setAllLeaves(leavesData);
+    if (user.role === "admin") {
+      try {
+        const response = await LeaveApi.getLeaves();
+        console.log("fetch leaves : ", response);
+        const leavesData: any = response.data;
+        setAllLeaves(Array.isArray(leavesData) ? leavesData : []);
+      } catch (error: any) {
+        console.error("Error loading leaves:", error);
+        toast.error(
+          error.response?.data?.message || "Failed to load leave data",
+        );
+      } finally {
+        setLoading(false);
       }
-    } catch (error: any) {
-      console.error("Error loading leaves:", error);
-      toast.error(error.response?.data?.message || "Failed to load leave data");
-    } finally {
-      setLoading(false);
+    } else {
+      try {
+        const empData = await HrmsEmployeesApi.getEmployeeByEmail(user.email);
+        console.log("emp data : ", empData);
+        const response = await LeaveApi.getLeaves({ employee_id: empData.id });
+        console.log("fetch leaves : ", response);
+        const leavesData: any = response.data;
+        setAllLeaves(Array.isArray(leavesData) ? leavesData : []);
+      } catch (error: any) {
+        console.error("Error loading leaves:", error);
+        toast.error(
+          error.response?.data?.message || "Failed to load leave data",
+        );
+      } finally {
+        setLoading(false);
+      }
     }
   };
 
   // Load statistics
   const loadStats = async () => {
     try {
-      const response = await LeaveApi.getLeaveStats();
+      const response: any = await LeaveApi.getLeaveStats();
       if (response) {
         setStats(response);
       }
@@ -201,6 +212,8 @@ export default function Leaves() {
     if (employeeMap.size > 0 && allLeaves.length > 0) {
       const enhanced = enhanceLeavesWithEmployeeData(allLeaves);
       setLeaves(enhanced);
+    } else {
+      setLeaves([]);
     }
   }, [employeeMap, allLeaves]);
 
@@ -368,8 +381,10 @@ export default function Leaves() {
       if (result.isConfirmed) {
         try {
           const response = await api.delete(`/leaves/${id}`);
-
+          console.log("delete response : ", response);
           if (response.data.success) {
+            await Promise.all([loadLeaves(), loadStats()]);
+
             Swal.fire({
               title: "Deleted!",
               text: "Leave has been deleted.",
@@ -380,8 +395,6 @@ export default function Leaves() {
                 confirmButton: "px-4 py-2 rounded-lg",
               },
             });
-            loadLeaves();
-            loadStats();
           }
         } catch (error: any) {
           console.error("Error deleting leave:", error);
@@ -955,18 +968,23 @@ export default function Leaves() {
 
                               <hr className="my-1" />
 
-                              <li>
-                                <button
-                                  onClick={() => {
-                                    handleDelete(leave.id);
-                                    setOpenMenuId(null);
-                                  }}
-                                  className="w-full flex items-center gap-2 px-4 py-2 hover:bg-red-50 text-red-600 text-left"
-                                >
-                                  <Trash2 className="w-4 h-4" />
-                                  Delete
-                                </button>
-                              </li>
+                              {!(
+                                leave.status === "approved" ||
+                                leave.status === "rejected"
+                              ) && (
+                                <li>
+                                  <button
+                                    onClick={() => {
+                                      handleDelete(leave.id);
+                                      setOpenMenuId(null);
+                                    }}
+                                    className="w-full flex items-center gap-2 px-4 py-2 hover:bg-red-50 text-red-600 text-left"
+                                  >
+                                    <Trash2 className="w-4 h-4" />
+                                    Delete
+                                  </button>
+                                </li>
+                              )}
                             </ul>
                           </div>
                         )}
@@ -990,7 +1008,7 @@ export default function Leaves() {
             loadStats();
           }}
           employees={employees}
-          user={profile}
+          // user={profile}
         />
       )}
 

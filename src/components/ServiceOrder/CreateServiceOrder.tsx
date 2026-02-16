@@ -13,7 +13,6 @@ import {
   Calendar,
   CreditCard,
   Tag,
-  Truck,
   User,
   Search,
   ClipboardCheck,
@@ -224,7 +223,6 @@ export default function CreateServiceOrderForm({
           : [];
       setPOTypes(list);
       if (Array.isArray(data)) {
-        console.log(String(data.find((d: any) => d.name === "Material")?.id));
         setFormData({
           ...formData,
           service_type_id: String(
@@ -249,7 +247,7 @@ export default function CreateServiceOrderForm({
           : [],
       );
     } catch (err) {
-      console.warn("loadServices failed, fallback to empty", err);
+      console.warn("load Work Orders failed, fallback to empty", err);
       setItems([]);
     }
   };
@@ -570,15 +568,16 @@ export default function CreateServiceOrderForm({
       }
     } catch (err) {
       console.warn(
-        "generatePONumber remote failed, falling back to client seq",
+        "generateWONumber remote failed, falling back to client seq",
         err,
       );
+      toast.error("generateWONumber remote failed, falling back to client seq");
     }
     const now = new Date();
     const year = now.getFullYear();
     const seq = Math.floor(Math.random() * 9000) + 1;
 
-    return `SO/${year}/${String(seq).padStart(4, "0")}`;
+    return `WO/${year}/${String(seq).padStart(4, "0")}`;
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -593,8 +592,7 @@ export default function CreateServiceOrderForm({
         formData.project_id === "" ||
         formData.building_id === "" ||
         formData.service_type_id === "" ||
-        formData.so_date === "" ||
-        formData.delivery_date === ""
+        formData.so_date === ""
       ) {
         toast.error("Fill all required fields.");
         return;
@@ -624,7 +622,7 @@ export default function CreateServiceOrderForm({
         selected_terms_idsData.length === 0 &&
         terms_and_conditionsData.length === 0
       ) {
-        toast.error("Select Terms & Conditions For Service Order.");
+        toast.error("Select Terms & Conditions For Work Order.");
         return;
       }
 
@@ -635,7 +633,7 @@ export default function CreateServiceOrderForm({
         building_id: formData.building_id,
         service_type_id: formData.service_type_id,
         so_date: formData.so_date,
-        delivery_date: formData.delivery_date,
+        delivery_date: "2026-02-21",
         is_interstate: formData.is_interstate,
         items: formData.items,
         subtotal: formData.subtotal,
@@ -697,16 +695,16 @@ export default function CreateServiceOrderForm({
       //   }
       // }
       if (created.success) {
-        toast.success("Service Order created successfully!");
+        toast.success("Woek Order created successfully!");
       } else {
-        toast.error("Error while creating service order.");
+        toast.error("Error while creating Work order.");
       }
       setShowCreatePro(false);
       resetForm();
       loadAllData();
     } catch (err) {
-      console.error("Error creating PO:", err);
-      toast.error("Error creating service order");
+      console.error("Error creating WO:", err);
+      toast.error("Error creating work order");
     }
   };
 
@@ -790,10 +788,10 @@ export default function CreateServiceOrderForm({
 
               <div>
                 <h2 className="text-lg font-bold text-white leading-tight">
-                  Create Service Order
+                  Create Work Order
                 </h2>
                 <p className="text-xs text-white/80 mt-0.5">
-                  Manage and create service orders
+                  Manage and create work orders
                 </p>
               </div>
             </div>
@@ -916,7 +914,7 @@ export default function CreateServiceOrderForm({
                 <div className="space-y-1.5">
                   <label className=" text-xs font-semibold text-gray-700 mb-1 flex items-center gap-1.5">
                     <Tag className="w-3 h-3 text-purple-600" />
-                    <span>PO Type</span>
+                    <span>WO Type</span>
                     <span className="text-red-500">*</span>
                   </label>
                   <div className="relative group">
@@ -943,7 +941,7 @@ export default function CreateServiceOrderForm({
                 <div className="space-y-1.5">
                   <label className=" text-xs font-semibold text-gray-700 mb-1 flex items-center gap-1.5">
                     <Calendar className="w-3 h-3 text-amber-600" />
-                    <span>PO Date</span>
+                    <span>WO Date</span>
                     <span className="text-red-500">*</span>
                   </label>
                   <div className="relative group">
@@ -964,7 +962,7 @@ export default function CreateServiceOrderForm({
                 </div>
 
                 {/* Delivery Date */}
-                <div className="space-y-1.5">
+                {/* <div className="space-y-1.5">
                   <label className=" text-xs font-semibold text-gray-700 mb-1 flex items-center gap-1.5">
                     <Truck className="w-3 h-3 text-indigo-600" />
                     <span>Delivery Date</span>
@@ -987,7 +985,7 @@ export default function CreateServiceOrderForm({
                       className="w-full pl-10 pr-4 py-2 text-sm border border-gray-300 rounded-xl focus:border-indigo-600 focus:ring-2 focus:ring-indigo-600/20 outline-none transition-all duration-200 hover:border-gray-400"
                     />
                   </div>
-                </div>
+                </div> */}
               </div>
             </div>
 
@@ -1293,7 +1291,7 @@ export default function CreateServiceOrderForm({
 
               {/* Add Terms Buttons */}
               <div className="flex flex-wrap gap-2 pt-3">
-                <button
+                {/* <button
                   onClick={() => {
                     if (formData.vendor_id) setShowAddPaymentTerm(true);
                     else toast.warning("Select Vendor.");
@@ -1303,7 +1301,7 @@ export default function CreateServiceOrderForm({
                 >
                   <Plus className="w-3 h-3" />
                   Add Payment Terms & Conditions
-                </button>
+                </button> */}
                 <button
                   onClick={() => {
                     if (formData.vendor_id) setShowTermsConditions(true);
@@ -1326,7 +1324,7 @@ export default function CreateServiceOrderForm({
                 className="flex-1 bg-gradient-to-r from-red-600 to-red-700 text-white py-3 px-6 rounded-xl hover:from-red-400 hover:to-red-800 transition-all duration-200 font-semibold text-sm shadow-lg hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 group"
               >
                 <FileText className="w-4 h-4 group-hover:scale-110 transition-transform" />
-                Create Service Order
+                Create Work Order
               </button>
               <button
                 type="button"
@@ -1610,7 +1608,7 @@ export default function CreateServiceOrderForm({
                   </h3>
                   <p className="text-xs text-gray-300/70 mt-1 flex items-center gap-2">
                     <span className="w-1 h-1 bg-gradient-to-r from-[#b52124] to-[#d43538] rounded-full"></span>
-                    Add Payment Terms & Conditions For Service Order.
+                    Add Payment Terms & Conditions For Work Order.
                   </p>
                 </div>
               </div>

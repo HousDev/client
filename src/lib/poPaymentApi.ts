@@ -5,7 +5,7 @@ import { api, unwrap } from "./Api";
  * Uses multipart/form-data because of payment_proof upload
  */
 async function createPayment(payload: any) {
-  const res = await api.post("/po-payments", payload, {
+  const res: any = await api.post("/po-payments", payload, {
     headers: {
       "Content-Type": "multipart/form-data",
     },
@@ -17,7 +17,15 @@ async function createPayment(payload: any) {
  * Get all PO payments (ADMIN)
  */
 async function getPayments() {
-  const res = await api.get("/po-payments");
+  const res: any = await api.get("/po-payments");
+  return unwrap(res);
+}
+
+/**
+ * Get all PO payments History (ADMIN)
+ */
+async function getPaymentsHistory() {
+  const res: any = await api.get("/po-payments/history");
   return unwrap(res);
 }
 
@@ -26,7 +34,7 @@ async function getPayments() {
  * payment_proof is optional
  */
 async function updatePayment(id: number | string, payload: any) {
-  const res = await api.put(`/po-payments/${id}`, payload, {
+  const res: any = await api.put(`/po-payments/${id}`, payload, {
     headers: {
       "Content-Type": "multipart/form-data",
     },
@@ -38,12 +46,13 @@ async function updatePayment(id: number | string, payload: any) {
  * Delete PO payment (ADMIN)
  */
 async function deletePayment(id: number | string) {
-  const res = await api.delete(`/po-payments/${id}`);
+  const res: any = await api.delete(`/po-payments/${id}`);
   return unwrap(res);
 }
 
 const poPaymentApi = {
   createPayment,
+  getPaymentsHistory,
   getPayments,
   updatePayment,
   deletePayment,

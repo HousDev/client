@@ -860,7 +860,18 @@ export default function UpdateProject({
     const flat = floor.flats?.[selectedItem.flatId];
     if (!flat) return;
 
-    flat.areas = selectedAreas;
+    console.log("Add area to single flat : ", selectedAreas);
+
+    const data = selectedAreas.map((a: any) => ({
+      ...a,
+      unit: "sqft",
+      area_size:
+        a.unit === "sqft"
+          ? a.area_size
+          : convertSqmToSqft(Number(a.area_size) ?? 0),
+    }));
+
+    flat.areas = data;
 
     // Step 2️⃣ Single state update
     setFormData((prev) => ({
@@ -872,11 +883,19 @@ export default function UpdateProject({
 
   const addAreaToAllFlats = () => {
     const buildings = structuredClone(formData.buildings);
-    console.log(selectedItem);
+    console.log("for update flat areas : ", selectedAreas);
+    const data = selectedAreas.map((a: any) => ({
+      ...a,
+      unit: "sqft",
+      area_size:
+        a.unit === "sqft"
+          ? a.area_size
+          : convertSqmToSqft(Number(a.area_size) ?? 0),
+    }));
     buildings.forEach((building: any) => {
       building.floors?.forEach((floor: any) => {
         if (floor.flats[selectedItem.flatId]) {
-          floor.flats[selectedItem.flatId].areas = selectedAreas;
+          floor.flats[selectedItem.flatId].areas = data;
         }
       });
     });
@@ -901,8 +920,11 @@ export default function UpdateProject({
           common_area_name: element.common_area_name,
           status: "pending",
           workflow: defaultWorkflow,
-          common_area_size: element.area_size,
-          common_area_size_unit: element.unit,
+          common_area_size:
+            element.unit === "sqft"
+              ? element.area_size
+              : convertSqmToSqft(Number(element.area_size) ?? 0),
+          common_area_size_unit: "sqft",
         };
 
         updatedBuildings[selectedItem.buildingId].floors[
@@ -921,8 +943,11 @@ export default function UpdateProject({
       common_area_name: element.common_area_name,
       status: "pending",
       workflow: defaultWorkflow,
-      common_area_size: element.area_size,
-      common_area_size_unit: element.unit,
+      common_area_size:
+        element.unit === "sqft"
+          ? element.area_size
+          : convertSqmToSqft(Number(element.area_size) ?? 0),
+      common_area_size_unit: "sqft",
     }));
     if (selectedAreas.length > 0) {
       buildings.forEach((building: any) => {
@@ -964,6 +989,11 @@ export default function UpdateProject({
       buildings,
     }));
   };
+
+  function convertSqmToSqft(value: number) {
+    if (!value || isNaN(value)) return 0;
+    return value * 10.7639;
+  }
 
   return (
     <>
@@ -1510,6 +1540,13 @@ export default function UpdateProject({
                                 }
                               </span>
                             )}
+                            {((!floor.flats && !floor.common_areas) ||
+                              (floor.flats.length === 0 &&
+                                floor.common_areas.length === 0)) && (
+                              <p className="text-xs text-red-600 pl-3">
+                                Add Flat or Common Area.
+                              </p>
+                            )}
                           </div>
 
                           <div className="ml-2 grid grid-cols-1 lg:grid-cols-2 gap-3">
@@ -1568,121 +1605,137 @@ export default function UpdateProject({
                               <div className="grid grid-cols-2 gap-1">
                                 {floor.flats.map(
                                   (flat: any, flatIndex: number) => (
-                                    <div
-                                      key={flat.id || flatIndex}
-                                      className="bg-white rounded p-1.5 border border-gray-200"
-                                    >
-                                      <div className="flex justify-between items-center">
-                                        <div className="flex flex-1 items-center">
-                                          <div className="bg-blue-50 rounded-lg text-blue-600 mr-1 p-1">
-                                            <Home className="w-3 h-3" />
+                                    <div>
+                                      <div
+                                        key={flat.id || flatIndex}
+                                        className="bg-white rounded p-1.5 border border-gray-200"
+                                      >
+                                        <div className="flex justify-between items-center">
+                                          <div className="flex flex-1 items-center">
+                                            <div className="bg-blue-50 rounded-lg text-blue-600 mr-1 p-1">
+                                              <Home className="w-3 h-3" />
+                                            </div>
+                                            <input
+                                              type="text"
+                                              value={flat.flat_name}
+                                              disabled
+                                              className={`w-full bg-transparent border-b focus:outline-none focus:border-[#C62828] px-1 py-0.5 text-xs ${
+                                                errors[
+                                                  `building_${buildingIndex}_floor_${floorIndex}_flat_${flatIndex}_name`
+                                                ]
+                                                  ? "border-red-300"
+                                                  : "border-gray-300"
+                                              }`}
+                                              placeholder="Flat name/number"
+                                            />
                                           </div>
-                                          <input
-                                            type="text"
-                                            value={flat.flat_name}
-                                            disabled
-                                            className={`w-full bg-transparent border-b focus:outline-none focus:border-[#C62828] px-1 py-0.5 text-xs ${
-                                              errors[
-                                                `building_${buildingIndex}_floor_${floorIndex}_flat_${flatIndex}_name`
-                                              ]
-                                                ? "border-red-300"
-                                                : "border-gray-300"
-                                            }`}
-                                            placeholder="Flat name/number"
-                                          />
-                                        </div>
-                                        <div className="flex items-center gap-0.5">
-                                          <button
-                                            type="button"
-                                            onClick={() => {
-                                              setSelectedAreas(
-                                                flat.areas ?? [],
-                                              );
-                                              setSelectedItem({
-                                                ...selectedItem,
-                                                buildingId: buildingIndex,
-                                                floorId: floorIndex,
-                                                flatId: flatIndex,
-                                              });
-                                              setShowModalForItem("flatArea");
-                                            }}
-                                            className="p-0.5 text-blue-600 hover:bg-green-50 rounded-lg transition-all duration-200"
-                                          >
-                                            <PlusCircle className="w-3 h-3" />
-                                          </button>
-                                          {formData.buildings.length >= 1 && (
+                                          <div className="flex items-center gap-0.5">
                                             <button
                                               type="button"
                                               onClick={() => {
+                                                setSelectedAreas(
+                                                  flat.areas ?? [],
+                                                );
                                                 setSelectedItem({
-                                                  name: flat.flat_name,
-                                                  count: "",
+                                                  ...selectedItem,
                                                   buildingId: buildingIndex,
                                                   floorId: floorIndex,
                                                   flatId: flatIndex,
-                                                  commonAreaId: "",
                                                 });
-                                                setShowModalForItem("flat");
+                                                setShowModalForItem("flatArea");
                                               }}
-                                              className="p-0.5 text-green-600 hover:bg-green-50 rounded-lg transition-all duration-200"
+                                              className="p-0.5 text-blue-600 hover:bg-green-50 rounded-lg transition-all duration-200"
                                             >
-                                              <Edit2 className="w-3 h-3" />
+                                              <PlusCircle className="w-3 h-3" />
                                             </button>
-                                          )}
-                                          <button
-                                            type="button"
-                                            onClick={() =>
-                                              removeFlat(
-                                                buildingIndex,
-                                                floorIndex,
-                                                flatIndex,
-                                              )
-                                            }
-                                            className="p-0.5 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-all duration-200"
-                                          >
-                                            <X className="w-3 h-3" />
-                                          </button>
-                                        </div>
-                                      </div>
-                                      {flat.areas && (
-                                        <div>
-                                          {flat.areas.map(
-                                            (
-                                              a: any,
-                                              areaItemIndexr: number,
-                                            ) => (
-                                              <div
-                                                key={areaItemIndexr}
-                                                className="flex justify-between py-2 px-3 m-1 border border-slate-400 rounded-lg"
+                                            {formData.buildings.length >= 1 && (
+                                              <button
+                                                type="button"
+                                                onClick={() => {
+                                                  setSelectedItem({
+                                                    name: flat.flat_name,
+                                                    count: "",
+                                                    buildingId: buildingIndex,
+                                                    floorId: floorIndex,
+                                                    flatId: flatIndex,
+                                                    commonAreaId: "",
+                                                  });
+                                                  setShowModalForItem("flat");
+                                                }}
+                                                className="p-0.5 text-green-600 hover:bg-green-50 rounded-lg transition-all duration-200"
                                               >
-                                                <div>
-                                                  <h1 className="text-xs">
-                                                    {a.name}
-                                                  </h1>
-                                                  <h5 className="text-xs text-slate-600">
-                                                    {a.area_size + " " + a.unit}
-                                                  </h5>
-                                                </div>
-                                                <div className="space-x-2 flex items-center">
-                                                  <button
-                                                    onClick={() => {
-                                                      removeArea(
-                                                        buildingIndex,
-                                                        floorIndex,
-                                                        flatIndex,
-                                                        areaItemIndexr,
-                                                        "flat",
-                                                      );
-                                                    }}
-                                                    className="p-0.5 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-all duration-200"
-                                                  >
-                                                    <X className="w-3 h-3" />
-                                                  </button>
-                                                </div>
-                                              </div>
-                                            ),
-                                          )}
+                                                <Edit2 className="w-3 h-3" />
+                                              </button>
+                                            )}
+                                            <button
+                                              type="button"
+                                              onClick={() =>
+                                                removeFlat(
+                                                  buildingIndex,
+                                                  floorIndex,
+                                                  flatIndex,
+                                                )
+                                              }
+                                              className="p-0.5 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-all duration-200"
+                                            >
+                                              <X className="w-3 h-3" />
+                                            </button>
+                                          </div>
                                         </div>
+                                        {flat.areas && (
+                                          <div>
+                                            {flat.areas.map(
+                                              (
+                                                a: any,
+                                                areaItemIndexr: number,
+                                              ) => (
+                                                <div
+                                                  key={areaItemIndexr}
+                                                  className="flex justify-between py-2 px-3 m-1 border border-slate-400 rounded-lg"
+                                                >
+                                                  <div>
+                                                    <h1 className="text-xs">
+                                                      {a.name}
+                                                    </h1>
+                                                    <h5 className="text-xs text-slate-600">
+                                                      {a.area_size +
+                                                        " " +
+                                                        a.unit}
+                                                    </h5>
+                                                  </div>
+                                                  <div className="space-x-2 flex items-center">
+                                                    <button
+                                                      onClick={() => {
+                                                        removeArea(
+                                                          buildingIndex,
+                                                          floorIndex,
+                                                          flatIndex,
+                                                          areaItemIndexr,
+                                                          "flat",
+                                                        );
+                                                      }}
+                                                      className="p-0.5 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-all duration-200"
+                                                    >
+                                                      <X className="w-3 h-3" />
+                                                    </button>
+                                                  </div>
+                                                </div>
+                                              ),
+                                            )}
+                                          </div>
+                                        )}
+                                        {(!flat.areas ||
+                                          flat.areas.length === 0) && (
+                                          <div className="flex justify-between text-xs py-2 px-3 m-1 border border-slate-400 rounded-lg">
+                                            No Flat Area Added.
+                                          </div>
+                                        )}
+                                      </div>
+                                      {(!flat.areas ||
+                                        flat.areas.length === 0) && (
+                                        <p className="text-red-600 text-xs pl-3">
+                                          Add Flat Areas
+                                        </p>
                                       )}
                                     </div>
                                   ),

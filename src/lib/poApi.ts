@@ -1,74 +1,74 @@
 import { api, unwrap } from "./Api"; // adjust import path if needed
 
 async function getPOs() {
-  const res = await api.get("/purchase-orders");
+  const res: any = await api.get("/purchase-orders");
   return unwrap(res);
 }
 
 async function getVendors(active?: boolean) {
-  const res = await api.get("/vendors", {
+  const res: any = await api.get("/vendors", {
     params: active ? { active: 1 } : undefined,
   });
   return unwrap(res);
 }
 
 async function getProjects() {
-  const res = await api.get("/projects");
+  const res: any = await api.get("/projects");
   return unwrap(res);
 }
 
 async function getPOTypes() {
-  const res = await api.get("/po-types");
+  const res: any = await api.get("/po-types");
   return unwrap(res);
 }
 
 async function getItems() {
-  const res = await api.get("/items");
+  const res: any = await api.get("/items");
   return unwrap(res);
 }
 
 async function getTerms() {
-  const res = await api.get("/terms");
+  const res: any = await api.get("/terms");
   return unwrap(res);
 }
 
 async function getPaymentTerms() {
-  const res = await api.get("/payment-terms");
+  const res: any = await api.get("/payment-terms");
   return unwrap(res);
 }
 
 async function nextSequence() {
-  const res = await api.get("/purchase-orders/next-sequence");
+  const res: any = await api.get("/purchase-orders/next-sequence");
   return unwrap(res);
 }
 
 async function createPO(payload: any) {
-  const res = await api.post("/purchase-orders", payload);
+  const res: any = await api.post("/purchase-orders", payload);
   return unwrap(res);
 }
 
 async function updatePO(id: Number, payload: any) {
-  const res = await api.put(`/purchase-orders/${id}`, payload);
+  const res: any = await api.put(`/purchase-orders/${id}`, payload);
   return unwrap(res);
 }
 
 async function createTracking(records: any[]) {
-  const res = await api.post("/po-material-tracking", { records });
+  const res: any = await api.post("/po-material-tracking", { records });
   return unwrap(res);
 }
 
 async function createPayment(payload: any) {
-  const res = await api.post("/po-payments", payload);
+  const res: any = await api.post("/po-payments", payload);
   return unwrap(res);
 }
 
 export async function updatePurchaseOrder(id: number | string, payload: any) {
-  const res = await api.put(`/purchase-orders/${id}`, payload);
+  const res: any = await api.put(`/purchase-orders/${id}`, payload);
   return unwrap(res);
 }
 
 export async function deletePurchaseOrder(id: any) {
-  const res = await api.delete(`/purchase-orders/${id}`);
+  const res: any = await api.delete(`/purchase-orders/${id}`);
   return unwrap(res);
 }
 
@@ -76,14 +76,14 @@ export async function deletePurchaseOrderItem(
   POItemId: any,
   POMaterialTrackingId: any,
 ) {
-  const res = await api.delete(
+  const res: any = await api.delete(
     `/purchase-orders/poItem/${POItemId}/${POMaterialTrackingId}`,
   );
   return unwrap(res);
 }
 
 export async function getPOsItems() {
-  const res = await api.get(`/purchase-orders/purchaseOrderItems`);
+  const res: any = await api.get(`/purchase-orders/purchaseOrderItems`);
   return unwrap(res);
 }
 
@@ -91,14 +91,14 @@ export async function updatePurchaseOrderStatus(
   id: number | string,
   status: any,
 ) {
-  const res = await api.put(`/purchase-orders/updatePOStatus/${id}`, {
+  const res: any = await api.put(`/purchase-orders/updatePOStatus/${id}`, {
     status,
   });
   return unwrap(res);
 }
 
 export async function getPoPdf(id: number) {
-  const res = await api.get(`/pdf/po/${id}`);
+  const res: any = await api.get(`/pdf/po/${id}`);
   return unwrap(res);
 }
 

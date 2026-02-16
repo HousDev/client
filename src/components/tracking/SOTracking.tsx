@@ -161,7 +161,7 @@ export default function SOTracking() {
       setSoData(Array.from(soMap.values()));
       setLoading(false);
     } catch (err) {
-      toast.error("Failed to load Service Orders");
+      toast.error("Failed to load Work Orders");
       setLoading(false);
     }
   };
@@ -255,7 +255,7 @@ export default function SOTracking() {
       <div className="p-4 md:p-6 bg-gray-50 min-h-screen">
         <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-8 md:p-12 text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
-          <p className="text-gray-600 mt-4">Loading Service Orders...</p>
+          <p className="text-gray-600 mt-4">Loading Work Orders...</p>
         </div>
       </div>
     );
@@ -269,7 +269,7 @@ export default function SOTracking() {
       <div className="sticky top-20 z-10 mt-2 grid grid-cols-2 md:grid-cols-4 gap-2 mb-2 mx-0">
         <div className="bg-white px-2.5 py-2 rounded-lg border border-gray-200 flex items-center justify-between">
           <div>
-            <p className="text-[11px] text-gray-500 leading-none">Total SO</p>
+            <p className="text-[11px] text-gray-500 leading-none">Total WO</p>
             <p className="text-sm font-semibold text-gray-800">
               {soData.length}
             </p>
@@ -320,7 +320,7 @@ export default function SOTracking() {
                 </th>
                 <th className="px-3 py-2 text-left">
                   <div className="text-xs font-semibold text-gray-700 uppercase tracking-wider">
-                    SO Number
+                    WO Number
                   </div>
                 </th>
                 <th className="px-3 py-2 text-left">
@@ -340,12 +340,12 @@ export default function SOTracking() {
                 </th>
                 <th className="px-3 py-2 text-left">
                   <div className="text-xs font-semibold text-gray-700 uppercase tracking-wider">
-                    SO Status
+                    WO Status
                   </div>
                 </th>
                 <th className="px-3 py-2 text-left">
                   <div className="text-xs font-semibold text-gray-700 uppercase tracking-wider">
-                    Service Status
+                    Work Status
                   </div>
                 </th>
                 <th className="px-3 py-2 text-left">
@@ -360,7 +360,7 @@ export default function SOTracking() {
                 <td className="px-3 py-1.5">
                   <input
                     type="text"
-                    placeholder="Search SO..."
+                    placeholder="Search WO..."
                     value={searchSONumber}
                     onChange={(e) => setSearchSONumber(e.target.value)}
                     className="w-full px-2 py-1 text-xs border border-gray-300 rounded-md focus:ring-1 focus:ring-blue-500 focus:border-transparent"
@@ -396,7 +396,7 @@ export default function SOTracking() {
                 <td className="px-3 py-1.5">
                   <input
                     type="text"
-                    placeholder="Search SO status..."
+                    placeholder="Search WO status..."
                     value={searchSOStatus}
                     onChange={(e) => setSearchSOStatus(e.target.value)}
                     className="w-full px-2 py-1 text-xs border border-gray-300 rounded-md focus:ring-1 focus:ring-blue-500 focus:border-transparent"
@@ -571,7 +571,7 @@ export default function SOTracking() {
                             <div className="px-3 py-2 border-t border-gray-200">
                               <h4 className="text-xs font-semibold text-gray-700 mb-2 flex items-center gap-1">
                                 <FileText className="w-3 h-3" />
-                                Services in SO {so.so_number}
+                                Services in WO {so.so_number}
                               </h4>
                               <div className="overflow-x-auto">
                                 <table className="w-full bg-white rounded-lg border border-gray-200 min-w-[600px]">

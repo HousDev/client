@@ -6,27 +6,24 @@ import {
   X,
   Trash2,
   Package,
-  Save,
   FileText,
   Info,
   Box,
   Building2,
-  Calculator,
   Calendar,
   CreditCard,
   Tag,
   Truck,
   User,
   Search,
-  ChevronDown,
   ClipboardCheck,
+  Save,
 } from "lucide-react";
 import { useAuth } from "../contexts/AuthContext";
 import poApi from "../lib/poApi";
 import poTypeApi from "../lib/poTypeApi";
 import TermsConditionsApi from "../lib/termsConditionsApi";
 import { toast } from "sonner";
-import classifiedPaymentTerms from "../data/paymentTerms";
 import PaymentMastersApi from "../lib/paymentMasterApi";
 
 /* --- types (updated to include individual GST rates) --- */
@@ -258,7 +255,6 @@ export default function CreatePurchaseOrderForm({
   const [selectedPaymentTermId, setSelectedPaymentTermId] = useState<any>("");
   const [selectedPaymentTerm, setSelectedPaymentTerm] = useState<any>("");
   const [poPaymentTerms, setPoPaymentTerms] = useState<any[]>([]);
-  const [showTermDropdown, setShowTermDropdown] = useState(false);
   const [displayTerms, setDisplayTerms] = useState<any>([]);
 
   const [selectedPaymentTermData, setSelectedPaymentTermData] =
@@ -753,8 +749,7 @@ export default function CreatePurchaseOrderForm({
         formData.project_id === "" ||
         formData.po_type_id === "" ||
         formData.po_date === "" ||
-        formData.delivery_date === "" ||
-        formData.due_date === ""
+        formData.delivery_date === ""
       ) {
         toast.error("Fill all required fields.");
         return;
@@ -764,6 +759,19 @@ export default function CreatePurchaseOrderForm({
         return;
       }
 
+      let paymentPerct = 0;
+      poPaymentTerms.forEach((element: any) => {
+        paymentPerct += Number(element.percentPayment);
+      });
+      console.log(paymentPerct);
+      if (Number(paymentPerct) !== 100) {
+        toast.error(
+          "Your payment T&C payment percentage is " +
+            paymentPerct +
+            "% it is not equal to 100%.",
+        );
+        return;
+      }
       const selected_terms_idsData: any = [];
       const terms_and_conditionsData: any = [];
 
@@ -795,7 +803,6 @@ export default function CreatePurchaseOrderForm({
         po_type_id: formData.po_type_id,
         po_date: formData.po_date,
         delivery_date: formData.delivery_date,
-        due_date: formData.due_date,
         is_interstate: formData.is_interstate,
         items: formData.items,
         subtotal: formData.subtotal,
@@ -807,7 +814,7 @@ export default function CreatePurchaseOrderForm({
         igst_amount: formData.igst_amount,
         total_gst_amount: formData.total_gst_amount,
         grand_total: formData.grand_total,
-        payment_terms_id: formData.payment_terms_id,
+        payment_terms: poPaymentTerms,
         advance_amount: formData.advance_amount,
         total_paid: 0,
         balance_amount: formData.grand_total,
@@ -819,8 +826,6 @@ export default function CreatePurchaseOrderForm({
         payment_status: "pending",
         created_by: user?.id,
       };
-
-      console.log(payload);
 
       const created: any = await poApi.createPO(payload);
 
@@ -1080,6 +1085,7 @@ export default function CreatePurchaseOrderForm({
                     <input
                       type="date"
                       value={formData.po_date}
+                      max={formData.delivery_date}
                       onChange={(e) =>
                         setFormData({ ...formData, po_date: e.target.value })
                       }
@@ -1103,6 +1109,7 @@ export default function CreatePurchaseOrderForm({
                     <input
                       type="date"
                       value={formData.delivery_date}
+                      min={formData.po_date}
                       onChange={(e) =>
                         setFormData({
                           ...formData,
@@ -1110,31 +1117,6 @@ export default function CreatePurchaseOrderForm({
                         })
                       }
                       className="w-full pl-10 pr-4 py-2 text-sm border border-gray-300 rounded-xl focus:border-indigo-600 focus:ring-2 focus:ring-indigo-600/20 outline-none transition-all duration-200 hover:border-gray-400"
-                    />
-                  </div>
-                </div>
-
-                {/* Payment Due Date */}
-                <div className="space-y-1.5">
-                  <label className="block text-xs font-semibold text-gray-700 mb-1 flex items-center gap-1.5">
-                    <CreditCard className="w-3 h-3 text-red-600" />
-                    <span>Payment Due Date</span>
-                    <span className="text-red-500">*</span>
-                  </label>
-                  <div className="relative group">
-                    <div className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 group-focus-within:text-red-600 transition-colors">
-                      <CreditCard className="w-3.5 h-3.5" />
-                    </div>
-                    <input
-                      type="date"
-                      value={formData.due_date}
-                      onChange={(e) =>
-                        setFormData({
-                          ...formData,
-                          due_date: e.target.value,
-                        })
-                      }
-                      className="w-full pl-10 pr-4 py-2 text-sm border border-gray-300 rounded-xl focus:border-red-600 focus:ring-2 focus:ring-red-600/20 outline-none transition-all duration-200 hover:border-gray-400"
                     />
                   </div>
                 </div>
@@ -1377,17 +1359,21 @@ export default function CreatePurchaseOrderForm({
                   </div>
                   <div className="bg-gradient-to-b from-gray-50/30 to-white/30 p-4 rounded-xl border border-gray-300">
                     <ul className="space-y-2">
-                      {poPaymentTerms.map((d, indx: number) => (
-                        <li key={indx} className="flex items-start gap-2">
-                          <div className="w-1.5 h-1.5 bg-green-500 rounded-full mt-1.5 flex-shrink-0"></div>
-                          <p className="text-xs text-gray-700 flex-1">
-                            {d.content
-                              .replace("${percent}", d.percent)
-                              .replace("${materialPercent}", d.materialPercent)
-                              .replace("${days}", d.days)}
-                          </p>
-                        </li>
-                      ))}
+                      {poPaymentTerms.map((d, indx: number) => {
+                        console.log(d);
+                        let term = d.percentPayment + " " + d.firstText + " ";
+                        term += d.gracePeriod ? d.gracePeriod + " " : "";
+                        term += d.gracePeriod ? d.secondText : "";
+                        console.log(term);
+                        return (
+                          <li key={indx} className="flex items-start gap-2">
+                            <div className="w-1.5 h-1.5 bg-green-500 rounded-full mt-1.5 flex-shrink-0"></div>
+                            <p className="text-xs text-gray-700 flex-1">
+                              {term}
+                            </p>
+                          </li>
+                        );
+                      })}
                     </ul>
                   </div>
                 </div>
@@ -1407,59 +1393,6 @@ export default function CreatePurchaseOrderForm({
                     </h4>
                   </div>
                   <div className="bg-gradient-to-b from-gray-50/30 to-white/30 p-4 rounded-xl border border-gray-300">
-                    {/* <div className="space-y-4">
-                      {terms.map((d, indx: number) => {
-                        const extraTCData =
-                          extraTerms.filter(
-                            (ed: any) =>
-                              ed.category === d.category && ed.is_default,
-                          ) || [];
-                        if (
-                          d.content.find((d: any) => d.is_default) ||
-                          extraTCData.length > 0
-                        ) {
-                          return (
-                            <div key={indx} className="space-y-2">
-                              <h5 className="text-xs font-semibold text-gray-700">
-                                {d.category.charAt(0).toUpperCase() +
-                                  d.category.slice(1)}
-                              </h5>
-                              <ul className="space-y-1.5 ml-3">
-                                {d.content.map(
-                                  (term: any, idx: number) =>
-                                    term.is_default && (
-                                      <li
-                                        key={idx}
-                                        className="flex items-start gap-2"
-                                      >
-                                        <div className="w-1.5 h-1.5 bg-amber-500 rounded-full mt-1 flex-shrink-0"></div>
-                                        <p className="text-xs text-gray-700 flex-1">
-                                          {term.content}
-                                        </p>
-                                      </li>
-                                    ),
-                                )}
-                                {extraTCData.map(
-                                  (etc: any) =>
-                                    etc.is_default && (
-                                      <li
-                                        key={etc.content}
-                                        className="flex items-start gap-2"
-                                      >
-                                        <div className="w-1.5 h-1.5 bg-amber-500 rounded-full mt-1 flex-shrink-0"></div>
-                                        <p className="text-xs text-gray-700 flex-1">
-                                          {etc.content}
-                                        </p>
-                                      </li>
-                                    ),
-                                )}
-                              </ul>
-                            </div>
-                          );
-                        }
-                        return null;
-                      })}
-                    </div> */}
                     <div className="space-y-4">
                       {displayTerms.map((d: any, indx: number) => (
                         <div key={indx} className="space-y-2">
@@ -1792,144 +1725,6 @@ export default function CreatePurchaseOrderForm({
           </div>
         </div>
       )}
-      {/* {showTermsConditions && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-2xl">
-            <div className="bg-gradient-to-r rounded-t-2xl from-blue-600 to-blue-700 px-6 py-4 flex justify-between items-center">
-              <h2 className="text-2xl font-bold text-white">
-                Add Terms & Conditions
-              </h2>
-              <div className="flex">
-                <button
-                  onClick={() => setShowAddTerm(true)}
-                  className="text-white bg-green-600 hover:bg-green-700 rounded-lg px-3 font-semibold py-1 flex items-center mr-3 text-sm"
-                >
-                  <Plus className="w-4 h-4" /> Add
-                </button>
-                <button
-                  onClick={() => setShowTermsConditions(false)}
-                  className="text-white hover:bg-white hover:bg-opacity-20 rounded-lg p-2 transition"
-                >
-                  <X className="w-6 h-6" />
-                </button>
-              </div>
-            </div>
-            <div className="py-6 ">
-              <ul className="px-6">
-                {terms.map((d, indx: number) => {
-                  const extraTCData =
-                    extraTerms.filter(
-                      (ed: any) => ed.category === d.category,
-                    ) || [];
-                  return (
-                    <li className="mb-3" key={indx}>
-                      <div>
-                        <h1 className="font-semibold">
-                          <input
-                            type="checkbox"
-                            onChange={(e) => {
-                              setTerms((prev) =>
-                                prev.map((tc) =>
-                                  tc.id === d.id
-                                    ? {
-                                        ...tc,
-                                        isActive: !tc.isActive,
-                                        content: tc.content.map((i: any) => ({
-                                          ...i,
-                                          is_default: !tc.isActive,
-                                        })),
-                                      }
-                                    : tc,
-                                ),
-                              );
-
-                              setExtraTerms((prev) =>
-                                prev.map((tc) =>
-                                  tc.category === d.category
-                                    ? {
-                                        ...tc,
-                                        is_default: !d.isActive,
-                                      }
-                                    : tc,
-                                ),
-                              );
-                            }}
-                            checked={
-                              d.isActive ||
-                              d.content.filter((ftc: any) => ftc.is_default)
-                                .length === d.content.length
-                            }
-                            className="w-4 h-4 accent-blue-600 cursor-pointer mr-1"
-                          />{" "}
-                          {d.category.charAt(0).toUpperCase() +
-                            d.category.slice(1) || ""}
-                        </h1>
-                      </div>
-                      <ul className=" ml-3">
-                        {d.content.map((term: any, idx: number) => {
-                          return (
-                            <li key={idx}>
-                              <input
-                                type="checkbox"
-                                checked={term.is_default}
-                                onChange={() => {
-                                  setTerms((prev) =>
-                                    prev.map((tc) =>
-                                      tc.id === d.id
-                                        ? {
-                                            ...tc,
-                                            content: tc.content.map((i: any) =>
-                                              i.term_id === term.term_id
-                                                ? {
-                                                    ...i,
-                                                    is_default: !i.is_default,
-                                                  }
-                                                : i,
-                                            ),
-                                          }
-                                        : tc,
-                                    ),
-                                  );
-                                }}
-                                className="w-4 h-4 accent-blue-600 cursor-pointer mr-1"
-                              />{" "}
-                              {term.content}
-                            </li>
-                          );
-                        })}
-                        {extraTCData.map((etc: any) => {
-                          return (
-                            <li key={etc.content}>
-                              <input
-                                type="checkbox"
-                                checked={etc.is_default}
-                                onChange={() => {
-                                  setExtraTerms((prev) =>
-                                    prev.map((etci) =>
-                                      etci.content === etc.content
-                                        ? {
-                                            ...etci,
-                                            is_default: !etci.is_default, // ✅ TOGGLE
-                                          }
-                                        : etci,
-                                    ),
-                                  );
-                                }}
-                                className="w-4 h-4 accent-blue-600 cursor-pointer mr-1"
-                              />{" "}
-                              {etc.content}
-                            </li>
-                          );
-                        })}
-                      </ul>
-                    </li>
-                  );
-                })}
-              </ul>
-            </div>
-          </div>
-        </div>
-      )} */}
 
       {showAddPaymentTerm && (
         <div className="fixed inset-0 bg-gradient-to-br from-gray-900/95 via-gray-800/95 to-gray-900/95 backdrop-blur-sm flex items-center justify-center z-[70] p-2 md:p-4">
@@ -1971,136 +1766,248 @@ export default function CreatePurchaseOrderForm({
             <div className="relative flex-grow overflow-y-auto">
               <div className="relative p-5 md:p-7 space-y-6">
                 {/* Custom Payment Term Select */}
-                <div className="animate-fade-up">
-                  <label className="block text-sm font-semibold text-[#2a2c2a] mb-3">
-                    Select Payment Term
-                  </label>
-                  <SearchableSelect
-                    options={allPayments.map((term: any) => {
-                      const concatinatedTerm = [
-                        term.percentPayment != null
-                          ? `${Number(term.percentPayment).toFixed(2)}`
-                          : "",
+                <div className=" space-y-6 sticky top-4 z-50 bg-white">
+                  <div className="animate-fade-up">
+                    <label className="block text-sm font-semibold text-[#2a2c2a] mb-3">
+                      Select Payment Term
+                    </label>
+                    <SearchableSelect
+                      options={allPayments.map((term: any) => {
+                        const concatinatedTerm = [
+                          term.percentPayment != null
+                            ? `${Number(term.percentPayment).toFixed(2)}`
+                            : "",
 
-                        term.firstText ?? "",
+                          term.firstText ?? "",
+                          term.gracePeriod != null
+                            ? `${Number(term.gracePeriod).toFixed(2)}`
+                            : "",
 
-                        term.materialPercent != null
-                          ? `${Number(term.materialPercent).toFixed(2)}`
-                          : "",
+                          term.gracePeriod != null
+                            ? (term.secondText ?? "")
+                            : "",
+                        ]
+                          .filter(Boolean)
+                          .join(" ");
+                        return {
+                          id: term.id,
+                          name: concatinatedTerm || "",
+                        };
+                      })}
+                      value={selectedPaymentTermData.id}
+                      onChange={(id) => {
+                        const findedData = allPayments.find(
+                          (d: any) => Number(d.id) === Number(id),
+                        );
+                        console.log("term : ", findedData);
+                        setSelectedPaymentTermData({
+                          ...findedData,
+                          percentPayment: Number(
+                            findedData.percentPayment,
+                          ).toFixed(2),
+                        });
+                      }}
+                      placeholder="Select a payment term"
+                      required
+                    />
+                  </div>
 
-                        term.secondText ?? "",
+                  {/* Dynamic Form Sections with all original logic */}
+                  {selectedPaymentTermData && (
+                    <div className=" bg-gradient-to-br from-blue-50/50 to-white border border-blue-200/50 rounded-xl animate-fade-up">
+                      <div className="flex flex-wrap items-center gap-3 p-2 bg-white/50 rounded-lg border border-blue-100">
+                        <div className="relative flex items-center">
+                          <input
+                            type="text"
+                            value={selectedPaymentTermData.percentPayment}
+                            onChange={(e) => {
+                              console.log(selectedPaymentTermData);
+                              const totalPercent = poPaymentTerms.reduce(
+                                (sum, item) =>
+                                  sum + Number(item.percentPayment),
+                                0,
+                              );
 
-                        term.gracePeriod != null ? (term.thirdText ?? "") : "",
-                      ]
-                        .filter(Boolean)
-                        .join(" ");
-                      return {
-                        id: term.id,
-                        name: concatinatedTerm || "",
-                      };
-                    })}
-                    value={selectedPaymentTermData.id}
-                    onChange={(id) => {
-                      const findedData = allPayments.find(
-                        (d: any) => Number(d.id) === Number(id),
-                      );
-                      setSelectedPaymentTermData(findedData);
-                    }}
-                    placeholder="Select a payment term"
-                    required
-                  />
-                </div>
-
-                {/* Dynamic Form Sections with all original logic */}
-                {selectedPaymentTermData && (
-                  <div className="p-5 bg-gradient-to-br from-blue-50/50 to-white border border-blue-200/50 rounded-xl animate-fade-up">
-                    <div className="flex flex-wrap items-center gap-3 p-4 bg-white/50 rounded-lg border border-blue-100">
-                      <div className="relative flex items-center">
-                        <input
-                          type="text"
-                          value={selectedPaymentTermData.percentPayment}
-                          onChange={(e) => {
-                            setSelectedPaymentTermData({
-                              ...selectedPaymentTermData,
-                              percentPayment: e.target.value,
-                            });
-                          }}
-                          className="w-20 px-3 py-1 text-center border-2 border-blue-300 rounded-lg focus:ring-4 focus:ring-blue-500/20 focus:border-blue-500 outline-none font-bold text-blue-900 bg-white shadow-inner"
-                        />
-                        <p className="text-sm text-slate-800">
-                          {selectedPaymentTermData.firstText}
-                        </p>
+                              if (
+                                totalPercent + Number(e.target.value) > 100 ||
+                                Number(e.target.value) > 100
+                              ) {
+                                toast.error(
+                                  `You already entered ${totalPercent} % payment percent you are entering payment percent greater than 100 %`,
+                                );
+                                return;
+                              }
+                              setSelectedPaymentTermData({
+                                ...selectedPaymentTermData,
+                                percentPayment: e.target.value,
+                              });
+                            }}
+                            className="w-20 px-3 py-1 mr-2 text-center border-2 border-blue-300 rounded-lg focus:ring-4 focus:ring-blue-500/20 focus:border-blue-500 outline-none font-bold text-blue-900 bg-white shadow-inner"
+                          />
+                          <p className="text-sm text-slate-800">
+                            {selectedPaymentTermData.firstText}
+                          </p>
+                          {selectedPaymentTermData.gracePeriod && (
+                            <div className="flex items-center">
+                              <input
+                                type="text"
+                                value={selectedPaymentTermData.gracePeriod}
+                                onChange={(e) => {
+                                  setSelectedPaymentTermData({
+                                    ...selectedPaymentTermData,
+                                    gracePeriod: e.target.value,
+                                  });
+                                }}
+                                className="w-20 px-3 py-1 mx-2 text-center border-2 border-blue-300 rounded-lg focus:ring-4 focus:ring-blue-500/20 focus:border-blue-500 outline-none font-bold text-blue-900 bg-white shadow-inner"
+                              />
+                              <p className="text-sm text-slate-800">
+                                {selectedPaymentTermData.secondText}
+                              </p>
+                            </div>
+                          )}
+                        </div>
                       </div>
                     </div>
-                  </div>
-                )}
+                  )}
 
-                {/* Action Buttons - All original logic preserved */}
-                <div className="pt-6 border-t border-gray-200/50">
-                  <div className="flex flex-col sm:flex-row gap-4">
+                  <div>
                     <button
                       type="button"
                       disabled={!selectedPaymentTermData}
                       onClick={() => {
-                        if (!selectedPaymentTermData) {
-                          toast.error("Fill correct data.");
-                          return;
-                        }
-
+                        console.log(poPaymentTerms);
                         const totalPercent = poPaymentTerms.reduce(
-                          (acc, term) => acc + Number(term.percent),
+                          (sum, item) => sum + Number(item.percentPayment),
                           0,
                         );
-                        const totalMaterialPercent = poPaymentTerms.reduce(
-                          (acc, term) => acc + Number(term.materialPercent),
-                          0,
-                        );
-
-                        if (
-                          totalMaterialPercent +
-                            Number(selectedPaymentTermData.materialPercent) >
-                          100
-                        ) {
-                          toast.error(
-                            "You have already entered material percent of " +
-                              totalMaterialPercent +
-                              "% You can not exceed 100%",
-                          );
-                          return;
-                        }
+                        console.log("totalPercent : ", totalPercent);
                         if (
                           totalPercent +
-                            Number(selectedPaymentTermData.percent) >
+                            Number(selectedPaymentTermData.percentPayment) >
                           100
                         ) {
                           toast.error(
-                            "You have already entered payment percent of " +
-                              totalPercent +
-                              "% You can not exceed 100%",
+                            `You already entered ${totalPercent} % payment percent you are entering payment percent greater than 100 %`,
                           );
                           return;
                         }
-                        console.log(poPaymentTerms);
-                        let data = poPaymentTerms;
-                        console.log("this is payment terms", data);
-                        data.push(selectedPaymentTermData);
-                        setPoPaymentTerms(data);
+
+                        setPoPaymentTerms((prev) => [
+                          ...prev,
+                          {
+                            event_trigger:
+                              selectedPaymentTermData.event_trigger,
+                            firstText: selectedPaymentTermData.firstText,
+                            gracePeriod: selectedPaymentTermData.gracePeriod,
+                            id: 14,
+                            percentPayment:
+                              selectedPaymentTermData.percentPayment,
+                            secondText: selectedPaymentTermData.secondText,
+                          },
+                        ]);
+                        setSelectedPaymentTermData("");
+                      }}
+                      className={`flex group flex-1 px-6 py-2 rounded-xl font-semibold text-sm transition-all duration-300 transform hover:scale-[1.02] active:scale-[0.98] ${
+                        selectedPaymentTermData
+                          ? "bg-gradient-to-r from-[#b52124] via-[#c52c30] to-[#d43538] text-white shadow-lg shadow-red-500/25 hover:shadow-xl hover:shadow-red-500/30"
+                          : "bg-gray-300 text-gray-500 cursor-not-allowed"
+                      }  w-full flex justify-center`}
+                    >
+                      <div className="absolute inset-0 rounded-xl bg-gradient-to-r from-transparent via-white/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
+                      <div className="relative flex items-center justify-center gap-3">
+                        <Plus className="w-4 h-4 group-hover:rotate-90 transition-transform duration-300" />
+                        <span>Add Payment Terms & Condition</span>
+                      </div>
+                    </button>
+                  </div>
+                </div>
+                <div>
+                  {poPaymentTerms.length > 0 && (
+                    <div className="mb-6 ">
+                      <div className="flex items-center gap-2 mb-3">
+                        <div className="p-1.5 bg-green-100 rounded-lg">
+                          <CreditCard className="w-4 h-4 text-green-600" />
+                        </div>
+                        <h4 className="text-sm font-semibold text-gray-800">
+                          Payment Terms
+                        </h4>
+                      </div>
+                      <div className="bg-gradient-to-b from-gray-50/30 to-white/30 max-h-40 overflow-y-scroll">
+                        <ul className="space-y-2">
+                          {poPaymentTerms.map((d, indx: number) => {
+                            console.log(d);
+                            let term =
+                              d.percentPayment + " " + d.firstText + " ";
+                            term += d.gracePeriod ? d.gracePeriod + " " : "";
+                            term += d.gracePeriod ? d.secondText : "";
+                            console.log(term);
+                            return (
+                              <li
+                                key={indx}
+                                className="flex justify-between items-center gap-2 bg-gradient-to-b from-gray-50/30 to-white/30 p-4 rounded-xl border border-gray-300"
+                              >
+                                <div className="flex items-start gap-2">
+                                  <div className="w-1.5 h-1.5 bg-green-500 rounded-full mt-1.5 flex-shrink-0"></div>
+                                  <p className="text-xs text-gray-700 flex-1">
+                                    {term}
+                                  </p>
+                                </div>
+                                <button
+                                  onClick={() => {
+                                    const filteredData = poPaymentTerms.filter(
+                                      (t) => {
+                                        let termNew =
+                                          t.percentPayment +
+                                          " " +
+                                          t.firstText +
+                                          " ";
+                                        termNew += t.gracePeriod
+                                          ? t.gracePeriod + " "
+                                          : "";
+                                        termNew += t.gracePeriod
+                                          ? t.secondText
+                                          : "";
+                                        return term !== termNew;
+                                      },
+                                    );
+
+                                    setPoPaymentTerms(filteredData);
+                                  }}
+                                  className="bg-red-100 p-[2px] rounded-full cursor-pointer hover:scale-105"
+                                >
+                                  <X className="w-4 h-4" />
+                                </button>
+                              </li>
+                            );
+                          })}
+                        </ul>
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+                {/* Action Buttons - All original logic preserved */}
+                <div className="pt-6 border-t border-gray-200/50">
+                  <div className="flex flex-col sm:flex-row gap-4 -z-10">
+                    <button
+                      type="button"
+                      disabled={poPaymentTerms.length === 0}
+                      onClick={() => {
                         setSelectedPaymentTerm("");
                         setSelectedPaymentTermData("");
                         setSelectedPaymentTermId("");
                         setShowAddPaymentTerm(false);
-                        setShowAddPaymentTerm(false);
                       }}
-                      className={`relative group flex-1 px-6 py-3.5 rounded-xl font-semibold text-sm transition-all duration-300 transform hover:scale-[1.02] active:scale-[0.98] ${
-                        selectedPaymentTermData
+                      className={`relative group flex-1 px-6 py-2 rounded-xl font-semibold text-sm transition-all duration-300 transform hover:scale-[1.02] active:scale-[0.98] ${
+                        poPaymentTerms.length !== 0
                           ? "bg-gradient-to-r from-[#b52124] via-[#c52c30] to-[#d43538] text-white shadow-lg shadow-red-500/25 hover:shadow-xl hover:shadow-red-500/30"
                           : "bg-gray-300 text-gray-500 cursor-not-allowed"
                       }`}
                     >
                       <div className="absolute inset-0 rounded-xl bg-gradient-to-r from-transparent via-white/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
                       <div className="relative flex items-center justify-center gap-3">
-                        <Plus className="w-4 h-4 group-hover:rotate-90 transition-transform duration-300" />
-                        <span>Add</span>
+                        <Save className="w-4 h-4" />
+                        <span>Submit</span>
                       </div>
                     </button>
 
@@ -2112,7 +2019,7 @@ export default function CreatePurchaseOrderForm({
                         setSelectedPaymentTermId("");
                         setShowAddPaymentTerm(false);
                       }}
-                      className="px-6 py-3.5 rounded-xl font-semibold text-sm bg-gradient-to-r from-gray-200 to-gray-300 text-gray-700 hover:from-gray-300 hover:to-gray-400 transition-all duration-300 transform hover:scale-[1.02] active:scale-[0.98] shadow-md shadow-gray-500/10 border border-gray-300/50"
+                      className="px-6 py-2 rounded-xl font-semibold text-sm bg-gradient-to-r from-gray-200 to-gray-300 text-gray-700 hover:from-gray-300 hover:to-gray-400 transition-all duration-300 transform hover:scale-[1.02] active:scale-[0.98] shadow-md shadow-gray-500/10 border border-gray-300/50"
                     >
                       Close
                     </button>
@@ -2157,144 +2064,6 @@ export default function CreatePurchaseOrderForm({
             </div>
 
             <div className="p-4 overflow-y-scroll flex-grow min-h-32 max-h-96">
-              {/* <ul className="space-y-3">
-                {terms.map((d, indx: number) => {
-                  const extraTCData =
-                    extraTerms.filter(
-                      (ed: any) => ed.category === d.category,
-                    ) || [];
-
-                  return (
-                    <li
-                      key={indx}
-                      className="border border-gray-300 rounded-xl p-3"
-                    >
-                      <div className="flex items-start gap-2 mb-2">
-                        <input
-                          type="checkbox"
-                          onChange={() => {
-                            const isActive = !d.isActive;
-
-                            setTerms((prev) =>
-                              prev.map((tc) =>
-                                tc.id === d.id
-                                  ? {
-                                      ...tc,
-                                      isActive: isActive,
-                                      content: tc.content.map((i: any) => ({
-                                        ...i,
-                                        is_default: isActive,
-                                      })),
-                                    }
-                                  : tc,
-                              ),
-                            );
-
-                            setDisplayTerms((prev: any) =>
-                              prev.map((tc: any) =>
-                                tc.category === d.category
-                                  ? {
-                                      ...tc,
-                                      isActive: isActive,
-                                      content: tc.content.map((i: any) => ({
-                                        ...i,
-                                        is_default: isActive,
-                                      })),
-                                    }
-                                  : tc,
-                              ),
-                            );
-
-                            setExtraTerms((prev) =>
-                              prev.map((tc) =>
-                                tc.category === d.category
-                                  ? {
-                                      ...tc,
-                                      is_default: isActive,
-                                    }
-                                  : tc,
-                              ),
-                            );
-                          }}
-                          checked={
-                            d.isActive ||
-                            d.content.filter((ftc: any) => ftc.is_default)
-                              .length === d.content.length
-                          }
-                          className="w-4 h-4 accent-[#b52124] cursor-pointer mt-0.5"
-                        />
-                        <h4 className="font-semibold text-sm text-[#40423f]">
-                          {d.category.charAt(0).toUpperCase() +
-                            d.category.slice(1) || ""}
-                        </h4>
-                      </div>
-
-                      <ul className="ml-6 space-y-2">
-                        {d.content.map((term: any, idx: number) => (
-                          <li key={idx} className="flex items-start gap-2">
-                            <input
-                              type="checkbox"
-                              checked={term.is_default}
-                              onChange={() => {
-                                setTerms((prev) =>
-                                  prev.map((tc) =>
-                                    tc.id === d.id
-                                      ? {
-                                          ...tc,
-                                          content: tc.content.map((i: any) =>
-                                            i.term_id === term.term_id
-                                              ? {
-                                                  ...i,
-                                                  is_default: !i.is_default,
-                                                }
-                                              : i,
-                                          ),
-                                        }
-                                      : tc,
-                                  ),
-                                );
-                              }}
-                              className="w-3.5 h-3.5 accent-[#b52124] cursor-pointer mt-0.5"
-                            />
-                            <span className="text-xs text-[#5a5d5a]">
-                              {term.content}
-                            </span>
-                          </li>
-                        ))}
-
-                        {extraTCData.map((etc: any) => (
-                          <li
-                            key={etc.content}
-                            className="flex items-start gap-2"
-                          >
-                            <input
-                              type="checkbox"
-                              checked={etc.is_default}
-                              onChange={() => {
-                                setExtraTerms((prev) =>
-                                  prev.map((etci) =>
-                                    etci.content === etc.content
-                                      ? {
-                                          ...etci,
-                                          is_default: !etci.is_default,
-                                        }
-                                      : etci,
-                                  ),
-                                );
-                              }}
-                              className="w-3.5 h-3.5 accent-[#b52124] cursor-pointer mt-0.5"
-                            />
-                            <span className="text-xs text-[#5a5d5a] italic">
-                              {etc.content}
-                            </span>
-                          </li>
-                        ))}
-                      </ul>
-                    </li>
-                  );
-                })}
-              </ul> */}
-
               <ul className="space-y-3">
                 {displayTerms.map((d: any, indx: number) => (
                   <li
@@ -2472,7 +2241,6 @@ export default function CreatePurchaseOrderForm({
                 >
                   <option value="">Select Category</option>
                   <option value="general">General</option>
-                  <option value="payment">Payment</option>
                   <option value="delivery">Delivery</option>
                   <option value="quality">Quality</option>
                   <option value="warranty">Warranty</option>

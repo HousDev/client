@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 // src/components/ServiceOrdersPro.tsx
-import React, { useEffect, useState, useRef, SetStateAction } from "react";
+import React, { useEffect, useState, SetStateAction } from "react";
 import {
   Plus,
   X,
@@ -187,7 +187,7 @@ export default function UpdateServiceOrderForm({
           : [];
       setPOTypes(list);
     } catch (err) {
-      console.warn("loadPOTypes failed, fallback to empty", err);
+      console.warn("loadWOTypes failed, fallback to empty", err);
       setPOTypes([]);
     } finally {
       setPOTypesLoading(false);
@@ -503,8 +503,7 @@ export default function UpdateServiceOrderForm({
         formData.project_id === "" ||
         formData.building_id === "" ||
         formData.po_type_id === "" ||
-        formData.po_date === "" ||
-        formData.delivery_date === ""
+        formData.po_date === ""
       ) {
         toast.error("Fill all required fields.");
         return;
@@ -531,7 +530,7 @@ export default function UpdateServiceOrderForm({
         selected_terms_idsData.length === 0 &&
         terms_and_conditionsData.length === 0
       ) {
-        toast.error("Select Terms & Conditions For Service Order.");
+        toast.error("Select Terms & Conditions For Work Order.");
         return;
       }
 
@@ -542,7 +541,7 @@ export default function UpdateServiceOrderForm({
         building_id: formData.building_id,
         service_type_id: formData.po_type_id,
         so_date: formData.po_date,
-        delivery_date: formData.delivery_date,
+        delivery_date: "2026-02-21",
         is_interstate: formData.is_interstate,
         services: formData.items,
         subtotal: formData.subtotal,
@@ -572,15 +571,15 @@ export default function UpdateServiceOrderForm({
         payload,
       );
       console.log(updatePORes);
-      if (updatePORes.success) toast.success("PO Updated Successfully.");
-      else toast.error("Faild to update PO.");
+      if (updatePORes.success) toast.success("WO Updated Successfully.");
+      else toast.error("Faild to update WO.");
       await loadAllData();
 
       setShowEditModal(false);
       resetForm();
       loadPOs();
     } catch (err) {
-      console.error("Error creating PO:", err);
+      console.error("Error creating WO:", err);
       toast.error("Error update service order");
     }
   };
@@ -671,11 +670,11 @@ export default function UpdateServiceOrderForm({
             <div>
               <div className="flex items-baseline gap-2">
                 <h2 className="text-lg md:text-xl font-bold text-white">
-                  Update Service Order
+                  Update Work Order
                 </h2>
               </div>
               <p className="text-xs text-gray-300/80 font-medium mt-1 hidden md:flex items-center gap-1">
-                Modify service order details and items
+                Modify work order details and items
               </p>
             </div>
           </div>
@@ -775,7 +774,7 @@ export default function UpdateServiceOrderForm({
 
               <div className="space-y-1.5">
                 <label className="block text-xs font-medium text-[#40423f] mb-1">
-                  PO Type <span className="text-[#b52124]">*</span>
+                  WO Type <span className="text-[#b52124]">*</span>
                 </label>
                 <SearchableSelect
                   options={poTypes.map((t: any) => ({
@@ -795,7 +794,7 @@ export default function UpdateServiceOrderForm({
               <div className="space-y-1.5">
                 <label className=" text-xs font-medium text-[#40423f] mb-1 flex items-center gap-1">
                   <Calendar className="w-3 h-3 text-[#b52124]" />
-                  PO Date <span className="text-[#b52124]">*</span>
+                  WO Date <span className="text-[#b52124]">*</span>
                 </label>
                 <input
                   type="date"
@@ -809,7 +808,7 @@ export default function UpdateServiceOrderForm({
                 />
               </div>
 
-              <div className="space-y-1.5">
+              {/* <div className="space-y-1.5">
                 <label className=" text-xs font-medium text-[#40423f] mb-1 flex items-center gap-1">
                   <Calendar className="w-3 h-3 text-[#b52124]" />
                   Delivery Date
@@ -826,7 +825,7 @@ export default function UpdateServiceOrderForm({
                   }
                   className="w-full px-3 py-2 border border-gray-300 rounded-xl focus:ring-2 focus:ring-[#b52124]/20 focus:border-[#b52124] outline-none text-sm bg-white/50"
                 />
-              </div>
+              </div> */}
             </div>
           </div>
 
@@ -1078,7 +1077,7 @@ export default function UpdateServiceOrderForm({
               className="flex-1 bg-gradient-to-r from-[#b52124] to-[#d43538] text-white py-2.5 px-4 rounded-xl hover:from-[#d43538] hover:to-[#b52124] transition-all duration-200 font-medium text-sm shadow-lg hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
             >
               <Save className="w-4 h-4" />
-              Update Service Order
+              Update Work Order
             </button>
             <button
               type="button"

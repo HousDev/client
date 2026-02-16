@@ -132,20 +132,12 @@ const attendanceApi = {
   async getAllToday() {
     try {
       // Using statistics as a fallback
-      const response = await api.get("/attendance/statistics");
-      return {
-        success: true,
-        data: [], // Empty array for now
-        statistics: response.data,
-      };
+      const response = await api.get("/attendance/today");
+      return response.data;
     } catch (error: any) {
       console.error("Get All Today API error:", error);
       // Return mock data for testing
-      return {
-        success: true,
-        data: [],
-        message: "Using mock data for testing",
-      };
+      return error;
     }
   },
 
