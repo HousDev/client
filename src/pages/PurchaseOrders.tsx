@@ -1844,7 +1844,7 @@ export default function PurchaseOrders() {
                                 is_interstate: Boolean(po.is_interstate),
                                 items: result,
                                 notes: po.notes ?? "",
-                                payment_terms_id: po.payment_terms_id ?? "",
+                                payment_terms: po.payment_terms ?? "",
                                 po_date: po.po_date.slice(0, 10) ?? "",
                                 po_number: po.po_number ?? "",
                                 po_type_id: Number(po.po_type_id),

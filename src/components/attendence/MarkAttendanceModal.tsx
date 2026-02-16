@@ -168,18 +168,20 @@ const attendanceService = {
 
 // CameraView Component
 interface CameraViewProps {
-  onCapture: (image: string) => void;
+  canvasRef: any;
+  videoRef: any;
   facingMode: FacingMode;
   isOpen: boolean;
 }
 
 const CameraView: React.FC<CameraViewProps> = ({
-  onCapture,
+  videoRef,
+  canvasRef,
   facingMode,
   isOpen,
 }) => {
-  const videoRef = useRef<HTMLVideoElement>(null);
-  const canvasRef = useRef<HTMLCanvasElement>(null);
+  // const videoRef = useRef<HTMLVideoElement>(null);
+  // const canvasRef = useRef<HTMLCanvasElement>(null);
   const streamRef = useRef<MediaStream | null>(null);
 
   useEffect(() => {
@@ -218,29 +220,8 @@ const CameraView: React.FC<CameraViewProps> = ({
     };
   }, [facingMode, isOpen]);
 
-  const capture = () => {
-    if (!videoRef.current || !canvasRef.current) return;
-
-    const ctx = canvasRef.current.getContext("2d");
-    if (!ctx) return;
-
-    canvasRef.current.width = videoRef.current.videoWidth;
-    canvasRef.current.height = videoRef.current.videoHeight;
-
-    if (facingMode === "user") {
-      ctx.translate(canvasRef.current.width, 0);
-      ctx.scale(-1, 1);
-    }
-
-    ctx.drawImage(videoRef.current, 0, 0);
-    onCapture(canvasRef.current.toDataURL("image/jpeg", 0.8));
-  };
-
   return (
-    <div
-      className="w-full h-full relative group cursor-pointer"
-      onClick={capture}
-    >
+    <div className="w-full h-full relative group">
       <video
         ref={videoRef}
         autoPlay
@@ -250,68 +231,6 @@ const CameraView: React.FC<CameraViewProps> = ({
         }`}
       />
       <canvas ref={canvasRef} className="hidden" />
-    </div>
-  );
-};
-
-// StatusTimeline Component
-interface StatusTimelineProps {
-  records: AttendanceRecord[];
-}
-
-const StatusTimeline: React.FC<StatusTimelineProps> = ({ records }) => {
-  if (records.length === 0)
-    return (
-      <div className="px-6 py-12 text-center text-slate-300 text-[10px] font-black uppercase tracking-[0.2em]">
-        No activity yet
-      </div>
-    );
-
-  return (
-    <div className="divide-y divide-slate-100 border-t border-slate-100">
-      {records.map((record) => (
-        <div
-          key={record.id}
-          className="p-5 flex gap-4 transition-colors hover:bg-slate-50"
-        >
-          <div className="shrink-0">
-            <div className="w-14 h-14 rounded-full overflow-hidden border-2 border-white shadow-sm ring-1 ring-slate-100 bg-slate-50">
-              <img
-                src={record.selfie}
-                alt="User"
-                className="w-full h-full object-cover scale-x-[-1]"
-              />
-            </div>
-          </div>
-
-          <div className="flex-1 min-w-0 flex flex-col justify-center">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <span className="text-[16px] font-black text-slate-900 tracking-tight">
-                  {record.timestamp
-                    .toLocaleTimeString([], {
-                      hour: "2-digit",
-                      minute: "2-digit",
-                      hour12: true,
-                    })
-                    .toUpperCase()}
-                </span>
-                <span className="w-1.5 h-1.5 rounded-full bg-slate-300"></span>
-                <span className="text-[16px] font-black text-slate-900 tracking-tight">
-                  {record.type === PunchStatus.IN ? "In" : "Out"}
-                </span>
-              </div>
-              <span className="text-[11px] text-slate-400 font-black uppercase tracking-widest">
-                {record.shiftInfo || "No Shift"}
-              </span>
-            </div>
-
-            <p className="text-[11px] leading-[1.5] text-slate-500 font-bold mt-1.5 uppercase tracking-tight line-clamp-2">
-              {record.address}
-            </p>
-          </div>
-        </div>
-      ))}
     </div>
   );
 };
@@ -340,11 +259,14 @@ const AttendanceTracker: React.FC<AttendanceTrackerProps> = ({
   const [facingMode, setFacingMode] = useState<FacingMode>("user");
   const { user } = useAuth();
 
+  const videoRef = useRef<HTMLVideoElement>(null);
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+
   const checkLocation = useCallback(async () => {
     const securityRes = await securityApi.getPunchRadiusSettings();
     const employeeData = await HrmsEmployeesApi.getEmployeeByEmail(user.email);
 
-    const MAX_DISTANCE_METERS = securityRes.max_punch_distance_meters;
+    const MAX_DISTANCE_METERS = Number(securityRes.max_punch_distance_meters);
 
     if (!navigator.geolocation) return;
 
@@ -365,10 +287,17 @@ const AttendanceTracker: React.FC<AttendanceTrackerProps> = ({
             await companyApi.getCompanyLocationsById(branchId);
 
           const d = calculateDistance(
-            coords.latitude,
-            coords.longitude,
-            empBranch.latitude,
-            empBranch.longitude,
+            Number(coords.latitude),
+            Number(coords.longitude),
+            Number(empBranch.latitude),
+            Number(empBranch.longitude),
+          );
+          console.log(
+            Number(coords.latitude),
+            Number(coords.longitude),
+            Number(empBranch.latitude),
+            Number(empBranch.longitude),
+            d,
           );
 
           console.log(d <= MAX_DISTANCE_METERS, d < minDistance);
@@ -500,16 +429,33 @@ const AttendanceTracker: React.FC<AttendanceTrackerProps> = ({
     }
   }, [isOpen]);
 
+  const capture = () => {
+    if (!videoRef.current || !canvasRef.current) return;
+
+    const ctx = canvasRef.current.getContext("2d");
+    if (!ctx) return;
+
+    canvasRef.current.width = videoRef.current.videoWidth;
+    canvasRef.current.height = videoRef.current.videoHeight;
+
+    if (facingMode === "user") {
+      ctx.translate(canvasRef.current.width, 0);
+      ctx.scale(-1, 1);
+    }
+
+    ctx.drawImage(videoRef.current, 0, 0);
+    setSelfie(canvasRef.current.toDataURL("image/jpeg", 0.8));
+    setShowCamera(false);
+  };
+
   return (
     <div className="w-full flex flex-col items-center pt-6">
       <div className="relative w-72 h-72 rounded-full border-4 border-slate-50 overflow-hidden shadow-2xl bg-slate-900 mb-8 ">
         {showCamera && !selfie ? (
           <CameraView
+            videoRef={videoRef}
+            canvasRef={canvasRef}
             facingMode={facingMode}
-            onCapture={(img) => {
-              setSelfie(img);
-              setShowCamera(false);
-            }}
             isOpen={isOpen}
           />
         ) : (
@@ -523,17 +469,6 @@ const AttendanceTracker: React.FC<AttendanceTrackerProps> = ({
               alt="User"
               className="w-full h-full object-cover"
             />
-            {selfie && (
-              <button
-                onClick={() => {
-                  setSelfie(null);
-                  setShowCamera(true);
-                }}
-                className="absolute inset-0 m-auto w-14 h-14 bg-black/40 backdrop-blur-md rounded-full text-white flex items-center justify-center border border-white/20 active:scale-90 transition-transform"
-              >
-                <RefreshCw size={24} />
-              </button>
-            )}
           </div>
         )}
 
@@ -546,21 +481,55 @@ const AttendanceTracker: React.FC<AttendanceTrackerProps> = ({
       </div>
 
       <div className="w-full px-4">
-        <button
-          onClick={handleSubmit}
-          disabled={loading || (!selfie && currentStatus === PunchStatus.OUT)}
-          className={`w-full py-5 text-white font-black text-xl shadow-lg transition-all active:scale-[0.98] rounded-2xl ${
-            currentStatus === PunchStatus.IN ? "bg-[#12e5b1]" : "bg-[#f14641]"
-          } disabled:opacity-50`}
-        >
-          {loading ? (
-            <Loader2 className="animate-spin mx-auto" />
-          ) : currentStatus === PunchStatus.IN ? (
-            "Punch In"
-          ) : (
-            "Punch Out"
-          )}
-        </button>
+        {!selfie && (
+          <button
+            onClick={capture}
+            className={`w-full py-5 text-white font-black text-xl shadow-lg transition-all active:scale-[0.98] rounded-2xl ${
+              currentStatus === PunchStatus.IN ? "bg-[#12e5b1]" : "bg-[#f14641]"
+            } disabled:opacity-50`}
+          >
+            {loading ? (
+              <Loader2 className="animate-spin mx-auto" />
+            ) : currentStatus === PunchStatus.IN ? (
+              "Punch In"
+            ) : (
+              "Punch Out"
+            )}
+          </button>
+        )}
+        {selfie && (
+          <div className="flex  space-x-3">
+            <button
+              onClick={handleSubmit}
+              disabled={
+                loading || (!selfie && currentStatus === PunchStatus.OUT)
+              }
+              className={`w-full py-5 bg-green-500 text-white  font-black text-xl shadow-lg transition-all active:scale-[0.98] rounded-2xl  disabled:opacity-50`}
+            >
+              {loading ? (
+                <Loader2 className="animate-spin mx-auto" />
+              ) : (
+                "Confirm"
+              )}
+            </button>
+            <button
+              onClick={() => {
+                setSelfie(null);
+                setShowCamera(true);
+              }}
+              disabled={
+                loading || (!selfie && currentStatus === PunchStatus.OUT)
+              }
+              className={`w-full py-5  bg-slate-500 text-white font-black text-xl shadow-lg transition-all active:scale-[0.98] rounded-2xl  disabled:opacity-50`}
+            >
+              {loading ? (
+                <Loader2 className="animate-spin mx-auto" />
+              ) : (
+                "Retake"
+              )}
+            </button>
+          </div>
+        )}
       </div>
 
       <div className="mt-4 flex flex-col items-center gap-1">
@@ -686,13 +655,6 @@ const MarkAttendanceModal: React.FC<MarkAttendanceModalProps> = ({
                   onSuccess={handlePunchSuccess}
                   lastRecordSelfie={records[0]?.selfie}
                 />
-
-                {/* <div className="mt-8">
-                  <div className="px-4 mb-4 flex items-center justify-between">
-                    <h2 className="text-sm font-black text-slate-400 uppercase tracking-widest px-2">Recent Logs</h2>
-                  </div>
-                  <StatusTimeline records={records} />
-                </div> */}
               </>
             )}
           </div>

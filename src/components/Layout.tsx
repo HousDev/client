@@ -122,7 +122,6 @@ export default function Layout({
     loading: authLoading,
     systemSettings, // ✅ Get system settings from context
   } = useAuth();
-  console.log(user);
   // ✅ Use logo/favicon from systemSettings, fallback to defaults
   const logoUrl = systemSettings?.logo || DefaultLogo;
   const faviconUrl = systemSettings?.favicon;
@@ -224,7 +223,7 @@ export default function Layout({
     },
     {
       id: "service-orders",
-      label: "Service Orders",
+      label: "Work Orders",
       icon: Layers,
       headerIcon: Layers,
       value: [

@@ -1,6 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
-
 // // src/components/UsersMaster.tsx
 // import React, {
 //   useEffect,
@@ -595,7 +594,7 @@
 //       ) {
 //         const avatarUrl = response.data.profile_picture;
 //         console.log('✅ Avatar URL from response:', avatarUrl);
-        
+
 //         toast.success("Profile picture uploaded successfully");
 //         return avatarUrl;
 //       } else {
@@ -961,7 +960,6 @@
 //         is_active: formData.is_active,
 //         permissions: formData.permissions || {},
 //       };
-
 
 //       if (formData.password && formData.password.length > 0 && !editingId) {
 //         payload.password = formData.password;
@@ -1721,7 +1719,7 @@
 
 //   return (
 //     <div className="p-4 md:p-6 -mt-9 md:-mt-12 px-0 md:px-0 bg-gray-50 ">
-     
+
 //       <div className=" sticky top-16 z-10  mt-0 mb-1 px-0 py-1 md:p-4 flex flex-col md:flex-row md:items-center justify-between gap-1 md:gap-3">
 //         <div></div>
 
@@ -3078,9 +3076,6 @@
 //   );
 // }
 
-
-
-
 // src/components/UsersMaster.tsx
 import React, {
   useEffect,
@@ -3235,7 +3230,7 @@ export default function UsersMaster() {
   const [searchRole, setSearchRole] = useState("");
   const [searchPhone, setSearchPhone] = useState("");
   const [searchStatus, setSearchStatus] = useState("");
-const { user: currentUser, updateAvatarLocally } = useAuth();
+  const { user: currentUser, updateAvatarLocally } = useAuth();
 
   // Bulk selection
   const [selectedUsers, setSelectedUsers] = useState<Set<string>>(new Set());
@@ -3536,8 +3531,7 @@ const { user: currentUser, updateAvatarLocally } = useAuth();
     };
   }, [loadUsers, loadProjects, loadCompanies, loadAllRoles]);
 
-  useEffect(() => {
-  }, [departments]);
+  useEffect(() => {}, [departments]);
 
   // Load office locations when company changes
   // Load office locations when company changes
@@ -3655,44 +3649,44 @@ const { user: currentUser, updateAvatarLocally } = useAuth();
   //   [selectedFile],
   // );
   // Upload profile picture
-// Upload profile picture
-const uploadProfilePicture = useCallback(
-  async (userId: string): Promise<string | null> => {
-    if (!selectedFile) return null;
+  // Upload profile picture
+  const uploadProfilePicture = useCallback(
+    async (userId: string): Promise<string | null> => {
+      if (!selectedFile) return null;
 
-    setUploadingProfile(true);
-    try {
-      const response = await UsersApi.uploadProfilePicture(
-        userId,
-        selectedFile,
-      );
+      setUploadingProfile(true);
+      try {
+        const response = await UsersApi.uploadProfilePicture(
+          userId,
+          selectedFile,
+        );
 
-      console.log('📤 Upload response:', response); // Debug log
+        console.log("📤 Upload response:", response); // Debug log
 
-      if (
-        response.success &&
-        response.data &&
-        response.data.profile_picture
-      ) {
-        const avatarUrl = response.data.profile_picture;
-        console.log('✅ Avatar URL from response:', avatarUrl);
-        
-        toast.success("Profile picture uploaded successfully");
-        return avatarUrl;
-      } else {
-        toast.error(response.error || "Failed to upload profile picture");
+        if (
+          response.success &&
+          response.data &&
+          response.data.profile_picture
+        ) {
+          const avatarUrl = response.data.profile_picture;
+          console.log("✅ Avatar URL from response:", avatarUrl);
+
+          toast.success("Profile picture uploaded successfully");
+          return avatarUrl;
+        } else {
+          toast.error(response.error || "Failed to upload profile picture");
+          return null;
+        }
+      } catch (error: any) {
+        console.error("Upload error:", error);
+        toast.error("Profile picture upload failed");
         return null;
+      } finally {
+        setUploadingProfile(false);
       }
-    } catch (error: any) {
-      console.error("Upload error:", error);
-      toast.error("Profile picture upload failed");
-      return null;
-    } finally {
-      setUploadingProfile(false);
-    }
-  },
-  [selectedFile],
-);
+    },
+    [selectedFile],
+  );
   // Create employee record
   // Create employee record
   // Create employee record - FIXED VERSION
@@ -4042,147 +4036,146 @@ const uploadProfilePicture = useCallback(
         permissions: formData.permissions || {},
       };
 
-
       if (formData.password && formData.password.length > 0 && !editingId) {
         payload.password = formData.password;
       }
 
       if (editingId) {
-  // Update existing user
-  const response: any = await UsersApi.update(editingId, payload);
+        // Update existing user
+        const response: any = await UsersApi.update(editingId, payload);
 
-  let result: UserProfile;
+        let result: UserProfile;
 
-  if (response.success && response.data) {
-    result = response.data;
-  } else if (response.id) {
-    result = response;
-  } else {
-    throw new Error("Invalid response format");
-  }
+        if (response.success && response.data) {
+          result = response.data;
+        } else if (response.id) {
+          result = response;
+        } else {
+          throw new Error("Invalid response format");
+        }
 
-  // ✅ CRITICAL FIX: Upload profile picture and update immediately
-  if (selectedFile) {
-    console.log('📤 Uploading profile picture for user:', editingId);
-    const profilePicUrl = await uploadProfilePicture(editingId);
-    
-    if (profilePicUrl) {
-      console.log('✅ Profile picture uploaded:', profilePicUrl);
-      
-      // Update result object
-      result = { ...result, profile_picture: profilePicUrl };
-      
-      // ✅ Update preview URL immediately
-      setPreviewUrl(profilePicUrl);
-      
-      // ✅ Update header if editing current user
-      if (currentUser && currentUser.id === editingId) {
-        console.log('🔄 Updating header avatar for current user');
-        updateAvatarLocally(profilePicUrl);
+        // ✅ CRITICAL FIX: Upload profile picture and update immediately
+        if (selectedFile) {
+          console.log("📤 Uploading profile picture for user:", editingId);
+          const profilePicUrl = await uploadProfilePicture(editingId);
+
+          if (profilePicUrl) {
+            console.log("✅ Profile picture uploaded:", profilePicUrl);
+
+            // Update result object
+            result = { ...result, profile_picture: profilePicUrl };
+
+            // ✅ Update preview URL immediately
+            setPreviewUrl(profilePicUrl);
+
+            // ✅ Update header if editing current user
+            if (currentUser && currentUser.id === editingId) {
+              console.log("🔄 Updating header avatar for current user");
+              updateAvatarLocally(profilePicUrl);
+            }
+
+            // ✅ Force reload users to refresh table
+            await loadUsers();
+          }
+        }
+
+        // Update users state
+        setUsers((prev) =>
+          prev.map((u) => (u.id === editingId ? { ...u, ...result } : u)),
+        );
+
+        toast.success("User updated successfully!");
+      } else {
+        // Create new user
+        if (
+          users.some(
+            (u) => u.email.toLowerCase() === formData.email.toLowerCase(),
+          )
+        ) {
+          toast.error("A user with this email already exists");
+          setSubmitting(false);
+          return;
+        }
+
+        const response: any = await UsersApi.create(payload);
+        console.log("user creation response : ", response);
+
+        let newUser: UserProfile;
+        let userId: string;
+
+        if (response.success && response.data) {
+          newUser = response.data;
+          userId = newUser.id;
+        } else if (response.id || response._id) {
+          newUser = response;
+          userId = response.id || response._id;
+        } else {
+          throw new Error("Invalid response format from server");
+        }
+
+        if (!userId) {
+          throw new Error("User ID not found in response");
+        }
+
+        let finalUser = newUser;
+        let profilePicUrl: string | null = null;
+
+        // ✅ Upload profile picture
+        if (selectedFile && userId) {
+          console.log("📤 Uploading profile picture for new user:", userId);
+          profilePicUrl = await uploadProfilePicture(userId);
+
+          if (profilePicUrl) {
+            console.log("✅ Profile picture uploaded:", profilePicUrl);
+
+            finalUser = {
+              ...newUser,
+              profile_picture: profilePicUrl,
+            };
+
+            // ✅ Update preview
+            setPreviewUrl(profilePicUrl);
+
+            // ✅ Update header if current user (unlikely but possible)
+            if (currentUser && currentUser.id === userId) {
+              console.log("🔄 Updating header avatar for new current user");
+              updateAvatarLocally(profilePicUrl);
+            }
+          }
+        }
+
+        // Create employee record if needed
+        if (formData.is_employee && userId) {
+          try {
+            console.log("Creating employee record for user:", userId);
+            await createEmployeeRecord(userId, profilePicUrl);
+            toast.success("Employee record created successfully!");
+          } catch (empError: any) {
+            console.error("Failed to create employee record:", empError);
+            toast.warning(
+              "User created but employee record creation failed: " +
+                (empError.message || "Unknown error"),
+            );
+          }
+        }
+
+        // Clean up blob URL
+        if (previewUrl && previewUrl.startsWith("blob:")) {
+          URL.revokeObjectURL(previewUrl);
+        }
+
+        if (!finalUser.id) {
+          finalUser = { ...finalUser, id: userId };
+        }
+
+        // ✅ Add to users list
+        setUsers((prev) => [...prev, finalUser]);
+
+        // ✅ Reload users to ensure fresh data
+        await loadUsers();
+
+        toast.success("User created successfully!");
       }
-      
-      // ✅ Force reload users to refresh table
-      await loadUsers();
-    }
-  }
-
-  // Update users state
-  setUsers((prev) =>
-    prev.map((u) => (u.id === editingId ? { ...u, ...result } : u)),
-  );
-  
-  toast.success("User updated successfully!");
-} else {
-  // Create new user
-  if (
-    users.some(
-      (u) => u.email.toLowerCase() === formData.email.toLowerCase(),
-    )
-  ) {
-    toast.error("A user with this email already exists");
-    setSubmitting(false);
-    return;
-  }
-
-  const response: any = await UsersApi.create(payload);
-  console.log("user creation response : ", response);
-  
-  let newUser: UserProfile;
-  let userId: string;
-
-  if (response.success && response.data) {
-    newUser = response.data;
-    userId = newUser.id;
-  } else if (response.id || response._id) {
-    newUser = response;
-    userId = response.id || response._id;
-  } else {
-    throw new Error("Invalid response format from server");
-  }
-
-  if (!userId) {
-    throw new Error("User ID not found in response");
-  }
-
-  let finalUser = newUser;
-  let profilePicUrl: string | null = null;
-
-  // ✅ Upload profile picture
-  if (selectedFile && userId) {
-    console.log('📤 Uploading profile picture for new user:', userId);
-    profilePicUrl = await uploadProfilePicture(userId);
-    
-    if (profilePicUrl) {
-      console.log('✅ Profile picture uploaded:', profilePicUrl);
-      
-      finalUser = {
-        ...newUser,
-        profile_picture: profilePicUrl,
-      };
-      
-      // ✅ Update preview
-      setPreviewUrl(profilePicUrl);
-      
-      // ✅ Update header if current user (unlikely but possible)
-      if (currentUser && currentUser.id === userId) {
-        console.log('🔄 Updating header avatar for new current user');
-        updateAvatarLocally(profilePicUrl);
-      }
-    }
-  }
-
-  // Create employee record if needed
-  if (formData.is_employee && userId) {
-    try {
-      console.log("Creating employee record for user:", userId);
-      await createEmployeeRecord(userId, profilePicUrl);
-      toast.success("Employee record created successfully!");
-    } catch (empError: any) {
-      console.error("Failed to create employee record:", empError);
-      toast.warning(
-        "User created but employee record creation failed: " +
-          (empError.message || "Unknown error"),
-      );
-    }
-  }
-
-  // Clean up blob URL
-  if (previewUrl && previewUrl.startsWith("blob:")) {
-    URL.revokeObjectURL(previewUrl);
-  }
-
-  if (!finalUser.id) {
-    finalUser = { ...finalUser, id: userId };
-  }
-
-  // ✅ Add to users list
-  setUsers((prev) => [...prev, finalUser]);
-  
-  // ✅ Reload users to ensure fresh data
-  await loadUsers();
-  
-  toast.success("User created successfully!");
-}
 
       setShowModal(false);
       resetForm();
@@ -4241,28 +4234,27 @@ const uploadProfilePicture = useCallback(
     setDepartmentRoles([]);
   }, [previewUrl]);
 
- 
-const getProfilePictureUrl = useCallback(
-  (profilePicture: string | undefined) => {
-    if (!profilePicture) return "";
-    if (profilePicture.startsWith("blob:")) return profilePicture; // ✅ Allow blob URLs for preview
-    if (profilePicture.startsWith("http")) return profilePicture; // Already full URL
-    
-    // Build full URL
-    const base = import.meta.env.VITE_API_URL || 'http://localhost:4000/api';
-    
-    // Handle both formats: "/uploads/file.jpg" or just "file.jpg"
-    if (profilePicture.startsWith("/uploads/")) {
-      return `${base}${profilePicture}`;
-    } else if (profilePicture.startsWith("/")) {
-      return `${base}${profilePicture}`;
-    } else {
-      return `${base}/uploads/${profilePicture}`;
-    }
-  },
-  [],
-);
-  
+  const getProfilePictureUrl = useCallback(
+    (profilePicture: string | undefined) => {
+      if (!profilePicture) return "";
+      if (profilePicture.startsWith("blob:")) return profilePicture; // ✅ Allow blob URLs for preview
+      if (profilePicture.startsWith("http")) return profilePicture; // Already full URL
+
+      // Build full URL
+      const base = import.meta.env.VITE_API_URL || "http://localhost:4000/api";
+
+      // Handle both formats: "/uploads/file.jpg" or just "file.jpg"
+      if (profilePicture.startsWith("/uploads/")) {
+        return `${base}${profilePicture}`;
+      } else if (profilePicture.startsWith("/")) {
+        return `${base}${profilePicture}`;
+      } else {
+        return `${base}/uploads/${profilePicture}`;
+      }
+    },
+    [],
+  );
+
   const handleEdit = useCallback(
     async (user: UserProfile) => {
       console.log("Starting edit for user:", user);
@@ -4290,7 +4282,7 @@ const getProfilePictureUrl = useCallback(
       }
 
       // Initial form data
-      const initialFormData = {
+      const initialFormData: any = {
         email: user.email,
         first_name: firstName,
         middle_name: middleName,
@@ -4849,7 +4841,6 @@ const getProfilePictureUrl = useCallback(
 
   return (
     <div className="p-4 md:p-6 -mt-9 md:-mt-12 px-0 md:px-0 bg-gray-50 ">
-     
       <div className=" sticky top-16 z-10  mt-0 mb-1 px-0 py-1 md:p-4 flex flex-col md:flex-row md:items-center justify-between gap-1 md:gap-3">
         <div></div>
 
@@ -4926,7 +4917,7 @@ const getProfilePictureUrl = useCallback(
 
       {/* Main Table */}
       <div className="sticky top-36 z-10 bg-white rounded-xl px-0 shadow-sm border border-gray-200  mx-0 md:mx-0">
-      <div className="overflow-y-auto max-h-[calc(100vh-140px)] md:max-h-[calc(100vh-170px)] ">
+        <div className="overflow-y-auto max-h-[calc(100vh-140px)] md:max-h-[calc(100vh-170px)] ">
           <table className="w-full min-w-[800px]">
             <thead className="sticky top-0 z-10 bg-gray-200 border-b border-gray-200">
               {/* Header Row */}
@@ -5397,7 +5388,7 @@ const getProfilePictureUrl = useCallback(
                     {/* Phone Input */}
                     <div className="space-y-1">
                       <label className="block text-xs font-semibold text-gray-700">
-                        Phone
+                        Phone <span className="text-red-500">*</span>
                       </label>
                       <input
                         type="tel"
@@ -5412,6 +5403,7 @@ const getProfilePictureUrl = useCallback(
                         className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
                         placeholder="9876543210"
                         maxLength={10}
+                        required
                       />
                     </div>
 

@@ -24,7 +24,7 @@ export type LeaveApplication = {
   applied_at: string;
   updated_at: string;
   is_half_day?: boolean; // Add this
-  half_day_period?: 'morning' | 'afternoon'; // Add this
+  half_day_period?: "morning" | "afternoon"; // Add this
 };
 
 export type LeaveStats = {
@@ -75,15 +75,15 @@ export const LeaveApi = {
 
   // Approve leave - FIXED: Send string user_id
   approveLeave: async (
-    id: number, 
+    id: number,
     user_id: string, // Changed from number to string
-    username?: string, 
-    name?: string
+    username?: string,
+    name?: string,
   ): Promise<any> => {
-    const response = await api.post(`/leaves/${id}/approve`, { 
+    const response = await api.post(`/leaves/${id}/approve`, {
       user_id: user_id, // Send as string
       username: username || user_id,
-      name: name || 'Admin User'
+      name: name || "Admin User",
     });
     return response.data;
   },
@@ -94,13 +94,13 @@ export const LeaveApi = {
     user_id: string, // Changed from number to string
     rejection_reason: string,
     username?: string,
-    name?: string
+    name?: string,
   ): Promise<any> => {
     const response = await api.post(`/leaves/${id}/reject`, {
       user_id: user_id, // Send as string
       rejection_reason: rejection_reason,
       username: username || user_id,
-      name: name || 'Admin User'
+      name: name || "Admin User",
     });
     return response.data;
   },
@@ -110,8 +110,8 @@ export const LeaveApi = {
     const response = await api.get(`/leaves/${id}/download`, {
       responseType: "blob",
       headers: {
-        'Accept': 'application/octet-stream'
-      }
+        Accept: "application/octet-stream",
+      },
     });
     return response.data;
   },

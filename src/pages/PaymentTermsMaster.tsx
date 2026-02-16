@@ -411,9 +411,6 @@ import {
   Trash2,
   CreditCard,
   X,
-  Search,
-  CheckSquare,
-  Square,
   Loader2,
   XCircle,
   ReceiptText,
@@ -427,10 +424,8 @@ interface PaymentTermFormData {
   trigger: string;
   paymentPercent: string;
   firstText: string;
-  materialPercent: string;
-  secondText: string;
   gracePeriod: string;
-  thirdText: string;
+  secondText: string;
 
   name: string;
   days: number;
@@ -463,10 +458,8 @@ export default function PaymentTermsMaster() {
     trigger: "",
     paymentPercent: "",
     firstText: "",
-    materialPercent: "",
     secondText: "",
     gracePeriod: "",
-    thirdText: "",
     name: "",
     days: 0,
     description: "",
@@ -495,10 +488,8 @@ export default function PaymentTermsMaster() {
       trigger: "",
       paymentPercent: "",
       firstText: "",
-      materialPercent: "",
-      secondText: "",
       gracePeriod: "",
-      thirdText: "",
+      secondText: "",
       name: "",
       days: 0,
       description: "",
@@ -526,10 +517,8 @@ export default function PaymentTermsMaster() {
           event_trigger: formData.trigger,
           percentPayment: formData.paymentPercent,
           firstText: formData.firstText,
-          materialPercent: formData.materialPercent,
-          secondText: formData.secondText,
           gracePeriod: formData.gracePeriod,
-          thirdText: formData.thirdText,
+          secondText: formData.secondText,
         };
 
         const paymentMasterRes: any =
@@ -543,10 +532,8 @@ export default function PaymentTermsMaster() {
           event_trigger: formData.trigger,
           percentPayment: formData.paymentPercent,
           firstText: formData.firstText,
-          materialPercent: formData.materialPercent,
-          secondText: formData.secondText,
           gracePeriod: formData.gracePeriod,
-          thirdText: formData.thirdText,
+          secondText: formData.secondText,
         };
 
         const paymentMasterRes: any =
@@ -571,10 +558,8 @@ export default function PaymentTermsMaster() {
       trigger: term.event_trigger,
       paymentPercent: formatPercent(term.percentPayment),
       firstText: term.firstText,
-      materialPercent: formatPercent(term.materialPercent),
       secondText: term.secondText,
       gracePeriod: term.gracePeriod,
-      thirdText: term.thirdText,
       name: term.name,
       days: term.days,
       description: term.description || "",
@@ -809,7 +794,7 @@ export default function PaymentTermsMaster() {
 
       {/* Main Table with Search Bars below header */}
       <div className="sticky top-56 z-10 bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden mx-0 md:mx-0">
-      <div className="overflow-y-auto max-h-[calc(100vh-300px)] md:max-h-[calc(100vh-260px)] ">
+        <div className="overflow-y-auto max-h-[calc(100vh-300px)] md:max-h-[calc(100vh-260px)] ">
           <table className="w-full min-w-[800px]">
             <thead className="sticky top-0 z-10 bg-gray-200 border-b border-gray-200">
               {/* Header Row */}
@@ -917,14 +902,8 @@ export default function PaymentTermsMaster() {
 
                   term.firstText ?? "",
 
-                  term.materialPercent != null
-                    ? `${formatPercent(term.materialPercent)}%`
-                    : "",
-
-                  term.secondText ?? "",
                   term.gracePeriod != null ? term.gracePeriod : "",
-                  ,
-                  term.gracePeriod != null ? (term.thirdText ?? "") : "",
+                  term.secondText ?? "",
                 ]
                   .filter(Boolean)
                   .join(" ");
@@ -1063,7 +1042,6 @@ export default function PaymentTermsMaster() {
                         "Before Delivery",
                         "On Delivery",
                         "After Delivery",
-                        "Matterial Received",
                       ].map((trigger) => (
                         <option key={trigger} value={trigger}>
                           {trigger}
@@ -1122,52 +1100,6 @@ export default function PaymentTermsMaster() {
                   </div>
                 </div>
 
-                <div className="space-y-1">
-                  <label className="block text-xs font-semibold text-gray-800 mb-1">
-                    Material Percent
-                  </label>
-                  <div className="relative group">
-                    <div className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 group-focus-within:text-[#C62828] transition-colors">
-                      <Percent className="w-3.5 h-3.5" />
-                    </div>
-                    <input
-                      type="text"
-                      value={formData.materialPercent}
-                      onChange={(e) =>
-                        setFormData({
-                          ...formData,
-                          materialPercent: e.target.value,
-                        })
-                      }
-                      className="w-full pl-9 pr-3 py-2 text-sm border-2 border-gray-200 rounded-xl focus:border-[#C62828] focus:ring-2 focus:ring-[#C62828]/20 outline-none transition-all duration-200 hover:border-gray-300"
-                      placeholder="50"
-                    />
-                  </div>
-                </div>
-
-                <div className="space-y-1">
-                  <label className="block text-xs font-semibold text-gray-800 mb-1">
-                    Enter Term
-                  </label>
-                  <div className="relative group">
-                    <div className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 group-focus-within:text-[#C62828] transition-colors">
-                      <ReceiptText className="w-3.5 h-3.5" />
-                    </div>
-                    <input
-                      type="text"
-                      value={formData.secondText}
-                      onChange={(e) =>
-                        setFormData({
-                          ...formData,
-                          secondText: e.target.value,
-                        })
-                      }
-                      className="w-full pl-9 pr-3 py-2 text-sm border-2 border-gray-200 rounded-xl focus:border-[#C62828] focus:ring-2 focus:ring-[#C62828]/20 outline-none transition-all duration-200 hover:border-gray-300"
-                      placeholder="% Material"
-                    />
-                  </div>
-                </div>
-
                 <div className="col-span-1 sm:col-span-2 flex justify-start items-center w-fit ml-3">
                   <input
                     type="checkbox"
@@ -1178,7 +1110,7 @@ export default function PaymentTermsMaster() {
                         setFormData({
                           ...formData,
                           gracePeriod: "",
-                          thirdText: "",
+                          secondText: "",
                         });
                       }
                     }}
@@ -1222,11 +1154,11 @@ export default function PaymentTermsMaster() {
                       </div>
                       <input
                         type="text"
-                        value={formData.thirdText}
+                        value={formData.secondText}
                         onChange={(e) =>
                           setFormData({
                             ...formData,
-                            thirdText: e.target.value,
+                            secondText: e.target.value,
                           })
                         }
                         className="w-full pl-9 pr-3 py-2 text-sm border-2 border-gray-200 rounded-xl focus:border-[#C62828] focus:ring-2 focus:ring-[#C62828]/20 outline-none transition-all duration-200 hover:border-gray-300"
@@ -1238,10 +1170,8 @@ export default function PaymentTermsMaster() {
 
                 {(formData.paymentPercent ||
                   formData.firstText ||
-                  formData.materialPercent ||
                   formData.secondText ||
-                  formData.gracePeriod ||
-                  formData.thirdText) && (
+                  formData.gracePeriod) && (
                   <div className="col-span-1 sm:col-span-2 border border-orange-600 px-3 py-2 rounded-lg">
                     <label className="block text-xs font-semibold text-gray-800 mb-1">
                       Preview of Term
@@ -1253,13 +1183,9 @@ export default function PaymentTermsMaster() {
                           " " +
                           formData.firstText +
                           " " +
-                          formData.materialPercent +
-                          " " +
-                          formData.secondText +
-                          " " +
                           formData.gracePeriod +
                           " " +
-                          formData.thirdText}
+                          formData.secondText}
                       </p>
                     </div>
                   </div>

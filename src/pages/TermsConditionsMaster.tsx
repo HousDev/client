@@ -2127,7 +2127,7 @@ export default function TermsConditionsMaster() {
 
       {/* Main Table */}
       <div className=" bg-white rounded-xl shadow-sm border border-gray-200  mx-0 md:mx-0">
-      <div className="overflow-y-auto max-h-[calc(100vh-300px)] md:max-h-[calc(100vh-260px)] ">
+        <div className="overflow-y-auto max-h-[calc(100vh-300px)] md:max-h-[calc(100vh-260px)] ">
           <table className="w-full">
             <thead className=" sticky top-0 z-10 bg-gray-200 border-b border-gray-200">
               {/* Header Row */}
@@ -2442,7 +2442,6 @@ export default function TermsConditionsMaster() {
                       }
                       placeholder="Select Vendor"
                       required
-                      className="pl-9"
                     />
                   </div>
                 </div>
@@ -2466,7 +2465,6 @@ export default function TermsConditionsMaster() {
                       required
                     >
                       <option value="general">General</option>
-                      <option value="payment">Payment</option>
                       <option value="delivery">Delivery</option>
                       <option value="quality">Quality</option>
                       <option value="warranty">Warranty</option>

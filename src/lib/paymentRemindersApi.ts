@@ -12,6 +12,7 @@ export type PoPaymentReminder = {
   id: number;
 
   po_id: number;
+  po_payment_id: number;
   po_number: string;
   vendor: string;
 
@@ -48,13 +49,14 @@ export const PoPaymentRemindersApi = {
     payload: Pick<
       PoPaymentReminder,
       | "po_id"
+      | "po_payment_id"
       | "po_number"
       | "vendor"
       | "total_amount"
       | "total_paid"
       | "balance_amount"
       | "due_date"
-    >
+    >,
   ): Promise<{ message: string; reminder: PoPaymentReminder }> =>
     unwrap(api.post("/po-payment-reminders", payload)),
 

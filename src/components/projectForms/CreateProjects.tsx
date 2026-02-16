@@ -290,27 +290,58 @@ export default function ConstructionProjectWizardForm({
 
   const handleSubmit = async () => {
     if (validateStep(5)) {
+      let hasError = false;
+      let errMsg = "";
       const finalData = {
         ...formData,
         buildings: formData.buildings.map((building) => ({
           ...building,
-          floors: building.floors.map((floor) => ({
-            ...floor,
-            flats: floor.flats.map((flat) => ({
-              ...flat,
-              status: flat.status || "pending",
-              areas: flat.areas || [],
-              workflow: flat.workflow || defaultWorkflow,
-            })),
-            common_areas: floor.common_areas.map((commonArea) => ({
-              ...commonArea,
-              status: commonArea.status || "pending",
-              workflow: commonArea.workflow || defaultWorkflow,
-            })),
-          })),
+          floors: building.floors.map((floor) => {
+            if (floor.flats && floor.common_areas) {
+              if (floor.flats.length === 0 && floor.common_areas.length === 0) {
+                errMsg = "Add Flat or Common Area In Floor.";
+                hasError = true;
+                return;
+              }
+            } else {
+              errMsg = "Add Flat or Common Area In Floor.";
+              hasError = true;
+              return;
+            }
+            return {
+              ...floor,
+              flats: floor.flats.map((flat) => {
+                if (flat.areas) {
+                  if (flat.areas.length === 0) {
+                    errMsg = "Please Add Flat Areas.";
+                    hasError = true;
+                    return;
+                  }
+                } else {
+                  errMsg = "Please Add Flat Areas.";
+                  hasError = true;
+                  return;
+                }
+                return {
+                  ...flat,
+                  status: flat.status || "pending",
+                  areas: flat.areas || [],
+                  workflow: flat.workflow || defaultWorkflow,
+                };
+              }),
+              common_areas: floor.common_areas.map((commonArea) => ({
+                ...commonArea,
+                status: commonArea.status || "pending",
+                workflow: commonArea.workflow || defaultWorkflow,
+              })),
+            };
+          }),
         })),
       };
-
+      if (hasError) {
+        toast.error(errMsg);
+        return;
+      }
       if (
         !finalData.name ||
         finalData.name.length < 3 ||
@@ -498,8 +529,11 @@ export default function ConstructionProjectWizardForm({
           common_area_name: element.name,
           status: "pending",
           workflow: defaultWorkflow,
-          area_size: element.area_size,
-          unit: element.unit,
+          area_size:
+            element.unit === "sqm"
+              ? convertSqmToSqft(Number(element.area_size) ?? 0)
+              : element.area_size,
+          unit: "sqft",
         };
 
         updatedBuildings[selectedArea.buildingId].floors[
@@ -664,8 +698,11 @@ export default function ConstructionProjectWizardForm({
         caIndex
       ],
       ["common_area_name"]: value,
-      area_size: selectedArea.area_size,
-      unit: selectedArea.unit,
+      area_size:
+        selectedArea.unit === "sqft"
+          ? selectedArea.area_size
+          : convertSqmToSqft(Number(selectedArea.area_size)),
+      unit: "sqft",
     };
     setFormData((prev) => ({ ...prev, buildings: updatedBuildings }));
   };
@@ -684,7 +721,18 @@ export default function ConstructionProjectWizardForm({
     const flat = floor.flats?.[areaIndex];
     if (!flat) return;
 
-    flat.areas = selectedAreas;
+    console.log("to single falt : ", selectedAreas);
+
+    const data = selectedAreas.map((a: any) => ({
+      ...a,
+      unit: "sqft",
+      area_size:
+        a.unit === "sqft"
+          ? a.area_size
+          : convertSqmToSqft(Number(a.area_size) ?? 0),
+    }));
+
+    flat.areas = data;
 
     // Step 2️⃣ Single state update
     setFormData((prev) => ({
@@ -700,8 +748,11 @@ export default function ConstructionProjectWizardForm({
       selectedAreas.forEach((element: any) => {
         const newCommonArea = {
           common_area_name: element.name, // e.g. Lobby, Lift, Staircase
-          area_size: element.area_size,
-          unit: element.unit,
+          area_size:
+            element.unit === "sqft"
+              ? element.area_size
+              : convertSqmToSqft(Number(element.area_size)),
+          unit: "sqft",
           status: "pending", // optional: keep empty if you decided NOT to break common area into areas
         };
 
@@ -728,11 +779,19 @@ export default function ConstructionProjectWizardForm({
 
   const addAreaToAllFlats = () => {
     const buildings = structuredClone(formData.buildings);
-    console.log(selectedArea);
+    console.log("selected areas data : ", selectedAreas);
+    const data = selectedAreas.map((a: any) => ({
+      ...a,
+      unit: "sqft",
+      area_size:
+        a.unit === "sqft"
+          ? a.area_size
+          : convertSqmToSqft(Number(a.area_size) ?? 0),
+    }));
     buildings.forEach((building) => {
       building.floors?.forEach((floor) => {
         if (floor.flats[selectedArea.flatId]) {
-          floor.flats[selectedArea.flatId].areas = selectedAreas;
+          floor.flats[selectedArea.flatId].areas = data;
         }
       });
     });
@@ -799,6 +858,11 @@ export default function ConstructionProjectWizardForm({
   useEffect(() => {
     console.log(formData);
   }, [formData]);
+
+  function convertSqmToSqft(value: number) {
+    if (!value || isNaN(value)) return 0;
+    return value * 10.7639;
+  }
 
   return (
     <div className="fixed inset-0 bg-black/60 backdrop-blur-md flex items-center justify-center z-50 p-4 animate-fadeIn">
@@ -1366,6 +1430,13 @@ export default function ConstructionProjectWizardForm({
                             }
                           </span>
                         )}
+                        {((!floor.flats && !floor.common_areas) ||
+                          (floor.flats.length === 0 &&
+                            floor.common_areas.length === 0)) && (
+                          <p className="text-xs text-red-600 pl-3">
+                            Add Flat or Common Area.
+                          </p>
+                        )}
                       </div>
 
                       <div className="ml-2 grid grid-cols-1 lg:grid-cols-2 gap-3">
@@ -1516,7 +1587,8 @@ export default function ConstructionProjectWizardForm({
                                                 {a.name}
                                               </h1>
                                               <h5 className="text-xs text-slate-600">
-                                                {a.area_size + " " + a.unit}
+                                                {a.area_size + " "}
+                                                {a.unit}
                                               </h5>
                                             </div>
                                             <div className="space-x-2 flex items-center">
@@ -1541,7 +1613,17 @@ export default function ConstructionProjectWizardForm({
                                       )}
                                     </div>
                                   )}
+                                  {(!flat.areas || flat.areas.length === 0) && (
+                                    <div className="flex justify-between text-xs py-2 px-3 m-1 border border-slate-400 rounded-lg">
+                                      No Flat Area Added.
+                                    </div>
+                                  )}
                                 </div>
+                                {(!flat.areas || flat.areas.length === 0) && (
+                                  <p className="text-red-600 text-xs pl-3">
+                                    Add Flat Areas
+                                  </p>
+                                )}
                               </div>
                             ))}
                             {floor.flats.length === 0 && (
@@ -1613,7 +1695,7 @@ export default function ConstructionProjectWizardForm({
                                     </div>
                                     <h1 className="text-xs py-1 px-2 text-slate-600">
                                       {commonArea.area_size ?? 0}{" "}
-                                      {commonArea.unit ?? "sqft"}
+                                      {commonArea.unit}
                                     </h1>
                                   </div>
                                   <div className="flex items-center gap-0.5">
@@ -2461,6 +2543,7 @@ export default function ConstructionProjectWizardForm({
                 {showUpdateModalForItem === "flatArea" && (
                   <button
                     onClick={() => {
+                      console.log("this is add all flat");
                       addAreaToAllFlats();
                       setSelectedArea({
                         id: "",

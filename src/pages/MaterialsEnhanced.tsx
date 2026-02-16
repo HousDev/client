@@ -34,7 +34,7 @@ export default function MaterialsEnhanced() {
           <Package
             className={`w-3 h-3 md:w-5 md:h-5 ${activeTab === "management" ? "text-white" : "text-gray-500"}`}
           />
-          <span className="text-xs sm:text-xs md:text-base">SO Tracking</span>
+          <span className="text-xs sm:text-xs md:text-base">WO Tracking</span>
         </button>
       </div>
       <div className="">
