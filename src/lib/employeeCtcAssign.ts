@@ -36,6 +36,11 @@ async function getCurrentCTC(employeeId: number | string) {
   return unwrap(res);
 }
 
+async function getAllAssignUserTemplate() {
+  const res: any = await api.get(`/employee-ctc-assign`);
+  return unwrap(res);
+}
+
 /* =====================================================
    Get Full CTC History of Employee
 ===================================================== */
@@ -57,6 +62,7 @@ async function deleteAssignment(id: number | string) {
 const employeeCtcAssignApi = {
   assignTemplate,
   updateAssignment,
+  getAllAssignUserTemplate,
   getCurrentCTC,
   getCTCHistory,
   deleteAssignment,

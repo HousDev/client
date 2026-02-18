@@ -14,9 +14,11 @@ async function createAdvance(payload: any) {
 async function approveAdvance(
   id: number | string,
   approved_by: number | string,
+  remark: string,
 ) {
   const res: any = await api.put(`/employee-advance/${id}/approve`, {
     approved_by,
+    remark,
   });
   return unwrap(res);
 }
@@ -58,6 +60,19 @@ async function getAdvance(id: number | string) {
   return unwrap(res);
 }
 
+async function deleteAdvance(id: number | string) {
+  const res: any = await api.delete(`/employee-advance/${id}`);
+  return unwrap(res);
+}
+
+/**
+ * Get all Advance
+ */
+async function getAllAdvance() {
+  const res: any = await api.get(`/employee-advance/`);
+  return unwrap(res);
+}
+
 /**
  * Get All Advances of Employee
  */
@@ -70,8 +85,10 @@ const employeeAdvanceApi = {
   createAdvance,
   approveAdvance,
   rejectAdvance,
+  deleteAdvance,
   disburseAdvance,
   closeAdvance,
+  getAllAdvance,
   getAdvance,
   getEmployeeAdvances,
 };

@@ -24,6 +24,8 @@ import Button from "../components/ui/Button";
 import Badge from "../components/ui/Badge";
 import { toast } from "sonner";
 import HrmsEmployeesApi, { HrmsEmployee } from "../lib/employeeApi";
+import ctcTemplateApi from "../lib/ctcTemplateApi";
+import employeeCtcAssignApi from "../lib/employeeCtcAssign";
 
 interface Employee {
   id: string;
@@ -62,13 +64,14 @@ interface CTCTemplate {
   description: string;
   template_type: "standard" | "custom";
   is_default: boolean;
+  is_active: boolean;
   components: TemplateComponent[];
 }
 
 interface TemplateComponent {
   name: string;
   type: "earning" | "deduction";
-  percentage: number;
+  value: number;
   is_taxable: boolean;
 }
 
@@ -79,33 +82,34 @@ const initialTemplates: CTCTemplate[] = [
     description: "Standard CTC structure for IT professionals",
     template_type: "standard",
     is_default: true,
+    is_active: true,
     components: [
       {
         name: "Basic Salary",
         type: "earning",
-        percentage: 40,
+        value: 40,
         is_taxable: true,
       },
-      { name: "HRA", type: "earning", percentage: 20, is_taxable: true },
+      { name: "HRA", type: "earning", value: 20, is_taxable: true },
       {
         name: "Special Allowance",
         type: "earning",
-        percentage: 25,
+        value: 25,
         is_taxable: true,
       },
       {
         name: "PF Contribution",
         type: "earning",
-        percentage: 5,
+        value: 5,
         is_taxable: false,
       },
       {
         name: "Professional Tax",
         type: "deduction",
-        percentage: 2,
+        value: 2,
         is_taxable: false,
       },
-      { name: "TDS", type: "deduction", percentage: 8, is_taxable: false },
+      { name: "TDS", type: "deduction", value: 8, is_taxable: false },
     ],
   },
   {
@@ -114,28 +118,29 @@ const initialTemplates: CTCTemplate[] = [
     description: "Performance-based structure for sales team",
     template_type: "standard",
     is_default: false,
+    is_active: true,
     components: [
       {
         name: "Basic Salary",
         type: "earning",
-        percentage: 35,
+        value: 35,
         is_taxable: true,
       },
-      { name: "HRA", type: "earning", percentage: 15, is_taxable: true },
-      { name: "Commission", type: "earning", percentage: 30, is_taxable: true },
+      { name: "HRA", type: "earning", value: 15, is_taxable: true },
+      { name: "Commission", type: "earning", value: 30, is_taxable: true },
       {
         name: "Travel Allowance",
         type: "earning",
-        percentage: 10,
+        value: 10,
         is_taxable: false,
       },
       {
         name: "Professional Tax",
         type: "deduction",
-        percentage: 2,
+        value: 2,
         is_taxable: false,
       },
-      { name: "TDS", type: "deduction", percentage: 8, is_taxable: false },
+      { name: "TDS", type: "deduction", value: 8, is_taxable: false },
     ],
   },
   {
@@ -144,43 +149,47 @@ const initialTemplates: CTCTemplate[] = [
     description: "Executive compensation structure",
     template_type: "standard",
     is_default: false,
+    is_active: true,
     components: [
       {
         name: "Basic Salary",
         type: "earning",
-        percentage: 45,
+        value: 45,
         is_taxable: true,
       },
-      { name: "HRA", type: "earning", percentage: 25, is_taxable: true },
+      { name: "HRA", type: "earning", value: 25, is_taxable: true },
       {
         name: "Performance Bonus",
         type: "earning",
-        percentage: 15,
+        value: 15,
         is_taxable: true,
       },
       {
         name: "Car Allowance",
         type: "earning",
-        percentage: 5,
+        value: 5,
         is_taxable: false,
       },
       {
         name: "Professional Tax",
         type: "deduction",
-        percentage: 2,
+        value: 2,
         is_taxable: false,
       },
-      { name: "TDS", type: "deduction", percentage: 8, is_taxable: false },
+      { name: "TDS", type: "deduction", value: 8, is_taxable: false },
     ],
   },
 ];
 
 export default function CTCConfiguration() {
   const [configurations, setConfigurations] = useState<CTCConfig[]>([]);
-  const [templates, setTemplates] = useState<CTCTemplate[]>(initialTemplates);
+  const [templates, setTemplates] = useState<CTCTemplate[]>([]);
   const [loading, setLoading] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
+  const [allAssignedUserTemplate, setAllAssignedUserTemplate] = useState<any>(
+    [],
+  );
 
   // Employee state
   const [employees, setEmployees] = useState<Employee[]>([]);
@@ -217,6 +226,7 @@ export default function CTCConfiguration() {
     name: "",
     description: "",
     template_type: "custom" as "standard" | "custom",
+    is_default: false,
     components: [] as TemplateComponent[],
   });
 
@@ -250,7 +260,9 @@ export default function CTCConfiguration() {
   const loadData = async () => {
     setLoading(true);
     try {
-      await new Promise((resolve) => setTimeout(resolve, 500));
+      const ctcTemplatesRes: any = await ctcTemplateApi.getTemplates();
+      setTemplates(ctcTemplatesRes.data);
+      console.log("res : ", ctcTemplatesRes);
     } catch (error) {
       console.error("Error loading data:", error);
       toast.error("Failed to load data");
@@ -264,7 +276,6 @@ export default function CTCConfiguration() {
     setEmployeesLoading(true);
     try {
       const response = await HrmsEmployeesApi.getEmployees();
-      console.log("Fetched employees:", response);
 
       // Transform HrmsEmployee to Employee format
       const transformedEmployees: Employee[] = response.map(
@@ -289,118 +300,186 @@ export default function CTCConfiguration() {
     }
   };
 
-  const handleAssignCTC = () => {
-    const employee = employees.find((e) => e.id === configForm.employee_id);
-    const template = templates.find((t) => t.id === configForm.template_id);
+  const loadAssignCTCtoEmployee = async () => {
+    try {
+      const resData: any =
+        await employeeCtcAssignApi.getAllAssignUserTemplate();
+      console.log(resData.data);
+      setAllAssignedUserTemplate(resData.data);
+      const assignmentData = [];
+      for (let ut of resData.data) {
+        const response = await HrmsEmployeesApi.getEmployees();
 
-    if (
-      !employee ||
-      !template ||
-      !configForm.annual_ctc ||
-      parseFloat(configForm.annual_ctc) <= 0
-    ) {
-      toast.error("Please fill all required fields");
-      return;
+        // Transform HrmsEmployee to Employee format
+        const transformedEmployees: Employee[] = response.map(
+          (emp: HrmsEmployee) => ({
+            id: emp.id.toString(),
+            name: `${emp.first_name} ${emp.last_name}`,
+            code: emp.employee_code,
+            job_title: emp.designation || emp.job_title || "N/A",
+            department: emp.department_name || "N/A",
+            branch: emp.branch || emp.office_location || "N/A",
+            status: emp.employee_status || "active",
+          }),
+        );
+        const employee: any = transformedEmployees.find(
+          (e) => Number(e.id) === Number(ut.employee_id),
+        );
+
+        const ctcTemplatesRes: any = await ctcTemplateApi.getTemplates();
+
+        const template = (ctcTemplatesRes.data || []).find(
+          (t: any) => Number(t.id) === Number(ut.template_id),
+        );
+
+        const annualCTC = parseFloat(ut.ctc_amount);
+        const monthlyCTC = annualCTC / 12;
+
+        const components: CTCComponent[] = template.components.map(
+          (comp: any, index: number) => ({
+            id: `COMP${Date.now()}_${index}`,
+            name: comp.name,
+            type: comp.type,
+            percentage: comp.value,
+            annual_amount: (annualCTC * comp.value) / 100,
+            monthly_amount: (monthlyCTC * comp.value) / 100,
+            is_taxable: comp.is_taxable,
+          }),
+        );
+
+        const newConfig: CTCConfig = {
+          id: ut.id,
+          employee,
+          annual_ctc: annualCTC,
+          monthly_ctc: monthlyCTC,
+          template_name: template.name,
+          effective_from: ut.effective_from,
+          status: "active",
+          components,
+        };
+        assignmentData.push(newConfig);
+      }
+      setConfigurations(assignmentData);
+    } catch (error: any) {
+      toast.error(error.response.data.error);
     }
-
-    const annualCTC = parseFloat(configForm.annual_ctc);
-    const monthlyCTC = annualCTC / 12;
-
-    const components: CTCComponent[] = template.components.map(
-      (comp, index) => ({
-        id: `COMP${Date.now()}_${index}`,
-        name: comp.name,
-        type: comp.type,
-        percentage: comp.percentage,
-        annual_amount: (annualCTC * comp.percentage) / 100,
-        monthly_amount: (monthlyCTC * comp.percentage) / 100,
-        is_taxable: comp.is_taxable,
-      }),
-    );
-
-    const newConfig: CTCConfig = {
-      id: `CTC${Date.now()}`,
-      employee,
-      annual_ctc: annualCTC,
-      monthly_ctc: monthlyCTC,
-      template_name: template.name,
-      effective_from: configForm.effective_from,
-      status: "active",
-      components,
-    };
-
-    setConfigurations([newConfig, ...configurations]);
-    setShowConfigModal(false);
-    setConfigForm({
-      employee_id: "",
-      template_id: "",
-      annual_ctc: "",
-      effective_from: new Date().toISOString().split("T")[0],
-    });
-    toast.success("CTC assigned successfully!");
   };
 
-  const handleCreateTemplate = () => {
-    console.log("Create CTC Template", templateForm);
-    // try {
-    //   if (
-    //     !templateForm.name ||
-    //     !templateForm.description ||
-    //     templateForm.components.length === 0
-    //   ) {
-    //     toast.error(
-    //       "Please fill all required fields and add at least one component",
-    //     );
-    //     return;
-    //   }
+  const deleteAssignedTemplate = async (id: number) => {
+    try {
+      const deleteRes: any = await employeeCtcAssignApi.deleteAssignment(id);
+      if (deleteRes.success) {
+        toast.success(deleteRes.message);
+        loadAssignCTCtoEmployee();
+      } else {
+        toast.error(deleteRes.message);
+      }
+    } catch (error: any) {
+      toast.error(error.response.data.message);
+    }
+  };
 
-    //   const totalPercentage = templateForm.components.reduce(
-    //     (sum, comp) => sum + comp.percentage,
-    //     0,
-    //   );
-    //   if (totalPercentage !== 100) {
-    //     toast.error(
-    //       `Total percentage must be 100%. Current: ${totalPercentage}%`,
-    //     );
-    //     return;
-    //   }
+  useEffect(() => {
+    loadAssignCTCtoEmployee();
+  }, []);
 
-    //   const newTemplate: CTCTemplate = {
-    //     id: `TMPL${Date.now()}`,
-    //     name: templateForm.name,
-    //     description: templateForm.description,
-    //     template_type: templateForm.template_type,
-    //     is_default: false,
-    //     components: templateForm.components,
-    //   };
+  const assignCTCtoEmployee = async () => {
+    try {
+      const payload = {
+        employee_id: configForm.employee_id,
+        template_id: configForm.template_id,
+        ctc_amount: configForm.annual_ctc,
+        effective_from: configForm.effective_from,
+      };
 
-    //   setTemplates([...templates, newTemplate]);
-    //   setShowCreateTemplateModal(false);
-    //   setTemplateForm({
-    //     name: "",
-    //     description: "",
-    //     template_type: "custom",
-    //     components: [],
-    //   });
-    //   toast.success("Template created successfully!");
-    // } catch (error: any) {
-    //   toast.error("Error : ", error.response.data.message);
-    // }
+      const res: any = await employeeCtcAssignApi.assignTemplate(payload);
+      console.log(res);
+      if (res.success) {
+        toast.success(res.message);
+        loadAssignCTCtoEmployee();
+        setShowConfigModal(false);
+        setConfigForm({
+          employee_id: "",
+          template_id: "",
+          annual_ctc: "",
+          effective_from: new Date().toISOString().split("T")[0],
+        });
+      } else {
+        toast.error(res.message);
+      }
+    } catch (error: any) {
+      toast.error(error.response.data.message);
+    }
+  };
+
+  const handleCreateTemplate = async () => {
+    try {
+      if (
+        !templateForm.name ||
+        !templateForm.description ||
+        templateForm.components.length === 0
+      ) {
+        toast.error(
+          "Please fill all required fields and add at least one component",
+        );
+        return;
+      }
+
+      const totalPercentage = templateForm.components.reduce(
+        (sum, comp) => sum + Number(comp.value),
+        0,
+      );
+      if (totalPercentage !== 100) {
+        toast.error(
+          `Total percentage must be 100%. Current: ${totalPercentage}%`,
+        );
+        return;
+      }
+
+      const newTemplate: CTCTemplate = {
+        id: `TMPL${Date.now()}`,
+        name: templateForm.name,
+        description: templateForm.description,
+        template_type: templateForm.template_type,
+        is_default: false,
+        is_active: true,
+        components: templateForm.components,
+      };
+      const ctcTemplateRes: any =
+        await ctcTemplateApi.createTemplate(newTemplate);
+      if (ctcTemplateRes.success) {
+        toast.success(ctcTemplateRes.message);
+        loadData();
+        setShowCreateTemplateModal(false);
+        setTemplateForm({
+          name: "",
+          description: "",
+          is_default: false,
+          template_type: "custom",
+          components: [],
+        });
+      } else {
+        toast.error("Error : ", ctcTemplateRes.message);
+      }
+    } catch (error: any) {
+      toast.error("Error : ", error.response.data.message);
+    }
   };
 
   const handleAddComponent = () => {
     const totalPercent = templateForm.components.reduce(
-      (sum, t) => (t.type === "earning" ? (sum += Number(t.percentage)) : 0),
+      (sum, t) => (sum += Number(t.value)),
       0,
     );
-    if (totalPercent >= 100 && newComponent.type === "earning") {
+    if (totalPercent >= 100) {
       toast.error(
-        "You have already added earning " +
+        "You have already added " +
           totalPercent +
           "% you can not add more than 100%",
       );
       return;
     }
+
     if (
       !newComponent.name ||
       !newComponent.percentage ||
@@ -409,12 +488,13 @@ export default function CTCConfiguration() {
       toast.error("Please fill all component fields");
       return;
     }
+
     if (selectedCtcComponentIndex) {
       const tempComp = templateForm.components;
       tempComp[selectedCtcComponentIndex] = {
         name: newComponent.name,
         type: newComponent.type,
-        percentage: parseFloat(newComponent.percentage),
+        value: parseFloat(newComponent.percentage),
         is_taxable: newComponent.is_taxable,
       };
       setTemplateForm({
@@ -425,7 +505,7 @@ export default function CTCConfiguration() {
       const component: TemplateComponent = {
         name: newComponent.name,
         type: newComponent.type,
-        percentage: parseFloat(newComponent.percentage),
+        value: parseFloat(newComponent.percentage),
         is_taxable: newComponent.is_taxable,
       };
 
@@ -456,6 +536,19 @@ export default function CTCConfiguration() {
     setSelectedTemplate(template);
     setShowViewTemplateModal(true);
   };
+  const handleDeleteTemplate = async (id: number) => {
+    try {
+      const templateRes: any = await ctcTemplateApi.deleteTemplate(id);
+      if (templateRes.success) {
+        toast.success(templateRes.message);
+        loadData();
+      } else {
+        toast.error(templateRes.message);
+      }
+    } catch (error: any) {
+      toast.error(error.response.data.message);
+    }
+  };
 
   const handleEditTemplate = (template: CTCTemplate) => {
     setSelectedTemplate(template);
@@ -463,6 +556,7 @@ export default function CTCConfiguration() {
       name: template.name,
       description: template.description,
       template_type: template.template_type,
+      is_default: template.is_default,
       components: [...template.components],
     });
     setShowEditTemplateModal(true);
@@ -481,7 +575,7 @@ export default function CTCConfiguration() {
     }
 
     const totalPercentage = templateForm.components.reduce(
-      (sum, comp) => sum + comp.percentage,
+      (sum, comp) => sum + comp.value,
       0,
     );
     if (totalPercentage !== 100) {
@@ -502,6 +596,7 @@ export default function CTCConfiguration() {
     setTemplateForm({
       name: "",
       description: "",
+      is_default: false,
       template_type: "custom",
       components: [],
     });
@@ -600,7 +695,7 @@ export default function CTCConfiguration() {
   });
 
   const totalPercentage = templateForm.components.reduce(
-    (sum, comp) => (comp.type === "earning" ? sum + comp.percentage : 0),
+    (sum, comp) => sum + Number(comp.value),
     0,
   );
 
@@ -949,7 +1044,7 @@ export default function CTCConfiguration() {
                               <li>
                                 <button
                                   onClick={() => {
-                                    handleDeleteConfig(config.id);
+                                    deleteAssignedTemplate(Number(config.id));
                                     setOpenMenuId(null);
                                   }}
                                   className="w-full flex items-center gap-2 px-4 py-2 hover:bg-red-50 text-red-600 text-left"
@@ -1037,14 +1132,14 @@ export default function CTCConfiguration() {
                             <h4 className="text-sm font-medium text-gray-800 truncate">
                               {template.name}
                             </h4>
-                            {template.is_default && (
+                            {Boolean(template.is_default) && (
                               <span className="text-[10px] bg-green-100 text-green-800 px-1.5 py-0.5 rounded">
                                 Default
                               </span>
                             )}
-                            <span className="text-[10px] bg-slate-100 text-slate-700 px-1.5 py-0.5 rounded">
+                            {/* <span className="text-[10px] bg-slate-100 text-slate-700 px-1.5 py-0.5 rounded">
                               {template.template_type}
-                            </span>
+                            </span> */}
                           </div>
                           <p className="text-xs text-slate-600 mb-2">
                             {template.description}
@@ -1053,23 +1148,90 @@ export default function CTCConfiguration() {
                             {template.components.length} components
                           </p>
                         </div>
-                        <div className="flex gap-1 ml-2">
-                          <button
-                            onClick={() => handleViewTemplate(template)}
-                            className="px-2 py-1 text-xs border border-slate-300 rounded hover:bg-slate-50 transition-colors flex items-center gap-1"
-                          >
-                            <Eye className="h-3 w-3" />
-                            View
-                          </button>
-                          {!template.is_default && (
+                        <div className="">
+                          <div className="flex gap-1 ml-2">
                             <button
-                              onClick={() => handleEditTemplate(template)}
-                              className="px-2 py-1 text-xs border border-slate-300 rounded hover:bg-slate-50 transition-colors flex items-center gap-1"
+                              onClick={() => handleViewTemplate(template)}
+                              className="px-2 py-1 text-blue-600 text-xs border border-slate-300 rounded hover:bg-slate-50 transition-colors flex items-center gap-1"
                             >
-                              <Edit className="h-3 w-3" />
-                              Edit
+                              <Eye className="h-3 w-3" />
+                              View
                             </button>
-                          )}
+                            {!template.is_default && (
+                              <button
+                                onClick={() => handleEditTemplate(template)}
+                                className="px-2 py-1 text-green-600 text-xs border border-slate-300 rounded hover:bg-slate-50 transition-colors flex items-center gap-1"
+                              >
+                                <Edit className="h-3 w-3" />
+                                Edit
+                              </button>
+                            )}
+                            <button
+                              onClick={() =>
+                                handleDeleteTemplate(Number(template.id))
+                              }
+                              className="px-2 py-1 text-red-600 text-xs border border-slate-300 rounded hover:bg-slate-50 transition-colors flex items-center gap-1"
+                            >
+                              <Trash2 className="h-3 w-3" />
+                              Delete
+                            </button>
+                          </div>
+                          <div className="flex justify-center items-center gap-3 py-2">
+                            <div className="flex items-center">
+                              <input
+                                type="checkbox"
+                                onChange={async () => {
+                                  try {
+                                    const res: any =
+                                      await ctcTemplateApi.toggleActive(
+                                        template.id,
+                                      );
+                                    console.log(res);
+                                    if (res.success) {
+                                      toast.success(res.message);
+                                      loadData();
+                                    } else {
+                                      toast.error(res.message);
+                                    }
+                                  } catch (error: any) {
+                                    toast.error(error.response.data.message);
+                                  }
+                                }}
+                                checked={template.is_active}
+                                className="text-red-600 mr-1"
+                              />
+                              <span className="text-xs font-semibold">
+                                Is Active
+                              </span>
+                            </div>
+                            <div className="flex items-center">
+                              <input
+                                type="checkbox"
+                                checked={template.is_default}
+                                onChange={async () => {
+                                  try {
+                                    const res: any =
+                                      await ctcTemplateApi.setDefault(
+                                        template.id,
+                                      );
+                                    console.log(res);
+                                    if (res.success) {
+                                      toast.success(res.message);
+                                      loadData();
+                                    } else {
+                                      toast.error(res.message);
+                                    }
+                                  } catch (error: any) {
+                                    toast.error(error.response.data.message);
+                                  }
+                                }}
+                                className="text-red-600 mr-1"
+                              />
+                              <span className="text-xs font-semibold">
+                                Is Default
+                              </span>
+                            </div>
+                          </div>
                         </div>
                       </div>
                     </div>
@@ -1116,7 +1278,22 @@ export default function CTCConfiguration() {
                 </div>
               </div>
               <button
-                onClick={() => setShowCreateTemplateModal(false)}
+                onClick={() => {
+                  setShowCreateTemplateModal(false);
+                  setTemplateForm({
+                    name: "",
+                    description: "",
+                    is_default: false,
+                    template_type: "custom",
+                    components: [],
+                  });
+                  setNewComponent({
+                    name: "",
+                    type: "earning",
+                    percentage: "",
+                    is_taxable: true,
+                  });
+                }}
                 className="text-white hover:bg-white/20 rounded-xl p-2 transition-all duration-200 hover:scale-105 active:scale-95"
               >
                 <X className="w-5 h-5" />
@@ -1212,12 +1389,18 @@ export default function CTCConfiguration() {
                         type="number"
                         placeholder="%"
                         value={newComponent.percentage}
-                        onChange={(e) =>
+                        onChange={(e) => {
+                          if (
+                            Number(e.target.value) > 100 ||
+                            Number(e.target.value) + totalPercentage > 100
+                          ) {
+                            return;
+                          }
                           setNewComponent({
                             ...newComponent,
                             percentage: e.target.value,
-                          })
-                        }
+                          });
+                        }}
                         min="0"
                         max="100"
                         className="w-full px-3 py-2 text-sm border-2 border-gray-200 rounded-xl focus:border-[#C62828] focus:ring-2 focus:ring-[#C62828]/20 outline-none transition-all duration-200 hover:border-gray-300"
@@ -1271,7 +1454,7 @@ export default function CTCConfiguration() {
                               {comp.type}
                             </span>
                             <span className="text-sm text-slate-600">
-                              {comp.percentage}%
+                              {comp.value}%
                             </span>
                             <span className="text-xs text-slate-500">
                               {comp.is_taxable ? "Taxable" : "Non-taxable"}
@@ -1285,7 +1468,7 @@ export default function CTCConfiguration() {
                                 setNewComponent({
                                   name: comp.name,
                                   type: comp.type,
-                                  percentage: String(comp.percentage),
+                                  percentage: String(comp.value),
                                   is_taxable: comp.is_taxable,
                                 });
                               }}
@@ -1312,7 +1495,7 @@ export default function CTCConfiguration() {
                     <div className="bg-red-50 border border-red-200 rounded-xl p-3">
                       <p className="text-sm text-red-700 flex items-center gap-2">
                         <AlertCircle className="w-4 h-4" />
-                        Total percentage must equal 100%. Currently:{" "}
+                        Total earning percentage must equal 100%. Currently:{" "}
                         {totalPercentage}%
                       </p>
                     </div>
@@ -1324,7 +1507,22 @@ export default function CTCConfiguration() {
             <div className="border-t border-slate-200 p-4 flex gap-3">
               <button
                 type="button"
-                onClick={() => setShowCreateTemplateModal(false)}
+                onClick={() => {
+                  setTemplateForm({
+                    name: "",
+                    description: "",
+                    is_default: false,
+                    template_type: "custom",
+                    components: [],
+                  });
+                  setNewComponent({
+                    name: "",
+                    type: "earning",
+                    percentage: "",
+                    is_taxable: true,
+                  });
+                  setShowCreateTemplateModal(false);
+                }}
                 className="flex-1 px-4 py-2.5 border-2 border-gray-200 rounded-xl hover:bg-gray-50 hover:border-gray-300 transition-all duration-200 font-medium text-gray-700 hover:text-gray-900"
               >
                 Cancel
@@ -1422,7 +1620,7 @@ export default function CTCConfiguration() {
                         </div>
                         <div className="flex items-center gap-4">
                           <span className="text-sm font-medium text-slate-700">
-                            {comp.percentage}%
+                            {comp.value}%
                           </span>
                           <span className="text-xs text-slate-500">
                             {comp.is_taxable ? "Taxable" : "Non-taxable"}
@@ -1473,7 +1671,22 @@ export default function CTCConfiguration() {
                 </div>
               </div>
               <button
-                onClick={() => setShowEditTemplateModal(false)}
+                onClick={() => {
+                  setTemplateForm({
+                    name: "",
+                    description: "",
+                    is_default: false,
+                    template_type: "custom",
+                    components: [],
+                  });
+                  setNewComponent({
+                    name: "",
+                    type: "earning",
+                    percentage: "",
+                    is_taxable: true,
+                  });
+                  setShowEditTemplateModal(false);
+                }}
                 className="text-white hover:bg-white/20 rounded-xl p-2 transition-all duration-200 hover:scale-105 active:scale-95"
               >
                 <X className="w-5 h-5" />
@@ -1621,19 +1834,36 @@ export default function CTCConfiguration() {
                               {comp.type}
                             </span>
                             <span className="text-sm text-slate-600">
-                              {comp.percentage}%
+                              {comp.value}%
                             </span>
                             <span className="text-xs text-slate-500">
                               {comp.is_taxable ? "Taxable" : "Non-taxable"}
                             </span>
                           </div>
-                          <button
-                            type="button"
-                            onClick={() => handleRemoveComponent(index)}
-                            className="text-red-600 hover:text-red-800"
-                          >
-                            <Trash2 className="h-4 w-4" />
-                          </button>
+                          <div className="space-x-3">
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setSelectedCtcComponentIndex(index);
+                                setNewComponent({
+                                  name: comp.name,
+                                  type: comp.type,
+                                  percentage: String(comp.value),
+                                  is_taxable: comp.is_taxable,
+                                });
+                              }}
+                              className="text-green-600 hover:text-green-800"
+                            >
+                              <Edit2 className="h-4 w-4" />
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => handleRemoveComponent(index)}
+                              className="text-red-600 hover:text-red-800"
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </button>
+                          </div>
                         </div>
                       ))}
                     </div>
@@ -1646,7 +1876,22 @@ export default function CTCConfiguration() {
             <div className="border-t border-slate-200 p-4 flex gap-3">
               <button
                 type="button"
-                onClick={() => setShowEditTemplateModal(false)}
+                onClick={() => {
+                  setTemplateForm({
+                    name: "",
+                    description: "",
+                    is_default: false,
+                    template_type: "custom",
+                    components: [],
+                  });
+                  setNewComponent({
+                    name: "",
+                    type: "earning",
+                    percentage: "",
+                    is_taxable: true,
+                  });
+                  setShowEditTemplateModal(false);
+                }}
                 className="flex-1 px-4 py-2.5 border-2 border-gray-200 rounded-xl hover:bg-gray-50 hover:border-gray-300 transition-all duration-200 font-medium text-gray-700 hover:text-gray-900"
               >
                 Cancel
@@ -1705,7 +1950,7 @@ export default function CTCConfiguration() {
               <form
                 onSubmit={(e) => {
                   e.preventDefault();
-                  handleAssignCTC();
+                  assignCTCtoEmployee();
                 }}
                 className="space-y-4"
               >
@@ -1880,7 +2125,7 @@ export default function CTCConfiguration() {
               </button>
               <button
                 type="button"
-                onClick={handleAssignCTC}
+                onClick={assignCTCtoEmployee}
                 disabled={
                   !configForm.employee_id ||
                   !configForm.template_id ||

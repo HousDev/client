@@ -1110,45 +1110,49 @@ export default function PaymentsEnhanced() {
                       <td className="px-2 md:px-4 py-2">
                         <span
                           className={`px-2 py-1 rounded-full text-[10px] md:text-xs font-medium ${getStatusColor(
-                            po.status,
+                            (po.status || "").toLowerCase(),
                           )}`}
                         >
                           {(po.status || "pending").toUpperCase()}
                         </span>
                       </td>
                       <td className="px-2 md:px-4 py-2">
-                        <div className="flex gap-1">
-                          {can("make_payments") && (
-                            <>
-                              <button
-                                onClick={() => openPaymentModal(po)}
-                                className="px-2 py-1 bg-green-600 text-white rounded hover:bg-green-700 transition-all duration-200 flex items-center gap-1 text-[10px] md:text-xs"
-                                title="Make Payment"
-                              >
-                                <IndianRupee className="w-3 h-3" />
-                                Pay
-                              </button>
-                              <button
-                                onClick={() =>
-                                  createPaymentReminder({
-                                    po_id: po.po_id,
-                                    po_payment_id: po.id,
-                                    po_number: po.po_number,
-                                    vendor: po.name,
-                                    total_amount: po.total_amount,
-                                    total_paid: po.amount_paid,
-                                    balance_amount: po.balance_amount,
-                                    due_date: po.payment_due_date,
-                                  })
-                                }
-                                className="p-1 bg-blue-600 text-white rounded hover:bg-blue-700 transition-all duration-200 flex items-center justify-center"
-                                title="Set Reminder"
-                              >
-                                <Bell className="w-3 h-3" />
-                              </button>
-                            </>
-                          )}
-                        </div>
+                        {Number(po.balance_amount) !== 0 ? (
+                          <div className="flex gap-1">
+                            {can("make_payments") && (
+                              <>
+                                <button
+                                  onClick={() => openPaymentModal(po)}
+                                  className="px-2 py-1 bg-green-600 text-white rounded hover:bg-green-700 transition-all duration-200 flex items-center gap-1 text-[10px] md:text-xs"
+                                  title="Make Payment"
+                                >
+                                  <IndianRupee className="w-3 h-3" />
+                                  Pay
+                                </button>
+                                <button
+                                  onClick={() =>
+                                    createPaymentReminder({
+                                      po_id: po.po_id,
+                                      po_payment_id: po.id,
+                                      po_number: po.po_number,
+                                      vendor: po.name,
+                                      total_amount: po.total_amount,
+                                      total_paid: po.amount_paid,
+                                      balance_amount: po.balance_amount,
+                                      due_date: po.payment_due_date,
+                                    })
+                                  }
+                                  className="p-1 bg-blue-600 text-white rounded hover:bg-blue-700 transition-all duration-200 flex items-center justify-center"
+                                  title="Set Reminder"
+                                >
+                                  <Bell className="w-3 h-3" />
+                                </button>
+                              </>
+                            )}
+                          </div>
+                        ) : (
+                          <div>--</div>
+                        )}
                       </td>
                     </tr>
                   );

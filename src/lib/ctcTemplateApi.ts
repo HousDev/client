@@ -24,6 +24,15 @@ async function getTemplate(id: number | string) {
   return unwrap(res);
 }
 
+async function setDefault(id: number | string) {
+  const res: any = await api.get(`/ctc-template/set-default/${id}`);
+  return unwrap(res);
+}
+async function toggleActive(id: number | string) {
+  const res: any = await api.get(`/ctc-template/set-active/${id}`);
+  return unwrap(res);
+}
+
 /**
  * Update CTC Template
  */
@@ -42,9 +51,11 @@ async function deleteTemplate(id: number | string) {
 
 const ctcTemplateApi = {
   createTemplate,
+  setDefault,
   getTemplates,
   getTemplate,
   updateTemplate,
+  toggleActive,
   deleteTemplate,
 };
 
