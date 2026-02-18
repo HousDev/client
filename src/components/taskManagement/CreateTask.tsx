@@ -513,7 +513,7 @@ export default function CreateTask({
                     <input
                       type="date"
                       value={formData.start_date}
-                      min={today}
+                      // min={today}   // 👈 Is line ko comment ya remove kar den
                       onChange={(e) =>
                         setFormData({
                           ...formData,
@@ -522,10 +522,9 @@ export default function CreateTask({
                         })
                       }
                       className="w-full px-4 py-2 text-sm border border-gray-300 rounded-xl
-             focus:border-amber-600 focus:ring-2 focus:ring-amber-600/20"
+         focus:border-amber-600 focus:ring-2 focus:ring-amber-600/20"
                       required
                     />
-
                   </div>
                 </div>
                 <div className="space-y-1.5">
