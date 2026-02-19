@@ -43,6 +43,7 @@ import HrmsEmployeesApi, {
 } from "../lib/employeeApi";
 import employeeAdvanceApi from "../lib/employeeAdvanceApi";
 import { useAuth } from "../contexts/AuthContext";
+import MySwal from "../utils/swal";
 
 interface AdvanceRequest {
   id: string;
@@ -70,7 +71,7 @@ interface AdvanceRequest {
   total_recovered?: number;
   balance_amount?: number;
   monthly_deduction: number;
-  remarks?: string;
+  remark?: string;
 }
 
 interface HrmsEmployee {
@@ -213,7 +214,7 @@ export default function Advance() {
           status: "pending",
           balance_amount: 50000,
           monthly_deduction: 16667,
-          remarks: "Urgent medical requirement",
+          remark: "Urgent medical requirement",
         },
         {
           id: "2",
@@ -233,7 +234,7 @@ export default function Advance() {
           approved_by: "Admin User",
           balance_amount: 30000,
           monthly_deduction: 15000,
-          remarks: "Education fee payment",
+          remark: "Education fee payment",
         },
         {
           id: "3",
@@ -255,7 +256,7 @@ export default function Advance() {
           total_recovered: 10000,
           balance_amount: 15000,
           monthly_deduction: 5000,
-          remarks: "Home maintenance work",
+          remark: "Home maintenance work",
         },
       ];
       // API call would go here
@@ -289,9 +290,8 @@ export default function Advance() {
         return "warning";
       case "rejected":
         return "danger";
-      case "disbursed":
       case "recovering":
-        return "info";
+        return "processing";
       case "recovered":
         return "secondary";
       default:
@@ -368,42 +368,52 @@ export default function Advance() {
 
     try {
       // API call would go here
-      console.log(
-        `${approvalData.action} advance:`,
-        selectedAdvance.id,
-        approvalData.remarks,
-      );
-      const approveRes = await employeeAdvanceApi.approveAdvance(
-        selectedAdvance.id,
-        user.id,
-        approvalData.action,
-      );
+      let approveRes: any;
+      if (approvalData.action === "approved") {
+        approveRes = await employeeAdvanceApi.approveAdvance(
+          selectedAdvance.id,
+          user.id,
+          approvalData.remarks,
+        );
+      } else {
+        approveRes = await employeeAdvanceApi.rejectAdvance(
+          selectedAdvance.id,
+          user.id,
+          approvalData.remarks,
+        );
+      }
       console.log(approvalData);
       setShowApprovalModal(false);
       setSelectedAdvance(null);
       setApprovalData({ action: "approved", remarks: "" });
-
-      await loadAdvances();
-      toast.success(`Advance ${approvalData.action}d successfully!`);
-    } catch (error) {
+      if (approveRes.success) {
+        await loadAdvances();
+        toast.success(approveRes.message);
+      } else {
+        toast.success(approveRes.message);
+      }
+    } catch (error: any) {
       console.error("Error processing approval:", error);
-      toast.error("Failed to process request");
+      toast.error(error.response.data.message);
     }
   };
 
   const handleDisburse = async (advance: AdvanceRequest) => {
-    toast.success(
-      `Advance of ₹${advance.amount.toLocaleString()} disbursed to ${advance.employee_name}!`,
-    );
-
     try {
       // API call would go here
-      console.log("Disbursing advance:", advance.id);
-      await loadAdvances();
-      toast.success("Advance disbursed successfully!");
-    } catch (error) {
+      const disbursementRes: any = await employeeAdvanceApi.disburseAdvance(
+        advance.id,
+      );
+
+      if (disbursementRes.success) {
+        await loadAdvances();
+        toast.success(disbursementRes.message);
+      } else {
+        toast.success(disbursementRes.message);
+      }
+    } catch (error: any) {
       console.error("Error disbursing advance:", error);
-      toast.error("Failed to disburse advance");
+      toast.error(error.response.data.message);
     }
   };
 
@@ -613,6 +623,18 @@ export default function Advance() {
 
   const deleteAdvance = async (id: number | string) => {
     try {
+      const result: any = await MySwal.fire({
+        title: `Delete  Advance?`,
+        text: "This action cannot be undone.",
+        icon: "warning",
+        showCancelButton: true,
+        confirmButtonColor: "#C62828",
+        cancelButtonColor: "#6B7280",
+        confirmButtonText: `Delete`,
+        cancelButtonText: "Cancel",
+      });
+
+      if (!result.isConfirmed) return;
       // Immediate deletion with toast
       const res: any = await employeeAdvanceApi.deleteAdvance(id);
       console.log(res);
@@ -742,6 +764,11 @@ export default function Advance() {
                 <th className="px-3 md:px-4 py-2 text-left">
                   <div className="text-[10px] md:text-xs font-semibold text-gray-700 uppercase tracking-wider">
                     Request Date
+                  </div>
+                </th>
+                <th className="px-3 md:px-4 py-2 text-left">
+                  <div className="text-[10px] md:text-xs font-semibold text-gray-700 uppercase tracking-wider">
+                    Disbursement Date
                   </div>
                 </th>
                 <th className="px-3 md:px-4 py-2 text-left">
@@ -966,6 +993,16 @@ export default function Advance() {
                       </td>
 
                       <td className="px-3 md:px-4 py-3">
+                        <p className="text-xs md:text-sm text-gray-700">
+                          {advance.disbursement_date
+                            ? new Date(
+                                advance.disbursement_date,
+                              ).toLocaleDateString()
+                            : "--"}
+                        </p>
+                      </td>
+
+                      <td className="px-3 md:px-4 py-3">
                         {advance.balance_amount !== undefined && (
                           <p className="text-xs md:text-sm font-medium text-orange-600">
                             ₹{advance.balance_amount.toLocaleString()}
@@ -998,6 +1035,7 @@ export default function Advance() {
                               <li>
                                 <button
                                   onClick={() => {
+                                    console.log(advance);
                                     setSelectedAdvance(advance);
                                     setShowDetailsModal(true);
                                     setOpenMenuId(null);
@@ -1065,19 +1103,23 @@ export default function Advance() {
                                 </li>
                               )}
 
-                              <hr className="my-1" />
+                              {advance.status === "pending" && (
+                                <hr className="my-1" />
+                              )}
 
-                              <li>
-                                <button
-                                  onClick={() => {
-                                    deleteAdvance(advance.id);
-                                  }}
-                                  className="w-full flex items-center gap-2 px-4 py-2 hover:bg-red-50 text-red-600 text-left"
-                                >
-                                  <Trash2 className="w-4 h-4" />
-                                  Delete
-                                </button>
-                              </li>
+                              {advance.status === "pending" && (
+                                <li>
+                                  <button
+                                    onClick={() => {
+                                      deleteAdvance(advance.id);
+                                    }}
+                                    className="w-full flex items-center gap-2 px-4 py-2 hover:bg-red-50 text-red-600 text-left"
+                                  >
+                                    <Trash2 className="w-4 h-4" />
+                                    Delete
+                                  </button>
+                                </li>
+                              )}
                             </ul>
                           </div>
                         )}
@@ -1244,7 +1286,7 @@ export default function Advance() {
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   {/* Amount */}
                   <div className="space-y-1.5">
-                    <label className="block text-sm font-semibold text-gray-800 mb-1 flex items-center gap-2">
+                    <label className="text-sm font-semibold text-gray-800 mb-1 flex items-center gap-2">
                       <IndianRupee className="w-4 h-4 text-[#C62828]" />
                       Advance Amount (₹) <span className="text-red-500">*</span>
                     </label>
@@ -1319,7 +1361,7 @@ export default function Advance() {
 
                   {/* Monthly Deduction Calculation */}
                   <div className="col-span-2 space-y-1.5">
-                    <label className="block text-sm font-semibold text-gray-800 mb-1 flex items-center gap-2">
+                    <label className="text-sm font-semibold text-gray-800 mb-1 flex items-center gap-2">
                       <Calculator className="w-4 h-4 text-[#C62828]" />
                       Monthly Deduction Summary
                     </label>
@@ -1730,10 +1772,22 @@ export default function Advance() {
                   </div>
                 </>
               )}
-              <div className="col-span-2">
+              <div className="">
                 <label className="text-slate-600">Reason</label>
                 <p className="font-medium text-slate-900">
                   {selectedAdvance.reason}
+                </p>
+              </div>
+              <div className="">
+                <label className="text-slate-600">
+                  {selectedAdvance.status === "pending" ||
+                  selectedAdvance.status === "approved"
+                    ? "Approve "
+                    : "Rejection "}{" "}
+                  Reason
+                </label>
+                <p className="font-medium text-slate-900">
+                  {selectedAdvance.remark}
                 </p>
               </div>
             </div>

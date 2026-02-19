@@ -256,6 +256,8 @@ export default function CreatePurchaseOrderForm({
   const [selectedPaymentTerm, setSelectedPaymentTerm] = useState<any>("");
   const [poPaymentTerms, setPoPaymentTerms] = useState<any[]>([]);
   const [displayTerms, setDisplayTerms] = useState<any>([]);
+  const [selectedTermsWithGracePeriod, setSelectedTermsWithGracePeriod] =
+    useState<boolean>(false);
 
   const [selectedPaymentTermData, setSelectedPaymentTermData] =
     useState<any>("");
@@ -1020,7 +1022,7 @@ export default function CreatePurchaseOrderForm({
 
                 {/* Project Selection */}
                 <div className="space-y-1.5">
-                  <label className="block text-xs font-semibold text-gray-700 mb-1 flex items-center gap-1.5">
+                  <label className="text-xs font-semibold text-gray-700 mb-1 flex items-center gap-1.5">
                     <Building2 className="w-3 h-3 text-green-600" />
                     <span>Project</span>
                     <span className="text-red-500">*</span>
@@ -1754,6 +1756,7 @@ export default function CreatePurchaseOrderForm({
                   setSelectedPaymentTermData("");
                   setSelectedPaymentTermId("");
                   setShowAddPaymentTerm(false);
+                  setSelectedTermsWithGracePeriod(false);
                 }}
                 className="group relative p-2.5 hover:bg-gray-700/30 rounded-xl transition-all duration-200 hover:scale-105 active:scale-95"
               >
@@ -1799,7 +1802,11 @@ export default function CreatePurchaseOrderForm({
                         const findedData = allPayments.find(
                           (d: any) => Number(d.id) === Number(id),
                         );
-                        console.log("term : ", findedData);
+                        if (findedData.gracePeriod) {
+                          setSelectedTermsWithGracePeriod(true);
+                        } else {
+                          setSelectedTermsWithGracePeriod(false);
+                        }
                         setSelectedPaymentTermData({
                           ...findedData,
                           percentPayment: Number(
@@ -1847,7 +1854,7 @@ export default function CreatePurchaseOrderForm({
                           <p className="text-sm text-slate-800">
                             {selectedPaymentTermData.firstText}
                           </p>
-                          {selectedPaymentTermData.gracePeriod && (
+                          {selectedTermsWithGracePeriod && (
                             <div className="flex items-center">
                               <input
                                 type="text"
@@ -1898,7 +1905,12 @@ export default function CreatePurchaseOrderForm({
                             event_trigger:
                               selectedPaymentTermData.event_trigger,
                             firstText: selectedPaymentTermData.firstText,
-                            gracePeriod: selectedPaymentTermData.gracePeriod,
+                            gracePeriod: selectedTermsWithGracePeriod
+                              ? (selectedPaymentTermData.gracePeriod || "")
+                                  .length !== 0
+                                ? selectedPaymentTermData.gracePeriod
+                                : "0"
+                              : selectedPaymentTermData.gracePeriod,
                             id: 14,
                             percentPayment:
                               selectedPaymentTermData.percentPayment,
@@ -1997,6 +2009,7 @@ export default function CreatePurchaseOrderForm({
                         setSelectedPaymentTermData("");
                         setSelectedPaymentTermId("");
                         setShowAddPaymentTerm(false);
+                        setSelectedTermsWithGracePeriod(false);
                       }}
                       className={`relative group flex-1 px-6 py-2 rounded-xl font-semibold text-sm transition-all duration-300 transform hover:scale-[1.02] active:scale-[0.98] ${
                         poPaymentTerms.length !== 0
@@ -2018,6 +2031,7 @@ export default function CreatePurchaseOrderForm({
                         setSelectedPaymentTermData("");
                         setSelectedPaymentTermId("");
                         setShowAddPaymentTerm(false);
+                        setSelectedTermsWithGracePeriod(false);
                       }}
                       className="px-6 py-2 rounded-xl font-semibold text-sm bg-gradient-to-r from-gray-200 to-gray-300 text-gray-700 hover:from-gray-300 hover:to-gray-400 transition-all duration-300 transform hover:scale-[1.02] active:scale-[0.98] shadow-md shadow-gray-500/10 border border-gray-300/50"
                     >

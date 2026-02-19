@@ -77,7 +77,6 @@
 
 // export default HrmsEmployeesApi;
 
-
 // // src/lib/employeeApi.ts - UPDATE WITH NEW METHOD
 // import { api, unwrap } from "./Api";
 
@@ -133,7 +132,7 @@
 //    */
 //   createEmployee: async (
 //     formData: FormData
-//   ): Promise<HrmsEmployee> => 
+//   ): Promise<HrmsEmployee> =>
 //     unwrap(api.post("/employees", formData, {
 //       headers: {
 //         'Content-Type': 'multipart/form-data'
@@ -156,10 +155,10 @@
 // ): Promise<HrmsEmployee> => {
 //   try {
 //     console.log("Sending employee data to create-from-user:", employeeData);
-    
+
 //     const response = await api.post("/employees/create-from-user", employeeData);
 //     console.log("Create from user response:", response.data);
-    
+
 //     // Handle the response structure from your backend
 //     if (response.data.success && response.data.data) {
 //       return response.data.data;
@@ -186,7 +185,7 @@
 //   updateEmployee: async (
 //     id: number | string,
 //     formData: FormData
-//   ): Promise<HrmsEmployee> => 
+//   ): Promise<HrmsEmployee> =>
 //     unwrap(api.put(`/employees/${id}`, formData, {
 //       headers: {
 //         'Content-Type': 'multipart/form-data'
@@ -203,9 +202,6 @@
 
 // export default HrmsEmployeesApi;
 
-
-
-
 // src/lib/employeeApi.ts
 import { api, unwrap } from "./Api";
 
@@ -217,7 +213,7 @@ export type HrmsEmployee = {
   message: string;
   id: number;
   employee_code: string;
-  
+
   // Basic Details
   first_name: string;
   last_name: string;
@@ -233,14 +229,14 @@ export type HrmsEmployee = {
   office_location?: string | null;
   attendence_location: string;
   employee_status: string;
-  
+
   // Personal Details
   blood_group?: string;
   date_of_birth?: string;
   marital_status?: string;
   emergency_contact?: string;
   nationality?: string;
-  
+
   // Address Details
   current_address?: string;
   permanent_address?: string;
@@ -248,17 +244,17 @@ export type HrmsEmployee = {
   state?: string;
   pincode?: string;
   same_as_permanent?: boolean;
-  
+
   // Identification Details
   aadhar_number?: string;
   pan_number?: string;
-  
+
   // Educational Details
   highest_qualification?: string;
   university?: string;
   passing_year?: string;
   percentage?: string;
-  
+
   // Employment Details
   employee_type?: string;
   branch?: string;
@@ -267,27 +263,27 @@ export type HrmsEmployee = {
   date_of_leaving?: string;
   job_title?: string;
   notice_period?: string;
-  alary?: string; // or number if you prefer
+  salary?: string; // or number if you prefer
   salary_type?: string; // "monthly" or "yearly"
-  
+
   // System Details
   laptop_assigned?: string;
   system_login_id?: string;
   system_password?: string;
   office_email_id?: string;
   office_email_password?: string;
-  
+
   // Bank Details
   bank_account_number?: string;
   bank_name?: string;
   ifsc_code?: string;
   upi_id?: string;
-  
+
   // Joins (from backend queries)
   role_name?: string;
   department_name?: string;
   project_name?: string;
-  
+
   // Timestamps
   user_id?: string;
   created_at?: string;
@@ -320,18 +316,19 @@ export const HrmsEmployeesApi = {
    * Create employee with file upload and comprehensive data
    * POST /employees
    */
-  createEmployee: async (
-    formData: FormData
-  ): Promise<HrmsEmployee> => {
+  createEmployee: async (formData: FormData): Promise<HrmsEmployee> => {
     try {
-      console.log("Creating employee with form data:", Object.fromEntries(formData));
-      
+      console.log(
+        "Creating employee with form data:",
+        Object.fromEntries(formData),
+      );
+
       const response = await api.post("/employees", formData, {
         headers: {
-          'Content-Type': 'multipart/form-data'
-        }
+          "Content-Type": "multipart/form-data",
+        },
       });
-      
+
       console.log("Create employee response:", response.data);
       return response.data;
     } catch (error: any) {
@@ -339,13 +336,15 @@ export const HrmsEmployeesApi = {
         message: error.message,
         status: error.response?.status,
         data: error.response?.data,
-        config: error.config
+        config: error.config,
       });
-      if (error.response?.data?.message?.toLowerCase().includes('phone') ||
-        error.response?.data?.errors?.phone) {
-      throw new Error("Phone number already exists");
-    }
-    throw error;
+      if (
+        error.response?.data?.message?.toLowerCase().includes("phone") ||
+        error.response?.data?.errors?.phone
+      ) {
+        throw new Error("Phone number already exists");
+      }
+      throw error;
     }
   },
 
@@ -353,15 +352,16 @@ export const HrmsEmployeesApi = {
    * Create employee from user data (simplified version)
    * POST /employees/create-from-user
    */
-  createFromUser: async (
-    employeeData: any
-  ): Promise<HrmsEmployee> => {
+  createFromUser: async (employeeData: any): Promise<HrmsEmployee> => {
     try {
       console.log("Sending employee data to create-from-user:", employeeData);
-      
-      const response = await api.post("/employees/create-from-user", employeeData);
+
+      const response = await api.post(
+        "/employees/create-from-user",
+        employeeData,
+      );
       console.log("Create from user response:", response.data);
-      
+
       if (response.data.success && response.data.data) {
         return response.data.data;
       } else if (response.data) {
@@ -374,7 +374,7 @@ export const HrmsEmployeesApi = {
         message: error.message,
         status: error.response?.status,
         data: error.response?.data,
-        config: error.config
+        config: error.config,
       });
       throw error;
     }
@@ -386,17 +386,20 @@ export const HrmsEmployeesApi = {
    */
   updateEmployee: async (
     id: number | string,
-    formData: FormData
+    formData: FormData,
   ): Promise<HrmsEmployee> => {
     try {
-      console.log(`Updating employee ${id} with form data:`, Object.fromEntries(formData));
-      
+      console.log(
+        `Updating employee ${id} with form data:`,
+        Object.fromEntries(formData),
+      );
+
       const response = await api.put(`/employees/${id}`, formData, {
         headers: {
-          'Content-Type': 'multipart/form-data'
-        }
+          "Content-Type": "multipart/form-data",
+        },
       });
-      
+
       console.log("Update employee response:", response.data);
       return response.data;
     } catch (error: any) {
@@ -404,12 +407,14 @@ export const HrmsEmployeesApi = {
         message: error.message,
         status: error.response?.status,
         data: error.response?.data,
-        config: error.config
+        config: error.config,
       });
-      if (error.response?.data?.message?.toLowerCase().includes('phone') ||
-        error.response?.data?.errors?.phone) {
-      throw new Error("Phone number already exists");
-    }
+      if (
+        error.response?.data?.message?.toLowerCase().includes("phone") ||
+        error.response?.data?.errors?.phone
+      ) {
+        throw new Error("Phone number already exists");
+      }
       throw error;
     }
   },
@@ -420,20 +425,23 @@ export const HrmsEmployeesApi = {
    */
   updateAdditionalDetails: async (
     id: number | string,
-    payload: Partial<HrmsEmployee>
+    payload: Partial<HrmsEmployee>,
   ): Promise<{ success: boolean; message: string; data: HrmsEmployee }> => {
     try {
       console.log(`Updating additional details for employee ${id}:`, payload);
-      
-      const response = await api.patch(`/employees/${id}/additional-details`, payload);
+
+      const response = await api.patch(
+        `/employees/${id}/additional-details`,
+        payload,
+      );
       console.log("Update additional details response:", response.data);
-      
+
       return response.data;
     } catch (error: any) {
       console.error("Update additional details error:", {
         message: error.message,
         status: error.response?.status,
-        data: error.response?.data
+        data: error.response?.data,
       });
       throw error;
     }
@@ -444,29 +452,31 @@ export const HrmsEmployeesApi = {
    * PATCH /employees/:id/status
    */
   // In employeeApi.ts
-updateEmployeeStatus: async (
-  id: number | string,
-  status: string
-): Promise<HrmsEmployee> => {
-  try {
-    console.log(`Updating status for employee ${id} to:`, status);
-    
-    // ✅ Send 'employee_status' as parameter name, not 'status'
-    const response = await api.patch(`/employees/${id}/status`, { 
-      employee_status: status 
-    });
-    return response.data;
-  } catch (error: any) {
-    console.error("Update employee status error:", error.message);
-    throw error;
-  }
-}, 
+  updateEmployeeStatus: async (
+    id: number | string,
+    status: string,
+  ): Promise<HrmsEmployee> => {
+    try {
+      console.log(`Updating status for employee ${id} to:`, status);
+
+      // ✅ Send 'employee_status' as parameter name, not 'status'
+      const response = await api.patch(`/employees/${id}/status`, {
+        employee_status: status,
+      });
+      return response.data;
+    } catch (error: any) {
+      console.error("Update employee status error:", error.message);
+      throw error;
+    }
+  },
 
   /**
    * Delete employee
    * DELETE /employees/:id
    */
-  deleteEmployee: async (id: number | string): Promise<{ success: boolean; message: string }> => {
+  deleteEmployee: async (
+    id: number | string,
+  ): Promise<{ success: boolean; message: string }> => {
     try {
       const response = await api.delete(`/employees/${id}`);
       return response.data;
@@ -481,11 +491,11 @@ updateEmployeeStatus: async (
    * POST /employees/bulk-delete
    */
   bulkDeleteEmployees: async (
-    ids: number[]
+    ids: number[],
   ): Promise<{ success: boolean; message: string; deletedCount: number }> => {
     try {
       console.log("Bulk deleting employees:", ids);
-      
+
       const response = await api.post("/employees/bulk-delete", { ids });
       return response.data;
     } catch (error: any) {
@@ -498,19 +508,17 @@ updateEmployeeStatus: async (
    * Search employees with filters
    * GET /employees/search
    */
-  searchEmployees: async (
-    filters: {
-      search?: string;
-      department?: string;
-      role?: string;
-      status?: string;
-      employee_type?: string;
-      gender?: string;
-    }
-  ): Promise<HrmsEmployee[]> => {
+  searchEmployees: async (filters: {
+    search?: string;
+    department?: string;
+    role?: string;
+    status?: string;
+    employee_type?: string;
+    gender?: string;
+  }): Promise<HrmsEmployee[]> => {
     try {
       console.log("Searching employees with filters:", filters);
-      
+
       const response = await api.get("/employees/search", { params: filters });
       return response.data;
     } catch (error: any) {
@@ -523,21 +531,19 @@ updateEmployeeStatus: async (
    * Export employees to CSV
    * GET /employees/export
    */
-  exportEmployees: async (
-    filters?: {
-      department?: string;
-      role?: string;
-      status?: string;
-    }
-  ): Promise<Blob> => {
+  exportEmployees: async (filters?: {
+    department?: string;
+    role?: string;
+    status?: string;
+  }): Promise<Blob> => {
     try {
       console.log("Exporting employees with filters:", filters);
-      
+
       const response = await api.get("/employees/export", {
         params: filters,
-        responseType: 'blob'
+        responseType: "blob",
       });
-      
+
       return response.data;
     } catch (error: any) {
       console.error("Export employees error:", error.message);
@@ -565,7 +571,7 @@ updateEmployeeStatus: async (
       console.error("Get employee stats error:", error.message);
       throw error;
     }
-  }
+  },
 };
 
 export default HrmsEmployeesApi;

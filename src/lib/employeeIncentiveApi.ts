@@ -58,6 +58,11 @@ async function getIncentiveById(id: number | string) {
   return unwrap(res);
 }
 
+async function deleteIncentiveById(id: number | string) {
+  const res: any = await api.delete(`/employee-incentive/${id}`);
+  return unwrap(res);
+}
+
 /* =====================================================
    Get Employee Incentives
 ===================================================== */
@@ -78,12 +83,18 @@ async function getIncentivesByMonthYear(
   );
   return unwrap(res);
 }
+async function getAllIncentives() {
+  const res: any = await api.get(`/employee-incentive/`);
+  return unwrap(res);
+}
 
 const employeeIncentiveApi = {
   createIncentive,
   approveIncentive,
+  deleteIncentiveById,
   rejectIncentive,
   markAsPaid,
+  getAllIncentives,
   getIncentiveById,
   getEmployeeIncentives,
   getIncentivesByMonthYear,
