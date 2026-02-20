@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 // src/components/Layout.tsx
 import { ReactNode, useState, useMemo, useEffect, useRef } from "react";
 import { useAuth } from "../contexts/AuthContext";
@@ -17,7 +16,6 @@ import {
   MdRequestQuote,
   MdChecklist,
   MdSettings,
-  MdClose,
   MdAccountCircle,
 } from "react-icons/md";
 import {
@@ -372,7 +370,16 @@ export default function Layout({
   // ── Sign out ─────────────────────────────────────────────────────────────
   const handleSignOut = async () => {
     try {
+      // ✅ Module restore states clear karo
+      localStorage.removeItem("activeTab");
+      localStorage.removeItem("selectedEmployeeId");
+
+      // ✅ Auth logout
       await signOut();
+
+      // ✅ Fresh reload (clean state)
+      window.location.reload();
+
     } catch (error) {
       console.error("Error signing out:", error);
     }
