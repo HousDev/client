@@ -32,13 +32,13 @@ export default function Masters() {
       component: ItemsMaster,
     },
 
-    {
-      id: "service",
-      label: "Service Master",
-      icon: Package,
-      description: "Services",
-      component: ServicesMaster,
-    },
+    // {
+    //   id: "service",
+    //   label: "Service Master",
+    //   icon: Package,
+    //   description: "Services",
+    //   component: ServicesMaster,
+    // },
 
     {
       id: "po_types",

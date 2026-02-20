@@ -739,7 +739,11 @@ export default function UpdateServiceOrderForm({
                     const projectDetailsRes: any =
                       await projectApi.getProjectById(id);
                     setProjectBuildings(projectDetailsRes.data.buildings);
-                    setFormData({ ...formData, project_id: id });
+                    setFormData({
+                      ...formData,
+                      project_id: id,
+                      building_id: "",
+                    });
                   }}
                   placeholder="Select Project"
                   required

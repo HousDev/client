@@ -36,6 +36,7 @@ import Badge from "../components/ui/Badge";
 import Swal from "sweetalert2";
 import { toast } from "sonner";
 import HrmsEmployeesApi, { HrmsEmployee } from "../lib/employeeApi"; // ✅ Import Employee API
+import employeeReimbursementApi from "../lib/employeeReimbursementApi";
 
 interface Reimbursement {
   id: string;
@@ -184,8 +185,23 @@ export default function Reimbursements() {
   };
 
   // ✅ UPDATED: Handle add reimbursement with API employees
-  const handleAddReimbursement = () => {
+  const handleAddReimbursement = async () => {
     console.log("formdata of renbursment : ", formData);
+
+    // try{
+    //   const formDataObj = new FormData()
+    //   formDataObj.append("employee_id",formData.employee_id)
+    //   formDataObj.append("category",formData.category)
+    //   formDataObj.append("amount",formData.amount)
+    //   formDataObj.append("description",formData.description)
+    //   formDataObj.append("doc",formData.receipt)
+
+    //   const reimbursementRes:any =await employeeReimbursementApi.createReimbursement()
+    // }catch(error:any){
+    //   console.log(error)
+
+    // }
+
     // Find employee from API data instead of mockEmployees
     const selectedEmployee = employees.find(
       (e) => e.id.toString() === formData.employee_id,

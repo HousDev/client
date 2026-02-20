@@ -5,12 +5,14 @@ import { api, unwrap } from "./Api";
  * Get all inventory transaction
  */
 async function getTransactions() {
-  const res = await api.get("/inventory-transaction");
+  const res: any = await api.get("/inventory-transaction");
   return unwrap(res);
 }
 
 async function getIssueMaterialTransactions(id?: number) {
-  const res = await api.get("/inventory-transaction/issueMaterialTransaction");
+  const res: any = await api.get(
+    "/inventory-transaction/issueMaterialTransaction",
+  );
   return unwrap(res);
 }
 
@@ -18,7 +20,7 @@ async function getIssueMaterialTransactions(id?: number) {
  * Get transaction by ID
  */
 async function getTransactionById(id: number | string) {
-  const res = await api.get(`/inventory-transaction/${id}`);
+  const res: any = await api.get(`/inventory-transaction/${id}`);
   return unwrap(res);
 }
 
@@ -26,16 +28,22 @@ async function getTransactionById(id: number | string) {
  * Create inventory transaction
  */
 async function createTransaction(payload: any) {
-  const res = await api.post("/inventory-transaction", payload);
+  const res: any = await api.post("/inventory-transaction", payload);
   return unwrap(res);
 }
 async function createTransactionOut(payload: any) {
-  const res = await api.post("/inventory-transaction/materialOut", payload);
+  const res: any = await api.post(
+    "/inventory-transaction/materialOut",
+    payload,
+  );
   return unwrap(res);
 }
 
 async function createTransactionIssueMaterial(payload: any) {
-  const res = await api.post("/inventory-transaction/issueMaterial", payload);
+  const res: any = await api.post(
+    "/inventory-transaction/issueMaterial",
+    payload,
+  );
   return unwrap(res);
 }
 
@@ -43,7 +51,7 @@ async function createTransactionIssueMaterial(payload: any) {
  * Update inventory transaction
  */
 async function updateTransaction(id: number | string, payload: any) {
-  const res = await api.put(`/inventory-transaction/${id}`, payload);
+  const res: any = await api.put(`/inventory-transaction/${id}`, payload);
   return unwrap(res);
 }
 
@@ -51,7 +59,7 @@ async function updateTransaction(id: number | string, payload: any) {
  * Delete inventory transaction
  */
 async function deleteTransaction(id: number | string) {
-  const res = await api.delete(`/inventory-transaction/${id}`);
+  const res: any = await api.delete(`/inventory-transaction/${id}`);
   return unwrap(res);
 }
 
@@ -59,7 +67,7 @@ async function deleteTransaction(id: number | string) {
  * Get transaction by item ID
  */
 async function getTransactionsByItemId(itemId: number | string) {
-  const res = await api.get(`/inventory-transaction/item/${itemId}`);
+  const res: any = await api.get(`/inventory-transaction/item/${itemId}`);
   return unwrap(res);
 }
 

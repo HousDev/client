@@ -172,6 +172,7 @@ export default function ServiceOrders() {
     id: number | string;
     status: string;
     note: string;
+    po_number?: string;
   }>({ id: "", status: "", note: "" });
 
   const [items, setItems] = useState<any>([]);
@@ -1159,8 +1160,9 @@ export default function ServiceOrders() {
     }
   };
 
-  const openPaymentModal = (po: PO) => {
-    setSelectedPO(po);
+  const openPaymentModal = (po: any) => {
+    console.log("this is po for exmp : ", po);
+    setSelectedPO({ ...po, po_number: po.so_number });
     setPaymentData({
       ...paymentData,
       amount_paid: String(po.balance_amount) || String(po.grand_total),
@@ -1922,6 +1924,7 @@ export default function ServiceOrders() {
                                         ...serviceOrderRejection,
                                         status: "rejected",
                                         id: po.id,
+                                        po_number: po.so_number,
                                       });
                                       setShowRejectionModule(true);
                                       setShowApprovalButtons(null);
@@ -2184,10 +2187,10 @@ export default function ServiceOrders() {
                 </div>
                 <div>
                   <h2 className="text-base font-bold text-white">
-                    Record Payment
+                    Reject Work Order
                   </h2>
                   <p className="text-xs text-white/90 font-medium mt-0.5">
-                    PO: {selectedPO?.po_number}
+                    WO: {serviceOrderRejection?.po_number}
                   </p>
                 </div>
               </div>
@@ -2266,7 +2269,7 @@ export default function ServiceOrders() {
                     Record Payment
                   </h2>
                   <p className="text-xs text-white/90 font-medium mt-0.5">
-                    PO: {selectedPO?.po_number}
+                    WO: {selectedPO?.po_number}
                   </p>
                 </div>
               </div>

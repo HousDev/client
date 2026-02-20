@@ -6,7 +6,6 @@ import {
   Plus,
   Edit2,
   Trash2,
-  Search,
   XCircle,
   FileText,
   Package,
@@ -17,10 +16,7 @@ import {
   IndianRupee,
   FileDown,
   Loader2,
-  Truck,
-  Upload,
-  User,
-  Filter,
+  CircleX,
 } from "lucide-react";
 import { useAuth } from "../contexts/AuthContext";
 import vendorApi from "../lib/vendorApi";
@@ -166,6 +162,15 @@ export default function PurchaseOrders() {
   const [selectedPOForUdate, setSelectedPOForUpdate] = useState<any>();
   const [allPurchaseOrderItems, setAllPurchaseOrderItems] = useState<any>([]);
   const [pdfLoading, setPdfLoading] = useState(false);
+  const [showRejectionModule, setShowRejectionModule] =
+    useState<boolean>(false);
+
+  const [serviceOrderRejection, setServiceOrderRejection] = useState<{
+    id: number | string;
+    status: string;
+    note: string;
+    po_number?: string;
+  }>({ id: "", status: "", note: "" });
 
   const [items, setItems] = useState<any>([]);
   // Add these state variables near your other state declarations
@@ -193,6 +198,7 @@ export default function PurchaseOrders() {
     type: "",
     date: "",
   });
+
   // Replace your useEffect that filters data with these new useEffect hooks
   // For tracking tab
   // useEffect(() => {
@@ -769,6 +775,8 @@ export default function PurchaseOrders() {
         po_types: ts.find((t) => t.id === p.po_type_id) ?? p.po_types ?? null,
       }));
 
+      console.log(poWithRelations);
+
       setPOs(poWithRelations);
       setLoading(false);
     }, 200);
@@ -938,6 +946,59 @@ export default function PurchaseOrders() {
     // const updated = pos.filter((p) => p.id !== id);
     // setPOs(updated);
     toast.success("PO deleted successfully!");
+  };
+
+  const rejectServiceOrderStatus = async (e: React.FormEvent) => {
+    e.preventDefault();
+    try {
+      if (serviceOrderRejection.note.length === 0) {
+        toast.error("Please Enter Rejection Reason.");
+        return;
+      }
+
+      const result: any = await MySwal.fire({
+        title:
+          serviceOrderRejection.status.charAt(0).toUpperCase() +
+          serviceOrderRejection.status.slice(1),
+        text: `Are you sure you want to ${
+          serviceOrderRejection.status === "authorize"
+            ? serviceOrderRejection.status
+            : serviceOrderRejection.status === "approved"
+              ? "approve"
+              : "reject"
+        } this service order`,
+        icon: "warning",
+        showCancelButton: true,
+      });
+
+      if (!result.isConfirmed) return;
+
+      const payload = {
+        status: serviceOrderRejection.status,
+        note: serviceOrderRejection.note,
+      };
+
+      const approveRes: any = await poApi.updatePurchaseOrderStatus(
+        serviceOrderRejection.id,
+        payload,
+      );
+
+      if (approveRes.success) {
+        toast.success(
+          "service order status updated to " + status.toLocaleUpperCase() + ".",
+        );
+        setShowRejectionModule(false);
+        setServiceOrderRejection({ id: "", status: "", note: "" });
+        setShowApprovalButtons(null);
+        loadAllData();
+      } else {
+        toast.error(
+          "Failed to update service order status." + status.toLocaleUpperCase(),
+        );
+      }
+    } catch (error: any) {
+      toast.error(error.response.data.message);
+    }
   };
 
   const updatePurchaseOrderStatus = async (id: string, status: string) => {
@@ -2054,6 +2115,84 @@ export default function PurchaseOrders() {
                 </div>
               ))}
             </div>
+          </div>
+        </div>
+      )}
+
+      {showRejectionModule && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-md flex items-center justify-center z-50 p-4">
+          <div className="bg-gradient-to-br from-gray-50 to-white rounded-2xl shadow-2xl shadow-gray-900/20 w-full max-w-2xl border border-gray-200 overflow-hidden">
+            {/* Modal Header */}
+            <div className="bg-gradient-to-r from-[#40423f] via-[#4a4c49] to-[#5a5d5a] px-5 py-3 flex justify-between items-center border-b border-gray-700/30">
+              <div className="flex items-center gap-2.5">
+                <div className="p-1.5 bg-white/20 rounded-xl backdrop-blur-sm">
+                  <IndianRupee className="w-4 h-4 text-white" />
+                </div>
+                <div>
+                  <h2 className="text-base font-bold text-white">
+                    Reject Work Order
+                  </h2>
+                  <p className="text-xs text-white/90 font-medium mt-0.5">
+                    WO: {serviceOrderRejection?.po_number}
+                  </p>
+                </div>
+              </div>
+              <button
+                onClick={() => {
+                  setShowRejectionModule(false);
+                  setServiceOrderRejection({ id: "", status: "", note: "" });
+                  setShowApprovalButtons(null);
+                }}
+                className="text-white hover:bg-white/20 rounded-xl p-1.5 transition-all duration-200"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            <form
+              onSubmit={rejectServiceOrderStatus}
+              className="p-4 max-h-[calc(90vh-80px)] overflow-y-auto"
+            >
+              <div className="space-y-1">
+                <label className="block text-xs font-semibold text-gray-800">
+                  Work Order Rejection Reason
+                </label>
+                <textarea
+                  value={serviceOrderRejection.note || ""}
+                  onChange={(e) =>
+                    setServiceOrderRejection({
+                      ...serviceOrderRejection,
+                      note: e.target.value || "",
+                    })
+                  }
+                  className="w-full px-3 py-2 text-sm border-2 border-gray-200 rounded-xl focus:border-[#C62828] focus:ring-2 focus:ring-[#C62828]/20 outline-none"
+                  rows={2}
+                  placeholder="Add any remarks..."
+                />
+              </div>
+
+              {/* Modal Footer */}
+              <div className="border-t p-3 flex gap-2">
+                <button
+                  type="submit"
+                  disabled={submitting}
+                  className="flex-1 bg-gradient-to-r from-[#C62828] to-red-600 text-white py-2 px-4 rounded-xl hover:from-red-600 hover:to-red-700 transition-all duration-200 font-semibold flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed text-sm"
+                >
+                  <CircleX className="w-4 h-4" /> Reject Work Order
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowRejectionModule(false);
+                    setServiceOrderRejection({ id: "", status: "", note: "" });
+                    setShowApprovalButtons(null);
+                  }}
+                  className="px-4 py-2 text-sm border border-gray-200 rounded-xl hover:bg-gray-50 transition-all duration-200 font-medium text-gray-700"
+                >
+                  Cancel
+                </button>
+              </div>
+            </form>
           </div>
         </div>
       )}
