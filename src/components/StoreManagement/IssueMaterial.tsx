@@ -359,10 +359,11 @@ export default function IssueMaterial({
         );
         return false;
       }
-
+      console.log(material)
       const stockItem = allInventory.find(
         (item) => item.id === material.materialId,
       );
+      console.log(stockItem)
       if (stockItem && parseFloat(material.quantity) > stockItem.quantity) {
         toast.error(
           `Insufficient stock for ${material.materialName}! Available: ${stockItem.quantity} ${stockItem.unit}`,
@@ -459,6 +460,7 @@ export default function IssueMaterial({
         setActiveFormTab("");
         loadAllData();
       } else {
+        console.log(response.message)
         toast.error(response.message || "Failed to issue materials");
       }
     } catch (error) {
