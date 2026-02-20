@@ -896,13 +896,23 @@ export default function ViewRequestMaterial({
           item.stock_status === "OUT OF STOCK" ||
           item.stock_status === "LOW STOCK",
       );
-      console.log(i);
+
       const items = i.map((material: any) => ({
         itemId: material.request_material_item_id,
         required_quantity: Number(material.required_quantity),
         approved_quantity: material.approved_quantity,
       }));
+
       console.log(items);
+      const total = items.reduce(
+        (sum: number, elem: any) => (sum += Number(elem.quantity)),
+        0,
+      );
+
+      if (total === 0) {
+        toast.error("Please Enter Valid Quantity.");
+      }
+
       const submissionData = {
         userId: user?.id,
         projectId: materialRequest.projectId,
@@ -1368,11 +1378,7 @@ export default function ViewRequestMaterial({
                               type="text"
                               inputMode="decimal"
                               value={item.approveQuantity ?? ""}
-                              disabled={
-                                item.stock_quantity === 0 ||
-                                item.required_quantity ===
-                                  item.approved_quantity
-                              }
+                              disabled={materialRequest.status === "approved"}
                               placeholder="Qty"
                               onChange={(e) => {
                                 const value = e.target.value;
@@ -1449,7 +1455,8 @@ export default function ViewRequestMaterial({
         </div>
 
         {/* Footer Actions */}
-        {requestData.status === "pending" && (
+        {(requestData.status === "pending" ||
+          requestData.status === "partial") && (
           <div className="flex flex-col xs:flex-row justify-between gap-2 pt-3 px-3 sm:px-4 border-t border-gray-300/50 pb-3">
             {requestData.items?.some(
               (i: any) =>

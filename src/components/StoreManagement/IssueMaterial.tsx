@@ -140,8 +140,12 @@ export default function IssueMaterial({
   const loadAllMaterialRequest = async () => {
     try {
       const materialRequestRes = await RequestMaterialApi.getAll();
+      const filteredRequest = materialRequestRes.filter(
+        (mr: any) => mr.status === "approved",
+      );
+
       setAllMaterialRequest(
-        Array.isArray(materialRequestRes) ? materialRequestRes : [],
+        Array.isArray(filteredRequest) ? filteredRequest : [],
       );
     } catch (error) {
       console.log(error);
@@ -416,9 +420,12 @@ export default function IssueMaterial({
 
     try {
       setLoading(true);
-
       // Prepare data for API call
+      console.log("selected req : ", selectedMaterialRequestData);
       const submissionData = {
+        materialRequest: selectedMaterialRequestData
+          ? selectedMaterialRequestData.request_material_id
+          : null,
         projectId: formData.projectId,
         buildingId: formData.buildingId,
         floorId: formData.floorId,
@@ -433,6 +440,9 @@ export default function IssueMaterial({
           materialId: material.materialId,
           materialName: material.materialName,
           quantity: parseFloat(material.quantity),
+          approved_qauntity: material.approved_quantity
+            ? material.approved_quantity
+            : 0,
           unit: material.unit,
         })),
       };
@@ -519,7 +529,7 @@ export default function IssueMaterial({
           <form onSubmit={handleSubmit} className="space-y-4">
             {/* Material Request */}
             <div className="space-y-1.5">
-              <label className="block text-sm font-semibold text-gray-800 mb-1 flex items-center gap-2">
+              <label className="text-sm font-semibold text-gray-800 mb-1 flex items-center gap-2">
                 <ClipboardList className="w-4 h-4 text-[#C62828]" />
                 Material Request <span className="text-red-500">*</span>
               </label>
@@ -550,6 +560,7 @@ export default function IssueMaterial({
                             materialName:
                               inventoryItem.item_name || inventoryItem.name,
                             quantity: i.approved_quantity,
+                            approved_quantity: i.approved_quantity,
                             unit: inventoryItem.unit,
                             currentStock: inventoryItem.quantity,
                             reorder_qty: inventoryItem.reorder_qty,
@@ -621,7 +632,7 @@ export default function IssueMaterial({
               </div>
 
               <div className="space-y-1.5">
-                <label className="block text-sm font-semibold text-gray-800 mb-1 flex items-center gap-2">
+                <label className="text-sm font-semibold text-gray-800 mb-1 flex items-center gap-2">
                   <Building className="w-4 h-4 text-[#C62828]" />
                   Building <span className="text-red-500">*</span>
                 </label>
@@ -945,6 +956,10 @@ export default function IssueMaterial({
                               <span className="px-2 py-1 bg-blue-100 text-blue-700 rounded-lg text-xs font-medium">
                                 Stock: {material.currentStock} {material.unit}
                               </span>
+                              <span className="px-2 py-1 bg-yellow-100 text-yellow-700 rounded-lg text-xs font-medium">
+                                Approved Qty: {material.approved_quantity}{" "}
+                                {material.unit}
+                              </span>
                               {isLowStock && (
                                 <span className="px-2 py-1 bg-yellow-100 text-yellow-700 rounded-lg text-xs font-medium flex items-center gap-1">
                                   <AlertCircle className="w-3 h-3" />
@@ -959,6 +974,14 @@ export default function IssueMaterial({
                                 type="text"
                                 value={material.quantity}
                                 onChange={(e) => {
+                                  if (material.approved_quantity) {
+                                    if (
+                                      Number(material.approved_quantity) <
+                                      Number(e.target.value)
+                                    ) {
+                                      return;
+                                    }
+                                  }
                                   if (
                                     !/^\d*\.?\d*$/.test(e.target.value) ||
                                     Number(e.target.value) < 0
