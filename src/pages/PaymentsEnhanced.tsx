@@ -927,7 +927,7 @@ export default function PaymentsEnhanced() {
                   </th>
                   <th className="px-2 md:px-4 py-2 text-left">
                     <div className="text-[10px] md:text-xs font-semibold text-gray-700 uppercase tracking-wider">
-                      TOTAL
+                      TOTAL AMOUNT + GST
                     </div>
                   </th>
                   <th className="px-2 md:px-4 py-2 text-left">

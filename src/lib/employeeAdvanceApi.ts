@@ -29,9 +29,11 @@ async function approveAdvance(
 async function rejectAdvance(
   id: number | string,
   rejected_by: number | string,
+  remark: string,
 ) {
   const res: any = await api.put(`/employee-advance/${id}/reject`, {
     rejected_by,
+    remark,
   });
   return unwrap(res);
 }
