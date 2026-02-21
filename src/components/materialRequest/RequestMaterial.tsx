@@ -789,7 +789,7 @@ export default function RequestMaterial({
                                 <div className="font-semibold text-gray-800 text-xs text-wrap w-36">
                                   {material.materialName}
                                 </div>
-                                <div className="flex items-center gap-3 mt-1">
+                                {/* <div className="flex items-center gap-3 mt-1">
                                   <div className="text-xs text-gray-600">
                                     Stock:{" "}
                                     <span
@@ -804,7 +804,7 @@ export default function RequestMaterial({
                                       Low Stock
                                     </span>
                                   )}
-                                </div>
+                                </div> */}
                               </div>
                             </div>
 
@@ -984,12 +984,12 @@ export default function RequestMaterial({
                                   <span className="text-xs text-gray-600">
                                     HSN: {item.hsn_code || "N/A"}
                                   </span>
-                                  <span className="text-xs text-gray-600">
+                                  {/* <span className="text-xs text-gray-600">
                                     Stock:{" "}
                                     {item.inventoryItem
                                       ?.quantity_after_approve || 0}{" "}
                                     {item.unit}
-                                  </span>
+                                  </span> */}
                                 </div>
                                 {existingMaterial && (
                                   <div className="text-xs bg-blue-100 text-blue-700 px-2 py-1 rounded-full mt-1 inline-flex items-center gap-1">

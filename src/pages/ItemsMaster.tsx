@@ -716,7 +716,6 @@ interface ItemFormData {
   sgst_rate: string;
   standard_rate: number;
   is_active?: boolean;
-  location: string;
 }
 
 type Item = ItemFormData & { id: string };
@@ -762,7 +761,6 @@ export default function ItemsMaster(): JSX.Element {
     sgst_rate: "9",
     standard_rate: 0,
     is_active: true,
-    location: "",
   });
 
   // Load items from backend
@@ -814,7 +812,6 @@ export default function ItemsMaster(): JSX.Element {
       sgst_rate: "9",
       standard_rate: 0,
       is_active: true,
-      location: "",
     });
     setEditingId(null);
   }
@@ -849,7 +846,6 @@ export default function ItemsMaster(): JSX.Element {
       sgst_rate: Number(formData.sgst_rate) || 0,
       standard_rate: Number(formData.standard_rate) || 0,
       is_active: formData.is_active ? 1 : 0,
-      location: formData.location || "",
     };
 
     try {
@@ -872,7 +868,6 @@ export default function ItemsMaster(): JSX.Element {
             updated.is_active === undefined
               ? Boolean(payload.is_active)
               : Boolean(updated.is_active),
-          location: updated?.location || "",
         };
         setItems((prev) =>
           prev.map((it) => (it.id === editingId ? normalized : it)),
@@ -896,7 +891,6 @@ export default function ItemsMaster(): JSX.Element {
             created.is_active === undefined
               ? Boolean(payload.is_active)
               : Boolean(created.is_active),
-          location: created.location || "",
         };
         setItems((prev) => [...prev, normalized]);
         toast.success("Item created successfully!");
@@ -924,7 +918,6 @@ export default function ItemsMaster(): JSX.Element {
       sgst_rate: item.sgst_rate || "0",
       standard_rate: item.standard_rate || 0,
       is_active: item.is_active ?? true,
-      location: item.location ?? "",
     });
     setShowModal(true);
   };
@@ -2086,33 +2079,6 @@ export default function ItemsMaster(): JSX.Element {
                       />
                     </div>
                   </div>
-
-                  {/* Location (for materials only) */}
-                  {formData.category === "material" && (
-                    <div className="space-y-1">
-                      <label className="block text-xs font-semibold text-gray-800 mb-1">
-                        Location <span className="text-red-500">*</span>
-                      </label>
-                      <div className="relative group">
-                        <div className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 group-focus-within:text-[#C62828] transition-colors">
-                          <Package className="w-3.5 h-3.5" />
-                        </div>
-                        <input
-                          type="text"
-                          value={formData.location}
-                          placeholder="Location"
-                          onChange={(e) =>
-                            setFormData({
-                              ...formData,
-                              location: e.target.value,
-                            })
-                          }
-                          className="w-full pl-9 pr-3 py-2 text-sm border-2 border-gray-200 rounded-xl focus:border-[#C62828] focus:ring-2 focus:ring-[#C62828]/20 outline-none transition-all duration-200 hover:border-gray-300"
-                          required
-                        />
-                      </div>
-                    </div>
-                  )}
 
                   {/* Description */}
                   <div className="md:col-span-3 space-y-1">

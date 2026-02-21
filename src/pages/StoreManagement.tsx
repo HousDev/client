@@ -86,8 +86,6 @@ type Item = {
   location: string;
 };
 
-
-
 // ADD THIS INTERFACE
 interface StoreManagementProps {
   activeFormTab?: string;
@@ -428,13 +426,11 @@ export default function StoreManagement({
         filtered = filtered.filter(
           (item: any) => item.item_category === filterCategory,
         );
-
       }
       if (filterSubCategory) {
         filtered = filtered.filter(
           (item: any) => item.item_sub_category === filterSubCategory,
         );
-
       }
 
       if (filterLocation) {
@@ -1271,12 +1267,6 @@ export default function StoreManagement({
               </h2>
 
               <div className="flex items-center gap-2 md:gap-3">
-                <button
-                  onClick={resetFilters}
-                  className="text-white text-xs md:text-sm hover:bg-white hover:bg-opacity-20 px-2 md:px-3 py-1 md:py-1.5 rounded transition"
-                >
-                  Reset
-                </button>
                 <button
                   onClick={() => setShowFilterSidebar(false)}
                   className="text-white hover:bg-white hover:bg-opacity-20 rounded-lg p-1 transition"

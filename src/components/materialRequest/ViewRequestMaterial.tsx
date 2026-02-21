@@ -1471,25 +1471,27 @@ export default function ViewRequestMaterial({
                   Request Material
                 </button>
               )}
-            <div className="flex gap-2">
-              <button
-                onClick={approveQuantity}
-                className="flex-1 bg-gradient-to-r from-green-600 to-emerald-600 text-white py-1.5 px-4 rounded-lg hover:from-green-700 hover:to-emerald-700 transition-all font-medium text-xs sm:text-sm shadow-sm active:scale-[0.98]"
-              >
-                Approve
-              </button>
-              <button
-                onClick={() => {
-                  rejectRequestMaterial(
-                    requestData.request_material_id,
-                    "rejected",
-                  );
-                }}
-                className="flex-1 border border-red-300 text-red-600 py-1.5 px-4 rounded-lg hover:bg-red-50 transition-all font-medium text-xs sm:text-sm shadow-sm active:scale-[0.98]"
-              >
-                Reject
-              </button>
-            </div>
+            {!requestData.previous_request_id && (
+              <div className="flex gap-2">
+                <button
+                  onClick={approveQuantity}
+                  className="flex-1 bg-gradient-to-r from-green-600 to-emerald-600 text-white py-1.5 px-4 rounded-lg hover:from-green-700 hover:to-emerald-700 transition-all font-medium text-xs sm:text-sm shadow-sm active:scale-[0.98]"
+                >
+                  Approve
+                </button>
+                <button
+                  onClick={() => {
+                    rejectRequestMaterial(
+                      requestData.request_material_id,
+                      "rejected",
+                    );
+                  }}
+                  className="flex-1 border border-red-300 text-red-600 py-1.5 px-4 rounded-lg hover:bg-red-50 transition-all font-medium text-xs sm:text-sm shadow-sm active:scale-[0.98]"
+                >
+                  Reject
+                </button>
+              </div>
+            )}
           </div>
         )}
 
