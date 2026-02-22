@@ -871,8 +871,11 @@ export default function MaterialInForm({
         toast.error("Failed to create transaction.");
       }
     } catch (error: any) {
+      setLoading(false);
       console.error("Create transaction error:", error);
       toast.error(error?.response?.data?.message || "Something went wrong");
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -1272,9 +1275,6 @@ export default function MaterialInForm({
                                       parseFloat(item.issued_quantity);
 
                                     if (t < parseFloat(e.target.value)) {
-                                      toast.error(
-                                        "Received Qty. is greater than pending Qty.",
-                                      );
                                       return;
                                     }
                                     handleItemQuantityChange(

@@ -36,18 +36,12 @@ interface MaterialOutFormProps {
   setLoadTableData: any;
 }
 
-interface Vendor {
-  id: number;
-  name: string;
-  phone: string;
-  type: "CONTRACTOR" | "SUBCONTRACTOR" | "SUPPLIER" | "OTHER";
-}
-
 interface MaterialItem {
   id: number;
   materialId: number;
   materialName: string;
   quantity: string;
+  item_id?: number | string;
   unit: string;
   currentStock: number;
   reorder_qty: number;
@@ -83,6 +77,9 @@ export default function IssueMaterial({
     purpose: "",
     materials: [],
   });
+  const [allProjectInventory, setAllProjectInventory] = useState<any>(
+    allInventory || [],
+  );
 
   const [selectedProject, setSelectedProject] = useState<any>(null);
   const [selectedBuilding, setSelectedBuilding] = useState<any>(null);
@@ -158,6 +155,14 @@ export default function IssueMaterial({
     loadAllServiceVendors();
     loadAllMaterialRequest();
   }, []);
+
+  useEffect(() => {
+    console.log(allInventory);
+    const filterD = allInventory.filter(
+      (d: any) => Number(d.project_id) === Number(formData.projectId),
+    );
+    setAllProjectInventory(filterD || []);
+  }, [formData.projectId]);
 
   // Load project details when project is selected
   const loadProjectDetails = async (
@@ -307,6 +312,7 @@ export default function IssueMaterial({
       const newMaterial: MaterialItem = {
         id: Date.now() + Math.random(),
         materialId: inventoryItem.id,
+        item_id: inventoryItem.item_id,
         materialName: inventoryItem.item_name || inventoryItem.name,
         quantity: "1",
         unit: inventoryItem.unit,
@@ -342,7 +348,7 @@ export default function IssueMaterial({
   };
 
   // Filter inventory items for selection
-  const filteredInventory = allInventory.filter((item) => {
+  const filteredInventory = allProjectInventory.filter((item: any) => {
     const searchTerm = materialSearch.toLowerCase();
     return (
       (item.item_name || "").toLowerCase().includes(searchTerm) ||
@@ -359,11 +365,11 @@ export default function IssueMaterial({
         );
         return false;
       }
-      console.log(material)
+      console.log(material);
       const stockItem = allInventory.find(
         (item) => item.id === material.materialId,
       );
-      console.log(stockItem)
+      console.log(stockItem);
       if (stockItem && parseFloat(material.quantity) > stockItem.quantity) {
         toast.error(
           `Insufficient stock for ${material.materialName}! Available: ${stockItem.quantity} ${stockItem.unit}`,
@@ -388,6 +394,13 @@ export default function IssueMaterial({
 
     if (!formData.floorId) {
       toast.error("Please select a floor");
+      return false;
+    }
+
+    console.log(formData);
+
+    if (!formData.vendorId) {
+      toast.error("Please select a vendor");
       return false;
     }
 
@@ -423,6 +436,7 @@ export default function IssueMaterial({
       setLoading(true);
       // Prepare data for API call
       console.log("selected req : ", selectedMaterialRequestData);
+      console.log("form data : ", formData);
       const submissionData = {
         materialRequest: selectedMaterialRequestData
           ? selectedMaterialRequestData.request_material_id
@@ -439,6 +453,7 @@ export default function IssueMaterial({
         purpose: formData.purpose,
         materials: formData.materials.map((material: any) => ({
           materialId: material.materialId,
+          item_id: material.item_id,
           materialName: material.materialName,
           quantity: parseFloat(material.quantity),
           approved_qauntity: material.approved_quantity
@@ -460,10 +475,11 @@ export default function IssueMaterial({
         setActiveFormTab("");
         loadAllData();
       } else {
-        console.log(response.message)
+        console.log(response.message);
         toast.error(response.message || "Failed to issue materials");
       }
     } catch (error) {
+      setLoading(false);
       console.error("Error issuing materials:", error);
       toast.error("Failed to issue materials");
     } finally {
@@ -549,16 +565,21 @@ export default function IssueMaterial({
                     const mr = allMaterialRequest.find(
                       (d: any) => d.request_material_id === id,
                     );
+                    const filterD = allInventory.filter(
+                      (d: any) => Number(d.project_id) === Number(mr.projectId),
+                    );
+                    setAllProjectInventory(filterD || []);
                     setSelectedMaterialRequestData(mr);
                     const materials = [];
                     for (const i of mr.items) {
-                      for (const inventoryItem of allInventory) {
+                      for (const inventoryItem of filterD) {
                         if (
                           i.request_material_item_id === inventoryItem.item_id
                         ) {
                           const data = {
                             id: Date.now() + Math.random(),
                             materialId: inventoryItem.id,
+                            item_id: i.request_material_item_id,
                             materialName:
                               inventoryItem.item_name || inventoryItem.name,
                             quantity: i.approved_quantity,
@@ -958,10 +979,12 @@ export default function IssueMaterial({
                               <span className="px-2 py-1 bg-blue-100 text-blue-700 rounded-lg text-xs font-medium">
                                 Stock: {material.currentStock} {material.unit}
                               </span>
-                              <span className="px-2 py-1 bg-yellow-100 text-yellow-700 rounded-lg text-xs font-medium">
-                                Approved Qty: {material.approved_quantity}{" "}
-                                {material.unit}
-                              </span>
+                              {material.approved_quantity && (
+                                <span className="px-2 py-1 bg-yellow-100 text-yellow-700 rounded-lg text-xs font-medium">
+                                  Approved Qty: {material.approved_quantity}{" "}
+                                  {material.unit}
+                                </span>
+                              )}
                               {isLowStock && (
                                 <span className="px-2 py-1 bg-yellow-100 text-yellow-700 rounded-lg text-xs font-medium flex items-center gap-1">
                                   <AlertCircle className="w-3 h-3" />
@@ -1117,7 +1140,7 @@ export default function IssueMaterial({
                       </p>
                     </div>
                   ) : (
-                    filteredInventory.map((item) => {
+                    filteredInventory.map((item: any) => {
                       const existingMaterial = formData.materials.find(
                         (m: any) => m.materialId === item.id,
                       );

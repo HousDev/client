@@ -33,7 +33,6 @@ const REQUIRED_HEADERS = [
   "IGST",
   "CGST",
   "SGST",
-  "Location",
 ];
 
 /* -------------------------------- HELPERS -------------------------------- */
@@ -104,7 +103,6 @@ const buildItemsData = (rows: any[], last_item_code: string) => {
     const subCategory = String(row["Sub Category"]).trim();
     const unit = String(row["Unit"]).trim();
     const hsn = String(row["HSN/SAC Code"]).trim();
-    const location = String(row["Location"]).trim() ?? "";
 
     if (!productName || !productType || !category || !unit || !hsn) {
       errors.push(
@@ -148,7 +146,6 @@ const buildItemsData = (rows: any[], last_item_code: string) => {
       sgst_rate: sgst,
       standard_rate: Number(row["Purchase Rate"]) || 0,
       is_active: 1,
-      location: location ?? "",
     });
   });
 
