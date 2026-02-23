@@ -2245,7 +2245,7 @@ export default function ServiceOrders() {
       {/* Payment Modal */}
       {showPaymentModal && selectedPO && (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-md flex items-center justify-center z-50 p-4">
-          <div className="bg-gradient-to-br from-gray-50 to-white rounded-2xl shadow-2xl shadow-gray-900/20 w-full max-w-2xl border border-gray-200 overflow-hidden">
+          <div className="bg-gradient-to-br from-gray-50 to-white rounded-2xl shadow-2xl shadow-gray-900/20 w-full max-w-lg border border-gray-200 overflow-hidden">
             {/* Modal Header */}
             <div className="bg-gradient-to-r from-[#40423f] via-[#4a4c49] to-[#5a5d5a] px-5 py-3 flex justify-between items-center border-b border-gray-700/30">
               <div className="flex items-center gap-2.5">
@@ -2254,7 +2254,7 @@ export default function ServiceOrders() {
                 </div>
                 <div>
                   <h2 className="text-base font-bold text-white">
-                    Record Payment
+                    Record Advance Payment
                   </h2>
                   <p className="text-xs text-white/90 font-medium mt-0.5">
                     WO: {selectedPO?.po_number}
@@ -2430,7 +2430,7 @@ export default function ServiceOrders() {
                       required
                       id="payment_proof"
                       onChange={handleFileUpload}
-                      className="w-full px-3 py-2 text-sm border-2 border-gray-200 rounded-xl focus:border-[#C62828] focus:ring-2 focus:ring-[#C62828]/20 outline-none file:border-none file:bg-gradient-to-r file:from-[#C62828] file:to-red-600 file:text-white file:font-medium file:px-3 file:py-1.5 file:rounded-lg file:cursor-pointer"
+                      className="w-full px-3 py-1 text-sm border-2 border-gray-200 rounded-xl focus:border-[#C62828] focus:ring-2 focus:ring-[#C62828]/20 outline-none file:border-none file:bg-gradient-to-r file:from-[#C62828] file:to-red-600 file:text-white file:font-medium file:px-3 file:py-1 file:rounded-lg file:cursor-pointer"
                       accept=".pdf,.jpg,.jpeg,.png"
                     />
                   </div>

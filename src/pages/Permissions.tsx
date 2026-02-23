@@ -298,8 +298,16 @@ export default function Permissions() {
     { action: "export_reports", label: "Export Reports", module: "Reports" },
 
     // Administration
-    { action: "manage_users", label: "Manage Users", module: "Administration" },
-    { action: "manage_roles", label: "Manage Roles", module: "Administration" },
+    {
+      action: "manage_master",
+      label: "Manage Master",
+      module: "Administration",
+    },
+    {
+      action: "manage_settings",
+      label: "Manage Settings",
+      module: "Administration",
+    },
     {
       action: "manage_permissions",
       label: "Manage Permissions",
@@ -317,6 +325,16 @@ export default function Permissions() {
     },
     { action: "edit_users", label: "Edit Users", module: "Administration" },
     { action: "delete_users", label: "Delete Users", module: "Administration" },
+    {
+      action: "export_users_data",
+      label: "Export User Data",
+      module: "Administration",
+    },
+    {
+      action: "user_bulk_action",
+      label: "User Bulk Actions",
+      module: "Administration",
+    },
   ];
 
   const loadUsers = async () => {

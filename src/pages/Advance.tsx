@@ -259,8 +259,13 @@ export default function Advance() {
           remark: "Home maintenance work",
         },
       ];
+      let res: any;
       // API call would go here
-      const res: any = await employeeAdvanceApi.getAllAdvance();
+      if (user.role === "admin") {
+        res = await employeeAdvanceApi.getAllAdvance();
+      } else {
+        res = await employeeAdvanceApi.getEmployeeAdvances(user.id);
+      }
       console.log("res : ", res);
       // setAdvances(mockData);
       setAdvances(Array.isArray(res.data) ? res.data : []);
@@ -605,6 +610,19 @@ export default function Advance() {
 
   // Check if form is valid
   const isFormValid = () => {
+    if (
+      Number(formData.amount) >
+      Number(getSelectedEmployee()!.monthly_salary * 2) -
+        (advances || []).reduce(
+          (adv: number, curr: any) =>
+            curr.status === "recovering"
+              ? Number(curr.balance_amount) + adv
+              : adv,
+          0,
+        )
+    ) {
+      return false;
+    }
     if (!formData.employee_id || !formData.amount || !formData.reason) {
       return false;
     }
@@ -1290,31 +1308,67 @@ export default function Advance() {
                       <IndianRupee className="w-4 h-4 text-[#C62828]" />
                       Advance Amount (₹) <span className="text-red-500">*</span>
                     </label>
-                    <div className="relative group">
-                      <div className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 group-focus-within:text-[#C62828] transition-colors">
-                        <IndianRupee className="w-4 h-4" />
-                      </div>
-                      <input
-                        type="number"
-                        value={formData.amount}
-                        onChange={(e) => {
-                          if (e.target.value.length !== 0) {
+                    <div>
+                      <div className="relative group">
+                        <div className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 group-focus-within:text-[#C62828] transition-colors">
+                          <IndianRupee className="w-4 h-4" />
+                        </div>
+                        <input
+                          type="number"
+                          value={formData.amount}
+                          onChange={(e) => {
                             if (
-                              getSelectedEmployee()!.monthly_salary * 2 <
-                              Number(e.target.value)
-                            )
+                              Number(e.target.value) >
+                              Number(
+                                getSelectedEmployee()!.monthly_salary * 2,
+                              ) -
+                                (advances || []).reduce(
+                                  (adv: number, curr: any) =>
+                                    curr.status === "recovering"
+                                      ? Number(curr.balance_amount) + adv
+                                      : adv,
+                                  0,
+                                )
+                            ) {
                               return;
-                            if (Number(e.target.value) <= 0) return;
-                          }
-                          setFormData({
-                            ...formData,
-                            amount: e.target.value,
-                          });
-                        }}
-                        className="w-full pl-10 pr-4 py-2.5 text-sm border-2 border-gray-200 rounded-xl focus:border-[#C62828] focus:ring-2 focus:ring-[#C62828]/20 outline-none transition-all duration-200 hover:border-gray-300"
-                        placeholder="Enter amount"
-                        required
-                      />
+                            }
+                            if (e.target.value.length !== 0) {
+                              if (
+                                getSelectedEmployee()!.monthly_salary * 2 <
+                                Number(e.target.value)
+                              )
+                                return;
+                              if (Number(e.target.value) <= 0) return;
+                            }
+                            setFormData({
+                              ...formData,
+                              amount: e.target.value,
+                            });
+                          }}
+                          className="w-full pl-10 pr-4 py-2.5 text-sm border-2 border-gray-200 rounded-xl focus:border-[#C62828] focus:ring-2 focus:ring-[#C62828]/20 outline-none transition-all duration-200 hover:border-gray-300"
+                          placeholder="Enter amount"
+                          required
+                        />
+                      </div>
+                      <p className="text-xs text-red-500 ml-3">
+                        {" "}
+                        {(advances || []).reduce(
+                          (adv: number, curr: any) =>
+                            curr.status === "recovering"
+                              ? Number(curr.balance_amount) + adv
+                              : adv,
+                          0,
+                        ) > 0
+                          ? "Previous Advance : " +
+                            (advances || []).reduce(
+                              (adv: number, curr: any) =>
+                                curr.status === "recovering"
+                                  ? Number(curr.balance_amount) + adv
+                                  : adv,
+                              0,
+                            )
+                          : ""}
+                      </p>
                     </div>
                     {formData.amount && getSelectedEmployee() && (
                       <p className="text-xs text-gray-500">

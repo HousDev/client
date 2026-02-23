@@ -350,7 +350,7 @@ export default function Layout({
       label: "Settings",
       icon: FaCog,
       headerIcon: FaCog,
-      value: ["view_settings", "edit_settings", "full_access"],
+      value: ["manage_settings"],
       submenu: settingsSubmenuItems,
     },
     {
@@ -358,14 +358,21 @@ export default function Layout({
       label: "Masters",
       icon: Users,
       headerIcon: Users,
-      value: ["manage_users", "manage_roles"],
+      value: ["manage_master"],
       submenu: null,
     },
     {
       id: "users",
       label: "Users",
       icon: MdAccountCircle,
-      value: ["manage_users"],
+      value: [
+        "view_users_list",
+        "create_new_users",
+        "edit_users",
+        "delete_users",
+        "export_users_data",
+        "user_bulk_action",
+      ],
       submenu: null,
     },
     {
