@@ -8,22 +8,15 @@ import {
   Info,
   Building2,
   Calendar,
-  CreditCard,
-  Tag,
-  Truck,
   User,
   Home,
-  AreaChartIcon,
   Layers2,
   AreaChart,
   DoorOpen,
   Workflow,
-  University,
   WorkflowIcon,
 } from "lucide-react";
-import projectApi from "../../lib/projectApi";
 import { toast } from "sonner";
-import { Layer } from "recharts";
 import { BiTask } from "react-icons/bi";
 import SearchableSelect from "../SearchableSelect";
 import { UsersApi } from "../../lib/Api";
@@ -111,7 +104,7 @@ export default function UpdateTask({
         formData.id,
         payload,
       );
-      console.log("task created : ", response);
+      
       if (response.success) {
         laodData();
         setShowUpdateModal(false);

@@ -1775,7 +1775,12 @@ export default function CreatePurchaseOrderForm({
                       Select Payment Term
                     </label>
                     <SearchableSelect
-                      options={allPayments.map((term: any) => {
+                      options={allPayments
+                        .filter((term: any) => {
+                          return !poPaymentTerms.find(
+                            (d: any) => Number(d.id) === Number(term.id)
+                          );
+                        }).map((term: any) => {
                         const concatinatedTerm = [
                           term.percentPayment != null
                             ? `${Number(term.percentPayment).toFixed(2)}`
@@ -1792,6 +1797,8 @@ export default function CreatePurchaseOrderForm({
                         ]
                           .filter(Boolean)
                           .join(" ");
+
+
                         return {
                           id: term.id,
                           name: concatinatedTerm || "",
@@ -1911,7 +1918,7 @@ export default function CreatePurchaseOrderForm({
                                 ? selectedPaymentTermData.gracePeriod
                                 : "0"
                               : selectedPaymentTermData.gracePeriod,
-                            id: 14,
+                            id: selectedPaymentTermData.id,
                             percentPayment:
                               selectedPaymentTermData.percentPayment,
                             secondText: selectedPaymentTermData.secondText,

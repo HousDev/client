@@ -29,6 +29,12 @@ export const AreaSubTasksApi = {
     return unwrap(api.get(`/area-sub-tasks${query}`));
   },
 
+getSubTasksByEngineerId: async (
+    engId: number | string,
+  ): Promise<AreaSubTask[]> => {
+    return unwrap(api.get(`/area-sub-tasks/engineer/${engId}`));
+  },
+
   /**
    * Get single sub-task by ID
    * GET /api/area-sub-tasks/:id
@@ -54,6 +60,13 @@ export const AreaSubTasksApi = {
     id: number | string,
     payload: Partial<AreaSubTask>,
   ): Promise<AreaSubTask> => unwrap(api.put(`/area-sub-tasks/${id}`, payload)),
+
+ updateEngineerSubTask: async (
+    id: number | string,
+    payload: any,
+  ): Promise<AreaSubTask> => unwrap(api.put(`/area-sub-tasks/engineer/${id}`, payload,{
+          headers: { "Content-Type": "multipart/form-data" },
+        })),
 
   /**
    * Delete sub-task

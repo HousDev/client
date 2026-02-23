@@ -75,7 +75,7 @@ export default function MaterialRequests() {
     setLoading(true);
     try {
       const response: any = await RequestMaterialApi.getAll();
-      console.log(response);
+
       setRequests(response);
       loadAllInventory();
     } catch (error) {
@@ -509,7 +509,6 @@ export default function MaterialRequests() {
             <tbody className="divide-y divide-gray-200">
               {filteredRequests.map((request: any) => {
                 const isSelected = selectedRequests.has(request.request_no);
-                console.log("filtere", request);
                 return (
                   <tr
                     key={request.request_no}

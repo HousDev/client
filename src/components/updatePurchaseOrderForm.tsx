@@ -1390,7 +1390,12 @@ export default function UpdatePurchaseOrderForm({
                       Select Payment Term
                     </label>
                     <SearchableSelect
-                      options={allPayments.map((term: any) => {
+                      options={allPayments
+                        .filter((term: any) => {
+                          return !formData.payment_terms.find(
+                            (d: any) => Number(d.id) === Number(term.id)
+                          );
+                        }).map((term: any) => {
                         const concatinatedTerm = [
                           term.percentPayment != null
                             ? `${Number(term.percentPayment).toFixed(2)}`
