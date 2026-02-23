@@ -1,1234 +1,4 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
-// import React, { useEffect, useState } from "react";
-// import {
-//   Plus,
-//   Search,
-//   Phone,
-//   Mail,
-//   MapPin,
-//   X,
-//   Edit2,
-//   Trash2,
-//   FileText,
-//   Building2,
-//   User,
-//   CheckCircle,
-// } from "lucide-react";
-// import PhoneInput from "../components/PhoneInput";
-// import { validators, errorMessages } from "../utils/validators";
-// import vendorApi from "../lib/vendorApi"; // getVendors, createVendor, updateVendor, deleteVendor
-// import poTypeApi from "../lib/poTypeApi"; // getPOTypes
-// import poApi from "../lib/poApi"; // getItems
-// import SearchableSelect from "../components/SearchableSelect";
-
-// /* ---------------------------
-//    Types
-// ----------------------------*/
-// interface VendorFormData {
-//   name: string;
-//   category_name: string;
-//   pan_number: string;
-//   gst_number: string;
-//   contact_person_name: string;
-//   contact_person_phone: string;
-//   contact_person_email: string;
-//   office_street: string;
-//   office_city: string;
-//   office_state: string;
-//   office_pincode: string;
-//   office_country: string;
-//   company_email: string;
-//   company_phone: string;
-//   manager_name: string;
-//   manager_email: string;
-//   manager_phone: string;
-//   phone_country_code: string;
-//   // new optional field to save the selected material/service item id
-//   sub_item_id?: string;
-// }
-
-// interface Vendor {
-//   id: number | string;
-//   name: string;
-//   category_name: string;
-//   pan_number?: string;
-//   gst_number?: string;
-//   contact_person_name?: string;
-//   contact_person_phone?: string;
-//   contact_person_email?: string;
-//   office_street?: string;
-//   office_city?: string;
-//   office_state?: string;
-//   office_pincode?: string;
-//   office_country?: string;
-//   company_email?: string;
-//   company_phone?: string;
-//   manager_name?: string;
-//   manager_email?: string;
-//   manager_phone?: string;
-//   phone_country_code?: string;
-//   sub_item_id?: string;
-// }
-
-// interface Category {
-//   id?: string;
-//   name: string;
-// }
-
-// interface ItemOption {
-//   id: string;
-//   name: string;
-//   code?: string;
-//   hsn?: string;
-//   category?: string;
-// }
-
-// /* ---------------------------
-//    Component
-// ----------------------------*/
-
-// export const INDIAN_STATES = [
-//   "Andhra Pradesh",
-//   "Arunachal Pradesh",
-//   "Assam",
-//   "Bihar",
-//   "Chhattisgarh",
-//   "Goa",
-//   "Gujarat",
-//   "Haryana",
-//   "Himachal Pradesh",
-//   "Jharkhand",
-//   "Karnataka",
-//   "Kerala",
-//   "Madhya Pradesh",
-//   "Maharashtra",
-//   "Manipur",
-//   "Meghalaya",
-//   "Mizoram",
-//   "Nagaland",
-//   "Odisha",
-//   "Punjab",
-//   "Rajasthan",
-//   "Sikkim",
-//   "Tamil Nadu",
-//   "Telangana",
-//   "Tripura",
-//   "Uttar Pradesh",
-//   "Uttarakhand",
-//   "West Bengal",
-// ];
-
-// export default function VendorsEnhanced(): JSX.Element {
-//   const [vendors, setVendors] = useState<Vendor[]>([]);
-//   const [categories, setCategories] = useState<Category[]>([]);
-//   const [poTypes, setPoTypes] = useState<Category[]>([]);
-//   const [poTypesLoading, setPoTypesLoading] = useState<boolean>(false);
-//   const [materials, setMaterials] = useState<ItemOption[]>([]);
-//   const [services, setServices] = useState<ItemOption[]>([]);
-//   const [loading, setLoading] = useState(true);
-//   const [searchTerm, setSearchTerm] = useState("");
-//   const [showModal, setShowModal] = useState(false);
-//   const [editingId, setEditingId] = useState<number | string | null>(null);
-//   const [errors, setErrors] = useState<any>({});
-//   const [submitting, setSubmitting] = useState(false);
-
-//   const [formData, setFormData] = useState<VendorFormData>({
-//     name: "",
-//     category_name: "",
-//     pan_number: "",
-//     gst_number: "",
-//     contact_person_name: "",
-//     contact_person_phone: "",
-//     contact_person_email: "",
-//     office_street: "",
-//     office_city: "",
-//     office_state: "",
-//     office_pincode: "",
-//     office_country: "India",
-//     company_email: "",
-//     company_phone: "",
-//     manager_name: "",
-//     manager_email: "",
-//     manager_phone: "",
-//     phone_country_code: "+91",
-//     sub_item_id: "",
-//   });
-
-//   useEffect(() => {
-//     loadData();
-//     // eslint-disable-next-line react-hooks/exhaustive-deps
-//   }, []);
-
-//   async function loadData() {
-//     setLoading(true);
-//     try {
-//       // fetch vendors and PO types and items in parallel
-//       await Promise.all([
-//         vendorApi.getVendors().then((v: any) => setVendors(v || [])),
-//         loadPOTypes(),
-//         loadItems(),
-//       ]);
-//       // derive categories from vendor records (fallback)
-//       const unique = Array.from(
-//         new Set(
-//           (vendors || [])
-//             .map((v: Vendor) => v.category_name || "")
-//             .filter(Boolean)
-//         )
-//       );
-//       setCategories(unique.map((n) => ({ name: n })));
-//     } catch (err) {
-//       console.error("Error loading data:", err);
-//       setVendors([]);
-//     } finally {
-//       setLoading(false);
-//     }
-//   }
-
-//   async function loadPOTypes() {
-//     setPoTypesLoading(true);
-//     try {
-//       const data = await poTypeApi.getPOTypes();
-//       const list = Array.isArray(data)
-//         ? data
-//         : Array.isArray((data as any)?.data)
-//         ? (data as any).data
-//         : [];
-//       const mapped = list.map((t: any) => ({
-//         name: t.name || t.type_name || String(t.id),
-//       }));
-//       setPoTypes(mapped);
-//       return list;
-//     } catch (err) {
-//       console.warn("loadPOTypes failed, fallback to empty", err);
-//       setPoTypes([]);
-//       return [];
-//     } finally {
-//       setPoTypesLoading(false);
-//     }
-//   }
-
-//   async function loadItems() {
-//     try {
-//       const data = await poApi.getItems();
-//       const arr = Array.isArray(data)
-//         ? data
-//         : Array.isArray((data as any)?.data)
-//         ? (data as any).data
-//         : [];
-//       // normalize each item into ItemOption
-//       const normalized: ItemOption[] = arr.map((it: any) => ({
-//         id: String(it.id || it._id || it.item_id || it.key || ""),
-//         name: String(it.item_name || it.name || it.title || "Unnamed"),
-//         code: it.item_code || it.code || "",
-//         hsn: it.hsn_code || it.hsn || "",
-//         category: (it.category || it.type || "").toString().toLowerCase(),
-//       }));
-//       setMaterials(
-//         normalized.filter((i) => (i.category || "").includes("material"))
-//       );
-//       setServices(
-//         normalized.filter(
-//           (i) =>
-//             (i.category || "").includes("service") ||
-//             (i.category || "").includes("services")
-//         )
-//       );
-//     } catch (err) {
-//       console.warn("loadItems failed", err);
-//       setMaterials([]);
-//       setServices([]);
-//     }
-//   }
-
-//   /* ---------------------------
-//      Validation
-//   ----------------------------*/
-//   const validateForm = (): boolean => {
-//     const newErrors: any = {};
-
-//     if (!formData.name.trim()) newErrors.name = errorMessages.required;
-//     if (!formData.category_name || !formData.category_name.trim())
-//       newErrors.category_name = errorMessages.required;
-
-//     if (formData.pan_number && !validators.pan(formData.pan_number)) {
-//       newErrors.pan_number = errorMessages.pan;
-//     }
-
-//     if (formData.gst_number && !validators.gst(formData.gst_number)) {
-//       newErrors.gst_number = errorMessages.gst;
-//     }
-
-//     if (!formData.contact_person_name.trim()) {
-//       newErrors.contact_person_name = errorMessages.required;
-//     }
-
-//     if (!formData.contact_person_phone) {
-//       newErrors.contact_person_phone = errorMessages.required;
-//     } else if (!validators.phone(formData.contact_person_phone)) {
-//       newErrors.contact_person_phone = errorMessages.phone;
-//     }
-
-//     if (!formData.contact_person_email) {
-//       newErrors.contact_person_email = errorMessages.required;
-//     } else if (!validators.email(formData.contact_person_email)) {
-//       newErrors.contact_person_email = errorMessages.email;
-//     }
-
-//     if (formData.company_email && !validators.email(formData.company_email)) {
-//       newErrors.company_email = errorMessages.email;
-//     }
-
-//     if (formData.manager_email && !validators.email(formData.manager_email)) {
-//       newErrors.manager_email = errorMessages.email;
-//     }
-
-//     if (formData.company_phone && !validators.phone(formData.company_phone)) {
-//       newErrors.company_phone = errorMessages.phone;
-//     }
-
-//     if (formData.manager_phone && !validators.phone(formData.manager_phone)) {
-//       newErrors.manager_phone = errorMessages.phone;
-//     }
-
-//     if (
-//       formData.office_pincode &&
-//       !validators.pincode(formData.office_pincode)
-//     ) {
-//       newErrors.office_pincode = errorMessages.pincode;
-//     }
-
-//     setErrors(newErrors);
-//     return Object.keys(newErrors).length === 0;
-//   };
-
-//   /* ---------------------------
-//      Submit create / update via API
-//   ----------------------------*/
-//   const handleSubmit = async (e: React.FormEvent) => {
-//     e.preventDefault();
-//     if (submitting) return;
-//     if (!validateForm()) return;
-
-//     setSubmitting(true);
-//     try {
-//       const payload = {
-//         ...formData,
-//       };
-
-//       if (editingId) {
-//         await vendorApi.updateVendor(editingId, payload);
-//       } else {
-//         await vendorApi.createVendor(payload);
-//       }
-
-//       setShowModal(false);
-//       resetForm();
-//       await loadData();
-//     } catch (error) {
-//       console.error("Error saving vendor:", error);
-//       alert("Error saving vendor — check console for details");
-//     } finally {
-//       setSubmitting(false);
-//     }
-//   };
-
-//   /* ---------------------------
-//      Edit / Delete
-//   ----------------------------*/
-//   const handleEdit = (vendor: Vendor) => {
-//     setEditingId(vendor.id);
-//     setFormData({
-//       name: vendor.name || "",
-//       category_name: vendor.category_name || "",
-//       pan_number: vendor.pan_number || "",
-//       gst_number: vendor.gst_number || "",
-//       contact_person_name: vendor.contact_person_name || "",
-//       contact_person_phone: vendor.contact_person_phone || "",
-//       contact_person_email: vendor.contact_person_email || "",
-//       office_street: vendor.office_street || "",
-//       office_city: vendor.office_city || "",
-//       office_state: vendor.office_state || "",
-//       office_pincode: vendor.office_pincode || "",
-//       office_country: vendor.office_country || "India",
-//       company_email: vendor.company_email || "",
-//       company_phone: vendor.company_phone || "",
-//       manager_name: vendor.manager_name || "",
-//       manager_email: vendor.manager_email || "",
-//       manager_phone: vendor.manager_phone || "",
-//       phone_country_code: vendor.phone_country_code || "+91",
-//       sub_item_id: vendor.sub_item_id || "",
-//     });
-//     setShowModal(true);
-//   };
-
-//   const handleDelete = async (id: number | string) => {
-//     if (!confirm("Are you sure you want to delete this vendor?")) return;
-//     try {
-//       await vendorApi.deleteVendor(id);
-//       await loadData();
-//     } catch (error) {
-//       console.error("Error deleting vendor:", error);
-//       alert("Error deleting vendor");
-//     }
-//   };
-
-//   const resetForm = () => {
-//     setFormData({
-//       name: "",
-//       category_name: "",
-//       pan_number: "",
-//       gst_number: "",
-//       contact_person_name: "",
-//       contact_person_phone: "",
-//       contact_person_email: "",
-//       office_street: "",
-//       office_city: "",
-//       office_state: "",
-//       office_pincode: "",
-//       office_country: "India",
-//       company_email: "",
-//       company_phone: "",
-//       manager_name: "",
-//       manager_email: "",
-//       manager_phone: "",
-//       phone_country_code: "+91",
-//       sub_item_id: "",
-//     });
-//     setEditingId(null);
-//     setErrors({});
-//     setSubmitting(false);
-//   };
-
-//   /* ---------------------------
-//      Filtered vendors for local search
-//   ----------------------------*/
-//   const filteredVendors = vendors.filter(
-//     (vendor) =>
-//       (vendor.name || "").toLowerCase().includes(searchTerm.toLowerCase()) ||
-//       (vendor.contact_person_name || "")
-//         .toLowerCase()
-//         .includes(searchTerm.toLowerCase()) ||
-//       (vendor.pan_number || "")
-//         .toLowerCase()
-//         .includes(searchTerm.toLowerCase()) ||
-//       (vendor.gst_number || "")
-//         .toLowerCase()
-//         .includes(searchTerm.toLowerCase()) ||
-//       (vendor.category_name || "")
-//         .toLowerCase()
-//         .includes(searchTerm.toLowerCase())
-//   );
-
-//   const getCategoryName = (category_name?: string) => {
-//     return category_name || "";
-//   };
-
-//   /* ---------------------------
-//      Category source: prefer PO Types, fallback to vendor-derived categories
-//   ----------------------------*/
-//   const categoryOptions = poTypes.length > 0 ? poTypes : categories;
-
-//   /* ---------------------------
-//      Helpers for conditional render
-//   ----------------------------*/
-//   const isCategoryMaterial = (cat?: string) =>
-//     (cat || "").toLowerCase().includes("material");
-//   const isCategoryService = (cat?: string) =>
-//     (cat || "").toLowerCase().includes("service");
-
-//   return (
-//     <div className="p-6">
-//       <div className="flex justify-between items-center mb-6">
-//         <div>
-//           <h1 className="text-3xl font-bold text-gray-800">Vendors</h1>
-//           <p className="text-gray-600 mt-1">Manage your vendor database</p>
-//         </div>
-//         <button
-//           onClick={() => {
-//             resetForm();
-//             setShowModal(true);
-//           }}
-//           className="bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition flex items-center gap-2 shadow-sm"
-//         >
-//           <Plus className="w-5 h-5" />
-//           Add Vendor
-//         </button>
-//       </div>
-
-//       <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 mb-6">
-//         <div className="relative">
-//           <Search className="absolute left-4 top-3.5 text-gray-400 w-5 h-5" />
-//           <input
-//             type="text"
-//             placeholder="Search vendors by name, PAN, GST, contact person or category..."
-//             value={searchTerm}
-//             onChange={(e) => setSearchTerm(e.target.value)}
-//             className="w-full pl-12 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-//           />
-//         </div>
-//       </div>
-
-//       {loading ? (
-//         <div className="text-center py-12">
-//           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
-//           <p className="text-gray-600 mt-4">Loading vendors...</p>
-//         </div>
-//       ) : (
-//         <div className="grid grid-cols-1 gap-4">
-//           {filteredVendors.map((vendor) => (
-//             <div
-//               key={vendor.id}
-//               className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 hover:shadow-md transition"
-//             >
-//               <div className="flex justify-between items-start">
-//                 <div className="flex-1">
-//                   <div className="flex items-center gap-3 mb-3">
-//                     <div className="bg-blue-100 p-2 rounded-lg">
-//                       <Building2 className="w-6 h-6 text-blue-600" />
-//                     </div>
-//                     <div>
-//                       <h3 className="text-xl font-bold text-gray-800">
-//                         {vendor.name}
-//                       </h3>
-//                       <p className="text-sm text-gray-600">
-//                         {getCategoryName(vendor.category_name)}
-//                       </p>
-//                       {vendor.sub_item_id && (
-//                         <p className="text-xs text-gray-500 mt-1">
-//                           Linked item ID: {vendor.sub_item_id}
-//                         </p>
-//                       )}
-//                     </div>
-//                   </div>
-
-//                   <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-4">
-//                     {vendor.contact_person_name && (
-//                       <div className="flex items-start gap-2">
-//                         <User className="w-4 h-4 text-gray-400 mt-1" />
-//                         <div>
-//                           <p className="text-xs text-gray-500">
-//                             Contact Person
-//                           </p>
-//                           <p className="text-sm font-medium text-gray-800">
-//                             {vendor.contact_person_name}
-//                           </p>
-//                         </div>
-//                       </div>
-//                     )}
-
-//                     {vendor.contact_person_phone && (
-//                       <div className="flex items-start gap-2">
-//                         <Phone className="w-4 h-4 text-gray-400 mt-1" />
-//                         <div>
-//                           <p className="text-xs text-gray-500">Phone</p>
-//                           <p className="text-sm font-medium text-gray-800">
-//                             {vendor.phone_country_code}{" "}
-//                             {vendor.contact_person_phone}
-//                           </p>
-//                         </div>
-//                       </div>
-//                     )}
-
-//                     {vendor.contact_person_email && (
-//                       <div className="flex items-start gap-2">
-//                         <Mail className="w-4 h-4 text-gray-400 mt-1" />
-//                         <div>
-//                           <p className="text-xs text-gray-500">Email</p>
-//                           <p className="text-sm font-medium text-gray-800">
-//                             {vendor.contact_person_email}
-//                           </p>
-//                         </div>
-//                       </div>
-//                     )}
-
-//                     {vendor.pan_number && (
-//                       <div className="flex items-start gap-2">
-//                         <FileText className="w-4 h-4 text-gray-400 mt-1" />
-//                         <div>
-//                           <p className="text-xs text-gray-500">PAN</p>
-//                           <p className="text-sm font-medium text-gray-800">
-//                             {vendor.pan_number}
-//                           </p>
-//                         </div>
-//                       </div>
-//                     )}
-
-//                     {vendor.gst_number && (
-//                       <div className="flex items-start gap-2">
-//                         <FileText className="w-4 h-4 text-gray-400 mt-1" />
-//                         <div>
-//                           <p className="text-xs text-gray-500">GST</p>
-//                           <p className="text-sm font-medium text-gray-800">
-//                             {vendor.gst_number}
-//                           </p>
-//                         </div>
-//                       </div>
-//                     )}
-
-//                     {(vendor.office_city || vendor.office_state) && (
-//                       <div className="flex items-start gap-2">
-//                         <MapPin className="w-4 h-4 text-gray-400 mt-1" />
-//                         <div>
-//                           <p className="text-xs text-gray-500">Location</p>
-//                           <p className="text-sm font-medium text-gray-800">
-//                             {[vendor.office_city, vendor.office_state]
-//                               .filter(Boolean)
-//                               .join(", ")}
-//                           </p>
-//                         </div>
-//                       </div>
-//                     )}
-//                   </div>
-//                 </div>
-
-//                 <div className="flex gap-2 ml-4">
-//                   <button
-//                     onClick={() => handleEdit(vendor)}
-//                     className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition"
-//                     title="Edit vendor"
-//                   >
-//                     <Edit2 className="w-5 h-5" />
-//                   </button>
-//                   <button
-//                     onClick={() => handleDelete(vendor.id)}
-//                     className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition"
-//                     title="Delete vendor"
-//                   >
-//                     <Trash2 className="w-5 h-5" />
-//                   </button>
-//                 </div>
-//               </div>
-//             </div>
-//           ))}
-
-//           {filteredVendors.length === 0 && (
-//             <div className="text-center py-12 bg-white rounded-xl shadow-sm border border-gray-200">
-//               <Building2 className="w-16 h-16 text-gray-300 mx-auto mb-4" />
-//               <p className="text-gray-600 text-lg">No vendors found</p>
-//               <p className="text-gray-500 text-sm mt-2">
-//                 {searchTerm
-//                   ? "Try a different search term"
-//                   : 'Click "Add Vendor" to create your first vendor'}
-//               </p>
-//             </div>
-//           )}
-//         </div>
-//       )}
-
-//       {showModal && (
-//         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-//           <div className="bg-white rounded-2xl shadow-2xl w-full max-w-4xl max-h-[90vh] overflow-hidden">
-//             <div className="bg-gradient-to-r from-blue-600 to-blue-700 px-6 py-4 flex justify-between items-center">
-//               <h2 className="text-2xl font-bold text-white">
-//                 {editingId ? "Edit Vendor" : "Add New Vendor"}
-//               </h2>
-//               <button
-//                 onClick={() => {
-//                   setShowModal(false);
-//                   resetForm();
-//                 }}
-//                 className="text-white hover:bg-white hover:bg-opacity-20 rounded-lg p-2 transition"
-//               >
-//                 <X className="w-6 h-6" />
-//               </button>
-//             </div>
-
-//             <form
-//               onSubmit={handleSubmit}
-//               className="p-6 overflow-y-auto max-h-[calc(90vh-80px)]"
-//             >
-//               <div className="space-y-6">
-//                 {/* Basic Information */}
-//                 <div className="bg-gray-50 p-4 rounded-lg">
-//                   <h3 className="text-lg font-semibold text-gray-800 mb-4 flex items-center gap-2">
-//                     <Building2 className="w-5 h-5" />
-//                     Basic Information
-//                   </h3>
-//                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-//                     <div>
-//                       <label className="block text-sm font-medium text-gray-700 mb-2">
-//                         Company Name <span className="text-red-500">*</span>
-//                       </label>
-//                       <input
-//                         type="text"
-//                         value={formData.name}
-//                         onChange={(e) =>
-//                           setFormData({ ...formData, name: e.target.value })
-//                         }
-//                         className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
-//                           errors.name ? "border-red-300" : "border-gray-300"
-//                         }`}
-//                         placeholder="ABC Construction Pvt Ltd"
-//                         required
-//                       />
-//                       {errors.name && (
-//                         <p className="mt-1 text-sm text-red-600">
-//                           {errors.name}
-//                         </p>
-//                       )}
-//                     </div>
-
-//                     <div>
-//                       <label className="block text-sm font-medium text-gray-700 mb-2">
-//                         Category <span className="text-red-500">*</span>
-//                       </label>
-
-//                       <div className="flex gap-2">
-//                         <select
-//                           value={formData.category_name}
-//                           onChange={(e) => {
-//                             // reset sub_item_id when category changed
-//                             setFormData({
-//                               ...formData,
-//                               category_name: e.target.value,
-//                               sub_item_id: "",
-//                             });
-//                           }}
-//                           className={`flex-1 px-4 py-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
-//                             errors.category_name
-//                               ? "border-red-300"
-//                               : "border-gray-300"
-//                           }`}
-//                           required
-//                         >
-//                           <option value="">Select Category</option>
-//                           {categoryOptions.map((cat) => (
-//                             <option key={cat.name} value={cat.name}>
-//                               {cat.name}
-//                             </option>
-//                           ))}
-//                         </select>
-//                       </div>
-
-//                       {errors.category_name && (
-//                         <p className="mt-1 text-sm text-red-600">
-//                           {errors.category_name}
-//                         </p>
-//                       )}
-//                     </div>
-
-//                     {/* New conditional sub-item field */}
-//                     <div>
-//                       <label className="block text-sm font-medium text-gray-700 mb-2">
-//                         Sub Item (based on Category)
-//                       </label>
-
-//                       {isCategoryMaterial(formData.category_name) && (
-//                         <select
-//                           value={formData.sub_item_id || ""}
-//                           onChange={(e) =>
-//                             setFormData({
-//                               ...formData,
-//                               sub_item_id: e.target.value,
-//                             })
-//                           }
-//                           className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-//                         >
-//                           <option value="">Select Material</option>
-//                           {materials.map((m) => (
-//                             <option key={m.id} value={m.id}>
-//                               {m.name} {m.code ? `| ${m.code}` : ""}{" "}
-//                               {m.hsn ? `| HSN: ${m.hsn}` : ""}
-//                             </option>
-//                           ))}
-//                         </select>
-//                       )}
-
-//                       {isCategoryService(formData.category_name) && (
-//                         <select
-//                           value={formData.sub_item_id || ""}
-//                           onChange={(e) =>
-//                             setFormData({
-//                               ...formData,
-//                               sub_item_id: e.target.value,
-//                             })
-//                           }
-//                           className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-//                         >
-//                           <option value="">Select Service</option>
-//                           {services.map((s) => (
-//                             <option key={s.id} value={s.id}>
-//                               {s.name} {s.code ? `| ${s.code}` : ""}
-//                             </option>
-//                           ))}
-//                         </select>
-//                       )}
-
-//                       {!isCategoryMaterial(formData.category_name) &&
-//                         !isCategoryService(formData.category_name) && (
-//                           <div className="text-xs text-gray-500">
-//                             Select a Category with "Material" or "Service" to
-//                             pick sub-items.
-//                           </div>
-//                         )}
-//                     </div>
-
-//                     <div>
-//                       <label className="block text-sm font-medium text-gray-700 mb-2">
-//                         PAN Number
-//                       </label>
-//                       <input
-//                         type="text"
-//                         value={formData.pan_number}
-//                         onChange={(e) =>
-//                           setFormData({
-//                             ...formData,
-//                             pan_number: validators.formatPAN(e.target.value),
-//                           })
-//                         }
-//                         className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent uppercase ${
-//                           errors.pan_number
-//                             ? "border-red-300"
-//                             : "border-gray-300"
-//                         }`}
-//                         placeholder="ABCDE1234F"
-//                         maxLength={10}
-//                       />
-//                       {errors.pan_number && (
-//                         <p className="mt-1 text-sm text-red-600">
-//                           {errors.pan_number}
-//                         </p>
-//                       )}
-//                       {formData.pan_number &&
-//                         validators.pan(formData.pan_number) && (
-//                           <p className="mt-1 text-sm text-green-600 flex items-center gap-1">
-//                             <CheckCircle className="w-4 h-4" /> Valid PAN
-//                           </p>
-//                         )}
-//                     </div>
-
-//                     <div>
-//                       <label className="block text-sm font-medium text-gray-700 mb-2">
-//                         GST Number
-//                       </label>
-//                       <input
-//                         type="text"
-//                         value={formData.gst_number}
-//                         onChange={(e) =>
-//                           setFormData({
-//                             ...formData,
-//                             gst_number: validators.formatGST(e.target.value),
-//                           })
-//                         }
-//                         className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent uppercase ${
-//                           errors.gst_number
-//                             ? "border-red-300"
-//                             : "border-gray-300"
-//                         }`}
-//                         placeholder="22ABCDE1234F1Z5"
-//                         maxLength={15}
-//                       />
-//                       {errors.gst_number && (
-//                         <p className="mt-1 text-sm text-red-600">
-//                           {errors.gst_number}
-//                         </p>
-//                       )}
-//                       {formData.gst_number &&
-//                         validators.gst(formData.gst_number) && (
-//                           <p className="mt-1 text-sm text-green-600 flex items-center gap-1">
-//                             <CheckCircle className="w-4 h-4" /> Valid GST
-//                           </p>
-//                         )}
-//                     </div>
-//                   </div>
-//                 </div>
-
-//                 {/* Contact Person */}
-//                 <div className="bg-blue-50 p-4 rounded-lg">
-//                   <h3 className="text-lg font-semibold text-gray-800 mb-4 flex items-center gap-2">
-//                     <User className="w-5 h-5" />
-//                     Contact Person Details
-//                   </h3>
-//                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-//                     <div className="md:col-span-2">
-//                       <label className="block text-sm font-medium text-gray-700 mb-2">
-//                         Full Name <span className="text-red-500">*</span>
-//                       </label>
-//                       <input
-//                         type="text"
-//                         value={formData.contact_person_name}
-//                         onChange={(e) =>
-//                           setFormData({
-//                             ...formData,
-//                             contact_person_name: e.target.value,
-//                           })
-//                         }
-//                         className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
-//                           errors.contact_person_name
-//                             ? "border-red-300"
-//                             : "border-gray-300"
-//                         }`}
-//                         placeholder="John Doe"
-//                         required
-//                       />
-//                       {errors.contact_person_name && (
-//                         <p className="mt-1 text-sm text-red-600">
-//                           {errors.contact_person_name}
-//                         </p>
-//                       )}
-//                     </div>
-
-//                     <div>
-//                       <PhoneInput
-//                         value={formData.contact_person_phone}
-//                         countryCode={formData.phone_country_code}
-//                         onChange={(phone) =>
-//                           setFormData({
-//                             ...formData,
-//                             contact_person_phone: phone,
-//                           })
-//                         }
-//                         onCountryCodeChange={(code) =>
-//                           setFormData({ ...formData, phone_country_code: code })
-//                         }
-//                         label="Phone Number"
-//                         required
-//                         error={errors.contact_person_phone}
-//                       />
-//                     </div>
-
-//                     <div>
-//                       <label className="block text-sm font-medium text-gray-700 mb-2">
-//                         Email Address <span className="text-red-500">*</span>
-//                       </label>
-//                       <input
-//                         type="email"
-//                         value={formData.contact_person_email}
-//                         onChange={(e) =>
-//                           setFormData({
-//                             ...formData,
-//                             contact_person_email: e.target.value.toLowerCase(),
-//                           })
-//                         }
-//                         className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
-//                           errors.contact_person_email
-//                             ? "border-red-300"
-//                             : "border-gray-300"
-//                         }`}
-//                         placeholder="john@example.com"
-//                         required
-//                       />
-//                       {errors.contact_person_email && (
-//                         <p className="mt-1 text-sm text-red-600">
-//                           {errors.contact_person_email}
-//                         </p>
-//                       )}
-//                     </div>
-//                   </div>
-//                 </div>
-
-//                 {/* Office Address */}
-//                 <div className="bg-green-50 p-4 rounded-lg">
-//                   <h3 className="text-lg font-semibold text-gray-800 mb-4 flex items-center gap-2">
-//                     <MapPin className="w-5 h-5" />
-//                     Office Address
-//                   </h3>
-//                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-//                     <div className="md:col-span-2">
-//                       <label className="block text-sm font-medium text-gray-700 mb-2">
-//                         Street Address
-//                       </label>
-//                       <textarea
-//                         value={formData.office_street}
-//                         onChange={(e) =>
-//                           setFormData({
-//                             ...formData,
-//                             office_street: e.target.value,
-//                           })
-//                         }
-//                         className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-//                         rows={2}
-//                         placeholder="Building No, Street Name, Area"
-//                       />
-//                     </div>
-
-//                     <div>
-//                       <label className="block text-sm font-medium text-gray-700 mb-2">
-//                         City
-//                       </label>
-//                       <input
-//                         type="text"
-//                         value={formData.office_city}
-//                         onChange={(e) =>
-//                           setFormData({
-//                             ...formData,
-//                             office_city: e.target.value,
-//                           })
-//                         }
-//                         className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-//                         placeholder="Mumbai"
-//                       />
-//                     </div>
-
-//                     <div>
-//                       <label className="block text-sm font-medium text-gray-700 mb-2">
-//                         State
-//                       </label>
-//                       <SearchableSelect
-//                         options={INDIAN_STATES.map((s) => ({
-//                           id: s,
-//                           name: s || "",
-//                         }))}
-//                         value={formData.office_state}
-//                         onChange={(val: string) => {
-//                           setFormData({
-//                             ...formData,
-//                             office_state: val,
-//                           });
-//                         }}
-//                         placeholder="Select Vendor"
-//                         required
-//                       />
-//                       {/* <input
-//                         type="text"
-//                         value={formData.office_state}
-//                         onChange={(e) =>
-//                           setFormData({
-//                             ...formData,
-//                             office_state: e.target.value,
-//                           })
-//                         }
-//                         className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-//                         placeholder="Maharashtra"
-//                       /> */}
-//                     </div>
-
-//                     <div>
-//                       <label className="block text-sm font-medium text-gray-700 mb-2">
-//                         Pincode
-//                       </label>
-//                       <input
-//                         type="text"
-//                         value={formData.office_pincode}
-//                         onChange={(e) =>
-//                           setFormData({
-//                             ...formData,
-//                             office_pincode: validators.formatPincode(
-//                               e.target.value
-//                             ),
-//                           })
-//                         }
-//                         className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
-//                           errors.office_pincode
-//                             ? "border-red-300"
-//                             : "border-gray-300"
-//                         }`}
-//                         placeholder="400001"
-//                         maxLength={6}
-//                       />
-//                       {errors.office_pincode && (
-//                         <p className="mt-1 text-sm text-red-600">
-//                           {errors.office_pincode}
-//                         </p>
-//                       )}
-//                     </div>
-
-//                     <div>
-//                       <label className="block text-sm font-medium text-gray-700 mb-2">
-//                         Country
-//                       </label>
-//                       <input
-//                         type="text"
-//                         value={formData.office_country}
-//                         onChange={(e) =>
-//                           setFormData({
-//                             ...formData,
-//                             office_country: e.target.value,
-//                           })
-//                         }
-//                         className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-//                         placeholder="India"
-//                       />
-//                     </div>
-//                   </div>
-//                 </div>
-
-//                 {/* Company Contact */}
-//                 <div className="bg-purple-50 p-4 rounded-lg">
-//                   <h3 className="text-lg font-semibold text-gray-800 mb-4 flex items-center gap-2">
-//                     <Mail className="w-5 h-5" />
-//                     Company Contact Details
-//                   </h3>
-//                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-//                     <div>
-//                       <label className="block text-sm font-medium text-gray-700 mb-2">
-//                         Company Email
-//                       </label>
-//                       <input
-//                         type="email"
-//                         value={formData.company_email}
-//                         onChange={(e) =>
-//                           setFormData({
-//                             ...formData,
-//                             company_email: e.target.value.toLowerCase(),
-//                           })
-//                         }
-//                         className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
-//                           errors.company_email
-//                             ? "border-red-300"
-//                             : "border-gray-300"
-//                         }`}
-//                         placeholder="info@company.com"
-//                       />
-//                       {errors.company_email && (
-//                         <p className="mt-1 text-sm text-red-600">
-//                           {errors.company_email}
-//                         </p>
-//                       )}
-//                     </div>
-
-//                     <div>
-//                       <label className="block text-sm font-medium text-gray-700 mb-2">
-//                         Company Phone
-//                       </label>
-//                       <input
-//                         type="tel"
-//                         value={formData.company_phone}
-//                         onChange={(e) =>
-//                           setFormData({
-//                             ...formData,
-//                             company_phone: validators.formatPhone(
-//                               e.target.value
-//                             ),
-//                           })
-//                         }
-//                         className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
-//                           errors.company_phone
-//                             ? "border-red-300"
-//                             : "border-gray-300"
-//                         }`}
-//                         placeholder="9876543210"
-//                         maxLength={10}
-//                       />
-//                       {errors.company_phone && (
-//                         <p className="mt-1 text-sm text-red-600">
-//                           {errors.company_phone}
-//                         </p>
-//                       )}
-//                     </div>
-//                   </div>
-//                 </div>
-
-//                 {/* Manager Details */}
-//                 <div className="bg-orange-50 p-4 rounded-lg">
-//                   <h3 className="text-lg font-semibold text-gray-800 mb-4 flex items-center gap-2">
-//                     <User className="w-5 h-5" />
-//                     Manager Details (Optional)
-//                   </h3>
-//                   <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-//                     <div>
-//                       <label className="block text-sm font-medium text-gray-700 mb-2">
-//                         Manager Name
-//                       </label>
-//                       <input
-//                         type="text"
-//                         value={formData.manager_name}
-//                         onChange={(e) =>
-//                           setFormData({
-//                             ...formData,
-//                             manager_name: e.target.value,
-//                           })
-//                         }
-//                         className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-//                         placeholder="Jane Smith"
-//                       />
-//                     </div>
-
-//                     <div>
-//                       <label className="block text-sm font-medium text-gray-700 mb-2">
-//                         Manager Email
-//                       </label>
-//                       <input
-//                         type="email"
-//                         value={formData.manager_email}
-//                         onChange={(e) =>
-//                           setFormData({
-//                             ...formData,
-//                             manager_email: e.target.value.toLowerCase(),
-//                           })
-//                         }
-//                         className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
-//                           errors.manager_email
-//                             ? "border-red-300"
-//                             : "border-gray-300"
-//                         }`}
-//                         placeholder="jane@company.com"
-//                       />
-//                       {errors.manager_email && (
-//                         <p className="mt-1 text-sm text-red-600">
-//                           {errors.manager_email}
-//                         </p>
-//                       )}
-//                     </div>
-
-//                     <div>
-//                       <label className="block text-sm font-medium text-gray-700 mb-2">
-//                         Manager Phone
-//                       </label>
-//                       <input
-//                         type="tel"
-//                         value={formData.manager_phone}
-//                         onChange={(e) =>
-//                           setFormData({
-//                             ...formData,
-//                             manager_phone: validators.formatPhone(
-//                               e.target.value
-//                             ),
-//                           })
-//                         }
-//                         className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
-//                           errors.manager_phone
-//                             ? "border-red-300"
-//                             : "border-gray-300"
-//                         }`}
-//                         placeholder="9876543210"
-//                         maxLength={10}
-//                       />
-//                       {errors.manager_phone && (
-//                         <p className="mt-1 text-sm text-red-600">
-//                           {errors.manager_phone}
-//                         </p>
-//                       )}
-//                     </div>
-//                   </div>
-//                 </div>
-//               </div>
-
-//               <div className="flex gap-3 mt-6 pt-6 border-t">
-//                 <button
-//                   type="submit"
-//                   disabled={submitting}
-//                   className="flex-1 bg-blue-600 text-white py-3 px-6 rounded-lg hover:bg-blue-700 transition font-medium shadow-sm"
-//                 >
-//                   {submitting
-//                     ? editingId
-//                       ? "Updating..."
-//                       : "Creating..."
-//                     : editingId
-//                     ? "Update Vendor"
-//                     : "Create Vendor"}
-//                 </button>
-//                 <button
-//                   type="button"
-//                   onClick={() => {
-//                     setShowModal(false);
-//                     resetForm();
-//                   }}
-//                   className="px-6 py-3 border border-gray-300 rounded-lg hover:bg-gray-50 transition font-medium"
-//                 >
-//                   Cancel
-//                 </button>
-//               </div>
-//             </form>
-//           </div>
-//         </div>
-//       )}
-//     </div>
-//   );
-// }
-
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useState } from "react";
 import {
   Plus,
   Phone,
@@ -1280,6 +50,7 @@ import SearchableSelect from "../components/SearchableSelect";
 import { toast } from "sonner";
 import locationData from "../data/india_city_state_pincode_country.json";
 import MySwal from "../utils/swal";
+import { useAuth } from "../contexts/AuthContext";
 
 /* ---------------------------
    Types
@@ -1478,6 +249,8 @@ export default function VendorsEnhanced(): JSX.Element {
     phone_country_code: "+91",
     sub_item_id: "",
   });
+
+  const { can } = useAuth();
 
   // Load cities when state changes
   useEffect(() => {
@@ -1869,94 +642,93 @@ export default function VendorsEnhanced(): JSX.Element {
   const isCategoryService = (cat?: string) =>
     (cat || "").toLowerCase().includes("service");
 
-  const handlePhoneCheck = ()=>{
-    const existingOne:any=vendors.find((v:any)=>v.contact_person_phone===formData.contact_person_phone);
+  const handlePhoneCheck = () => {
+    const existingOne: any = vendors.find(
+      (v: any) => v.contact_person_phone === formData.contact_person_phone,
+    );
 
-    if(existingOne && !editingId){
-      toast.error("Contact Person Phone Number Already Exists.")
+    if (existingOne && !editingId) {
+      toast.error("Contact Person Phone Number Already Exists.");
     }
-    if(Number(existingOne.id)!==Number(editingId)){
-      toast.error("Contact Person Phone Number Already Exists.")
+    if (Number(existingOne.id) !== Number(editingId)) {
+      toast.error("Contact Person Phone Number Already Exists.");
     }
-  }
+  };
   const handleEmailCheck = () => {
-  const existingOne: any = vendors.find(
-    (v: any) =>
-      v.contact_person_email === formData.contact_person_email
-  );
+    const existingOne: any = vendors.find(
+      (v: any) => v.contact_person_email === formData.contact_person_email,
+    );
 
-  // while creating
-  if (existingOne && !editingId) {
-    toast.error("Contact Person Email Already Exists.");
-    return;
-  }
+    // while creating
+    if (existingOne && !editingId) {
+      toast.error("Contact Person Email Already Exists.");
+      return;
+    }
 
-  // while editing (ignore same record)
-  if (existingOne && Number(existingOne.id) !== Number(editingId)) {
-    toast.error("Contact Person Email Already Exists.");
-  }
-};
-const handleCompanyPhoneCheck = () => {
-  if (!formData.company_phone) return;
+    // while editing (ignore same record)
+    if (existingOne && Number(existingOne.id) !== Number(editingId)) {
+      toast.error("Contact Person Email Already Exists.");
+    }
+  };
+  const handleCompanyPhoneCheck = () => {
+    if (!formData.company_phone) return;
 
-  const existingOne: any = vendors.find(
-    (v: any) => v.company_phone === formData.company_phone
-  );
+    const existingOne: any = vendors.find(
+      (v: any) => v.company_phone === formData.company_phone,
+    );
 
-  // create mode
-  if (existingOne && !editingId) {
-    toast.error("Company Phone Number Already Exists.");
-    return;
-  }
+    // create mode
+    if (existingOne && !editingId) {
+      toast.error("Company Phone Number Already Exists.");
+      return;
+    }
 
-  // edit mode
-  if (existingOne && Number(existingOne.id) !== Number(editingId)) {
-    toast.error("Company Phone Number Already Exists.");
-  }
-};
+    // edit mode
+    if (existingOne && Number(existingOne.id) !== Number(editingId)) {
+      toast.error("Company Phone Number Already Exists.");
+    }
+  };
 
-const handleCompanyEmailCheck = () => {
-  if (!formData.company_email) return;
+  const handleCompanyEmailCheck = () => {
+    if (!formData.company_email) return;
 
-  const existingOne: any = vendors.find(
-    (v: any) => v.company_email === formData.company_email
-  );
+    const existingOne: any = vendors.find(
+      (v: any) => v.company_email === formData.company_email,
+    );
 
-  // create mode
-  if (existingOne && !editingId) {
-    toast.error("Company Email Already Exists.");
-    return;
-  }
+    // create mode
+    if (existingOne && !editingId) {
+      toast.error("Company Email Already Exists.");
+      return;
+    }
 
-  // edit mode
-  if (existingOne && Number(existingOne.id) !== Number(editingId)) {
-    toast.error("Company Email Already Exists.");
-  }
-};
-
-
-
+    // edit mode
+    if (existingOne && Number(existingOne.id) !== Number(editingId)) {
+      toast.error("Company Email Already Exists.");
+    }
+  };
 
   return (
     <div className="p-0 px-0 bg-gray-50 min-h-screen">
-     <div className="mb-2 sticky top-16 z-20  py-2">
-  <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-    <div className="flex gap-3">
-      <button
-        onClick={() => {
-          resetForm();
-          setShowModal(true);
-        }}
-        className="bg-[#C62828] text-white px-4 py-2 rounded-lg
+      {can("create_vendors") && (
+        <div className="mb-2 sticky top-16 z-20  py-2">
+          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+            <div className="flex gap-3">
+              <button
+                onClick={() => {
+                  resetForm();
+                  setShowModal(true);
+                }}
+                className="bg-[#C62828] text-white px-4 py-2 rounded-lg
         hover:bg-gray-800 transition flex items-center gap-2"
-      >
-        <Plus className="w-4 h-4" />
-        <span>Add Vendor</span>
-      </button>
-    </div>
-  </div>
-</div>
-
+              >
+                <Plus className="w-4 h-4" />
+                <span>Add Vendor</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Table */}
       {/* Table */}
@@ -1967,9 +739,9 @@ const handleCompanyEmailCheck = () => {
         </div>
       ) : (
         <div className="sticky top-32 z-20 bg-white rounded-xl shadow-sm border border-gray-200 ">
-<div className="overflow-y-auto max-h-[calc(100vh-160px)]">           
+          <div className="overflow-y-auto max-h-[calc(100vh-160px)]">
             <table className="w-full min-w-[800px]">
-<thead className=" sticky top-0 z-10 bg-gray-200 border-b-2 border-gray-200">
+              <thead className=" sticky top-0 z-10 bg-gray-200 border-b-2 border-gray-200">
                 {/* Header Row */}
                 <tr>
                   <th className="px-3 md:px-4 py-2 text-left">
@@ -1997,11 +769,13 @@ const handleCompanyEmailCheck = () => {
                       GST/PAN
                     </div>
                   </th>
-                  <th className="px-3 md:px-4 py-2 text-left">
-                    <div className="text-[10px] md:text-xs font-semibold text-gray-700 uppercase tracking-wider">
-                      Actions
-                    </div>
-                  </th>
+                  {(can("edit_vendors") || can("delete_vendors")) && (
+                    <th className="px-3 md:px-4 py-2 text-left">
+                      <div className="text-[10px] md:text-xs font-semibold text-gray-700 uppercase tracking-wider">
+                        Actions
+                      </div>
+                    </th>
+                  )}
                 </tr>
 
                 {/* Search Row - Separate Row Below Headers */}
@@ -2064,16 +838,18 @@ const handleCompanyEmailCheck = () => {
                   </td>
 
                   {/* Actions Column - Filter Button */}
-                  <td className="px-3 md:px-4 py-1 text-center">
-                    <button
-                      onClick={() => setShowFilterSidebar(true)}
-                      className="inline-flex items-center px-2 py-1 border border-gray-300 rounded hover:bg-gray-50 transition text-[9px] md:text-xs font-medium text-gray-700"
-                      title="Advanced Filters"
-                    >
-                      <Filter className="w-3 h-3 mr-0.5" />
-                      Filters
-                    </button>
-                  </td>
+                  {(can("edit_vendors") || can("delete_vendors")) && (
+                    <td className="px-3 md:px-4 py-1 text-center">
+                      <button
+                        onClick={() => setShowFilterSidebar(true)}
+                        className="inline-flex items-center px-2 py-1 border border-gray-300 rounded hover:bg-gray-50 transition text-[9px] md:text-xs font-medium text-gray-700"
+                        title="Advanced Filters"
+                      >
+                        <Filter className="w-3 h-3 mr-0.5" />
+                        Filters
+                      </button>
+                    </td>
+                  )}
                 </tr>
               </thead>
 
@@ -2177,20 +953,24 @@ const handleCompanyEmailCheck = () => {
                       </td>
                       <td className="px-3 md:px-4 py-3">
                         <div className="flex items-center justify-center gap-1.5 md:gap-2">
-                          <button
-                            onClick={() => handleEdit(vendor)}
-                            className="p-1.5 md:p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition"
-                            title="Edit vendor"
-                          >
-                            <Edit2 className="w-3.5 h-3.5 md:w-4 md:h-4" />
-                          </button>
-                          <button
-                            onClick={() => handleDelete(vendor.id)}
-                            className="p-1.5 md:p-2 text-red-600 hover:bg-red-50 rounded-lg transition"
-                            title="Delete vendor"
-                          >
-                            <Trash2 className="w-3.5 h-3.5 md:w-4 md:h-4" />
-                          </button>
+                          {can("edit_vendors") && (
+                            <button
+                              onClick={() => handleEdit(vendor)}
+                              className="p-1.5 md:p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition"
+                              title="Edit vendor"
+                            >
+                              <Edit2 className="w-3.5 h-3.5 md:w-4 md:h-4" />
+                            </button>
+                          )}
+                          {can("delete_vendors") && (
+                            <button
+                              onClick={() => handleDelete(vendor.id)}
+                              className="p-1.5 md:p-2 text-red-600 hover:bg-red-50 rounded-lg transition"
+                              title="Delete vendor"
+                            >
+                              <Trash2 className="w-3.5 h-3.5 md:w-4 md:h-4" />
+                            </button>
+                          )}
                         </div>
                       </td>
                     </tr>
@@ -2604,26 +1384,26 @@ const handleCompanyEmailCheck = () => {
                           </div>
 
                           {/* Sub Item */}
-                        <div className="space-y-1">
-  <label className="block text-[11px] font-medium text-gray-700">
-    Sub Item
-  </label>
-  {isCategoryMaterial(formData.category_name) ? (
-    <div className="relative w-full">
-      {/* Icon - Responsive positioning */}
-      <div className="absolute inset-y-0 left-0 pl-1.5 sm:pl-2 md:pl-2.5 flex items-center pointer-events-none z-10">
-        <Package className="h-2.5 w-2.5 sm:h-3 sm:w-3 text-gray-400" />
-      </div>
-      
-      <select
-        value={formData.sub_item_id || ""}
-        onChange={(e) =>
-          setFormData({
-            ...formData,
-            sub_item_id: e.target.value,
-          })
-        }
-        className="
+                          <div className="space-y-1">
+                            <label className="block text-[11px] font-medium text-gray-700">
+                              Sub Item
+                            </label>
+                            {isCategoryMaterial(formData.category_name) ? (
+                              <div className="relative w-full">
+                                {/* Icon - Responsive positioning */}
+                                <div className="absolute inset-y-0 left-0 pl-1.5 sm:pl-2 md:pl-2.5 flex items-center pointer-events-none z-10">
+                                  <Package className="h-2.5 w-2.5 sm:h-3 sm:w-3 text-gray-400" />
+                                </div>
+
+                                <select
+                                  value={formData.sub_item_id || ""}
+                                  onChange={(e) =>
+                                    setFormData({
+                                      ...formData,
+                                      sub_item_id: e.target.value,
+                                    })
+                                  }
+                                  className="
           w-full 
           border border-gray-300 
           rounded 
@@ -2638,49 +1418,49 @@ const handleCompanyEmailCheck = () => {
           overflow-hidden
           text-ellipsis
         "
-        style={{
-          maxWidth: '100%',
-          width: '100%',
-          minWidth: 0
-        }}
-      >
-        <option value="">Select Material</option>
-        {materials.map((m) => (
-          <option 
-            key={m.id} 
-            value={m.id}
-            title={`${m.name}${m.code ? ` | ${m.code}` : ""}`}
-            className="truncate"
-          >
-            {m.name.length > 50 
-              ? `${m.name.substring(0, 50)}...` 
-              : m.name}
-            {m.code ? ` | ${m.code}` : ""}
-          </option>
-        ))}
-      </select>
-      
-      {/* Chevron - Responsive positioning */}
-      <div className="absolute inset-y-0 right-0 pr-1 sm:pr-1.5 flex items-center pointer-events-none">
-        <ChevronDown className="h-2.5 w-2.5 sm:h-3 sm:w-3 text-gray-400" />
-      </div>
-    </div>
-  ) : isCategoryService(formData.category_name) ? (
-    <div className="relative w-full">
-      {/* Icon - Responsive positioning */}
-      <div className="absolute inset-y-0 left-0 pl-1.5 sm:pl-2 md:pl-2.5 flex items-center pointer-events-none z-10">
-        <Settings className="h-2.5 w-2.5 sm:h-3 sm:w-3 text-gray-400" />
-      </div>
-      
-      <select
-        value={formData.sub_item_id || ""}
-        onChange={(e) =>
-          setFormData({
-            ...formData,
-            sub_item_id: e.target.value,
-          })
-        }
-        className="
+                                  style={{
+                                    maxWidth: "100%",
+                                    width: "100%",
+                                    minWidth: 0,
+                                  }}
+                                >
+                                  <option value="">Select Material</option>
+                                  {materials.map((m) => (
+                                    <option
+                                      key={m.id}
+                                      value={m.id}
+                                      title={`${m.name}${m.code ? ` | ${m.code}` : ""}`}
+                                      className="truncate"
+                                    >
+                                      {m.name.length > 50
+                                        ? `${m.name.substring(0, 50)}...`
+                                        : m.name}
+                                      {m.code ? ` | ${m.code}` : ""}
+                                    </option>
+                                  ))}
+                                </select>
+
+                                {/* Chevron - Responsive positioning */}
+                                <div className="absolute inset-y-0 right-0 pr-1 sm:pr-1.5 flex items-center pointer-events-none">
+                                  <ChevronDown className="h-2.5 w-2.5 sm:h-3 sm:w-3 text-gray-400" />
+                                </div>
+                              </div>
+                            ) : isCategoryService(formData.category_name) ? (
+                              <div className="relative w-full">
+                                {/* Icon - Responsive positioning */}
+                                <div className="absolute inset-y-0 left-0 pl-1.5 sm:pl-2 md:pl-2.5 flex items-center pointer-events-none z-10">
+                                  <Settings className="h-2.5 w-2.5 sm:h-3 sm:w-3 text-gray-400" />
+                                </div>
+
+                                <select
+                                  value={formData.sub_item_id || ""}
+                                  onChange={(e) =>
+                                    setFormData({
+                                      ...formData,
+                                      sub_item_id: e.target.value,
+                                    })
+                                  }
+                                  className="
           w-full 
           border border-gray-300 
           rounded 
@@ -2695,42 +1475,42 @@ const handleCompanyEmailCheck = () => {
           overflow-hidden
           text-ellipsis
         "
-        style={{
-          maxWidth: '100%',
-          width: '100%',
-          minWidth: 0
-        }}
-      >
-        <option value="">Select Service</option>
-        {services.map((s) => (
-          <option 
-            key={s.id} 
-            value={s.id}
-            title={`${s.name}${s.code ? ` | ${s.code}` : ""}`}
-            className="truncate"
-          >
-            {s.name.length > 50 
-              ? `${s.name.substring(0, 50)}...` 
-              : s.name}
-            {s.code ? ` | ${s.code}` : ""}
-          </option>
-        ))}
-      </select>
-      
-      {/* Chevron - Responsive positioning */}
-      <div className="absolute inset-y-0 right-0 pr-1 sm:pr-1.5 flex items-center pointer-events-none">
-        <ChevronDown className="h-2.5 w-2.5 sm:h-3 sm:w-3 text-gray-400" />
-      </div>
-    </div>
-  ) : (
-    <div className="flex items-center gap-1 text-[10px] sm:text-xs text-gray-500 bg-gray-50 p-1.5 rounded border border-gray-200 w-full">
-      <Info className="w-2.5 h-2.5 flex-shrink-0" />
-      <span className="truncate">
-        Select category
-      </span>
-    </div>
-  )}
-</div>
+                                  style={{
+                                    maxWidth: "100%",
+                                    width: "100%",
+                                    minWidth: 0,
+                                  }}
+                                >
+                                  <option value="">Select Service</option>
+                                  {services.map((s) => (
+                                    <option
+                                      key={s.id}
+                                      value={s.id}
+                                      title={`${s.name}${s.code ? ` | ${s.code}` : ""}`}
+                                      className="truncate"
+                                    >
+                                      {s.name.length > 50
+                                        ? `${s.name.substring(0, 50)}...`
+                                        : s.name}
+                                      {s.code ? ` | ${s.code}` : ""}
+                                    </option>
+                                  ))}
+                                </select>
+
+                                {/* Chevron - Responsive positioning */}
+                                <div className="absolute inset-y-0 right-0 pr-1 sm:pr-1.5 flex items-center pointer-events-none">
+                                  <ChevronDown className="h-2.5 w-2.5 sm:h-3 sm:w-3 text-gray-400" />
+                                </div>
+                              </div>
+                            ) : (
+                              <div className="flex items-center gap-1 text-[10px] sm:text-xs text-gray-500 bg-gray-50 p-1.5 rounded border border-gray-200 w-full">
+                                <Info className="w-2.5 h-2.5 flex-shrink-0" />
+                                <span className="truncate">
+                                  Select category
+                                </span>
+                              </div>
+                            )}
+                          </div>
                         </div>
 
                         {/* Tax Details */}
@@ -2897,7 +1677,9 @@ const handleCompanyEmailCheck = () => {
                               <input
                                 type="tel"
                                 value={formData.contact_person_phone}
-                                onBlur={()=>{handlePhoneCheck()}}
+                                onBlur={() => {
+                                  handlePhoneCheck();
+                                }}
                                 onChange={(e) => {
                                   if (!/^\d*$/.test(e.target.value)) {
                                     return;
@@ -2937,25 +1719,25 @@ const handleCompanyEmailCheck = () => {
                               <div className="absolute inset-y-0 left-0 pl-2.5 flex items-center pointer-events-none">
                                 <Mail className="h-3 w-3 text-gray-400" />
                               </div>
-                             <input
-  type="email"
-  value={formData.contact_person_email}
-  onBlur={handleEmailCheck}
-  onChange={(e) =>
-    setFormData({
-      ...formData,
-      contact_person_email: e.target.value.toLowerCase(),
-    })
-  }
-  className={`w-full pl-8 pr-2 py-1.5 text-xs border rounded focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 transition-all duration-150 ${
-    errors.contact_person_email
-      ? "border-red-300 bg-red-50"
-      : "border-gray-300 hover:border-gray-400"
-  }`}
-  placeholder="john@example.com"
-  required
-/>
-
+                              <input
+                                type="email"
+                                value={formData.contact_person_email}
+                                onBlur={handleEmailCheck}
+                                onChange={(e) =>
+                                  setFormData({
+                                    ...formData,
+                                    contact_person_email:
+                                      e.target.value.toLowerCase(),
+                                  })
+                                }
+                                className={`w-full pl-8 pr-2 py-1.5 text-xs border rounded focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 transition-all duration-150 ${
+                                  errors.contact_person_email
+                                    ? "border-red-300 bg-red-50"
+                                    : "border-gray-300 hover:border-gray-400"
+                                }`}
+                                placeholder="john@example.com"
+                                required
+                              />
                             </div>
                             {errors.contact_person_email && (
                               <p className="text-[10px] text-red-600 flex items-center gap-1 mt-0.5">
@@ -2977,33 +1759,36 @@ const handleCompanyEmailCheck = () => {
                               <div className="absolute inset-y-0 left-0 pl-2.5 flex items-center pointer-events-none">
                                 <Phone className="h-3 w-3 text-gray-400" />
                               </div>
-                             <input
-  type="tel"
-  value={formData.company_phone}
-  onBlur={handleCompanyPhoneCheck}
-  onChange={(e) => {
-    if (!/^\d*$/.test(e.target.value)) {
-      toast.warning("Enter Valid Phone Number.");
-      return;
-    }
-    if (e.target.value.length > 10) {
-      toast.warning("Mobile number must be 10 digit.");
-      return;
-    }
-    setFormData({
-      ...formData,
-      company_phone: validators.formatPhone(e.target.value),
-    });
-  }}
-  className={`w-full pl-8 pr-2 py-1.5 text-xs border rounded focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 transition-all duration-150 ${
-    errors.company_phone
-      ? "border-red-300 bg-red-50"
-      : "border-gray-300 hover:border-gray-400"
-  }`}
-  placeholder="9876543210"
-  maxLength={10}
-/>
-
+                              <input
+                                type="tel"
+                                value={formData.company_phone}
+                                onBlur={handleCompanyPhoneCheck}
+                                onChange={(e) => {
+                                  if (!/^\d*$/.test(e.target.value)) {
+                                    toast.warning("Enter Valid Phone Number.");
+                                    return;
+                                  }
+                                  if (e.target.value.length > 10) {
+                                    toast.warning(
+                                      "Mobile number must be 10 digit.",
+                                    );
+                                    return;
+                                  }
+                                  setFormData({
+                                    ...formData,
+                                    company_phone: validators.formatPhone(
+                                      e.target.value,
+                                    ),
+                                  });
+                                }}
+                                className={`w-full pl-8 pr-2 py-1.5 text-xs border rounded focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 transition-all duration-150 ${
+                                  errors.company_phone
+                                    ? "border-red-300 bg-red-50"
+                                    : "border-gray-300 hover:border-gray-400"
+                                }`}
+                                placeholder="9876543210"
+                                maxLength={10}
+                              />
                             </div>
                           </div>
 
@@ -3016,24 +1801,23 @@ const handleCompanyEmailCheck = () => {
                               <div className="absolute inset-y-0 left-0 pl-2.5 flex items-center pointer-events-none">
                                 <Mail className="h-3 w-3 text-gray-400" />
                               </div>
-                             <input
-  type="email"
-  value={formData.company_email}
-  onBlur={handleCompanyEmailCheck}
-  onChange={(e) =>
-    setFormData({
-      ...formData,
-      company_email: e.target.value.toLowerCase(),
-    })
-  }
-  className={`w-full pl-8 pr-2 py-1.5 text-xs border rounded focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 transition-all duration-150 ${
-    errors.company_email
-      ? "border-red-300 bg-red-50"
-      : "border-gray-300 hover:border-gray-400"
-  }`}
-  placeholder="info@company.com"
-/>
-
+                              <input
+                                type="email"
+                                value={formData.company_email}
+                                onBlur={handleCompanyEmailCheck}
+                                onChange={(e) =>
+                                  setFormData({
+                                    ...formData,
+                                    company_email: e.target.value.toLowerCase(),
+                                  })
+                                }
+                                className={`w-full pl-8 pr-2 py-1.5 text-xs border rounded focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 transition-all duration-150 ${
+                                  errors.company_email
+                                    ? "border-red-300 bg-red-50"
+                                    : "border-gray-300 hover:border-gray-400"
+                                }`}
+                                placeholder="info@company.com"
+                              />
                             </div>
                           </div>
                         </div>

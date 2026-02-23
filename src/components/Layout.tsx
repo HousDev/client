@@ -116,6 +116,7 @@ export default function Layout({
   const {
     profile,
     user,
+    can,
     signOut,
     loading: authLoading,
     systemSettings, // ✅ Get system settings from context
@@ -225,9 +226,17 @@ export default function Layout({
       icon: Layers,
       headerIcon: Layers,
       value: [
-        "edit_service_orders",
-        "create_service_orders",
-        "view_service_orders",
+        "view_wo",
+        "create_wo",
+        "edit_wo",
+        "delete_wo",
+        "approve_wo",
+        "reject_wo",
+        "authorize_wo",
+        "reject_authorize_wo",
+        "download_pdf_wo",
+        "view_pdf_wo",
+        "make_payment_wo",
       ],
       submenu: null,
     },
@@ -238,9 +247,12 @@ export default function Layout({
       headerIcon: Package,
       value: [
         "edit_inventory",
-        "create_inventory",
         "view_inventory",
-        "delete_inventory",
+        "make_reminders",
+        "view_challan",
+        "material_in",
+        "material_out",
+        "material_issue",
       ],
       submenu: null,
     },
@@ -249,7 +261,7 @@ export default function Layout({
       label: "Tracking",
       icon: PackageSearch,
       headerIcon: PackageSearch,
-      value: ["view_materials", "receive_materials"],
+      value: ["view_po_tracking", "view_wo_tracking"],
       submenu: null,
     },
     {
@@ -257,7 +269,13 @@ export default function Layout({
       label: "Material Requests",
       icon: ClipboardCheck,
       headerIcon: ClipboardCheck,
-      value: ["view_materials_requests", "update_materials_requests"],
+      value: [
+        "view_material_requests",
+        "make_material_requests",
+        "make_material_requests_for_po",
+        "approve_material_request",
+        "reject_material_request",
+      ],
       submenu: null,
     },
     {
@@ -265,14 +283,27 @@ export default function Layout({
       label: "Payments",
       icon: Calculator,
       headerIcon: Calculator,
-      value: ["view_payments", "make_payments", "verify_payments"],
+      value: [
+        "view_payments",
+        "make_payments",
+        "verify_payments",
+        "mark_seen",
+        "send_reminder",
+      ],
       submenu: null,
     },
     {
       id: "task-management",
       label: "Task Management",
       icon: MdChecklist,
-      value: ["view_task", "create_task", "update_task", "delete_task"],
+      value: [
+        "view_task",
+        "create_task",
+        "update_task",
+        "update_task_progress",
+        "delete_task",
+        "view_task_photos",
+      ],
       submenu: null,
     },
     {
@@ -280,10 +311,14 @@ export default function Layout({
       label: "Projects",
       icon: Building2,
       value: [
-        "view_project",
+        "view_projects",
         "create_project",
         "update_project",
         "delete_project",
+        "view_projects_details",
+        "create_project_details",
+        "update_project_details",
+        "delete_project_details",
       ],
       submenu: null,
     },
@@ -379,7 +414,6 @@ export default function Layout({
 
       // ✅ Fresh reload (clean state)
       window.location.reload();
-
     } catch (error) {
       console.error("Error signing out:", error);
     }
@@ -513,20 +547,6 @@ export default function Layout({
     document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
-
-  // ── Permission helper ────────────────────────────────────────────────────
-  const can = (permission: string) => {
-    const role =
-      (profile as any)?.role_name ??
-      (profile as any)?.role ??
-      (user as any)?.role ??
-      null;
-    if (role === "admin") return true;
-    const perms: Record<string, boolean> | null =
-      (profile as any)?.permissions ?? null;
-    if (perms && typeof perms === "object") return Boolean(perms[permission]);
-    return false;
-  };
 
   // ── Store management quick-action helpers ────────────────────────────────
   const handleMaterialButtonClick = (formType: string) => {
@@ -858,48 +878,55 @@ export default function Layout({
               {/* Right */}
               <div className="flex items-center gap-2 sm:gap-3">
                 {/* Request Material – Desktop (not on store-management) */}
-                {activeTab !== "store-management" && (
-                  <button
-                    onClick={() => setShowRequestMaterial(true)}
-                    className="hidden sm:flex items-center px-4 py-2 bg-[#C62828] text-white rounded-lg hover:bg-[#A62222] hover:shadow-lg transition text-sm font-medium whitespace-nowrap"
-                  >
-                    Request Material
-                  </button>
-                )}
+                {activeTab !== "store-management" &&
+                  can("make_material_requests") && (
+                    <button
+                      onClick={() => setShowRequestMaterial(true)}
+                      className="hidden sm:flex items-center px-4 py-2 bg-[#C62828] text-white rounded-lg hover:bg-[#A62222] hover:shadow-lg transition text-sm font-medium whitespace-nowrap"
+                    >
+                      Request Material
+                    </button>
+                  )}
                 {/* Request Material – Desktop on store-management */}
-                {activeTab === "store-management" && (
-                  <button
-                    onClick={() => setShowRequestMaterial(true)}
-                    className="hidden lg:flex items-center px-4 py-2 bg-[#C62828] text-white rounded-lg hover:bg-[#A62222] hover:shadow-lg transition text-sm font-medium whitespace-nowrap ml-4"
-                  >
-                    Request Material
-                  </button>
-                )}
+                {activeTab === "store-management" &&
+                  can("make_material_requests") && (
+                    <button
+                      onClick={() => setShowRequestMaterial(true)}
+                      className="hidden lg:flex items-center px-4 py-2 bg-[#C62828] text-white rounded-lg hover:bg-[#A62222] hover:shadow-lg transition text-sm font-medium whitespace-nowrap ml-4"
+                    >
+                      Request Material
+                    </button>
+                  )}
 
                 {/* Store Management quick actions – Desktop */}
-                {activeTab === "store-management" &&
-                  (can("create_inventory") || can("full_access")) && (
-                    <div className="hidden lg:flex items-center gap-2 ml-4 border-l border-gray-300 pl-4">
+                {activeTab === "store-management" && (
+                  <div className="hidden lg:flex items-center gap-2 ml-4 border-l border-gray-300 pl-4">
+                    {can("material_in") && (
                       <button
                         onClick={() => handleMaterialButtonClick("in")}
                         className={`px-4 py-2 rounded-lg font-medium transition-all flex items-center gap-2 ${currentActiveFormTab === "in" ? "bg-[#C62828] text-white shadow-sm" : "bg-white border border-gray-300 text-gray-700 hover:bg-gray-50"}`}
                       >
                         <PackagePlus className="w-5 h-5" /> Material In
                       </button>
+                    )}
+                    {can("material_out") && (
                       <button
                         onClick={() => handleMaterialButtonClick("out")}
                         className={`px-4 py-2 rounded-lg font-medium transition-all flex items-center gap-2 ${currentActiveFormTab === "out" ? "bg-[#C62828] text-white shadow-sm" : "bg-white border border-gray-300 text-gray-700 hover:bg-gray-50"}`}
                       >
                         <PackageMinus className="w-5 h-5" /> Material Out
                       </button>
+                    )}
+                    {can("material_issue") && (
                       <button
                         onClick={() => handleMaterialButtonClick("issue")}
                         className={`px-4 py-2 rounded-lg font-medium transition-all flex items-center gap-2 ${currentActiveFormTab === "issue" ? "bg-[#C62828] text-white shadow-sm" : "bg-white border border-gray-300 text-gray-700 hover:bg-gray-50"}`}
                       >
                         <UserCheck className="w-5 h-5" /> Issue Material
                       </button>
-                    </div>
-                  )}
+                    )}
+                  </div>
+                )}
 
                 {/* Request Material – Mobile (not on store-management) */}
                 {activeTab !== "store-management" && (
@@ -1195,14 +1222,14 @@ export default function Layout({
           </div>
 
           {/* Mobile Quick Actions Bar (store-management only) */}
-          {activeTab === "store-management" &&
-            (can("create_inventory") || can("full_access")) && (
-              <div className="lg:hidden bg-gray-50 border-t border-gray-200 px-4 py-2">
-                <div className="flex items-center justify-between gap-2">
-                  <span className="text-sm font-medium text-gray-700">
-                    Quick Actions:
-                  </span>
-                  <div className="flex items-center gap-1">
+          {activeTab === "store-management" && (
+            <div className="lg:hidden bg-gray-50 border-t border-gray-200 px-4 py-2">
+              <div className="flex items-center justify-between gap-2">
+                <span className="text-sm font-medium text-gray-700">
+                  Quick Actions:
+                </span>
+                <div className="flex items-center gap-1">
+                  {can("material_in") && (
                     <button
                       onClick={() => handleMaterialButtonClick("in")}
                       className={`px-3 py-1.5 rounded-lg text-xs font-medium flex items-center gap-1 transition ${currentActiveFormTab === "in" ? "bg-[#C62828] text-white shadow-sm" : "bg-white border border-gray-300 text-gray-700 hover:bg-gray-50"}`}
@@ -1210,6 +1237,8 @@ export default function Layout({
                       <PackagePlus className="w-3.5 h-3.5" />
                       <span>In</span>
                     </button>
+                  )}
+                  {can("material_out") && (
                     <button
                       onClick={() => handleMaterialButtonClick("out")}
                       className={`px-3 py-1.5 rounded-lg text-xs font-medium flex items-center gap-1 transition ${currentActiveFormTab === "out" ? "bg-[#C62828] text-white shadow-sm" : "bg-white border border-gray-300 text-gray-700 hover:bg-gray-50"}`}
@@ -1217,6 +1246,8 @@ export default function Layout({
                       <PackageMinus className="w-3.5 h-3.5" />
                       <span>Out</span>
                     </button>
+                  )}
+                  {can("material_issue") && (
                     <button
                       onClick={() => handleMaterialButtonClick("issue")}
                       className={`px-3 py-1.5 rounded-lg text-xs font-medium flex items-center gap-1 transition ${currentActiveFormTab === "issue" ? "bg-[#C62828] text-white shadow-sm" : "bg-white border border-gray-300 text-gray-700 hover:bg-gray-50"}`}
@@ -1224,10 +1255,11 @@ export default function Layout({
                       <UserCheck className="w-3.5 h-3.5" />
                       <span>Issue</span>
                     </button>
-                  </div>
+                  )}
                 </div>
               </div>
-            )}
+            </div>
+          )}
         </header>
 
         {/* ── Page Content ── */}

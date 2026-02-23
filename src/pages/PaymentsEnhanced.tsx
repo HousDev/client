@@ -101,7 +101,7 @@ const PAYMENT_METHODS = [
 ];
 
 export default function PaymentsEnhanced() {
-  const { user, profile } = useAuth();
+  const { user, can } = useAuth();
   const [activeTab, setActiveTab] = useState<
     "payments" | "reminders" | "history"
   >("payments");
@@ -205,19 +205,6 @@ export default function PaymentsEnhanced() {
     calculateStats();
   }, [pos, payments, selectedItems, activeTab]);
 
-  const can = (permission: string) => {
-    if (profile?.role === "admin") return true;
-    if (
-      (profile as any)?.permissions &&
-      typeof (profile as any).permissions === "object"
-    ) {
-      return Boolean((profile as any).permissions[permission]);
-    }
-    return false;
-  };
-
-
-
   const loadPOData = async () => {
     try {
       setLoading(true);
@@ -243,7 +230,7 @@ export default function PaymentsEnhanced() {
               po_grand_total: curr.po_grand_total,
               po_balance_amount: curr.po_balance_amount,
               po_amount_paid: curr.po_amount_paid,
-              transactions: []
+              transactions: [],
             };
           }
 
@@ -255,23 +242,22 @@ export default function PaymentsEnhanced() {
             payment_type: curr.payment_type,
             balance_amount: curr.balance_amount,
             payment_status: curr.payment_status,
-            payment_due_date: new Date(curr.payment_due_date).toLocaleDateString(),
+            payment_due_date: new Date(
+              curr.payment_due_date,
+            ).toLocaleDateString(),
             created_at: curr.created_at,
             updated_at: curr.updated_at,
             remarks: curr.remarks,
-            status: curr.status
+            status: curr.status,
           });
 
           return acc;
-        }, {})
+        }, {}),
       );
 
-      grouped.sort((a: any, b: any) =>
-        b.po_number.localeCompare(a.po_number)
-      );
+      grouped.sort((a: any, b: any) => b.po_number.localeCompare(a.po_number));
 
       console.log("clg gtounped data : ", grouped);
-
 
       console.log("heloow  : ", poPaymentsRes);
       console.log(poPaymentHistoryRes);
@@ -326,33 +312,26 @@ export default function PaymentsEnhanced() {
       0,
     );
 
-    const totalOverdue = paymentHistorys.reduce(
-      (total: number, po: any) => {
+    const totalOverdue = paymentHistorys.reduce((total: number, po: any) => {
+      // Har PO ke transactions loop karo
+      const poOverdue = po.transactions.reduce((sum: number, txn: any) => {
+        if (!txn.payment_due_date) return sum;
 
-        // Har PO ke transactions loop karo
-        const poOverdue = po.transactions.reduce(
-          (sum: number, txn: any) => {
-            if (!txn.payment_due_date) return sum;
+        // DD/MM/YYYY format ko parse karo
+        const [day, month, year] = txn.payment_due_date.split("/");
+        const dueDate = new Date(`${year}-${month}-${day}`);
+        dueDate.setHours(0, 0, 0, 0);
 
-            // DD/MM/YYYY format ko parse karo
-            const [day, month, year] = txn.payment_due_date.split('/');
-            const dueDate = new Date(`${year}-${month}-${day}`);
-            dueDate.setHours(0, 0, 0, 0);
+        // Overdue condition
+        if (dueDate < today && Number(txn.balance_amount) > 0) {
+          return sum + Number(txn.balance_amount);
+        }
 
-            // Overdue condition
-            if (dueDate < today && Number(txn.balance_amount) > 0) {
-              return sum + Number(txn.balance_amount);
-            }
+        return sum;
+      }, 0);
 
-            return sum;
-          },
-          0
-        );
-
-        return total + poOverdue;
-      },
-      0
-    );
+      return total + poOverdue;
+    }, 0);
 
     let selectedAmount = 0;
 
@@ -1088,8 +1067,6 @@ export default function PaymentsEnhanced() {
                       </div>
                     </div>
                   </td>
-
-
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-200">
@@ -1097,38 +1074,40 @@ export default function PaymentsEnhanced() {
                   const isSelected = selectedItems.has(po.po_id);
                   return (
                     <React.Fragment>
-                    <tr
+                      <tr
                         key={po.po_id}
-                        onClick={() => { setExpandPO(expandPO === po.po_id ? "" : po.po_id) }}
-                      className={`hover:bg-gray-50 transition ${
-                        isSelected ? "bg-blue-50" : ""
-                      }`}
-                    >
-                      <td className="px-2 md:px-4 py-2 text-center">
-                        <input
-                          type="checkbox"
-                          checked={isSelected}
+                        onClick={() => {
+                          setExpandPO(expandPO === po.po_id ? "" : po.po_id);
+                        }}
+                        className={`hover:bg-gray-50 transition ${
+                          isSelected ? "bg-blue-50" : ""
+                        }`}
+                      >
+                        <td className="px-2 md:px-4 py-2 text-center">
+                          <input
+                            type="checkbox"
+                            checked={isSelected}
                             onChange={() => handleSelectItem(po.po_id)}
-                          className="w-3 h-3 md:w-4 md:h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
-                        />
-                      </td>
-                      <td className="px-2 md:px-4 py-2">
-                        <div className="font-bold text-blue-600 text-xs md:text-sm">
-                          {po.po_number}
-                        </div>
-                        <div className="text-[10px] md:text-xs text-gray-500">
-                          {po.po_date
-                            ? new Date(po.po_date).toLocaleDateString()
-                            : ""}
-                        </div>
-                      </td>
-                      <td className="px-2 md:px-4 py-2">
-                        <div className="text-gray-800 text-xs md:text-sm truncate max-w-[120px]">
-                          {po?.name || "N/A"}
-                        </div>
-                      </td>
-                      <td className="px-2 md:px-4 py-2">
-                        <div className="font-semibold text-gray-800 text-xs md:text-sm">
+                            className="w-3 h-3 md:w-4 md:h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+                          />
+                        </td>
+                        <td className="px-2 md:px-4 py-2">
+                          <div className="font-bold text-blue-600 text-xs md:text-sm">
+                            {po.po_number}
+                          </div>
+                          <div className="text-[10px] md:text-xs text-gray-500">
+                            {po.po_date
+                              ? new Date(po.po_date).toLocaleDateString()
+                              : ""}
+                          </div>
+                        </td>
+                        <td className="px-2 md:px-4 py-2">
+                          <div className="text-gray-800 text-xs md:text-sm truncate max-w-[120px]">
+                            {po?.name || "N/A"}
+                          </div>
+                        </td>
+                        <td className="px-2 md:px-4 py-2">
+                          <div className="font-semibold text-gray-800 text-xs md:text-sm">
                             {formatCurrency(po.po_grand_total)}
                           </div>
                         </td>
@@ -1158,7 +1137,8 @@ export default function PaymentsEnhanced() {
                             <div className="px-3 py-2 border-t border-gray-200">
                               <h4 className="text-xs font-semibold text-gray-700 mb-2 flex items-center gap-1">
                                 <FileText className="w-3 h-3" />
-                                Purchase Order Payment Transactions {po.po_number}
+                                Purchase Order Payment Transactions{" "}
+                                {po.po_number}
                               </h4>
                               <div className="overflow-x-auto">
                                 <table className="w-full bg-white rounded-lg border border-gray-200 min-w-[600px]">
@@ -1189,103 +1169,124 @@ export default function PaymentsEnhanced() {
                                     </tr>
                                   </thead>
                                   <tbody className="divide-y divide-gray-200">
-                                    {po.transactions.map((transaction: any, idx: number) => {
-
-
-                                      return (
-                                        <tr
-                                          key={transaction.id}
-                                          className={`hover:bg-gray-50 ${idx % 2 === 0
-                                            ? "bg-white"
-                                            : "bg-gray-50/50"
+                                    {po.transactions.map(
+                                      (transaction: any, idx: number) => {
+                                        return (
+                                          <tr
+                                            key={transaction.id}
+                                            className={`hover:bg-gray-50 ${
+                                              idx % 2 === 0
+                                                ? "bg-white"
+                                                : "bg-gray-50/50"
                                             }`}
-                                        >
-                                          <td className="px-2 py-1.5">
-                                            <div
-                                              className="font-medium text-gray-800 text-xs truncate max-w-[150px]"
-                                              title={
-                                                po.po_number || "Unknown"
-                                              }
-                                            >
-                                              {po.po_number || "Unknown"}
-                                            </div>
-                                            <div className="text-[10px] text-gray-500">
-                                              PO  Date: {po.po_date || "N/A"}
-                                            </div>
-                                          </td>
-                                          <td className="px-2 py-1.5 font-medium  text-xs">
-                                            {transaction.payment_type}
-                                          </td>
-                                          <td className="px-2 py-1.5 text-gray-700 text-xs">
-                                            {transaction.total_amount || "-"}
-                                          </td>
-                                          <td className="px-2 py-1.5 font-medium text-green-600 text-xs">
-                                            {transaction.amount_paid}
-                                          </td>
-                                          <td className="px-2 py-1.5 font-medium text-red-600 text-xs">
-                                            {transaction.balance_amount}
-                                          </td>
-
-                                          <td className="px-2 py-1.5">
-                                            <span
-                                              className={`px-2 py-0.5 rounded-full text-[10px] font-medium ${getStatusColor(
-                                                transaction.status,
-                                              )} whitespace-nowrap`}
-                                            >
-                                              {transaction.status?.toUpperCase() ||
-                                                "PENDING"}
-                                            </span>
-                                          </td>
-                                          <td className="px-2 md:px-4 py-2">
-                                            {Number(transaction.balance_amount) !== 0 ? (
-                                              <div className="flex gap-1">
-                                                {can("make_payments") && (
-                                                  <>
-                                                    <button
-                                                      onClick={() => openPaymentModal({
-                                                        po_id: po.po_id,
-                                                        po_payment_id: transaction.id,
-                                                        po_number: po.po_number,
-                                                        name: po.name,
-                                                        total_amount: transaction.total_amount,
-                                                        total_paid: transaction.amount_paid,
-                                                        balance_amount: transaction.balance_amount,
-                                                        due_date: transaction.payment_due_date,
-                                                      })}
-                                                      className="px-2 py-1 bg-green-600 text-white rounded hover:bg-green-700 transition-all duration-200 flex items-center gap-1 text-[10px] md:text-xs"
-                                                      title="Make Payment"
-                                                    >
-                                                      <IndianRupee className="w-3 h-3" />
-                                                      Pay
-                                                    </button>
-                                                    <button
-                                                      onClick={() =>
-                                                        createPaymentReminder({
-                                                          po_id: po.po_id,
-                                                          po_payment_id: transaction.id,
-                                                          po_number: po.po_number,
-                                                          vendor: po.name,
-                                                          total_amount: transaction.total_amount,
-                                                          total_paid: transaction.amount_paid,
-                                                          balance_amount: transaction.balance_amount,
-                                                          due_date: transaction.payment_due_date,
-                                                        })
-                                                      }
-                                                      className="p-1 bg-blue-600 text-white rounded hover:bg-blue-700 transition-all duration-200 flex items-center justify-center"
-                                                      title="Set Reminder"
-                                                    >
-                                                      <Bell className="w-3 h-3" />
-                                                    </button>
-                                                  </>
-                                                )}
+                                          >
+                                            <td className="px-2 py-1.5">
+                                              <div
+                                                className="font-medium text-gray-800 text-xs truncate max-w-[150px]"
+                                                title={
+                                                  po.po_number || "Unknown"
+                                                }
+                                              >
+                                                {po.po_number || "Unknown"}
                                               </div>
-                                            ) : (
-                                              <div>--</div>
-                                            )}
-                                          </td>
-                                        </tr>
-                                      );
-                                    })}
+                                              <div className="text-[10px] text-gray-500">
+                                                PO Date: {po.po_date || "N/A"}
+                                              </div>
+                                            </td>
+                                            <td className="px-2 py-1.5 font-medium  text-xs">
+                                              {transaction.payment_type}
+                                            </td>
+                                            <td className="px-2 py-1.5 text-gray-700 text-xs">
+                                              {transaction.total_amount || "-"}
+                                            </td>
+                                            <td className="px-2 py-1.5 font-medium text-green-600 text-xs">
+                                              {transaction.amount_paid}
+                                            </td>
+                                            <td className="px-2 py-1.5 font-medium text-red-600 text-xs">
+                                              {transaction.balance_amount}
+                                            </td>
+
+                                            <td className="px-2 py-1.5">
+                                              <span
+                                                className={`px-2 py-0.5 rounded-full text-[10px] font-medium ${getStatusColor(
+                                                  transaction.status,
+                                                )} whitespace-nowrap`}
+                                              >
+                                                {transaction.status?.toUpperCase() ||
+                                                  "PENDING"}
+                                              </span>
+                                            </td>
+                                            <td className="px-2 md:px-4 py-2">
+                                              {Number(
+                                                transaction.balance_amount,
+                                              ) !== 0 ? (
+                                                <div className="flex gap-1">
+                                                  <>
+                                                    {can("make_payments") && (
+                                                      <button
+                                                        onClick={() =>
+                                                          openPaymentModal({
+                                                            po_id: po.po_id,
+                                                            po_payment_id:
+                                                              transaction.id,
+                                                            po_number:
+                                                              po.po_number,
+                                                            name: po.name,
+                                                            total_amount:
+                                                              transaction.total_amount,
+                                                            total_paid:
+                                                              transaction.amount_paid,
+                                                            balance_amount:
+                                                              transaction.balance_amount,
+                                                            due_date:
+                                                              transaction.payment_due_date,
+                                                          })
+                                                        }
+                                                        className="px-2 py-1 bg-green-600 text-white rounded hover:bg-green-700 transition-all duration-200 flex items-center gap-1 text-[10px] md:text-xs"
+                                                        title="Make Payment"
+                                                      >
+                                                        <IndianRupee className="w-3 h-3" />
+                                                        Pay
+                                                      </button>
+                                                    )}
+                                                    {can("send_reminder") && (
+                                                      <button
+                                                        onClick={() =>
+                                                          createPaymentReminder(
+                                                            {
+                                                              po_id: po.po_id,
+                                                              po_payment_id:
+                                                                transaction.id,
+                                                              po_number:
+                                                                po.po_number,
+                                                              vendor: po.name,
+                                                              total_amount:
+                                                                transaction.total_amount,
+                                                              total_paid:
+                                                                transaction.amount_paid,
+                                                              balance_amount:
+                                                                transaction.balance_amount,
+                                                              due_date:
+                                                                transaction.payment_due_date,
+                                                            },
+                                                          )
+                                                        }
+                                                        className="p-1 bg-blue-600 text-white rounded hover:bg-blue-700 transition-all duration-200 flex items-center justify-center"
+                                                        title="Set Reminder"
+                                                      >
+                                                        <Bell className="w-3 h-3" />
+                                                      </button>
+                                                    )}
+                                                  </>
+                                                </div>
+                                              ) : (
+                                                <div>--</div>
+                                              )}
+                                            </td>
+                                          </tr>
+                                        );
+                                      },
+                                    )}
                                   </tbody>
                                 </table>
                               </div>
@@ -1293,7 +1294,6 @@ export default function PaymentsEnhanced() {
                           </td>
                         </tr>
                       )}
-
                     </React.Fragment>
                   );
                 })}
@@ -1541,16 +1541,18 @@ export default function PaymentsEnhanced() {
                       </span>
                     </td>
                     <td className="px-2 md:px-4 py-2">
-                      <button
-                        onClick={() => {
-                          setShowPaymentProofModal(true);
-                          setPaymentProofUrl(payment.payment_proof);
-                        }}
-                        className={`px-2 py-1 rounded-full text-[10px] md:text-xs font-medium cursor-pointer text-blue-600 hover:bg-blue-50 transition`}
-                        title="View Payment Proof"
-                      >
-                        <Eye className="w-4 h-4" />
-                      </button>
+                      {can("verify_payments") && (
+                        <button
+                          onClick={() => {
+                            setShowPaymentProofModal(true);
+                            setPaymentProofUrl(payment.payment_proof);
+                          }}
+                          className={`px-2 py-1 rounded-full text-[10px] md:text-xs font-medium cursor-pointer text-blue-600 hover:bg-blue-50 transition`}
+                          title="View Payment Proof"
+                        >
+                          <Eye className="w-4 h-4" />
+                        </button>
+                      )}
                     </td>
                   </tr>
                 ))}
@@ -1786,8 +1788,7 @@ export default function PaymentsEnhanced() {
                     </td>
                     <td className="px-2 md:px-4 py-2">
                       <div className="text-gray-800 text-xs md:text-sm">
-                        {reminder.due_date ||
-                          "--"}
+                        {reminder.due_date || "--"}
                       </div>
                     </td>
                     <td className="px-2 md:px-4 py-2">
@@ -1799,17 +1800,21 @@ export default function PaymentsEnhanced() {
                     </td>
                     <td className="px-2 md:px-4 py-2">
                       {reminder.status === "unseen" && (
-                        <button
-                          onClick={() => {
-                            markReminderSeen({
-                              id: reminder.id,
-                              seen_by: user?.id,
-                            });
-                          }}
-                          className="px-2 py-1 bg-green-600 text-white rounded hover:bg-green-700 transition-all duration-200 flex items-center gap-1 text-[10px] md:text-xs"
-                        >
-                          <Check className="w-3 h-3" /> Seen
-                        </button>
+                        <div>
+                          {can("mark_seen") && (
+                            <button
+                              onClick={() => {
+                                markReminderSeen({
+                                  id: reminder.id,
+                                  seen_by: user?.id,
+                                });
+                              }}
+                              className="px-2 py-1 bg-green-600 text-white rounded hover:bg-green-700 transition-all duration-200 flex items-center gap-1 text-[10px] md:text-xs"
+                            >
+                              <Check className="w-3 h-3" /> Seen
+                            </button>
+                          )}
+                        </div>
                       )}
                     </td>
                   </tr>

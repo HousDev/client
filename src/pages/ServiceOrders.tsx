@@ -108,7 +108,7 @@ type PaymentDataType = {
 };
 
 export default function ServiceOrders() {
-  const { user, profile } = useAuth();
+  const { user, profile, can } = useAuth();
   const [pos, setPOs] = useState<PO[]>([]);
   const [showChallans, setShowChallans] = useState(false);
   const [trackingData, setTrackingData] = useState<Tracking[]>([]);
@@ -620,30 +620,6 @@ export default function ServiceOrders() {
     setVendors(v);
     setProjects(p);
     setPOTypes(t);
-  };
-
-  // --- Permissions: admin gets everything, others follow profile.permissions ---
-  const can = (permission: string) => {
-    // Try these fields for role - adapt if your backend uses different field names
-    const role =
-      (profile as any)?.role_name ??
-      (profile as any)?.role ??
-      (user as any)?.role ??
-      null;
-
-    // If admin — grant all access
-    if (role === "admin") return true;
-
-    // fallback to permissions object if present on profile
-    const perms: Record<string, boolean> | null =
-      (profile as any)?.permissions ?? null;
-
-    if (perms && typeof perms === "object") {
-      return Boolean(perms[permission]);
-    }
-
-    // Default: deny
-    return false;
   };
 
   // --- Data operations (mocked) ---
@@ -1237,7 +1213,7 @@ export default function ServiceOrders() {
         </div>
 
         {/* Create SO Button */}
-        {can("create_pos") && (
+        {can("create_wo") && (
           <button
             onClick={() => setShowCreatePro(true)}
             className="
@@ -1506,13 +1482,17 @@ export default function ServiceOrders() {
                       </td>
                       <td className="px-3 md:px-4 py-3">
                         <div className="flex items-center justify-center gap-1.5 md:gap-2">
-                          <button
-                            onClick={() => handleView(po)}
-                            className="p-1.5 md:p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition"
-                            title="View Details"
-                          >
-                            <FileText className="w-3.5 h-3.5 md:w-4 md:h-4" />
-                          </button>
+                          {can("view_pdf_wo") && (
+                            <button
+                              onClick={() => {
+                                viewPoPdf(po.id);
+                              }}
+                              className="p-1.5 md:p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition"
+                              title="View PDF"
+                            >
+                              <FileText className="w-3.5 h-3.5 md:w-4 md:h-4" />
+                            </button>
+                          )}
                         </div>
                       </td>
                     </tr>
@@ -1739,31 +1719,35 @@ export default function ServiceOrders() {
                     </td>
                     <td className="px-3 md:px-4 py-3">
                       <div className="flex items-center justify-center gap-1.5 md:gap-2">
-                        <button
-                          onClick={() => {
-                            viewPoPdf(po.id, "download");
-                            setPdfUrl(po.id);
-                          }}
-                          disabled={pdfLoading}
-                          className="p-1.5 md:p-2 text-black hover:bg-blue-50 rounded-lg transition"
-                          title="Download PDF"
-                        >
-                          {pdfLoading && pdfUrl === po.id ? (
-                            <Loader2 className="w-3.5 h-3.5 md:w-4 md:h-4 animate-spin" />
-                          ) : (
-                            <FileDown className="w-3.5 h-3.5 md:w-4 md:h-4" />
-                          )}
-                        </button>
-                        <button
-                          onClick={() => {
-                            viewPoPdf(po.id);
-                          }}
-                          className="p-1.5 md:p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition"
-                          title="View PDF"
-                        >
-                          <FileText className="w-3.5 h-3.5 md:w-4 md:h-4" />
-                        </button>
-                        {can("edit_pos") && po.status === "draft" && (
+                        {can("download_pdf_wo") && (
+                          <button
+                            onClick={() => {
+                              viewPoPdf(po.id, "download");
+                              setPdfUrl(po.id);
+                            }}
+                            disabled={pdfLoading}
+                            className="p-1.5 md:p-2 text-black hover:bg-blue-50 rounded-lg transition"
+                            title="Download PDF"
+                          >
+                            {pdfLoading && pdfUrl === po.id ? (
+                              <Loader2 className="w-3.5 h-3.5 md:w-4 md:h-4 animate-spin" />
+                            ) : (
+                              <FileDown className="w-3.5 h-3.5 md:w-4 md:h-4" />
+                            )}
+                          </button>
+                        )}
+                        {can("view_pdf_wo") && (
+                          <button
+                            onClick={() => {
+                              viewPoPdf(po.id);
+                            }}
+                            className="p-1.5 md:p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition"
+                            title="View PDF"
+                          >
+                            <FileText className="w-3.5 h-3.5 md:w-4 md:h-4" />
+                          </button>
+                        )}
+                        {can("edit_wo") && po.status === "draft" && (
                           <button
                             onClick={async () => {
                               if (!allPurchaseOrderItems) {
@@ -1860,7 +1844,7 @@ export default function ServiceOrders() {
                           </button>
                         )}
 
-                        {can("delete_pos") && po.status === "draft" && (
+                        {can("delete_wo") && po.status === "draft" && (
                           <button
                             onClick={() => {
                               handleDelete(po.id);
@@ -1871,7 +1855,7 @@ export default function ServiceOrders() {
                             <Trash2 className="w-3.5 h-3.5 md:w-4 md:h-4" />
                           </button>
                         )}
-                        {can("make_payments") &&
+                        {can("make_payment_wo") &&
                           po.balance_amount! > 0 &&
                           po.status === "authorize" && (
                             <button
@@ -1888,7 +1872,7 @@ export default function ServiceOrders() {
                           {showApprovalButtons === po.id && (
                             <div className="absolute -top-16 right-2 z-50 space-x-3 bg-white flex shadow-xl px-6 py-3 rounded-md border border-slate-300">
                               {" "}
-                              {can("approve_pos") && po.status === "draft" && (
+                              {can("approve_wo") && po.status === "draft" && (
                                 <button
                                   onClick={() => {
                                     updateServiceOrderStatus(po.id, "approved");
@@ -1900,7 +1884,7 @@ export default function ServiceOrders() {
                                   Approve
                                 </button>
                               )}
-                              {can("authorize_pos") &&
+                              {can("authorize_wo") &&
                                 po.status === "approved" && (
                                   <button
                                     onClick={() => {
@@ -1915,29 +1899,33 @@ export default function ServiceOrders() {
                                     <Check className="w-4 h-4" /> Authorize
                                   </button>
                                 )}
-                              {(can("approve_pos") || can("authorize_pos")) &&
-                                (po.status === "draft" ||
-                                  po.status === "approved") && (
-                                  <button
-                                    onClick={() => {
-                                      setServiceOrderRejection({
-                                        ...serviceOrderRejection,
-                                        status: "rejected",
-                                        id: po.id,
-                                        po_number: po.so_number,
-                                      });
-                                      setShowRejectionModule(true);
-                                      setShowApprovalButtons(null);
-                                    }}
-                                    className="p-2 px-6 text-white bg-red-600 hover:bg-red-500 rounded-lg transition flex items-center text-xs"
-                                    title="Reject"
-                                  >
-                                    <XCircle className="w-4 h-4 mr-2" /> Reject
-                                  </button>
-                                )}
+                              {((can("reject_wo") && po.status === "draft") ||
+                                (can("reject_authorize_wo") &&
+                                  po.status === "approved")) && (
+                                <button
+                                  onClick={() => {
+                                    setServiceOrderRejection({
+                                      ...serviceOrderRejection,
+                                      status: "rejected",
+                                      id: po.id,
+                                      po_number: po.so_number,
+                                    });
+                                    setShowRejectionModule(true);
+                                    setShowApprovalButtons(null);
+                                  }}
+                                  className="p-2 px-6 text-white bg-red-600 hover:bg-red-500 rounded-lg transition flex items-center text-xs"
+                                  title="Reject"
+                                >
+                                  <XCircle className="w-4 h-4 mr-2" /> Reject
+                                </button>
+                              )}
                             </div>
                           )}
-                          {can("edit_pos") &&
+                          {((po.status === "draft" &&
+                            (can("approve_wo") || can("reject_wo"))) ||
+                            (po.status === "approved" &&
+                              (can("authorize_wo") ||
+                                can("reject_authorize_wo")))) &&
                             po.status !== "authorize" &&
                             po.status !== "rejected" && (
                               <button
