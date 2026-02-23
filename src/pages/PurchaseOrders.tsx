@@ -105,7 +105,7 @@ type PaymentDataType = {
 };
 
 export default function PurchaseOrders() {
-  const { user, profile } = useAuth();
+  const { user, profile, can } = useAuth();
   const [pos, setPOs] = useState<PO[]>([]);
   const [showChallans, setShowChallans] = useState(false);
   const [trackingData, setTrackingData] = useState<Tracking[]>([]);
@@ -731,28 +731,6 @@ export default function PurchaseOrders() {
   };
 
   // --- Permissions: admin gets everything, others follow profile.permissions ---
-  const can = (permission: string) => {
-    // Try these fields for role - adapt if your backend uses different field names
-    const role =
-      (profile as any)?.role_name ??
-      (profile as any)?.role ??
-      (user as any)?.role ??
-      null;
-
-    // If admin — grant all access
-    if (role === "admin") return true;
-
-    // fallback to permissions object if present on profile
-    const perms: Record<string, boolean> | null =
-      (profile as any)?.permissions ?? null;
-
-    if (perms && typeof perms === "object") {
-      return Boolean(perms[permission]);
-    }
-
-    // Default: deny
-    return false;
-  };
 
   // --- Data operations (mocked) ---
   const loadPOs = async () => {
@@ -1573,13 +1551,17 @@ export default function PurchaseOrders() {
                       </td>
                       <td className="px-3 md:px-4 py-3">
                         <div className="flex items-center justify-center gap-1.5 md:gap-2">
-                          <button
-                            onClick={() => handleView(po)}
-                            className="p-1.5 md:p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition"
-                            title="View Details"
-                          >
-                            <FileText className="w-3.5 h-3.5 md:w-4 md:h-4" />
-                          </button>
+                          {can("view_pdf_pos") && (
+                            <button
+                              onClick={() => {
+                                viewPoPdf(po.id);
+                              }}
+                              className="p-1.5 md:p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition"
+                              title="View PDF"
+                            >
+                              <FileText className="w-3.5 h-3.5 md:w-4 md:h-4" />
+                            </button>
+                          )}
                         </div>
                       </td>
                     </tr>
@@ -1785,30 +1767,34 @@ export default function PurchaseOrders() {
                     </td>
                     <td className="px-3 md:px-4 py-3">
                       <div className="flex items-center justify-center gap-1.5 md:gap-2">
-                        <button
-                          onClick={() => {
-                            viewPoPdf(po.id, "download");
-                            setPdfUrl(po.id);
-                          }}
-                          disabled={pdfLoading}
-                          className="p-1.5 md:p-2 text-black hover:bg-blue-50 rounded-lg transition"
-                          title="Download PDF"
-                        >
-                          {pdfLoading && pdfUrl === po.id ? (
-                            <Loader2 className="w-3.5 h-3.5 md:w-4 md:h-4 animate-spin" />
-                          ) : (
-                            <FileDown className="w-3.5 h-3.5 md:w-4 md:h-4" />
-                          )}
-                        </button>
-                        <button
-                          onClick={() => {
-                            viewPoPdf(po.id);
-                          }}
-                          className="p-1.5 md:p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition"
-                          title="View PDF"
-                        >
-                          <FileText className="w-3.5 h-3.5 md:w-4 md:h-4" />
-                        </button>
+                        {can("download_pdf_pos") && (
+                          <button
+                            onClick={() => {
+                              viewPoPdf(po.id, "download");
+                              setPdfUrl(po.id);
+                            }}
+                            disabled={pdfLoading}
+                            className="p-1.5 md:p-2 text-black hover:bg-blue-50 rounded-lg transition"
+                            title="Download PDF"
+                          >
+                            {pdfLoading && pdfUrl === po.id ? (
+                              <Loader2 className="w-3.5 h-3.5 md:w-4 md:h-4 animate-spin" />
+                            ) : (
+                              <FileDown className="w-3.5 h-3.5 md:w-4 md:h-4" />
+                            )}
+                          </button>
+                        )}
+                        {can("view_pdf_pos") && (
+                          <button
+                            onClick={() => {
+                              viewPoPdf(po.id);
+                            }}
+                            className="p-1.5 md:p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition"
+                            title="View PDF"
+                          >
+                            <FileText className="w-3.5 h-3.5 md:w-4 md:h-4" />
+                          </button>
+                        )}
                         {can("edit_pos") && po.status === "draft" && (
                           <button
                             onClick={async () => {
@@ -1940,7 +1926,8 @@ export default function PurchaseOrders() {
                             <Trash2 className="w-3.5 h-3.5 md:w-4 md:h-4" />
                           </button>
                         )}
-                        {can("make_payments") &&
+
+                        {can("make_payment_pos") &&
                           po.balance_amount! > 0 &&
                           po.status === "authorize" && (
                             <button
@@ -1984,25 +1971,26 @@ export default function PurchaseOrders() {
                                     <Check className="w-4 h-4" /> Authorize
                                   </button>
                                 )}
-                              {(can("approve_pos") || can("authorize_pos")) &&
-                                (po.status === "draft" ||
-                                  po.status === "approved") && (
-                                  <button
-                                    onClick={() =>
-                                      updatePurchaseOrderStatus(
-                                        po.id,
-                                        "rejected",
-                                      )
-                                    }
-                                    className="p-2 px-6 text-white bg-red-600 hover:bg-red-500 rounded-lg transition flex items-center text-xs"
-                                    title="Reject"
-                                  >
-                                    <XCircle className="w-4 h-4 mr-2" /> Reject
-                                  </button>
-                                )}
+                              {((can("reject_pos") && po.status === "draft") ||
+                                (can("reject_authorize_pos") &&
+                                  po.status === "approved")) && (
+                                <button
+                                  onClick={() =>
+                                    updatePurchaseOrderStatus(po.id, "rejected")
+                                  }
+                                  className="p-2 px-6 text-white bg-red-600 hover:bg-red-500 rounded-lg transition flex items-center text-xs"
+                                  title="Reject"
+                                >
+                                  <XCircle className="w-4 h-4 mr-2" /> Reject
+                                </button>
+                              )}
                             </div>
                           )}
-                          {can("edit_pos") &&
+                          {((po.status === "draft" &&
+                            (can("approve_pos") || can("reject_pos"))) ||
+                            (po.status === "approved" &&
+                              (can("authorize_pos") ||
+                                can("reject_authorize_pos")))) &&
                             po.status !== "authorize" &&
                             po.status !== "rejected" && (
                               <button

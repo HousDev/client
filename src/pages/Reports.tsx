@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { BarChart3, Download } from "lucide-react";
+import { useAuth } from "../contexts/AuthContext";
 
 type PO = {
   id: string;
@@ -26,6 +27,7 @@ type PaymentTerm = {
 const STORAGE_KEY = "mock_reports_data_v1";
 
 export default function Reports() {
+  const { can } = useAuth();
   const [reportData, setReportData] = useState({
     totalPOs: 0,
     totalAmount: 0,
@@ -128,14 +130,14 @@ export default function Reports() {
 
       const totalPOs = posRes.length;
       const completedPOs = posRes.filter(
-        (p) => p.status === "completed"
+        (p) => p.status === "completed",
       ).length;
       const pendingPOs = posRes.filter(
-        (p) => p.status === "pending_approval"
+        (p) => p.status === "pending_approval",
       ).length;
       const totalAmount = posRes.reduce(
         (sum, p) => sum + (p.grand_total || 0),
-        0
+        0,
       );
 
       const totalPayments = paymentsRes.length;
@@ -183,8 +185,8 @@ export default function Reports() {
               // escape quotes
               return `"${String(v).replace(/"/g, '""')}"`;
             })
-            .join(",")
-        )
+            .join(","),
+        ),
       )
       .join("\n");
 
@@ -254,32 +256,33 @@ export default function Reports() {
 
   return (
     <div className="space-y-6 p-6">
-      <div className="flex items-center justify-between">
-       
-        <div className="flex gap-3">
-          <button
-            onClick={() => downloadReport("pdf")}
-            className="flex items-center gap-2 bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700 transition"
-          >
-            <Download className="w-4 h-4" />
-            PDF
-          </button>
-          <button
-            onClick={() => downloadReport("excel")}
-            className="flex items-center gap-2 bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition"
-          >
-            <Download className="w-4 h-4" />
-            Excel (CSV)
-          </button>
-          <button
-            onClick={resetDemo}
-            className="bg-gray-100 text-gray-800 px-3 py-2 rounded-lg hover:bg-gray-200 transition"
-            title="Reset demo data"
-          >
-            Reset
-          </button>
+      {can("export_reports") && (
+        <div className="flex items-center justify-between">
+          <div className="flex gap-3">
+            <button
+              onClick={() => downloadReport("pdf")}
+              className="flex items-center gap-2 bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700 transition"
+            >
+              <Download className="w-4 h-4" />
+              PDF
+            </button>
+            <button
+              onClick={() => downloadReport("excel")}
+              className="flex items-center gap-2 bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition"
+            >
+              <Download className="w-4 h-4" />
+              Excel (CSV)
+            </button>
+            <button
+              onClick={resetDemo}
+              className="bg-gray-100 text-gray-800 px-3 py-2 rounded-lg hover:bg-gray-200 transition"
+              title="Reset demo data"
+            >
+              Reset
+            </button>
+          </div>
         </div>
-      </div>
+      )}
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
@@ -391,7 +394,7 @@ export default function Reports() {
                 <span className="font-medium text-gray-800 w-12 text-right">
                   {reportData.totalPOs > 0
                     ? Math.round(
-                        (reportData.completedPOs / reportData.totalPOs) * 100
+                        (reportData.completedPOs / reportData.totalPOs) * 100,
                       )
                     : 0}
                   %
@@ -414,7 +417,7 @@ export default function Reports() {
                 <span className="font-medium text-gray-800 w-12 text-right">
                   {reportData.totalPOs > 0
                     ? Math.round(
-                        (reportData.pendingPOs / reportData.totalPOs) * 100
+                        (reportData.pendingPOs / reportData.totalPOs) * 100,
                       )
                     : 0}
                   %

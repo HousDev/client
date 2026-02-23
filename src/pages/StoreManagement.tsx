@@ -97,7 +97,7 @@ export default function StoreManagement({
   setActiveFormTab = () => {},
 }: StoreManagementProps): JSX.Element {
   // ADD RETURN TYPE JSX.Element
-  const { user, profile } = useAuth();
+  const { can } = useAuth();
   const [inventory, setInventory] = useState<InventoryItem[]>([]);
   const [transactions, setTransactions] = useState<InventoryTransaction[]>([]);
   const [loadTableData, setLoadTableData] = useState<any>();
@@ -158,22 +158,6 @@ export default function StoreManagement({
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(10);
   const [totalPages, setTotalPages] = useState(1);
-
-  // --- Permissions ---
-  const can = (permission: string) => {
-    const role =
-      (profile as any)?.role_name ??
-      (profile as any)?.role ??
-      (user as any)?.role ??
-      null;
-    if (role === "admin") return true;
-    const perms: Record<string, boolean> | null =
-      (profile as any)?.permissions ?? null;
-    if (perms && typeof perms === "object") {
-      return Boolean(perms[permission]);
-    }
-    return false;
-  };
 
   // --- Load Items First (Prerequisite for Inventory) ---
   const loadAllItems = async () => {
@@ -1045,15 +1029,16 @@ export default function StoreManagement({
                         {/* Actions */}
                         <td className="px-2 md:px-4 py-2">
                           <div className="flex items-center justify-center gap-1 md:gap-2">
-                            <button
-                              onClick={() => reminder(item)}
-                              className="p-1 text-blue-600 hover:bg-blue-50 rounded-lg transition"
-                              title="Send Reminder"
-                            >
-                              <Bell className="w-2.5 h-2.5 md:w-3 md:h-3" />
-                            </button>
-                            {(can("update_inventory") ||
-                              can("full_access")) && (
+                            {can("make_reminders") && (
+                              <button
+                                onClick={() => reminder(item)}
+                                className="p-1 text-blue-600 hover:bg-blue-50 rounded-lg transition"
+                                title="Send Reminder"
+                              >
+                                <Bell className="w-2.5 h-2.5 md:w-3 md:h-3" />
+                              </button>
+                            )}
+                            {(can("edit_inventory") || can("full_access")) && (
                               <button
                                 onClick={() => handleEdit(item)}
                                 className="p-1 text-yellow-600 hover:bg-yellow-50 rounded-lg transition"
