@@ -12,7 +12,10 @@
            disabled:opacity-60 disabled:cursor-not-allowed;
   }
 }
-
+.scrollbar-extrathin::-webkit-scrollbar {
+  width: 1px;
+  height: 1px;
+}
 /* ===== Custom Scrollbar ===== */
 .scrollbar-thin::-webkit-scrollbar {
   width: 6px;

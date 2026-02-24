@@ -955,8 +955,15 @@ export default function UsersMaster() {
         department: formData.department,
         department_id: formData.department_id,
         is_active: formData.is_active,
-        permissions: formData.permissions || {},
+        permissions:
+          departmentRoles.find((dr: any) => dr.name === formData.role)
+            ?.permissions || {},
       };
+
+      console.log(
+        departmentRoles.find((dr: any) => dr.name === formData.role)
+          ?.permissions,
+      );
 
       if (formData.password && formData.password.length > 0 && !editingId) {
         payload.password = formData.password;

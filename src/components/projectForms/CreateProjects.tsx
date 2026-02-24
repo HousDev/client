@@ -2172,6 +2172,7 @@ export default function ConstructionProjectWizardForm({
                   </div>
                 </div>
               )}
+
               {showUpdateModalForItem === "building" && (
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
                   <div className="space-y-1.5">
