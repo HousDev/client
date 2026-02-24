@@ -36,6 +36,7 @@ import poPaymentApi from "../lib/poPaymentApi";
 import CreateServiceOrderForm from "../components/ServiceOrder/CreateServiceOrder";
 import UpdateServiceOrderForm from "../components/ServiceOrder/UpdateServiceOrders";
 import ServiceOrdersApi from "../lib/serviceOrderApi";
+import woPaymentApi from "../lib/woPayments";
 
 type Vendor = {
   id: string;
@@ -1063,12 +1064,12 @@ export default function ServiceOrders() {
       setPaymentData((prev) => ({ ...prev, payment_proof: file }));
     }
   };
-
   const handleMakePayment = async (e: React.FormEvent) => {
     e.preventDefault();
+
     try {
       if (!selectedPO) {
-        toast.error("No PO selected");
+        toast.error("No WO selected");
         return;
       }
 
@@ -1082,7 +1083,7 @@ export default function ServiceOrders() {
         return;
       }
 
-      if ((paymentData.payment_reference_no || "")?.length <= 0) {
+      if ((paymentData.payment_reference_no || "").length <= 0) {
         toast.error("Enter valid reference number");
         return;
       }
@@ -1092,27 +1093,42 @@ export default function ServiceOrders() {
         return;
       }
 
-      const newPayment: PaymentDataType = {
-        po_id: paymentData.po_id,
-        transaction_type: paymentData.transaction_type?.toUpperCase() || "",
-        amount_paid: paymentData.amount_paid,
-        payment_method: paymentData.payment_method?.toUpperCase() || "",
-        payment_reference_no: paymentData.payment_reference_no,
-        payment_proof: paymentData.payment_proof,
-        payment_date: paymentData.payment_date,
-        status: paymentData.status?.toUpperCase() || "",
-        remarks: paymentData.remarks,
-        created_by: user?.id,
-      };
+      // 🔥 IMPORTANT: Use FormData for file upload
+      const formData = new FormData();
+
+      formData.append("wo_id", String(paymentData.po_id)); // change if variable name different
+      formData.append(
+        "transaction_type",
+        paymentData.transaction_type?.toUpperCase() || ""
+      );
+      formData.append("amount_paid", String(paymentData.amount_paid));
+      formData.append(
+        "payment_method",
+        paymentData.payment_method?.toUpperCase() || ""
+      );
+      formData.append(
+        "payment_reference_no",
+        paymentData.payment_reference_no || ""
+      );
+      formData.append("payment_date", paymentData.payment_date || "");
+      formData.append("status", paymentData.status?.toUpperCase() || "");
+      formData.append("remarks", paymentData.remarks || "");
+      formData.append("created_by", String(user?.id || ""));
+
+      // 👇 payment_proof must be actual File object
+      formData.append("payment_proof", paymentData.payment_proof);
 
       setSubmitting(true);
-      const res: any = await poPaymentApi.createPayment(newPayment);
+
+      const res: any = await woPaymentApi.createWoPayment(formData);
 
       if (res.success) {
         loadAllData();
-        toast.success("Payment recorded successfully!");
+        toast.success("WO Payment recorded successfully!");
+
         setShowPaymentModal(false);
         setSelectedPO(null);
+
         setPaymentData({
           po_id: null,
           transaction_type: "payment",

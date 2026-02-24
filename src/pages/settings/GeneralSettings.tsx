@@ -1308,24 +1308,23 @@ src={userProfile.avatar}                            alt="Profile"
                       >
                         Reset
                       </button>
-                      <button
+                      {/* <button
                         onClick={handleSaveSystem}
                         className="px-4 py-2 bg-[#C62828] text-white text-sm font-medium rounded-lg hover:bg-[#A62222] transition flex items-center gap-1.5"
                       >
                         <FaSave className="w-3.5 h-3.5" />
                         Save
-                      </button>
+                      </button> */}
                     </div>
                   </div>
 
                   <div className="space-y-6">
-                    {/* ── Appearance ── */}
-                    <div className="space-y-4">
+                    {/* <div className="space-y-4">
                       <h3 className="text-base font-semibold text-gray-900">
                         Appearance
                       </h3>
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        {/* Theme */}
+
                         <div className="space-y-3">
                           <label className="text-sm font-medium text-gray-700">
                             Theme
@@ -1374,8 +1373,7 @@ src={userProfile.avatar}                            alt="Profile"
                           </div>
                         </div>
 
-                        {/* Primary Color */}
-                        {/* <div className="space-y-3">
+                    <div className="space-y-3">
                           <label className="text-sm font-medium text-gray-700">
                             Primary Color
                           </label>
@@ -1405,12 +1403,11 @@ src={userProfile.avatar}                            alt="Profile"
                                 {system.primaryColor}
                               </p>
                             </div>
-                          </div>
-                        </div> */}
                       </div>
                     </div>
+                  </div>
+                </div> */}
 
-                    {/* ── Branding (Logo + Favicon) ── */}
                     <div className="space-y-4">
                       <h3 className="text-base font-semibold text-gray-900">
                         Branding

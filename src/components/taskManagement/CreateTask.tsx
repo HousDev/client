@@ -8,22 +8,16 @@ import {
   Info,
   Building2,
   Calendar,
-  CreditCard,
-  Tag,
-  Truck,
   User,
   Home,
-  AreaChartIcon,
   Layers2,
   AreaChart,
   DoorOpen,
   Workflow,
-  University,
   WorkflowIcon,
 } from "lucide-react";
 import projectApi from "../../lib/projectApi";
 import { toast } from "sonner";
-import { Layer } from "recharts";
 import { BiTask } from "react-icons/bi";
 import SearchableSelect from "../SearchableSelect";
 import { UsersApi } from "../../lib/Api";
@@ -31,6 +25,7 @@ import AreaSubTasksApi from "../../lib/subTaskApi";
 
 /* ------------------ Main component ------------------ */
 interface CreateTaskPropTypes {
+  allTasks: any;
   projectId: number;
   setShowCreateTaskModal: React.Dispatch<SetStateAction<boolean>>;
   laodData: () => void;
@@ -55,6 +50,7 @@ interface FormDataType {
 export default function CreateTask({
   projectId,
   setShowCreateTaskModal,
+  allTasks,
   laodData,
 }: CreateTaskPropTypes) {
   const [formData, setFormData] = useState<FormDataType>({
@@ -313,7 +309,7 @@ export default function CreateTask({
                       <DoorOpen className="w-3.5 h-3.5" />
                     </div>
                     <SearchableSelect
-                      options={commonAreas.map((area: any) => ({
+                      options={commonAreas.filter((d: any) => !(allTasks || []).find((at: any) => at.common_area_id === d.id)).map((area: any) => ({
                         id: area.id,
                         name: area.common_area_name,
                       }))}
@@ -358,7 +354,7 @@ export default function CreateTask({
                       <AreaChart className="w-3.5 h-3.5" />
                     </div>
                     <SearchableSelect
-                      options={areas.map((a: any) => ({
+                      options={areas.filter((d: any) => !(allTasks || []).find((at: any) => at.area_id === d.id)).map((a: any) => ({
                         id: a.id,
                         name: a.name,
                       }))}

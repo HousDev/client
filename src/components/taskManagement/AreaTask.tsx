@@ -22,6 +22,7 @@ import React from "react";
 import CreateTask from "./CreateTask";
 import UpdateTask from "./UpdateTask";
 import EngineerUdateTask from "./EngineerUpdateTask";
+import { all } from "axios";
 
 interface AreaFormData {
   id?: string;
@@ -139,7 +140,6 @@ export default function AreaTasks({
 }) {
   console.log(selectedProjectId);
   const { user, can } = useAuth();
-  const [areaTasks, setAreaTasks] = useState<AreaFormData[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedTask, setSelectedTask] = useState<any>();
   const [showPhotos, setShowPhotos] = useState(false);
@@ -934,6 +934,7 @@ export default function AreaTasks({
           <CreateTask
             laodData={loadAllTask}
             projectId={selectedProjectId}
+            allTasks={allTasks}
             setShowCreateTaskModal={setShowCreateTaskModal}
           />
         )}
