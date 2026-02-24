@@ -651,7 +651,7 @@ export default function RequestMaterial({
               </div>
 
               <div className="space-y-1.5">
-                <label className="block text-sm font-semibold text-gray-800 mb-1 flex items-center gap-2">
+                <label className="text-sm font-semibold text-gray-800 mb-1 flex items-center gap-2">
                   <Pickaxe className="w-4 h-4 text-[#C62828]" />
                   For Work <span className="text-red-500">*</span>
                 </label>

@@ -605,27 +605,31 @@ export default function Advance() {
 
   // Get selected employee's monthly salary
   const getSelectedEmployee = () => {
-    return employees.find((emp) => emp.id.toString() === formData.employee_id);
+    return (
+      employees.find((emp) => emp.id.toString() === formData.employee_id) || {
+        id: "",
+        first_name: "",
+        last_name: "",
+        employee_code: "",
+        email: "",
+        phone: "",
+        department_name: "",
+        designation: "",
+        ctc: 0,
+        salary: 0, // Monthly salary from API
+        monthly_salary: 0,
+      }
+    );
   };
 
   // Check if form is valid
   const isFormValid = () => {
-    if (
-      Number(formData.amount) >
-      Number(getSelectedEmployee()!.monthly_salary * 2) -
-        (advances || []).reduce(
-          (adv: number, curr: any) =>
-            curr.status === "recovering"
-              ? Number(curr.balance_amount) + adv
-              : adv,
-          0,
-        )
-    ) {
-      return false;
-    }
     if (!formData.employee_id || !formData.amount || !formData.reason) {
       return false;
     }
+
+    const selectedEmployee = getSelectedEmployee();
+    if (!selectedEmployee) return false;
 
     const amount = parseFloat(formData.amount);
     if (isNaN(amount) || amount <= 0) {
@@ -672,12 +676,17 @@ export default function Advance() {
     <div className="space-y-5">
       {/* Header with New Advance Button */}
       <div className="flex items-center justify-end py-0 px-2 -mt-2 -mb-2">
-        <div className="sticky top-20 z-10 flex flex-col md:flex-row gap-3 items-center justify-end">
-          <Button onClick={() => setShowCreateModal(true)} className="text-sm">
-            <Plus className="h-4 w-4 mr-1.5" />
-            New Advance Request
-          </Button>
-        </div>
+        {user.role !== "admin" && (
+          <div className="sticky top-20 z-10 flex flex-col md:flex-row gap-3 items-center justify-end">
+            <Button
+              onClick={() => setShowCreateModal(true)}
+              className="text-sm"
+            >
+              <Plus className="h-4 w-4 mr-1.5" />
+              New Advance Request
+            </Button>
+          </div>
+        )}
       </div>
 
       {/* Statistics Cards - Sticky & Compact */}
@@ -1036,16 +1045,29 @@ export default function Advance() {
 
                       {/* Actions Column - Only Three-dot menu */}
                       <td className="px-3 md:px-4 py-3 relative menu-container">
-                        <button
-                          onClick={() =>
-                            setOpenMenuId(
-                              openMenuId === advance.id ? null : advance.id,
-                            )
-                          }
-                          className="p-1.5 hover:bg-gray-100 rounded transition ml-auto"
-                        >
-                          <MoreVertical className="w-4 h-4 text-gray-600" />
-                        </button>
+                        {user.role === "admin" ? (
+                          <button
+                            onClick={() =>
+                              setOpenMenuId(
+                                openMenuId === advance.id ? null : advance.id,
+                              )
+                            }
+                            className="p-1.5 hover:bg-gray-100 rounded transition ml-auto"
+                          >
+                            <MoreVertical className="w-4 h-4 text-gray-600" />
+                          </button>
+                        ) : advance.status === "pending" ? (
+                          <button
+                            onClick={() => {
+                              deleteAdvance(advance.id);
+                            }}
+                            className="w-full flex items-center gap-2 px-4 py-2 hover:bg-red-50 text-red-600 text-left"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </button>
+                        ) : (
+                          ""
+                        )}
 
                         {openMenuId === advance.id && (
                           <div className="absolute right-4 top-10 z-50 w-44 bg-white border border-gray-200 rounded-lg shadow-lg">
@@ -1255,7 +1277,7 @@ export default function Advance() {
                   </div>
 
                   {/* Employee Details Card */}
-                  {formData.employee_id && getSelectedEmployee() && (
+                  {/* {formData.employee_id && getSelectedEmployee() && (
                     <div className="border-2 border-green-200 rounded-xl p-4 bg-green-50/50 mt-2">
                       <div className="flex items-center justify-between mb-3">
                         <div className="flex items-center gap-3">
@@ -1297,7 +1319,7 @@ export default function Advance() {
                         </div>
                       </div>
                     </div>
-                  )}
+                  )} */}
                 </div>
 
                 {/* Amount & Installments Grid */}
@@ -1317,32 +1339,22 @@ export default function Advance() {
                           type="number"
                           value={formData.amount}
                           onChange={(e) => {
-                            if (
-                              Number(e.target.value) >
-                              Number(
-                                getSelectedEmployee()!.monthly_salary * 2,
-                              ) -
-                                (advances || []).reduce(
-                                  (adv: number, curr: any) =>
-                                    curr.status === "recovering"
-                                      ? Number(curr.balance_amount) + adv
-                                      : adv,
-                                  0,
-                                )
-                            ) {
-                              return;
+                            const selectedEmployee = getSelectedEmployee();
+                            if (!selectedEmployee) return;
+
+                            const value = e.target.value;
+                            if (value.length !== 0) {
+                              const numValue = Number(value);
+                              if (numValue <= 0) return;
+
+                              const maxAllowed =
+                                selectedEmployee.monthly_salary * 2;
+                              if (numValue > maxAllowed) return;
                             }
-                            if (e.target.value.length !== 0) {
-                              if (
-                                getSelectedEmployee()!.monthly_salary * 2 <
-                                Number(e.target.value)
-                              )
-                                return;
-                              if (Number(e.target.value) <= 0) return;
-                            }
+
                             setFormData({
                               ...formData,
-                              amount: e.target.value,
+                              amount: value,
                             });
                           }}
                           className="w-full pl-10 pr-4 py-2.5 text-sm border-2 border-gray-200 rounded-xl focus:border-[#C62828] focus:ring-2 focus:ring-[#C62828]/20 outline-none transition-all duration-200 hover:border-gray-300"
@@ -1610,12 +1622,6 @@ export default function Advance() {
                   </div>
                   <div className="p-5">
                     <ul className="space-y-2 text-sm">
-                      <li className="flex items-start gap-2">
-                        <ChevronRight className="w-3 h-3 text-yellow-600 mt-0.5 flex-shrink-0" />
-                        <span className="text-gray-700">
-                          Maximum advance amount is 2 times monthly salary
-                        </span>
-                      </li>
                       <li className="flex items-start gap-2">
                         <ChevronRight className="w-3 h-3 text-yellow-600 mt-0.5 flex-shrink-0" />
                         <span className="text-gray-700">
