@@ -282,9 +282,6 @@ export default function Permissions() {
 
     // HRMS
     { action: "view_hrms", label: "View HRMS", module: "HRMS" },
-    { action: "create_hrms", label: "Create HRMS", module: "HRMS" },
-    { action: "update_hrms", label: "Update HRMS", module: "HRMS" },
-    { action: "delete_hrms", label: "Delete HRMS", module: "HRMS" },
 
     // Notifications
     {
