@@ -73,7 +73,7 @@ interface LeaveStats {
 }
 
 export default function Leaves() {
-  const { user, profile } = useAuth();
+  const { user, profile, can } = useAuth();
   const [searchEmployee, setSearchEmployee] = useState("");
   const [searchLeaveType, setSearchLeaveType] = useState("");
   const [searchStatus, setSearchStatus] = useState("");
@@ -890,33 +890,40 @@ export default function Leaves() {
                       </td>
 
                       <td className="px-3 md:px-4 py-3 relative menu-container">
-                        <button
-                          onClick={() =>
-                            setOpenMenuId(
-                              openMenuId === leave.id ? null : leave.id,
-                            )
-                          }
-                          className="p-1.5 md:p-2 hover:bg-gray-100 rounded transition"
-                        >
-                          <MoreVertical className="w-3.5 h-3.5 md:w-4 md:h-4 text-gray-600" />
-                        </button>
+                        {(can("approve_leaves") ||
+                          can("delete_leaves") ||
+                          can("reject_leaves") ||
+                          can("view_leaves")) && (
+                          <button
+                            onClick={() =>
+                              setOpenMenuId(
+                                openMenuId === leave.id ? null : leave.id,
+                              )
+                            }
+                            className="p-1.5 md:p-2 hover:bg-gray-100 rounded transition"
+                          >
+                            <MoreVertical className="w-3.5 h-3.5 md:w-4 md:h-4 text-gray-600" />
+                          </button>
+                        )}
 
                         {openMenuId === leave.id && (
                           <div className="absolute right-4 top-10 z-50 w-44 bg-white border border-gray-200 rounded-lg shadow-lg">
                             <ul className="py-1 text-sm text-gray-700">
-                              <li>
-                                <button
-                                  onClick={() => {
-                                    setSelectedLeave(leave);
-                                    setIsViewOpen(true);
-                                    setOpenMenuId(null);
-                                  }}
-                                  className="w-full flex items-center gap-2 px-4 py-2 hover:bg-gray-100 text-left"
-                                >
-                                  <Eye className="w-4 h-4" />
-                                  View
-                                </button>
-                              </li>
+                              {can("view_leaves") && (
+                                <li>
+                                  <button
+                                    onClick={() => {
+                                      setSelectedLeave(leave);
+                                      setIsViewOpen(true);
+                                      setOpenMenuId(null);
+                                    }}
+                                    className="w-full flex items-center gap-2 px-4 py-2 hover:bg-gray-100 text-left"
+                                  >
+                                    <Eye className="w-4 h-4" />
+                                    View
+                                  </button>
+                                </li>
+                              )}
 
                               {leave.attachment_path && (
                                 <li>
@@ -938,31 +945,35 @@ export default function Leaves() {
 
                               {leave.status === "pending" && (
                                 <>
-                                  <li>
-                                    <button
-                                      onClick={() => {
-                                        handleApprove(leave.id);
-                                        setOpenMenuId(null);
-                                      }}
-                                      className="w-full flex items-center gap-2 px-4 py-2 hover:bg-gray-100 text-green-600 text-left"
-                                    >
-                                      <CheckCircle className="w-4 h-4" />
-                                      Approve
-                                    </button>
-                                  </li>
+                                  {can("approve_leaves") && (
+                                    <li>
+                                      <button
+                                        onClick={() => {
+                                          handleApprove(leave.id);
+                                          setOpenMenuId(null);
+                                        }}
+                                        className="w-full flex items-center gap-2 px-4 py-2 hover:bg-gray-100 text-green-600 text-left"
+                                      >
+                                        <CheckCircle className="w-4 h-4" />
+                                        Approve
+                                      </button>
+                                    </li>
+                                  )}
 
-                                  <li>
-                                    <button
-                                      onClick={() => {
-                                        handleReject(leave.id);
-                                        setOpenMenuId(null);
-                                      }}
-                                      className="w-full flex items-center gap-2 px-4 py-2 hover:bg-gray-100 text-orange-600 text-left"
-                                    >
-                                      <XCircle className="w-4 h-4" />
-                                      Reject
-                                    </button>
-                                  </li>
+                                  {can("reject_leaves") && (
+                                    <li>
+                                      <button
+                                        onClick={() => {
+                                          handleReject(leave.id);
+                                          setOpenMenuId(null);
+                                        }}
+                                        className="w-full flex items-center gap-2 px-4 py-2 hover:bg-gray-100 text-orange-600 text-left"
+                                      >
+                                        <XCircle className="w-4 h-4" />
+                                        Reject
+                                      </button>
+                                    </li>
+                                  )}
                                 </>
                               )}
 
@@ -973,16 +984,18 @@ export default function Leaves() {
                                 leave.status === "rejected"
                               ) && (
                                 <li>
-                                  <button
-                                    onClick={() => {
-                                      handleDelete(leave.id);
-                                      setOpenMenuId(null);
-                                    }}
-                                    className="w-full flex items-center gap-2 px-4 py-2 hover:bg-red-50 text-red-600 text-left"
-                                  >
-                                    <Trash2 className="w-4 h-4" />
-                                    Delete
-                                  </button>
+                                  {can("delete_leaves") && (
+                                    <button
+                                      onClick={() => {
+                                        handleDelete(leave.id);
+                                        setOpenMenuId(null);
+                                      }}
+                                      className="w-full flex items-center gap-2 px-4 py-2 hover:bg-red-50 text-red-600 text-left"
+                                    >
+                                      <Trash2 className="w-4 h-4" />
+                                      Delete
+                                    </button>
+                                  )}
                                 </li>
                               )}
                             </ul>

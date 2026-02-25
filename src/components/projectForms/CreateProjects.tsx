@@ -29,6 +29,7 @@ import { toast } from "sonner";
 import projectApi from "../../lib/projectApi";
 import { excelToProjectFormData } from "../../utils/excelToProjectFormData";
 import { BiArea, BiDownArrow, BiUpArrow } from "react-icons/bi";
+import MultiSelectWork from "../MultiSelect";
 
 interface ProjectWizardFormProps {
   setShowModel: any;
@@ -41,6 +42,13 @@ interface ProjectWizardFormProps {
 interface Building {
   building_name: string;
   floors: Floor[];
+  amenities: string;
+  amenitiesCount: string;
+  parking: string;
+  parkingCount: string;
+  residential: string;
+  residentialCount: string;
+  flatCount: string;
 }
 
 interface Floor {
@@ -104,6 +112,16 @@ export default function ConstructionProjectWizardForm({
 
   const [showCommonAreaModal, setShowCommonAreaModal] = useState(false);
 
+  const [buildingDetails, setBuildingDetails] = useState({
+    amenities: "",
+    amenitiesCount: "",
+    parking: "",
+    parkingCount: "",
+    residential: "",
+    residentialCount: "",
+    flatCount: "",
+  });
+
   const [updateAreaId, setUpdateAreaId] = useState<any>("");
 
   const [selectedItem, setSelectedItem] = useState<any | null>({
@@ -142,6 +160,7 @@ export default function ConstructionProjectWizardForm({
     end_date: "",
     buildings: [] as Building[],
   });
+  const [selectedFloorTypes, setSelectedFloorTypes] = useState<String[]>([]);
 
   const fileInputRef = useRef<HTMLInputElement | null>(null);
 
@@ -177,6 +196,42 @@ export default function ConstructionProjectWizardForm({
       description: "Review and submit",
     },
   ];
+
+  useEffect(() => {
+    const newBuildingDetails = { ...buildingDetails };
+
+    // Handle Parking
+    if (selectedFloorTypes.includes("Parking")) {
+      newBuildingDetails.parking = "Parking";
+      newBuildingDetails.parkingCount = newBuildingDetails.parkingCount || "1";
+    } else {
+      // Optionally clear when deselected
+      newBuildingDetails.parking = "";
+      newBuildingDetails.parkingCount = "";
+    }
+
+    // Handle Amenities
+    if (selectedFloorTypes.includes("Amenities")) {
+      newBuildingDetails.amenities = "Amenities";
+      newBuildingDetails.amenitiesCount =
+        newBuildingDetails.amenitiesCount || "1";
+    } else {
+      newBuildingDetails.amenities = "";
+      newBuildingDetails.amenitiesCount = "";
+    }
+
+    // Handle Residential
+    if (selectedFloorTypes.includes("Residential")) {
+      newBuildingDetails.residential = "Residential";
+      newBuildingDetails.residentialCount =
+        newBuildingDetails.residentialCount || "1";
+    } else {
+      newBuildingDetails.residential = "";
+      newBuildingDetails.residentialCount = "";
+    }
+
+    setBuildingDetails(newBuildingDetails);
+  }, [selectedFloorTypes]);
 
   const handleImportClick = () => {
     fileInputRef.current?.click();
@@ -378,6 +433,13 @@ export default function ConstructionProjectWizardForm({
   const addBuilding = () => {
     const newBuilding: Building = {
       building_name: `Building ${formData.buildings.length + 1}`,
+      amenities: "",
+      amenitiesCount: "",
+      parking: "",
+      parkingCount: "",
+      residential: "",
+      residentialCount: "",
+      flatCount: "",
       floors: [],
     };
     setFormData((prev) => ({
@@ -615,25 +677,76 @@ export default function ConstructionProjectWizardForm({
     if (count < 1) return;
 
     const building = updatedBuildings[index];
+    building.amenities = buildingDetails.amenities || "";
+    building.amenitiesCount = buildingDetails.amenitiesCount || "";
+    building.parking = buildingDetails.parking || "";
+    building.parkingCount = buildingDetails.parkingCount || "";
+    building.residential = buildingDetails.residential || "";
+    building.residentialCount = buildingDetails.residentialCount || "";
+    building.flatCount = buildingDetails.flatCount || "";
 
     building.floors = [];
-    for (let i = 1; i <= count; i++) {
-      const floorNumber = i;
-      const newFloor: Floor = {
-        floor_name: floorNumber === 1 ? "Ground Floor" : `Floor ${floorNumber}`,
-        flats: [],
-        common_areas: [],
-      };
+    if (buildingDetails.parking.length !== 0) {
+      for (let i = 1; i <= Number(buildingDetails.parkingCount || 0); i++) {
+        const newFloor: Floor = {
+          floor_name: `${buildingDetails.parking} ${i}`,
+          flats: [],
+          common_areas: [],
+        };
 
-      building.floors = [...building.floors, newFloor];
+        building.floors = [...building.floors, newFloor];
+      }
+    }
+    if (buildingDetails.amenities.length !== 0) {
+      for (let i = 1; i <= Number(buildingDetails.amenitiesCount || 0); i++) {
+        const newFloor: Floor = {
+          floor_name: `${buildingDetails.amenities} ${i}`,
+          flats: [],
+          common_areas: [],
+        };
+
+        building.floors = [...building.floors, newFloor];
+      }
+    }
+    if (buildingDetails.residential.length !== 0) {
+      for (let i = 1; i <= Number(buildingDetails.residentialCount || 0); i++) {
+        const newFloor: Floor = {
+          floor_name: `${buildingDetails.residential} ${i}`,
+          flats: [],
+          common_areas: [],
+        };
+        for (let j = 1; j <= Number(buildingDetails.flatCount || 0); j++) {
+          newFloor.flats.push({
+            flat_name: `${i}0${j}`,
+            status: "pending",
+            workflow: defaultWorkflow,
+            areas: [],
+          });
+        }
+
+        building.floors = [...building.floors, newFloor];
+      }
     }
 
     setBuildingFloorCounts((prev) => ({
       ...prev,
-      [index]: count,
+      [index]:
+        Number(buildingDetails.parkingCount || 0) +
+        Number(buildingDetails.amenitiesCount || 0) +
+        Number(buildingDetails.residentialCount || 0),
     }));
 
     setFormData((prev) => ({ ...prev, buildings: updatedBuildings }));
+    setBuildingDetails({
+      amenities: "",
+      amenitiesCount: "",
+      parking: "",
+      parkingCount: "",
+      residential: "",
+      residentialCount: "",
+      flatCount: "",
+    });
+    setSelectedFloorTypes([]);
   };
 
   const updateFloorDetails = (
@@ -742,7 +855,7 @@ export default function ConstructionProjectWizardForm({
     setSelectedAreas([]);
   };
 
-  const addCommonAreaToAllFloors = () => {
+  const addCommonAreaToAllFloors = (buildingIndx: number) => {
     const buildings = structuredClone(formData.buildings);
     if (selectedAreas.length > 0) {
       selectedAreas.forEach((element: any) => {
@@ -756,18 +869,16 @@ export default function ConstructionProjectWizardForm({
           status: "pending", // optional: keep empty if you decided NOT to break common area into areas
         };
 
-        buildings.forEach((building) => {
-          building.floors?.forEach((floor) => {
-            const existingCommonAreas = floor.common_areas ?? [];
+        buildings[buildingIndx].floors?.forEach((floor) => {
+          const existingCommonAreas = floor.common_areas ?? [];
 
-            const alreadyExists = existingCommonAreas.some(
-              (ca) => ca.common_area_name === newCommonArea.common_area_name,
-            );
+          const alreadyExists = existingCommonAreas.some(
+            (ca) => ca.common_area_name === newCommonArea.common_area_name,
+          );
 
-            if (!alreadyExists) {
-              floor.common_areas = [...existingCommonAreas, newCommonArea];
-            }
-          });
+          if (!alreadyExists) {
+            floor.common_areas = [...existingCommonAreas, newCommonArea];
+          }
         });
       });
     }
@@ -777,7 +888,7 @@ export default function ConstructionProjectWizardForm({
     }));
   };
 
-  const addAreaToAllFlats = () => {
+  const addAreaToAllFlats = (buildingIndx: number) => {
     const buildings = structuredClone(formData.buildings);
     console.log("selected areas data : ", selectedAreas);
     const data = selectedAreas.map((a: any) => ({
@@ -788,12 +899,11 @@ export default function ConstructionProjectWizardForm({
           ? a.area_size
           : convertSqmToSqft(Number(a.area_size) ?? 0),
     }));
-    buildings.forEach((building) => {
-      building.floors?.forEach((floor) => {
-        if (floor.flats[selectedArea.flatId]) {
-          floor.flats[selectedArea.flatId].areas = data;
-        }
-      });
+
+    buildings[buildingIndx].floors?.forEach((floor) => {
+      if (floor.flats[selectedArea.flatId]) {
+        floor.flats[selectedArea.flatId].areas = data;
+      }
     });
 
     setFormData((prev) => ({
@@ -1205,6 +1315,26 @@ export default function ConstructionProjectWizardForm({
                                   flatId: "",
                                   commonAreaId: "",
                                 });
+                                setBuildingDetails({
+                                  amenities: building.amenities,
+                                  amenitiesCount: building.amenitiesCount,
+                                  parking: building.parking,
+                                  parkingCount: building.parkingCount,
+                                  residential: building.residential,
+                                  residentialCount: building.residentialCount,
+                                  flatCount: building.flatCount,
+                                });
+                                let floortype = [];
+                                if (building.amenities.length !== 0) {
+                                  floortype.push(building.amenities);
+                                }
+                                if (building.parking.length !== 0) {
+                                  floortype.push(building.parking);
+                                }
+                                if (building.residential.length !== 0) {
+                                  floortype.push(building.residential);
+                                }
+                                setSelectedFloorTypes(floortype);
                                 setShowModalForItem("building");
                               }}
                               className="p-1.5 text-green-600 hover:bg-green-50 rounded-lg transition-all duration-200"
@@ -2033,6 +2163,15 @@ export default function ConstructionProjectWizardForm({
                   setSelectedAreas([]);
                   setShowModalForItem(null);
                   updateAreaId("");
+                  setBuildingDetails({
+                    amenities: "",
+                    amenitiesCount: "",
+                    parking: "",
+                    parkingCount: "",
+                    residential: "",
+                    residentialCount: "",
+                    flatCount: "",
+                  });
                 }}
                 className="text-white hover:bg-white/20 rounded-xl p-2 transition-all duration-200 hover:scale-105 active:scale-95"
               >
@@ -2201,7 +2340,176 @@ export default function ConstructionProjectWizardForm({
                   <div className="space-y-1.5">
                     <label className="text-xs font-semibold text-gray-800 mb-1 flex items-center gap-2">
                       <Layers className="w-3 h-3 text-[#C62828]" />
-                      Number of Floors <span className="text-red-500">*</span>
+                      Select Floor Types <span className="text-red-500">*</span>
+                    </label>
+                    <div className="relative group">
+                      <MultiSelectWork
+                        selectedFloorTypes={selectedFloorTypes}
+                        setSelectedFloorTypes={setSelectedFloorTypes}
+                        placeholder="Select Floor Type"
+                        optionsData={["Parking", "Amenities", "Residential"]}
+                      />
+                    </div>
+                  </div>
+                  {selectedFloorTypes.includes("Parking") && (
+                    <div className="space-y-1.5">
+                      <label className="text-xs font-semibold text-gray-800 mb-1 flex items-center gap-2">
+                        <Layers className="w-3 h-3 text-[#C62828]" />
+                        Parking Floor <span className="text-red-500">*</span>
+                      </label>
+                      <div className="relative group">
+                        <div className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 group-focus-within:text-[#C62828] transition-colors">
+                          <Layers className="w-3 h-3" />
+                        </div>
+                        <input
+                          type="text"
+                          value={buildingDetails.parking}
+                          onChange={(e) => {
+                            setBuildingDetails((prev: any) => ({
+                              ...prev,
+                              parking: e.target.value,
+                            }));
+                          }}
+                          className={`w-full pl-9 pr-4 py-2.5 text-sm border-2 border-gray-200 rounded-xl focus:border-[#C62828] focus:ring-2 focus:ring-[#C62828]/20`}
+                          placeholder="Floor Name"
+                        />
+                      </div>
+                    </div>
+                  )}
+                  {selectedFloorTypes.includes("Parking") && (
+                    <div className="space-y-1.5">
+                      <label className="text-xs font-semibold text-gray-800 mb-1 flex items-center gap-2">
+                        <Layers className="w-3 h-3 text-[#C62828]" />
+                        Parking Floor Number{" "}
+                        <span className="text-red-500">*</span>
+                      </label>
+                      <div className="relative group">
+                        <div className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 group-focus-within:text-[#C62828] transition-colors">
+                          <Layers className="w-3 h-3" />
+                        </div>
+                        <input
+                          type="text"
+                          value={buildingDetails.parkingCount}
+                          onChange={(e) => {
+                            setBuildingDetails((prev: any) => ({
+                              ...prev,
+                              parkingCount: e.target.value,
+                            }));
+                          }}
+                          className={`w-full pl-9 pr-4 py-2.5 text-sm border-2 border-gray-200 rounded-xl focus:border-[#C62828] focus:ring-2 focus:ring-[#C62828]/20`}
+                          placeholder="Floor Count"
+                        />
+                      </div>
+                    </div>
+                  )}
+                  {selectedFloorTypes.includes("Amenities") && (
+                    <div className="space-y-1.5">
+                      <label className="text-xs font-semibold text-gray-800 mb-1 flex items-center gap-2">
+                        <Layers className="w-3 h-3 text-[#C62828]" />
+                        Amenities Floor <span className="text-red-500">*</span>
+                      </label>
+                      <div className="relative group">
+                        <div className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 group-focus-within:text-[#C62828] transition-colors">
+                          <Layers className="w-3 h-3" />
+                        </div>
+                        <input
+                          type="text"
+                          value={buildingDetails.amenities}
+                          onChange={(e) => {
+                            setBuildingDetails((prev: any) => ({
+                              ...prev,
+                              amenities: e.target.value,
+                            }));
+                          }}
+                          className={`w-full pl-9 pr-4 py-2.5 text-sm border-2 border-gray-200 rounded-xl focus:border-[#C62828] focus:ring-2 focus:ring-[#C62828]/20`}
+                          placeholder="Floor Name"
+                        />
+                      </div>
+                    </div>
+                  )}
+                  {selectedFloorTypes.includes("Amenities") && (
+                    <div className="space-y-1.5">
+                      <label className="text-xs font-semibold text-gray-800 mb-1 flex items-center gap-2">
+                        <Layers className="w-3 h-3 text-[#C62828]" />
+                        Amenities Floor Number{" "}
+                        <span className="text-red-500">*</span>
+                      </label>
+                      <div className="relative group">
+                        <div className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 group-focus-within:text-[#C62828] transition-colors">
+                          <Layers className="w-3 h-3" />
+                        </div>
+                        <input
+                          type="text"
+                          value={buildingDetails.amenitiesCount}
+                          onChange={(e) => {
+                            setBuildingDetails((prev: any) => ({
+                              ...prev,
+                              amenitiesCount: e.target.value,
+                            }));
+                          }}
+                          className={`w-full pl-9 pr-4 py-2.5 text-sm border-2 border-gray-200 rounded-xl focus:border-[#C62828] focus:ring-2 focus:ring-[#C62828]/20`}
+                          placeholder="Floor Count"
+                        />
+                      </div>
+                    </div>
+                  )}
+                  {selectedFloorTypes.includes("Residential") && (
+                    <div className="space-y-1.5">
+                      <label className="text-xs font-semibold text-gray-800 mb-1 flex items-center gap-2">
+                        <Layers className="w-3 h-3 text-[#C62828]" />
+                        Residential Floor{" "}
+                        <span className="text-red-500">*</span>
+                      </label>
+                      <div className="relative group">
+                        <div className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 group-focus-within:text-[#C62828] transition-colors">
+                          <Layers className="w-3 h-3" />
+                        </div>
+                        <input
+                          type="text"
+                          value={buildingDetails.residential}
+                          onChange={(e) => {
+                            setBuildingDetails((prev: any) => ({
+                              ...prev,
+                              residential: e.target.value,
+                            }));
+                          }}
+                          className={`w-full pl-9 pr-4 py-2.5 text-sm border-2 border-gray-200 rounded-xl focus:border-[#C62828] focus:ring-2 focus:ring-[#C62828]/20`}
+                          placeholder="Floor Name"
+                        />
+                      </div>
+                    </div>
+                  )}
+                  {selectedFloorTypes.includes("Residential") && (
+                    <div className="space-y-1.5">
+                      <label className="text-xs font-semibold text-gray-800 mb-1 flex items-center gap-2">
+                        <Layers className="w-3 h-3 text-[#C62828]" />
+                        Residential Floor Number{" "}
+                        <span className="text-red-500">*</span>
+                      </label>
+                      <div className="relative group">
+                        <div className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 group-focus-within:text-[#C62828] transition-colors">
+                          <Layers className="w-3 h-3" />
+                        </div>
+                        <input
+                          type="text"
+                          value={buildingDetails.residentialCount}
+                          onChange={(e) => {
+                            setBuildingDetails((prev: any) => ({
+                              ...prev,
+                              residentialCount: e.target.value,
+                            }));
+                          }}
+                          className={`w-full pl-9 pr-4 py-2.5 text-sm border-2 border-gray-200 rounded-xl focus:border-[#C62828] focus:ring-2 focus:ring-[#C62828]/20`}
+                          placeholder="Floor Count"
+                        />
+                      </div>
+                    </div>
+                  )}
+                  <div className="space-y-1.5">
+                    <label className="text-xs font-semibold text-gray-800 mb-1 flex items-center gap-2">
+                      <Layers className="w-3 h-3 text-[#C62828]" />
+                      Number of Flats Per Floor{" "}
+                      <span className="text-red-500">*</span>
                     </label>
                     <div className="relative group">
                       <div className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 group-focus-within:text-[#C62828] transition-colors">
@@ -2209,15 +2517,15 @@ export default function ConstructionProjectWizardForm({
                       </div>
                       <input
                         type="text"
-                        value={selectedItem.count}
+                        value={buildingDetails.flatCount}
                         onChange={(e) => {
-                          setSelectedItem((prev: any) => ({
+                          setBuildingDetails((prev: any) => ({
                             ...prev,
-                            count: e.target.value,
+                            flatCount: e.target.value,
                           }));
                         }}
                         className={`w-full pl-9 pr-4 py-2.5 text-sm border-2 border-gray-200 rounded-xl focus:border-[#C62828] focus:ring-2 focus:ring-[#C62828]/20`}
-                        placeholder="Enter Number of Floors"
+                        placeholder="Flat Count"
                       />
                     </div>
                   </div>
@@ -2545,7 +2853,7 @@ export default function ConstructionProjectWizardForm({
                   <button
                     onClick={() => {
                       console.log("this is add all flat");
-                      addAreaToAllFlats();
+                      addAreaToAllFlats(selectedArea.buildingId);
                       setSelectedArea({
                         id: "",
                         name: "",
@@ -2568,6 +2876,15 @@ export default function ConstructionProjectWizardForm({
                   onClick={() => {
                     setSelectedAreas([]);
                     setShowModalForItem(null);
+                    setBuildingDetails({
+                      amenities: "",
+                      amenitiesCount: "",
+                      parking: "",
+                      parkingCount: "",
+                      residential: "",
+                      residentialCount: "",
+                      flatCount: "",
+                    });
                   }}
                   className="px-6 py-2.5 bg-gradient-to-r from-gray-600 to-gray-700 text-white rounded-xl hover:from-gray-700 hover:to-gray-800 transition-all duration-200 font-medium flex items-center justify-center gap-2"
                 >
@@ -2765,7 +3082,7 @@ export default function ConstructionProjectWizardForm({
               </button>
               <button
                 onClick={() => {
-                  addCommonAreaToAllFloors();
+                  addCommonAreaToAllFloors(selectedArea.buildingId);
                   setSelectedItem({
                     name: "",
                     count: "",

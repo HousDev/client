@@ -75,68 +75,167 @@ interface NotificationType {
 // ─── SUBMENU DEFINITIONS ──────────────────────────────────────────────────
 const hrmsSubmenuItems = [
   {
-    id: "hrms-dashboard", label: "Dashboard", icon: LayoutDashboard,
-    value: ["hrms_dashboard"]
+    id: "hrms-dashboard",
+    label: "Dashboard",
+    icon: LayoutDashboard,
+    value: ["hrms_dashboard"],
   },
   {
-    id: "employees", label: "Employees", icon: Users,
-    value: ["view_employee", "create_employee", "edit_employee", "delete_employee", "export_employee", "bulk_actions_employee"]
+    id: "employees",
+    label: "Employees",
+    icon: Users,
+    value: [
+      "view_employee",
+      "create_employee",
+      "edit_employee",
+      "delete_employee",
+      "export_employee",
+      "bulk_actions_employee",
+    ],
   },
   {
-    id: "recruitment", label: "Recruitment", icon: UserPlus,
-    value: ["view_recruitment", "create_recruitment", "manage_recruitment", "export_recruitment"]
+    id: "recruitment",
+    label: "Recruitment",
+    icon: UserPlus,
+    value: [
+      "view_recruitment",
+      "create_recruitment",
+      "manage_recruitment",
+      "export_recruitment",
+    ],
   },
   {
-    id: "attendance", label: "Attendance", icon: Clock,
-    value: ["view_attendance", "mark_attendance", "export_attendance"]
+    id: "attendance",
+    label: "Attendance",
+    icon: Clock,
+    value: ["view_attendance", "mark_attendance", "export_attendance"],
   },
   {
-    id: "leaves", label: "Leaves", icon: Calendar,
-    value: ["view_leaves", "apply_leaves", "approve_leaves", "configure_leaves", "view_all_balances_leaves", "export_leaves"]
+    id: "leaves",
+    label: "Leaves",
+    icon: Calendar,
+    value: [
+      "view_leaves",
+      "apply_leaves",
+      "approve_leaves",
+      "configure_leaves",
+      "view_all_balances_leaves",
+      "export_leaves",
+    ],
   },
   {
-    id: "payroll", label: "Payroll", icon: Wallet,
-    value: ["view_payroll", "create_payroll", "process_payroll", "approve_payroll", "export_payroll"]
+    id: "payroll",
+    label: "Payroll",
+    icon: Wallet,
+    value: [
+      "view_payroll",
+      "create_payroll",
+      "process_payroll",
+      "approve_payroll",
+      "export_payroll",
+    ],
   },
   {
-    id: "expenses", label: "Expenses", icon: Receipt,
-    value: ["view_expenses", "submit_expenses", "approve_expenses", "reject_expenses", "export_expenses"]
+    id: "expenses",
+    label: "Expenses",
+    icon: Receipt,
+    value: [
+      "view_expenses",
+      "submit_expenses",
+      "approve_expenses",
+      "reject_expenses",
+      "export_expenses",
+    ],
   },
   {
-    id: "tickets", label: "Tickets", icon: Ticket,
-    value: ["view_tickets", "create_tickets", "assign_tickets", "resolve_tickets", "escalate_tickets", "export_tickets"]
+    id: "tickets",
+    label: "Tickets",
+    icon: Ticket,
+    value: [
+      "view_tickets",
+      "create_tickets",
+      "assign_tickets",
+      "resolve_tickets",
+      "escalate_tickets",
+      "export_tickets",
+    ],
   },
   {
-    id: "documents", label: "Documents", icon: FileText,
-    value: ["view_documents", "generate_documents", "approve_documents", "export_documents"]
+    id: "documents",
+    label: "Documents",
+    icon: FileText,
+    value: [
+      "view_documents",
+      "generate_documents",
+      "approve_documents",
+      "export_documents",
+    ],
   },
   {
-    id: "hr-reports", label: "HR Reports", icon: BarChart,
-    value: ["view_hrms_reports", "create_hrms_reports", "schedule_hrms_reports", "export_hrms_reports"]
+    id: "hr-reports",
+    label: "HR Reports",
+    icon: BarChart,
+    value: [
+      "view_hrms_reports",
+      "create_hrms_reports",
+      "schedule_hrms_reports",
+      "export_hrms_reports",
+    ],
   },
   {
-    id: "roles-permissions", label: "Roles & Permissions", icon: Shield,
-    value: ["hrms_permissions"]
+    id: "roles-permissions",
+    label: "Roles & Permissions",
+    icon: Shield,
+    value: ["hrms_permissions"],
   },
   {
-    id: "hr-settings", label: "HR Settings", icon: MdSettings,
-    value: ["organization_hrms_settings",
+    id: "hr-settings",
+    label: "HR Settings",
+    icon: MdSettings,
+    value: [
+      "organization_hrms_settings",
       "locations_hrms_settings",
       "security_hrms_settings",
       "roles_hrms_settings",
-      "integrations_hrms_settings"]
+      "integrations_hrms_settings",
+    ],
   },
 ];
 
 // Payroll submenu items (inside HRMS -> Payroll)
 const payrollSubmenuItems = [
-  { id: "payroll", label: "Payroll Summary", icon: FileText, value: ["view_payroll", "export_payroll"] },
-  { id: "ctc-configuration", label: "CTC Configuration", icon: Settings, value: ["configure_ctc"] },
-  { id: "advance", label: "Advance", icon: Wallet, value: ["advance"] },
-  { id: "incentives", label: "Incentives", icon: Zap, varue: ["incentives"] },
-  { id: "reimbursements", label: "Reimbursements", icon: Receipt, value: ["reimbursements"] },
-  { id: "tds", label: "TDS", icon: Calculator, value: ["tds"] },
-  { id: "payment-history", label: "Payment History", icon: Clock, value: ["hrms_payment_history"] },
+  {
+    id: "payroll",
+    label: "Payroll Summary",
+    icon: FileText,
+    value: ["view_payroll_summary"],
+  },
+  {
+    id: "ctc-configuration",
+    label: "CTC Configuration",
+    icon: Settings,
+    value: ["view_ctc_config"],
+  },
+  { id: "advance", label: "Advance", icon: Wallet, value: ["view_advance"] },
+  {
+    id: "incentives",
+    label: "Incentives",
+    icon: Zap,
+    value: ["view_incentive"],
+  },
+  {
+    id: "reimbursements",
+    label: "Reimbursements",
+    icon: Receipt,
+    value: ["view_reimbursements"],
+  },
+  { id: "tds", label: "TDS", icon: Calculator, value: ["view_tds"] },
+  {
+    id: "payment-history",
+    label: "Payment History",
+    icon: Clock,
+    value: ["view_payment_history"],
+  },
 ];
 
 const settingsSubmenuItems = [
@@ -788,6 +887,11 @@ export default function Layout({
                                 (p) => p.id === activeTab,
                               ) ||
                                 openNestedSubmenu === "payroll");
+                            const hasPermission =
+                              subItem.value.some((d: any) =>
+                                userMenus.includes(d),
+                              ) || userMenus.includes("full_access");
+                            if (!hasPermission) return null;
 
                             return (
                               <div key={subItem.id}>
@@ -820,23 +924,35 @@ export default function Layout({
                                   openNestedSubmenu === "payroll" && (
                                     <div className="ml-6 pl-2 border-l border-gray-500 space-y-1 mt-1">
                                       {payrollSubmenuItems.map(
-                                        (payrollItem) => (
-                                          <button
-                                            key={payrollItem.id}
-                                            onClick={() =>
-                                              handlePayrollSubmenuClick(
-                                                payrollItem.id,
-                                              )
-                                            }
-                                            className={`w-full flex items-center gap-3 px-3 py-1.5 rounded-lg transition-all text-xs
+                                        (payrollItem: any) => {
+                                          const hasPermission =
+                                            payrollItem.value.some((d: any) =>
+                                              userMenus.includes(d),
+                                            ) ||
+                                            userMenus.includes("full_access");
+                                          console.log(
+                                            payrollItem.id,
+                                            hasPermission,
+                                          );
+                                          if (!hasPermission) return null;
+                                          return (
+                                            <button
+                                              key={payrollItem.id}
+                                              onClick={() =>
+                                                handlePayrollSubmenuClick(
+                                                  payrollItem.id,
+                                                )
+                                              }
+                                              className={`w-full flex items-center gap-3 px-3 py-1.5 rounded-lg transition-all text-xs
                                         ${activeTab === payrollItem.id ? "bg-[#C62828] text-white" : "text-gray-400 hover:bg-[#3D3D3D] hover:text-white"}`}
-                                          >
-                                            <payrollItem.icon className="w-3.5 h-3.5 flex-shrink-0" />
-                                            <span className="font-medium truncate">
-                                              {payrollItem.label}
-                                            </span>
-                                          </button>
-                                        ),
+                                            >
+                                              <payrollItem.icon className="w-3.5 h-3.5 flex-shrink-0" />
+                                              <span className="font-medium truncate">
+                                                {payrollItem.label}
+                                              </span>
+                                            </button>
+                                          );
+                                        },
                                       )}
                                     </div>
                                   )}

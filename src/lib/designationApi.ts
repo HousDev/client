@@ -12,7 +12,7 @@ export interface Designation {
   updated_at?: string;
   created_by?: string;
   updated_by?: string;
-  
+
   // Joined fields (from API)
   department_name?: string;
   department_code?: string;
@@ -71,48 +71,58 @@ export const designationApi = {
       console.log("Fetching all designations from API...");
       const response = await api.get("/designations");
       console.log("API Response:", response.data);
-      
+
       if (response.data && response.data.success) {
         // If data is in response.data.data
         if (response.data.data !== undefined) {
           const data = response.data.data;
           if (Array.isArray(data)) {
-            console.log(`Found ${data.length} designations in response.data.data`);
+            console.log(
+              `Found ${data.length} designations in response.data.data`,
+            );
             return data;
           }
         }
         // If data is directly in response.data
         if (Array.isArray(response.data)) {
-          console.log(`Found ${response.data.length} designations in response.data`);
+          console.log(
+            `Found ${response.data.length} designations in response.data`,
+          );
           return response.data;
         }
       }
-      
+
       // Try test endpoint if main endpoint fails
       console.log("Trying test endpoint...");
       const testResponse = await api.get("/designations/test/all");
       console.log("Test endpoint response:", testResponse.data);
-      
-      if (testResponse.data && testResponse.data.success && testResponse.data.data) {
+
+      if (
+        testResponse.data &&
+        testResponse.data.success &&
+        testResponse.data.data
+      ) {
         const testData = testResponse.data.data;
         if (Array.isArray(testData)) {
           console.log(`Found ${testData.length} designations in test endpoint`);
           return testData;
         }
       }
-      
+
       console.warn("No designations found or unexpected response format");
       return [];
     } catch (error: any) {
       console.error("Error fetching designations:", error);
-      
+
       // Try to get error details
       if (error.response) {
         console.error("Response error:", error.response.data);
         console.error("Response status:", error.response.status);
       }
-      
-      throw new Error(error.response?.data?.message || "Failed to fetch designations");
+
+      throw new Error(
+        error.response?.data?.message || "Failed to fetch designations",
+      );
     }
   },
 
@@ -123,14 +133,16 @@ export const designationApi = {
   async getById(id: string): Promise<Designation> {
     try {
       const response = await api.get(`/designations/${id}`);
-      
+
       if (response.data && response.data.success && response.data.data) {
         return response.data.data;
       }
       return response.data;
     } catch (error: any) {
       console.error(`Error fetching designation ${id}:`, error);
-      throw new Error(error.response?.data?.message || "Failed to fetch designation");
+      throw new Error(
+        error.response?.data?.message || "Failed to fetch designation",
+      );
     }
   },
 
@@ -143,14 +155,16 @@ export const designationApi = {
       console.log("Creating designation:", designation);
       const response = await api.post("/designations", designation);
       console.log("Create response:", response.data);
-      
+
       if (response.data && response.data.success && response.data.data) {
         return response.data.data;
       }
       return response.data;
     } catch (error: any) {
       console.error("Error creating designation:", error);
-      throw new Error(error.response?.data?.message || "Failed to create designation");
+      throw new Error(
+        error.response?.data?.message || "Failed to create designation",
+      );
     }
   },
 
@@ -158,17 +172,19 @@ export const designationApi = {
    * Update designation
    * PUT /designations/:id
    */
-  async update(id: string, designation: UpdateDesignationDTO): Promise<Designation> {
+  async update(id: string, payload: any): Promise<Designation> {
     try {
-      const response = await api.put(`/designations/${id}`, designation);
-      
+      const response = await api.put(`/designations/${id}`, payload);
+
       if (response.data && response.data.success && response.data.data) {
         return response.data.data;
       }
       return response.data;
     } catch (error: any) {
       console.error(`Error updating designation ${id}:`, error);
-      throw new Error(error.response?.data?.message || "Failed to update designation");
+      throw new Error(
+        error.response?.data?.message || "Failed to update designation",
+      );
     }
   },
 
@@ -179,14 +195,16 @@ export const designationApi = {
   async delete(id: string): Promise<{ success: boolean; message: string }> {
     try {
       const response = await api.delete(`/designations/${id}`);
-      
+
       if (response.data && response.data.success !== undefined) {
         return response.data;
       }
       return { success: true, message: "Designation deleted successfully" };
     } catch (error: any) {
       console.error(`Error deleting designation ${id}:`, error);
-      throw new Error(error.response?.data?.message || "Failed to delete designation");
+      throw new Error(
+        error.response?.data?.message || "Failed to delete designation",
+      );
     }
   },
 
@@ -199,14 +217,16 @@ export const designationApi = {
       console.log(`Toggling active status for designation ${id}`);
       const response = await api.patch(`/designations/${id}/toggle`);
       console.log("Toggle response:", response.data);
-      
+
       if (response.data && response.data.success && response.data.data) {
         return response.data.data;
       }
       return response.data;
     } catch (error: any) {
       console.error(`Error toggling designation ${id}:`, error);
-      throw new Error(error.response?.data?.message || "Failed to toggle designation");
+      throw new Error(
+        error.response?.data?.message || "Failed to toggle designation",
+      );
     }
   },
 
@@ -217,14 +237,16 @@ export const designationApi = {
   async getStats(): Promise<DesignationStats> {
     try {
       const response = await api.get("/designations/stats");
-      
+
       if (response.data && response.data.success && response.data.data) {
         return response.data.data;
       }
       return response.data;
     } catch (error: any) {
       console.error("Error fetching designation stats:", error);
-      throw new Error(error.response?.data?.message || "Failed to fetch statistics");
+      throw new Error(
+        error.response?.data?.message || "Failed to fetch statistics",
+      );
     }
   },
 
@@ -234,15 +256,19 @@ export const designationApi = {
    */
   async search(query: string): Promise<Designation[]> {
     try {
-      const response = await api.get("/designations/search", { params: { query } });
-      
+      const response = await api.get("/designations/search", {
+        params: { query },
+      });
+
       if (response.data && response.data.success && response.data.data) {
         return Array.isArray(response.data.data) ? response.data.data : [];
       }
       return Array.isArray(response.data) ? response.data : [];
     } catch (error: any) {
       console.error(`Error searching designations:`, error);
-      throw new Error(error.response?.data?.message || "Failed to search designations");
+      throw new Error(
+        error.response?.data?.message || "Failed to search designations",
+      );
     }
   },
 
@@ -250,17 +276,24 @@ export const designationApi = {
    * Get designations by department and role
    * GET /designations/department/:departmentId/role/:roleId
    */
-  async getByDepartmentRole(departmentId: string, roleId: number): Promise<Designation[]> {
+  async getByDepartmentRole(
+    departmentId: string,
+    roleId: number,
+  ): Promise<Designation[]> {
     try {
-      const response = await api.get(`/designations/department/${departmentId}/role/${roleId}`);
-      
+      const response = await api.get(
+        `/designations/department/${departmentId}/role/${roleId}`,
+      );
+
       if (response.data && response.data.success && response.data.data) {
         return Array.isArray(response.data.data) ? response.data.data : [];
       }
       return Array.isArray(response.data) ? response.data : [];
     } catch (error: any) {
       console.error("Error fetching designations by dept/role:", error);
-      throw new Error(error.response?.data?.message || "Failed to fetch designations");
+      throw new Error(
+        error.response?.data?.message || "Failed to fetch designations",
+      );
     }
   },
 
@@ -270,15 +303,19 @@ export const designationApi = {
    */
   async getByDepartment(departmentId: string): Promise<Designation[]> {
     try {
-      const response = await api.get(`/designations/department/${departmentId}`);
-      
+      const response = await api.get(
+        `/designations/department/${departmentId}`,
+      );
+
       if (response.data && response.data.success && response.data.data) {
         return Array.isArray(response.data.data) ? response.data.data : [];
       }
       return Array.isArray(response.data) ? response.data : [];
     } catch (error: any) {
       console.error("Error fetching designations by department:", error);
-      throw new Error(error.response?.data?.message || "Failed to fetch designations");
+      throw new Error(
+        error.response?.data?.message || "Failed to fetch designations",
+      );
     }
   },
 
@@ -289,14 +326,16 @@ export const designationApi = {
   async getByRole(roleId: number): Promise<Designation[]> {
     try {
       const response = await api.get(`/designations/role/${roleId}`);
-      
+
       if (response.data && response.data.success && response.data.data) {
         return Array.isArray(response.data.data) ? response.data.data : [];
       }
       return Array.isArray(response.data) ? response.data : [];
     } catch (error: any) {
       console.error("Error fetching designations by role:", error);
-      throw new Error(error.response?.data?.message || "Failed to fetch designations");
+      throw new Error(
+        error.response?.data?.message || "Failed to fetch designations",
+      );
     }
   },
 
@@ -307,14 +346,16 @@ export const designationApi = {
   async getAvailableDepartments(): Promise<DepartmentWithRoles[]> {
     try {
       const response = await api.get("/designations/available-departments");
-      
+
       if (response.data && response.data.success && response.data.data) {
         return Array.isArray(response.data.data) ? response.data.data : [];
       }
       return Array.isArray(response.data) ? response.data : [];
     } catch (error: any) {
       console.error("Error fetching departments:", error);
-      throw new Error(error.response?.data?.message || "Failed to fetch departments");
+      throw new Error(
+        error.response?.data?.message || "Failed to fetch departments",
+      );
     }
   },
 
@@ -324,8 +365,10 @@ export const designationApi = {
    */
   async getRolesByDepartment(departmentId: string): Promise<Role[]> {
     try {
-      const response = await api.get(`/designations/department/${departmentId}/roles`);
-      
+      const response = await api.get(
+        `/designations/department/${departmentId}/roles`,
+      );
+
       if (response.data && response.data.success && response.data.data) {
         return Array.isArray(response.data.data) ? response.data.data : [];
       }
@@ -343,21 +386,29 @@ export const designationApi = {
   async getAvailableRoles(): Promise<Role[]> {
     try {
       const response = await api.get("/designations/available-roles");
-      
+
       if (response.data && response.data.success && response.data.data) {
         return Array.isArray(response.data.data) ? response.data.data : [];
       }
       return Array.isArray(response.data) ? response.data : [];
     } catch (error: any) {
       console.error("Error fetching available roles:", error);
-      
+
       try {
         const fallbackResponse = await api.get("/roles");
-        
-        if (fallbackResponse.data && fallbackResponse.data.success && fallbackResponse.data.data) {
-          return Array.isArray(fallbackResponse.data.data) ? fallbackResponse.data.data : [];
+
+        if (
+          fallbackResponse.data &&
+          fallbackResponse.data.success &&
+          fallbackResponse.data.data
+        ) {
+          return Array.isArray(fallbackResponse.data.data)
+            ? fallbackResponse.data.data
+            : [];
         }
-        return Array.isArray(fallbackResponse.data) ? fallbackResponse.data : [];
+        return Array.isArray(fallbackResponse.data)
+          ? fallbackResponse.data
+          : [];
       } catch {
         throw new Error("Failed to fetch roles");
       }

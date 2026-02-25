@@ -75,7 +75,7 @@ export default function Attendance() {
   });
 
   const [showFilterDropdown, setShowFilterDropdown] = useState(false);
-  const { user } = useAuth();
+  const { user, can } = useAuth();
 
   useEffect(() => {
     loadAttendance();
@@ -309,13 +309,15 @@ export default function Attendance() {
     <div className="space-y-3  h-screen">
       {!(user.role === "admin") && (
         <div className="flex items-center justify-between">
-          <Button
-            onClick={() => setShowMarkModal(true)}
-            className="cursor-pointer"
-          >
-            <Clock className="h-4 w-4 mr-2" />
-            Mark Attendance
-          </Button>
+          {can("mark_attendance") && (
+            <Button
+              onClick={() => setShowMarkModal(true)}
+              className="cursor-pointer"
+            >
+              <Clock className="h-4 w-4 mr-2" />
+              Mark Attendance
+            </Button>
+          )}
         </div>
       )}
 
@@ -456,10 +458,12 @@ export default function Attendance() {
                   </div>
                 )}
               </div>
-              <Button variant="secondary" onClick={exportToCSV}>
-                <Download className="h-4 w-4 mr-2" />
-                Export CSV
-              </Button>
+              {can("export_attendance") && (
+                <Button variant="secondary" onClick={exportToCSV}>
+                  <Download className="h-4 w-4 mr-2" />
+                  Export CSV
+                </Button>
+              )}
             </div>
           </div>
         </div>

@@ -114,6 +114,13 @@ const buildFormData = (rows: any[]) => {
       buildingMap.set(buildingName, {
         building_name: buildingName,
         floors: new Map<string, any>(),
+        amenities: "",
+        amenitiesCount: "",
+        parking: "",
+        parkingCount: "",
+        residential: "",
+        residentialCount: "",
+        flatCount: "",
       });
     }
 
@@ -141,14 +148,14 @@ const buildFormData = (rows: any[]) => {
     /* -------- Partial unit error -------- */
     if (unitType && !unitName) {
       errors.push(
-        `Row ${rowNo}: Unit Name is required when Unit Type is provided`
+        `Row ${rowNo}: Unit Name is required when Unit Type is provided`,
       );
       return;
     }
 
     if (!unitType && unitName) {
       errors.push(
-        `Row ${rowNo}: Unit Type is required when Unit Name is provided`
+        `Row ${rowNo}: Unit Type is required when Unit Name is provided`,
       );
       return;
     }
@@ -156,7 +163,7 @@ const buildFormData = (rows: any[]) => {
     /* -------- Unit type validation -------- */
     if (!VALID_UNIT_TYPES.includes(unitType)) {
       errors.push(
-        `Row ${rowNo}: Invalid Unit Type "${unitType}". Allowed: FLAT, COMMON_AREA`
+        `Row ${rowNo}: Invalid Unit Type "${unitType}". Allowed: FLAT, COMMON_AREA`,
       );
       return;
     }
@@ -165,7 +172,7 @@ const buildFormData = (rows: any[]) => {
     const duplicateKey = `${buildingName}|${floorName}|${unitType}|${unitName}`;
     if (duplicateCheck.has(duplicateKey)) {
       errors.push(
-        `Row ${rowNo}: Duplicate ${unitType} "${unitName}" in same floor`
+        `Row ${rowNo}: Duplicate ${unitType} "${unitName}" in same floor`,
       );
       return;
     }
@@ -189,6 +196,13 @@ const buildFormData = (rows: any[]) => {
     buildings: Array.from(buildingMap.values()).map((b) => ({
       building_name: b.building_name,
       floors: Array.from(b.floors.values()),
+      amenities: "",
+      amenitiesCount: "",
+      parking: "",
+      parkingCount: "",
+      residential: "",
+      residentialCount: "",
+      flatCount: "",
     })),
   };
 };
