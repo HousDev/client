@@ -11,6 +11,7 @@ import MySwal from "../utils/swal";
 import ViewEmployeeModal from "../components/modals/ViewEmployeeModal";
 import EditEmployeeModal from "../components/modals/EditEmployeeModal";
 import AddMoreDetailsModal from "../components/modals/AddMoreDetailsModal";
+import { useAuth } from "../contexts/AuthContext";
 
 // Update the Employee interface
 interface Employee {
@@ -93,6 +94,8 @@ export default function Employees({ onViewProfile }: EmployeesProps) {
   const [selectedEmployee, setSelectedEmployee] = useState<Employee | null>(
     null,
   );
+
+  const { can } = useAuth();
 
   const [stats, setStats] = useState({
     total: 0,
@@ -636,7 +639,7 @@ export default function Employees({ onViewProfile }: EmployeesProps) {
         {/* Action Buttons */}
         <div className="flex flex-col sm:flex-row gap-2 w-full md:w-auto">
           {/* Bulk Actions */}
-          {selectedItems.size > 0 && (
+          {selectedItems.size > 0 && can("bulk_actions_employee") && (
             <div className="flex flex-wrap items-center gap-1 md:gap-2 bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 rounded-md px-2 md:px-3 py-1.5 md:py-2 w-full md:w-auto">
               <div className="flex items-center gap-1 md:gap-2">
                 <div className="bg-blue-100 p-1 rounded">
@@ -674,25 +677,27 @@ export default function Employees({ onViewProfile }: EmployeesProps) {
           )}
 
           {/* Export Button */}
-          <Button
-            variant="secondary"
-            className="text-[10px] sm:text-xs md:text-sm h-8 md:h-9 w-full md:w-auto"
-            onClick={() => {
-              const exportData = filteredEmployees.map((emp) => ({
-                Code: emp.employee_code,
-                "First Name": emp.first_name,
-                "Last Name": emp.last_name,
-                Email: emp.email,
-                Department: emp.department?.name || "N/A",
-                Role: emp.role?.name || "N/A",
-                Status: emp.employee_status,
-              }));
-              exportToCSV(exportData, "employees");
-            }}
-          >
-            <Download className="h-3 w-3 sm:h-4 sm:w-4 mr-1.5" />
-            Export
-          </Button>
+          {can("export_employee") && (
+            <Button
+              variant="secondary"
+              className="text-[10px] sm:text-xs md:text-sm h-8 md:h-9 w-full md:w-auto"
+              onClick={() => {
+                const exportData = filteredEmployees.map((emp) => ({
+                  Code: emp.employee_code,
+                  "First Name": emp.first_name,
+                  "Last Name": emp.last_name,
+                  Email: emp.email,
+                  Department: emp.department?.name || "N/A",
+                  Role: emp.role?.name || "N/A",
+                  Status: emp.employee_status,
+                }));
+                exportToCSV(exportData, "employees");
+              }}
+            >
+              <Download className="h-3 w-3 sm:h-4 sm:w-4 mr-1.5" />
+              Export
+            </Button>
+          )}
         </div>
       </div>
 
@@ -965,38 +970,44 @@ export default function Employees({ onViewProfile }: EmployeesProps) {
                     <td className="px-3 md:px-4 py-3">
                       <div className="flex items-center justify-center gap-1.5 md:gap-2">
                         {/* View Profile Button */}
-                        <button
-                          onClick={() => {
-                            if (onViewProfile) {
-                              onViewProfile(employee.id);
-                            }
-                          }}
-                          className="p-1.5 md:p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition"
-                          title="View Profile"
-                        >
-                          <Eye className="w-3.5 h-3.5 md:w-4 md:h-4" />
-                        </button>
+                        {can("view_employee") && (
+                          <button
+                            onClick={() => {
+                              if (onViewProfile) {
+                                onViewProfile(employee.id);
+                              }
+                            }}
+                            className="p-1.5 md:p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition"
+                            title="View Profile"
+                          >
+                            <Eye className="w-3.5 h-3.5 md:w-4 md:h-4" />
+                          </button>
+                        )}
 
                         {/* Edit Basic Info Button */}
-                        <button
-                          onClick={() => {
-                            setSelectedEmployee(employee);
-                            setShowEditModal(true);
-                          }}
-                          className="p-1.5 md:p-2 text-green-600 hover:bg-green-50 rounded-lg transition"
-                          title="Edit Basic Info"
-                        >
-                          <Edit className="w-3.5 h-3.5 md:w-4 md:h-4" />
-                        </button>
+                        {can("edit_employee") && (
+                          <button
+                            onClick={() => {
+                              setSelectedEmployee(employee);
+                              setShowEditModal(true);
+                            }}
+                            className="p-1.5 md:p-2 text-green-600 hover:bg-green-50 rounded-lg transition"
+                            title="Edit Basic Info"
+                          >
+                            <Edit className="w-3.5 h-3.5 md:w-4 md:h-4" />
+                          </button>
+                        )}
 
                         {/* Delete Button */}
-                        <button
-                          onClick={() => deleteEmployee(Number(employee.id))}
-                          className="p-1.5 md:p-2 text-red-600 hover:bg-red-50 rounded-lg transition"
-                          title="Delete"
-                        >
-                          <Trash2 className="w-3.5 h-3.5 md:w-4 md:h-4" />
-                        </button>
+                        {can("delete_employee") && (
+                          <button
+                            onClick={() => deleteEmployee(Number(employee.id))}
+                            className="p-1.5 md:p-2 text-red-600 hover:bg-red-50 rounded-lg transition"
+                            title="Delete"
+                          >
+                            <Trash2 className="w-3.5 h-3.5 md:w-4 md:h-4" />
+                          </button>
+                        )}
                       </div>
                     </td>
                   </tr>

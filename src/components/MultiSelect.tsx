@@ -1,13 +1,15 @@
 import { SetStateAction, useEffect, useRef, useState } from "react";
 
-const workOptions = ["Parking", "Amenities", "Residential"];
-
 export default function MultiSelectWork({
   selectedFloorTypes,
   setSelectedFloorTypes,
+  optionsData,
+  placeholder,
 }: {
   selectedFloorTypes: String[];
   setSelectedFloorTypes: React.Dispatch<SetStateAction<String[]>>;
+  optionsData: any;
+  placeholder: string;
 }) {
   const [open, setOpen] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -46,7 +48,9 @@ export default function MultiSelectWork({
         className="min-h-[45px] flex items-center gap-2 px-3 py-2 border-2 border-gray-200 rounded-xl cursor-pointer hover:border-gray-300 focus-within:border-[#C62828] overflow-x-auto scrollbar-extrathin"
       >
         {selectedFloorTypes.length === 0 && (
-          <span className="text-gray-400 text-sm">Select Work Categories</span>
+          <span className="text-gray-400 text-sm">
+            {placeholder || "Select Work Categories"}
+          </span>
         )}
 
         {selectedFloorTypes.map((type, indx) => (
@@ -71,7 +75,7 @@ export default function MultiSelectWork({
       {/* Dropdown */}
       {open && (
         <div className="absolute z-10 mt-2 w-full bg-white border border-gray-200 rounded-xl shadow-lg">
-          {workOptions.map((work) => (
+          {optionsData.map((work: any) => (
             <div
               key={work}
               onClick={() => toggleSelect(work)}
