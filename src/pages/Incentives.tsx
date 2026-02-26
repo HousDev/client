@@ -89,7 +89,7 @@ export default function Incentives() {
   // ✅ NEW: State for employees from API
   const [employees, setEmployees] = useState<HrmsEmployee[]>([]);
   const [loadingEmployees, setLoadingEmployees] = useState(false);
-  const { user } = useAuth();
+  const { user, can } = useAuth();
 
   const [formData, setFormData] = useState({
     employee_id: "",
@@ -480,7 +480,7 @@ export default function Incentives() {
         {/* DESKTOP VIEW — SAME AS YOUR ORIGINAL */}
         <div className="hidden lg:flex flex-col lg:flex-row lg:items-center lg:justify-between gap-3">
           <div className="flex flex-wrap items-center gap-2">
-            {selectedItems.size > 0 && (
+            {selectedItems.size > 0 && can("incentive_bulk_action") && (
               <div className="flex flex-wrap items-center gap-2 bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 rounded-md px-3 py-2 w-full sm:w-auto">
                 <div className="flex items-center gap-2">
                   <div className="bg-blue-100 p-1 rounded">
@@ -516,22 +516,26 @@ export default function Incentives() {
           </div>
 
           <div className="flex flex-col sm:flex-row gap-2 w-full lg:w-auto">
-            <Button
-              variant="secondary"
-              onClick={() => setShowImportModal(true)}
-              className="text-sm w-full sm:w-auto"
-            >
-              <Upload className="h-4 w-4 mr-1.5" />
-              Import CSV
-            </Button>
+            {can("import_incentive_csv") && (
+              <Button
+                variant="secondary"
+                onClick={() => setShowImportModal(true)}
+                className="text-sm w-full sm:w-auto"
+              >
+                <Upload className="h-4 w-4 mr-1.5" />
+                Import CSV
+              </Button>
+            )}
 
-            <Button
-              onClick={() => setShowAddModal(true)}
-              className="text-sm w-full sm:w-auto bg-gradient-to-r from-[#C62828] to-red-600 hover:from-red-600 hover:to-red-700"
-            >
-              <Plus className="h-4 w-4 mr-1.5" />
-              Add Incentive
-            </Button>
+            {can("create_incentive_request") && (
+              <Button
+                onClick={() => setShowAddModal(true)}
+                className="text-sm w-full sm:w-auto bg-gradient-to-r from-[#C62828] to-red-600 hover:from-red-600 hover:to-red-700"
+              >
+                <Plus className="h-4 w-4 mr-1.5" />
+                Add Incentive
+              </Button>
+            )}
           </div>
         </div>
       </div>
@@ -853,79 +857,87 @@ export default function Incentives() {
                         {openMenuId === incentive.id && (
                           <div className="absolute right-4 top-10 z-50 w-44 bg-white border border-gray-200 rounded-lg shadow-lg">
                             <ul className="py-1 text-sm text-gray-700">
-                              <li>
-                                <button
-                                  onClick={() => {
-                                    handleViewDetails(incentive);
-                                    setOpenMenuId(null);
-                                  }}
-                                  className="w-full flex items-center gap-2 px-4 py-2 hover:bg-gray-100 text-left"
-                                >
-                                  <Eye className="w-4 h-4" />
-                                  View Details
-                                </button>
-                              </li>
+                              {can("view_incentive") && (
+                                <li>
+                                  <button
+                                    onClick={() => {
+                                      handleViewDetails(incentive);
+                                      setOpenMenuId(null);
+                                    }}
+                                    className="w-full flex items-center gap-2 px-4 py-2 hover:bg-gray-100 text-left"
+                                  >
+                                    <Eye className="w-4 h-4" />
+                                    View Details
+                                  </button>
+                                </li>
+                              )}
 
                               {incentive.status === "pending" && (
                                 <>
+                                  {can("approve_incentive_request") && (
+                                    <li>
+                                      <button
+                                        onClick={() => {
+                                          handleApprove(incentive.id);
+                                          setOpenMenuId(null);
+                                        }}
+                                        className="w-full flex items-center gap-2 px-4 py-2 hover:bg-green-50 text-green-600 text-left"
+                                      >
+                                        <CheckCircle className="w-4 h-4" />
+                                        Approve
+                                      </button>
+                                    </li>
+                                  )}
+                                  {can("reject_incentive_request") && (
+                                    <li>
+                                      <button
+                                        onClick={() => {
+                                          handleReject(incentive.id);
+                                          setOpenMenuId(null);
+                                        }}
+                                        className="w-full flex items-center gap-2 px-4 py-2 hover:bg-red-50 text-red-600 text-left"
+                                      >
+                                        <XCircle className="w-4 h-4" />
+                                        Reject
+                                      </button>
+                                    </li>
+                                  )}
+                                </>
+                              )}
+
+                              {incentive.status === "approved" &&
+                                can("pay_incentive") && (
                                   <li>
                                     <button
                                       onClick={() => {
-                                        handleApprove(incentive.id);
+                                        handlePay(incentive.id);
                                         setOpenMenuId(null);
                                       }}
-                                      className="w-full flex items-center gap-2 px-4 py-2 hover:bg-green-50 text-green-600 text-left"
+                                      className="w-full flex items-center gap-2 px-4 py-2 hover:bg-blue-50 text-blue-600 text-left"
                                     >
-                                      <CheckCircle className="w-4 h-4" />
-                                      Approve
+                                      <IndianRupee className="w-4 h-4" />
+                                      Pay Now
                                     </button>
                                   </li>
+                                )}
+
+                              <hr className="my-1" />
+
+                              {incentive.status === "pending" &&
+                                can("delete_incentive_request") && (
                                   <li>
                                     <button
                                       onClick={() => {
-                                        handleReject(incentive.id);
+                                        handleDeleteIncentive(incentive.id);
                                         setOpenMenuId(null);
                                       }}
                                       className="w-full flex items-center gap-2 px-4 py-2 hover:bg-red-50 text-red-600 text-left"
                                     >
-                                      <XCircle className="w-4 h-4" />
-                                      Reject
+                                      <Trash2 className="w-4 h-4" />
+                                      Delete
                                     </button>
                                   </li>
-                                </>
-                              )}
-
-                              {incentive.status === "approved" && (
-                                <li>
-                                  <button
-                                    onClick={() => {
-                                      handlePay(incentive.id);
-                                      setOpenMenuId(null);
-                                    }}
-                                    className="w-full flex items-center gap-2 px-4 py-2 hover:bg-blue-50 text-blue-600 text-left"
-                                  >
-                                    <IndianRupee className="w-4 h-4" />
-                                    Pay Now
-                                  </button>
-                                </li>
-                              )}
-
-                              <hr className="my-1" />
-
-                              {incentive.status === "pending" && (
-                                <li>
-                                  <button
-                                    onClick={() => {
-                                      handleDeleteIncentive(incentive.id);
-                                      setOpenMenuId(null);
-                                    }}
-                                    className="w-full flex items-center gap-2 px-4 py-2 hover:bg-red-50 text-red-600 text-left"
-                                  >
-                                    <Trash2 className="w-4 h-4" />
-                                    Delete
-                                  </button>
-                                </li>
-                              )}
+                                )}
                             </ul>
                           </div>
                         )}

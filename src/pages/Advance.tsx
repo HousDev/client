@@ -113,7 +113,7 @@ export default function Advance() {
   const [selectedAdvance, setSelectedAdvance] = useState<AdvanceRequest | null>(
     null,
   );
-  const { user } = useAuth();
+  const { user, can } = useAuth();
 
   // More menu state
   const [openMenuId, setOpenMenuId] = useState<string | null>(null);
@@ -676,7 +676,7 @@ export default function Advance() {
     <div className="space-y-5">
       {/* Header with New Advance Button */}
       <div className="flex items-center justify-end py-0 px-2 -mt-2 -mb-2">
-        {user.role !== "admin" && (
+        {user.role !== "admin" && can("create_advance_request") && (
           <div className="sticky top-20 z-10 flex flex-col md:flex-row gap-3 items-center justify-end">
             <Button
               onClick={() => setShowCreateModal(true)}
@@ -1056,7 +1056,8 @@ export default function Advance() {
                           >
                             <MoreVertical className="w-4 h-4 text-gray-600" />
                           </button>
-                        ) : advance.status === "pending" ? (
+                        ) : advance.status === "pending" &&
+                          can("delete_advance_request") ? (
                           <button
                             onClick={() => {
                               deleteAdvance(advance.id);
@@ -1072,94 +1073,102 @@ export default function Advance() {
                         {openMenuId === advance.id && (
                           <div className="absolute right-4 top-10 z-50 w-44 bg-white border border-gray-200 rounded-lg shadow-lg">
                             <ul className="py-1 text-sm text-gray-700">
-                              <li>
-                                <button
-                                  onClick={() => {
-                                    console.log(advance);
-                                    setSelectedAdvance(advance);
-                                    setShowDetailsModal(true);
-                                    setOpenMenuId(null);
-                                  }}
-                                  className="w-full flex items-center gap-2 px-4 py-2 hover:bg-gray-100 text-left"
-                                >
-                                  <Eye className="w-4 h-4" />
-                                  View Details
-                                </button>
-                              </li>
+                              {can("view_advance") && (
+                                <li>
+                                  <button
+                                    onClick={() => {
+                                      console.log(advance);
+                                      setSelectedAdvance(advance);
+                                      setShowDetailsModal(true);
+                                      setOpenMenuId(null);
+                                    }}
+                                    className="w-full flex items-center gap-2 px-4 py-2 hover:bg-gray-100 text-left"
+                                  >
+                                    <Eye className="w-4 h-4" />
+                                    View Details
+                                  </button>
+                                </li>
+                              )}
 
                               {/* Approve/Reject options only for pending status */}
                               {advance.status === "pending" && (
                                 <>
-                                  <li>
-                                    <button
-                                      onClick={() => {
-                                        setSelectedAdvance(advance);
-                                        setApprovalData({
-                                          action: "approved",
-                                          remarks: "",
-                                        });
-                                        setShowApprovalModal(true);
-                                        setOpenMenuId(null);
-                                      }}
-                                      className="w-full flex items-center gap-2 px-4 py-2 hover:bg-gray-100 text-green-600 text-left"
-                                    >
-                                      <CheckCircle className="w-4 h-4" />
-                                      Approve
-                                    </button>
-                                  </li>
-                                  <li>
-                                    <button
-                                      onClick={() => {
-                                        setSelectedAdvance(advance);
-                                        setApprovalData({
-                                          action: "rejected",
-                                          remarks: "",
-                                        });
-                                        setShowApprovalModal(true);
-                                        setOpenMenuId(null);
-                                      }}
-                                      className="w-full flex items-center gap-2 px-4 py-2 hover:bg-gray-100 text-red-600 text-left"
-                                    >
-                                      <XCircle className="w-4 h-4" />
-                                      Reject
-                                    </button>
-                                  </li>
+                                  {can("approve_advance_request") && (
+                                    <li>
+                                      <button
+                                        onClick={() => {
+                                          setSelectedAdvance(advance);
+                                          setApprovalData({
+                                            action: "approved",
+                                            remarks: "",
+                                          });
+                                          setShowApprovalModal(true);
+                                          setOpenMenuId(null);
+                                        }}
+                                        className="w-full flex items-center gap-2 px-4 py-2 hover:bg-gray-100 text-green-600 text-left"
+                                      >
+                                        <CheckCircle className="w-4 h-4" />
+                                        Approve
+                                      </button>
+                                    </li>
+                                  )}
+                                  {can("reject_advance_request") && (
+                                    <li>
+                                      <button
+                                        onClick={() => {
+                                          setSelectedAdvance(advance);
+                                          setApprovalData({
+                                            action: "rejected",
+                                            remarks: "",
+                                          });
+                                          setShowApprovalModal(true);
+                                          setOpenMenuId(null);
+                                        }}
+                                        className="w-full flex items-center gap-2 px-4 py-2 hover:bg-gray-100 text-red-600 text-left"
+                                      >
+                                        <XCircle className="w-4 h-4" />
+                                        Reject
+                                      </button>
+                                    </li>
+                                  )}
                                 </>
                               )}
 
                               {/* Disburse option only for approved status */}
-                              {advance.status === "approved" && (
-                                <li>
-                                  <button
-                                    onClick={() => {
-                                      handleDisburse(advance);
-                                      setOpenMenuId(null);
-                                    }}
-                                    className="w-full flex items-center gap-2 px-4 py-2 hover:bg-gray-100 text-blue-600 text-left"
-                                  >
-                                    <IndianRupee className="w-4 h-4" />
-                                    Disburse
-                                  </button>
-                                </li>
-                              )}
+                              {advance.status === "approved" &&
+                                can("disburse_advance") && (
+                                  <li>
+                                    <button
+                                      onClick={() => {
+                                        handleDisburse(advance);
+                                        setOpenMenuId(null);
+                                      }}
+                                      className="w-full flex items-center gap-2 px-4 py-2 hover:bg-gray-100 text-blue-600 text-left"
+                                    >
+                                      <IndianRupee className="w-4 h-4" />
+                                      Disburse
+                                    </button>
+                                  </li>
+                                )}
 
                               {advance.status === "pending" && (
                                 <hr className="my-1" />
                               )}
 
-                              {advance.status === "pending" && (
-                                <li>
-                                  <button
-                                    onClick={() => {
-                                      deleteAdvance(advance.id);
-                                    }}
-                                    className="w-full flex items-center gap-2 px-4 py-2 hover:bg-red-50 text-red-600 text-left"
-                                  >
-                                    <Trash2 className="w-4 h-4" />
-                                    Delete
-                                  </button>
-                                </li>
-                              )}
+                              {advance.status === "pending" &&
+                                can("delete_advance_request") && (
+                                  <li>
+                                    <button
+                                      onClick={() => {
+                                        deleteAdvance(advance.id);
+                                      }}
+                                      className="w-full flex items-center gap-2 px-4 py-2 hover:bg-red-50 text-red-600 text-left"
+                                    >
+                                      <Trash2 className="w-4 h-4" />
+                                      Delete
+                                    </button>
+                                  </li>
+                                )}
                             </ul>
                           </div>
                         )}

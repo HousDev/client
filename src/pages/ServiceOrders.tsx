@@ -135,7 +135,7 @@ export default function ServiceOrders() {
   const [to, setTo] = useState("");
   const [paymentData, setPaymentData] = useState<PaymentDataType>({
     po_id: null,
-    transaction_type: "payment",
+    transaction_type: "advance",
     amount_paid: "",
     payment_method: "bank_transfer",
     payment_reference_no: "",
@@ -1064,6 +1064,7 @@ export default function ServiceOrders() {
       setPaymentData((prev) => ({ ...prev, payment_proof: file }));
     }
   };
+
   const handleMakePayment = async (e: React.FormEvent) => {
     e.preventDefault();
 
@@ -1099,16 +1100,16 @@ export default function ServiceOrders() {
       formData.append("wo_id", String(paymentData.po_id)); // change if variable name different
       formData.append(
         "transaction_type",
-        paymentData.transaction_type?.toUpperCase() || ""
+        paymentData.transaction_type?.toUpperCase() || "",
       );
       formData.append("amount_paid", String(paymentData.amount_paid));
       formData.append(
         "payment_method",
-        paymentData.payment_method?.toUpperCase() || ""
+        paymentData.payment_method?.toUpperCase() || "",
       );
       formData.append(
         "payment_reference_no",
-        paymentData.payment_reference_no || ""
+        paymentData.payment_reference_no || "",
       );
       formData.append("payment_date", paymentData.payment_date || "");
       formData.append("status", paymentData.status?.toUpperCase() || "");
@@ -1120,7 +1121,7 @@ export default function ServiceOrders() {
 
       setSubmitting(true);
 
-      const res: any = await woPaymentApi.createWoPayment(formData);
+      const res: any = await woPaymentApi.createWoPaymentHistory(formData);
 
       if (res.success) {
         loadAllData();
@@ -1131,7 +1132,7 @@ export default function ServiceOrders() {
 
         setPaymentData({
           po_id: null,
-          transaction_type: "payment",
+          transaction_type: "advance",
           amount_paid: "",
           payment_method: "bank_transfer",
           payment_reference_no: "",
@@ -1296,6 +1297,11 @@ export default function ServiceOrders() {
                     </th>
                     <th className="px-3 md:px-4 py-2 text-left">
                       <div className="text-[10px] md:text-xs font-semibold text-gray-700 uppercase tracking-wider">
+                        Advance Amount
+                      </div>
+                    </th>
+                    <th className="px-3 md:px-4 py-2 text-left">
+                      <div className="text-[10px] md:text-xs font-semibold text-gray-700 uppercase tracking-wider">
                         WO Status
                       </div>
                     </th>
@@ -1380,6 +1386,7 @@ export default function ServiceOrders() {
                         className="w-full px-2 py-1 text-[9px] md:text-xs border border-gray-300 rounded focus:ring-1 focus:ring-blue-500 focus:border-transparent"
                       />
                     </td>
+                    <td className="px-3 md:px-4 py-1"></td>
 
                     {/* PO Status Column Search */}
                     <td className="px-3 md:px-4 py-1">
@@ -1458,6 +1465,11 @@ export default function ServiceOrders() {
                       <td className="px-3 md:px-4 py-3">
                         <span className="font-semibold text-gray-800 text-xs md:text-sm">
                           {formatCurrency(po.grand_total)}
+                        </span>
+                      </td>
+                      <td className="px-3 md:px-4 py-3">
+                        <span className="font-semibold text-gray-800 text-xs md:text-sm">
+                          {formatCurrency(po.advance_amount)}
                         </span>
                       </td>
                       <td className="px-3 md:px-4 py-3">
@@ -2283,7 +2295,7 @@ export default function ServiceOrders() {
                   setSelectedPO(null);
                   setPaymentData({
                     po_id: null,
-                    transaction_type: "payment",
+                    transaction_type: "advance",
                     amount_paid: "",
                     payment_method: "bank_transfer",
                     payment_reference_no: "",

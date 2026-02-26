@@ -1,11 +1,11 @@
 import { api, unwrap } from "./Api";
 
 /**
- * Create WO payment
- * Uses multipart/form-data because of payment_proof upload
+ * Create WO Payment History
+ * (Supports multipart/form-data if payment_proof exists)
  */
-async function createWoPayment(payload: any) {
-  const res: any = await api.post("/wo_payments", payload, {
+async function createWoPaymentHistory(payload: any) {
+  const res: any = await api.post("/wo-payment-history", payload, {
     headers: {
       "Content-Type": "multipart/form-data",
     },
@@ -14,27 +14,26 @@ async function createWoPayment(payload: any) {
 }
 
 /**
- * Get all WO payments (ADMIN)
+ * Get all WO Payment History
  */
-async function getWoPayments() {
-  const res: any = await api.get("/wo_payments");
+async function getWoPaymentHistory() {
+  const res: any = await api.get("/wo-payment-history");
   return unwrap(res);
 }
 
 /**
- * Get all WO payments History (ADMIN)
+ * Get WO Payment History By ID
  */
-async function getWoPaymentsHistory() {
-  const res: any = await api.get("/wo_payments/history");
+async function getWoPaymentHistoryById(id: number | string) {
+  const res: any = await api.get(`/wo-payment-history/${id}`);
   return unwrap(res);
 }
 
 /**
- * Update WO payment (ADMIN)
- * payment_proof is optional
+ * Update WO Payment History
  */
-async function updateWoPayment(id: number | string, payload: any) {
-  const res: any = await api.put(`/wo_payments/${id}`, payload, {
+async function updateWoPaymentHistory(id: number | string, payload: any) {
+  const res: any = await api.put(`/wo-payment-history/${id}`, payload, {
     headers: {
       "Content-Type": "multipart/form-data",
     },
@@ -43,19 +42,19 @@ async function updateWoPayment(id: number | string, payload: any) {
 }
 
 /**
- * Delete WO payment (ADMIN)
+ * Delete WO Payment History
  */
-async function deleteWoPayment(id: number | string) {
-  const res: any = await api.delete(`/wo_payments/${id}`);
+async function deleteWoPaymentHistory(id: number | string) {
+  const res: any = await api.delete(`/wo-payment-history/${id}`);
   return unwrap(res);
 }
 
-const woPaymentApi = {
-  createWoPayment,
-  getWoPayments,
-  getWoPaymentsHistory,
-  updateWoPayment,
-  deleteWoPayment,
+const woPaymentHistoryApi = {
+  createWoPaymentHistory,
+  getWoPaymentHistory,
+  getWoPaymentHistoryById,
+  updateWoPaymentHistory,
+  deleteWoPaymentHistory,
 };
 
-export default woPaymentApi;
+export default woPaymentHistoryApi;

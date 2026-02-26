@@ -75,7 +75,7 @@ export default function SearchableSelect({
   return (
     <div ref={containerRef} className="relative">
       <div
-        className={`w-full flex items-center gap-2 px-3 py-3 ${disabled ? "border" : "border border-slate-400"} rounded-lg bg-white cursor-pointer ${
+        className={`w-full flex items-center gap-2 px-3 py-2 ${disabled ? "border" : "border border-slate-400"} rounded-lg bg-white cursor-pointer ${
           disabled ? "opacity-90 cursor-not-allowed" : "hover:shadow-sm"
         }`}
         onClick={() => !disabled && setOpen((s: any) => !s)}

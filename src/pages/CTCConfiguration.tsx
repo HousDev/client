@@ -26,6 +26,7 @@ import { toast } from "sonner";
 import HrmsEmployeesApi, { HrmsEmployee } from "../lib/employeeApi";
 import ctcTemplateApi from "../lib/ctcTemplateApi";
 import employeeCtcAssignApi from "../lib/employeeCtcAssign";
+import { useAuth } from "../contexts/AuthContext";
 
 interface Employee {
   id: string;
@@ -187,6 +188,7 @@ export default function CTCConfiguration() {
   const [loading, setLoading] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
+  const { can } = useAuth();
   const [allAssignedUserTemplate, setAllAssignedUserTemplate] = useState<any>(
     [],
   );
@@ -704,7 +706,7 @@ export default function CTCConfiguration() {
       {/* Header with Action Buttons - Sticky */}
       <div className="flex items-center justify-end py-0 px-2 -mt-2 -mb-2">
         <div className="sticky top-44 z-10 flex flex-col md:flex-row gap-3 items-center justify-end">
-          {selectedItems.size > 0 && (
+          {selectedItems.size > 0 && can("ctc_config_bulk_action") && (
             <div className="flex items-center gap-2 bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 rounded-md px-3 py-2">
               <div className="flex items-center gap-2">
                 <div className="bg-blue-100 p-1 rounded">
@@ -728,21 +730,25 @@ export default function CTCConfiguration() {
           )}
         </div>
         <div className="flex gap-2">
-          <Button
-            variant="secondary"
-            onClick={() => setShowTemplateModal(true)}
-            className="text-sm sticky top-20 z-10"
-          >
-            <Settings className="h-4 w-4 mr-1.5" />
-            Manage Templates
-          </Button>
-          <Button
-            onClick={() => setShowConfigModal(true)}
-            className="text-sm sticky top-20 z-10 bg-gradient-to-r from-[#C62828] to-red-600 hover:from-red-600 hover:to-red-700"
-          >
-            <Plus className="h-4 w-4 mr-1.5" />
-            Assign CTC
-          </Button>
+          {can("manage_ctc_template") && (
+            <Button
+              variant="secondary"
+              onClick={() => setShowTemplateModal(true)}
+              className="text-sm sticky top-20 z-10"
+            >
+              <Settings className="h-4 w-4 mr-1.5" />
+              Manage Templates
+            </Button>
+          )}
+          {can("assign_ctc") && (
+            <Button
+              onClick={() => setShowConfigModal(true)}
+              className="text-sm sticky top-20 z-10 bg-gradient-to-r from-[#C62828] to-red-600 hover:from-red-600 hover:to-red-700"
+            >
+              <Plus className="h-4 w-4 mr-1.5" />
+              Assign CTC
+            </Button>
+          )}
         </div>
       </div>
 
@@ -1023,39 +1029,47 @@ export default function CTCConfiguration() {
                           <MoreVertical className="w-3.5 h-3.5 md:w-4 md:h-4 text-gray-600" />
                         </button>
 
-                        {openMenuId === config.id && (
-                          <div className="absolute right-4 bottom-10 z-50 w-44 bg-white border border-gray-200 rounded-lg shadow-lg">
-                            <ul className="py-1 text-sm text-gray-700">
-                              <li>
-                                <button
-                                  onClick={() => {
-                                    handleViewConfig(config);
-                                    setOpenMenuId(null);
-                                  }}
-                                  className="w-full flex items-center gap-2 px-4 py-2 hover:bg-gray-100 text-left"
-                                >
-                                  <Eye className="w-4 h-4" />
-                                  View Details
-                                </button>
-                              </li>
+                        {openMenuId === config.id &&
+                          (can("view_ctc_config") ||
+                            can("delete_assigned_ctc")) && (
+                            <div className="absolute right-4 bottom-10 z-50 w-44 bg-white border border-gray-200 rounded-lg shadow-lg">
+                              <ul className="py-1 text-sm text-gray-700">
+                                {can("view_ctc_config") && (
+                                  <li>
+                                    <button
+                                      onClick={() => {
+                                        handleViewConfig(config);
+                                        setOpenMenuId(null);
+                                      }}
+                                      className="w-full flex items-center gap-2 px-4 py-2 hover:bg-gray-100 text-left"
+                                    >
+                                      <Eye className="w-4 h-4" />
+                                      View Details
+                                    </button>
+                                  </li>
+                                )}
 
-                              <hr className="my-1" />
+                                <hr className="my-1" />
 
-                              <li>
-                                <button
-                                  onClick={() => {
-                                    deleteAssignedTemplate(Number(config.id));
-                                    setOpenMenuId(null);
-                                  }}
-                                  className="w-full flex items-center gap-2 px-4 py-2 hover:bg-red-50 text-red-600 text-left"
-                                >
-                                  <Trash2 className="w-4 h-4" />
-                                  Delete
-                                </button>
-                              </li>
-                            </ul>
-                          </div>
-                        )}
+                                {can("delete_assigned_ctc") && (
+                                  <li>
+                                    <button
+                                      onClick={() => {
+                                        deleteAssignedTemplate(
+                                          Number(config.id),
+                                        );
+                                        setOpenMenuId(null);
+                                      }}
+                                      className="w-full flex items-center gap-2 px-4 py-2 hover:bg-red-50 text-red-600 text-left"
+                                    >
+                                      <Trash2 className="w-4 h-4" />
+                                      Delete
+                                    </button>
+                                  </li>
+                                )}
+                              </ul>
+                            </div>
+                          )}
                       </td>
                     </tr>
                   );
@@ -1108,16 +1122,18 @@ export default function CTCConfiguration() {
                   <h3 className="text-sm font-semibold text-gray-800">
                     Available Templates ({templates.length})
                   </h3>
-                  <button
-                    onClick={() => {
-                      setShowTemplateModal(false);
-                      setShowCreateTemplateModal(true);
-                    }}
-                    className="px-3 py-1.5 text-xs bg-gradient-to-r from-[#C62828] to-red-600 text-white rounded-md hover:from-red-600 hover:to-red-700 transition-all flex items-center gap-1"
-                  >
-                    <Plus className="h-3 w-3" />
-                    New Template
-                  </button>
+                  {can("create_ctc_template") && (
+                    <button
+                      onClick={() => {
+                        setShowTemplateModal(false);
+                        setShowCreateTemplateModal(true);
+                      }}
+                      className="px-3 py-1.5 text-xs bg-gradient-to-r from-[#C62828] to-red-600 text-white rounded-md hover:from-red-600 hover:to-red-700 transition-all flex items-center gap-1"
+                    >
+                      <Plus className="h-3 w-3" />
+                      New Template
+                    </button>
+                  )}
                 </div>
 
                 <div className="space-y-3">
@@ -1150,87 +1166,96 @@ export default function CTCConfiguration() {
                         </div>
                         <div className="">
                           <div className="flex gap-1 ml-2">
-                            <button
-                              onClick={() => handleViewTemplate(template)}
-                              className="px-2 py-1 text-blue-600 text-xs border border-slate-300 rounded hover:bg-slate-50 transition-colors flex items-center gap-1"
-                            >
-                              <Eye className="h-3 w-3" />
-                              View
-                            </button>
-                            {!template.is_default && (
+                            {can("view_ctc_template") && (
                               <button
-                                onClick={() => handleEditTemplate(template)}
-                                className="px-2 py-1 text-green-600 text-xs border border-slate-300 rounded hover:bg-slate-50 transition-colors flex items-center gap-1"
+                                onClick={() => handleViewTemplate(template)}
+                                className="px-2 py-1 text-blue-600 text-xs border border-slate-300 rounded hover:bg-slate-50 transition-colors flex items-center gap-1"
                               >
-                                <Edit className="h-3 w-3" />
-                                Edit
+                                <Eye className="h-3 w-3" />
+                                View
                               </button>
                             )}
-                            <button
-                              onClick={() =>
-                                handleDeleteTemplate(Number(template.id))
-                              }
-                              className="px-2 py-1 text-red-600 text-xs border border-slate-300 rounded hover:bg-slate-50 transition-colors flex items-center gap-1"
-                            >
-                              <Trash2 className="h-3 w-3" />
-                              Delete
-                            </button>
+                            {!template.is_default &&
+                              can("update_ctc_template") && (
+                                <button
+                                  onClick={() => handleEditTemplate(template)}
+                                  className="px-2 py-1 text-green-600 text-xs border border-slate-300 rounded hover:bg-slate-50 transition-colors flex items-center gap-1"
+                                >
+                                  <Edit className="h-3 w-3" />
+                                  Edit
+                                </button>
+                              )}
+                            {can("delete_ctc_template") && (
+                              <button
+                                onClick={() =>
+                                  handleDeleteTemplate(Number(template.id))
+                                }
+                                className="px-2 py-1 text-red-600 text-xs border border-slate-300 rounded hover:bg-slate-50 transition-colors flex items-center gap-1"
+                              >
+                                <Trash2 className="h-3 w-3" />
+                                Delete
+                              </button>
+                            )}
                           </div>
                           <div className="flex justify-center items-center gap-3 py-2">
-                            <div className="flex items-center">
-                              <input
-                                type="checkbox"
-                                onChange={async () => {
-                                  try {
-                                    const res: any =
-                                      await ctcTemplateApi.toggleActive(
-                                        template.id,
-                                      );
-                                    console.log(res);
-                                    if (res.success) {
-                                      toast.success(res.message);
-                                      loadData();
-                                    } else {
-                                      toast.error(res.message);
+                            {can("active_inactive_ctc_template") && (
+                              <div className="flex items-center">
+                                <input
+                                  type="checkbox"
+                                  onChange={async () => {
+                                    try {
+                                      const res: any =
+                                        await ctcTemplateApi.toggleActive(
+                                          template.id,
+                                        );
+                                      console.log(res);
+                                      if (res.success) {
+                                        toast.success(res.message);
+                                        loadData();
+                                      } else {
+                                        toast.error(res.message);
+                                      }
+                                    } catch (error: any) {
+                                      toast.error(error.response.data.message);
                                     }
-                                  } catch (error: any) {
-                                    toast.error(error.response.data.message);
-                                  }
-                                }}
-                                checked={template.is_active}
-                                className="text-red-600 mr-1"
-                              />
-                              <span className="text-xs font-semibold">
-                                Is Active
-                              </span>
-                            </div>
-                            <div className="flex items-center">
-                              <input
-                                type="checkbox"
-                                checked={template.is_default}
-                                onChange={async () => {
-                                  try {
-                                    const res: any =
-                                      await ctcTemplateApi.setDefault(
-                                        template.id,
-                                      );
-                                    console.log(res);
-                                    if (res.success) {
-                                      toast.success(res.message);
-                                      loadData();
-                                    } else {
-                                      toast.error(res.message);
+                                  }}
+                                  checked={template.is_active}
+                                  className="text-red-600 mr-1"
+                                />
+                                <span className="text-xs font-semibold">
+                                  Is Active
+                                </span>
+                              </div>
+                            )}
+                            {can("make_ctc_template_default") && (
+                              <div className="flex items-center">
+                                <input
+                                  type="checkbox"
+                                  checked={template.is_default}
+                                  onChange={async () => {
+                                    try {
+                                      const res: any =
+                                        await ctcTemplateApi.setDefault(
+                                          template.id,
+                                        );
+                                      console.log(res);
+                                      if (res.success) {
+                                        toast.success(res.message);
+                                        loadData();
+                                      } else {
+                                        toast.error(res.message);
+                                      }
+                                    } catch (error: any) {
+                                      toast.error(error.response.data.message);
                                     }
-                                  } catch (error: any) {
-                                    toast.error(error.response.data.message);
-                                  }
-                                }}
-                                className="text-red-600 mr-1"
-                              />
-                              <span className="text-xs font-semibold">
-                                Is Default
-                              </span>
-                            </div>
+                                  }}
+                                  className="text-red-600 mr-1"
+                                />
+                                <span className="text-xs font-semibold">
+                                  Is Default
+                                </span>
+                              </div>
+                            )}
                           </div>
                         </div>
                       </div>
