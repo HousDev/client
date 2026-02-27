@@ -692,7 +692,7 @@ export default function RolesMaster() {
               </div>
 
               {/* Permissions */}
-              <div className="mb-6 md:mb-8">
+              {/* <div className="mb-6 md:mb-8">
                 <div className="flex flex-col md:flex-row md:justify-between md:items-center gap-3 mb-4 md:mb-6">
                   <h4 className="text-base md:text-lg font-semibold text-gray-800 flex items-center gap-2">
                     <span className="bg-gray-100 p-1.5 rounded-lg">
@@ -761,7 +761,6 @@ export default function RolesMaster() {
                 </div>
               </div>
 
-              {/* Summary */}
               <div className="mb-6 md:mb-8 p-3 md:p-4 bg-blue-50 border border-blue-200 rounded-xl">
                 <h5 className="font-semibold text-blue-800 mb-1 md:mb-2 text-sm md:text-base">
                   Permissions Summary
@@ -775,7 +774,7 @@ export default function RolesMaster() {
                   )}{" "}
                   permissions
                 </p>
-              </div>
+              </div> */}
 
               {/* Modal Footer */}
               <div className="border-t pt-4 md:pt-6 flex flex-col sm:flex-row justify-end gap-3 md:gap-4">

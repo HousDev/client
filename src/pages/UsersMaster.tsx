@@ -2316,7 +2316,6 @@ export default function UsersMaster() {
                         className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
                         placeholder="john@example.com"
                         required
-                        disabled={!!editingId}
                       />
                     </div>
 
