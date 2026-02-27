@@ -3,6 +3,7 @@ import { Shield, Users, Search } from "lucide-react";
 import { toast } from "sonner";
 import rolesApi from "../lib/rolesApi";
 import { UsersApi } from "../lib/Api";
+import SearchableSelect from "../components/SearchableSelect";
 
 type Role = {
   id: string;
@@ -505,11 +506,45 @@ export default function Permissions() {
       <div className="bg-white shadow-sm p-4">
         {/* Role/User Selection with Global Select All Button - Reduced margin */}
         <div className="mb-4 flex flex-col md:flex-row md:items-center justify-between gap-4">
-          <div>
+          <div className="w-1/2">
             <label className="block text-xs font-semibold text-gray-700 mb-2 uppercase tracking-wider">
-              TARGET ROLE
+              TARGET {activeTab === "role-permissions" ? "ROLE" : "USER"}
             </label>
-            <select
+            <SearchableSelect
+              options={
+                activeTab === "role-permissions"
+                  ? roles.map((r: any) => ({
+                      id: r.id,
+                      name: r.name || "",
+                    }))
+                  : users.map((e: any) => ({
+                      id: e.id,
+                      name: e.full_name,
+                    }))
+              }
+              value={
+                activeTab === "role-permissions"
+                  ? Number(selectedRole)
+                  : String(selectedUser)
+              }
+              onChange={(id: any) => {
+                if (activeTab === "role-permissions") {
+                  const newRole = id;
+                  setSelectedRole(newRole);
+                  const r = roles.find((x: any) => x.id === Number(newRole));
+                  setRolePermissions(r?.permissions || {});
+                } else {
+                  const uid = id;
+                  setSelectedUser(uid);
+                  const u = users.find((x) => x.id === uid);
+                  console.log(u);
+                  setUserPermissions(u?.permissions || {});
+                }
+              }}
+              placeholder={`Select ${activeTab === "role-permissions" ? "Role" : "User"}`}
+              required
+            />
+            {/* <select
               value={
                 activeTab === "role-permissions" ? selectedRole : selectedUser
               }
@@ -539,7 +574,7 @@ export default function Permissions() {
                       {u.full_name}
                     </option>
                   ))}
-            </select>
+            </select> */}
           </div>
 
           {/* Global Select All Button */}
