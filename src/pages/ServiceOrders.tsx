@@ -1297,7 +1297,17 @@ export default function ServiceOrders() {
                     </th>
                     <th className="px-3 md:px-4 py-2 text-left">
                       <div className="text-[10px] md:text-xs font-semibold text-gray-700 uppercase tracking-wider">
+                        Total Paid
+                      </div>
+                    </th>
+                    <th className="px-3 md:px-4 py-2 text-left">
+                      <div className="text-[10px] md:text-xs font-semibold text-gray-700 uppercase tracking-wider">
                         Advance Amount
+                      </div>
+                    </th>
+                    <th className="px-3 md:px-4 py-2 text-left">
+                      <div className="text-[10px] md:text-xs font-semibold text-gray-700 uppercase tracking-wider">
+                        Retention Amount
                       </div>
                     </th>
                     <th className="px-3 md:px-4 py-2 text-left">
@@ -1387,6 +1397,8 @@ export default function ServiceOrders() {
                       />
                     </td>
                     <td className="px-3 md:px-4 py-1"></td>
+                    <td className="px-3 md:px-4 py-1"></td>
+                    <td className="px-3 md:px-4 py-1"></td>
 
                     {/* PO Status Column Search */}
                     <td className="px-3 md:px-4 py-1">
@@ -1469,7 +1481,17 @@ export default function ServiceOrders() {
                       </td>
                       <td className="px-3 md:px-4 py-3">
                         <span className="font-semibold text-gray-800 text-xs md:text-sm">
+                          {formatCurrency(po.total_paid)}
+                        </span>
+                      </td>
+                      <td className="px-3 md:px-4 py-3">
+                        <span className="font-semibold text-gray-800 text-xs md:text-sm">
                           {formatCurrency(po.advance_amount)}
+                        </span>
+                      </td>
+                      <td className="px-3 md:px-4 py-3">
+                        <span className="font-semibold text-gray-800 text-xs md:text-sm">
+                          {formatCurrency(po.retention_amount)}
                         </span>
                       </td>
                       <td className="px-3 md:px-4 py-3">

@@ -173,7 +173,10 @@ export default function ServiceOrderPayments() {
   const [paymentData, setPaymentData] = useState<any>({
     po_id: null,
     po_payment_id: null,
-    venderId: "",
+    adjust_with_advance: false,
+    advance_amount: "",
+    retention_percentage: "",
+    vendorId: "",
     transaction_type: "payment",
     amount_paid: "",
     payment_method: "bank_transfer",
@@ -222,6 +225,12 @@ export default function ServiceOrderPayments() {
       const filteredVendors = vendorRes.filter(
         (v: any) => v.category_name === "Service",
       );
+      const filteredWos = woRes.filter(
+        (wo: any) =>
+          wo.payment_status !== "completed" &&
+          Number(wo.balance_amount) > 0 &&
+          wo.status === "authorize",
+      );
 
       const poPaymentHistoryRes: any =
         await woPaymentHistoryApi.getWoPaymentHistory();
@@ -230,7 +239,8 @@ export default function ServiceOrderPayments() {
         Array.isArray(poPaymentHistoryRes.data) ? poPaymentHistoryRes.data : [],
       );
       setAllVendors(Array.isArray(filteredVendors) ? filteredVendors : []);
-      setWOs(Array.isArray(woRes) ? woRes : []);
+
+      setWOs(Array.isArray(filteredWos) ? filteredWos : []);
     } catch (err) {
       console.log(err);
       toast.error("Failed to load payment data.");
@@ -642,7 +652,15 @@ export default function ServiceOrderPayments() {
         "transaction_type",
         paymentData.transaction_type?.toUpperCase() || "",
       );
-      formData.append("amount_paid", String(paymentData.amount_paid));
+      formData.append("amount_paid", String(paymentData.amount_paid || "0"));
+      formData.append(
+        "advance_amount",
+        String(paymentData.advance_amount || "0"),
+      );
+      formData.append(
+        "retention_percentage",
+        String(paymentData.retention_percentage || "0"),
+      );
       formData.append(
         "payment_method",
         paymentData.payment_method?.toUpperCase() || "",
@@ -660,10 +678,9 @@ export default function ServiceOrderPayments() {
       formData.append("payment_proof", paymentData.payment_proof);
 
       setSubmitting(true);
-
       const res: any =
         await woPaymentHistoryApi.createWoPaymentHistory(formData);
-
+      console.log(res);
       if (res.success) {
         loadPOData();
         toast.success("WO Payment recorded successfully!");
@@ -673,8 +690,12 @@ export default function ServiceOrderPayments() {
 
         setPaymentData({
           po_id: null,
-          transaction_type: "advance",
+          po_payment_id: null,
+          adjust_with_advance: false,
+          advance_amount: "",
+          retention_percentage: "",
           vendorId: "",
+          transaction_type: "payment",
           amount_paid: "",
           payment_method: "bank_transfer",
           payment_reference_no: "",
@@ -732,6 +753,8 @@ export default function ServiceOrderPayments() {
     const colors: Record<string, string> = {
       paid: "bg-green-100 text-green-700",
       seen: "bg-green-100 text-green-700",
+      PAYMENT: "bg-green-100 text-green-700",
+      ADVANCE: "bg-yellow-100 text-yellow-700",
       unseen: "bg-orange-100 text-orange-700",
       SUCCESS: "bg-green-100 text-green-700",
       authorize: "bg-green-100 text-green-700",
@@ -776,7 +799,7 @@ export default function ServiceOrderPayments() {
       {/* Header */}
       <div className="sticky top-36 z-10 mb-0">
         {/* Compact Stats Cards */}
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-2 md:gap-3 mb-4">
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-2 md:gap-3 ">
           {/* Total Paid */}
           <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-2.5 sm:p-3 hover:border-green-500 transition-all duration-200 min-w-0">
             <div className="flex items-start justify-between gap-2">
@@ -852,7 +875,7 @@ export default function ServiceOrderPayments() {
         </div>
 
         {/* Tabs */}
-        <div className="sticky top-[148px] md:top-[136px] z-20 flex justify-end">
+        <div className="sticky top-[148px] md:top-[126px] z-20 flex justify-end">
           <button
             onClick={() => setShowPaymentModal(true)}
             className={`
@@ -878,7 +901,7 @@ export default function ServiceOrderPayments() {
       {/* History Tab */}
       {activeTab === "history" && (
         <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
-          <div className="overflow-y-auto max-h-[calc(100vh-208px)] md:max-h-[calc(92vh-270px)]">
+          <div className="overflow-y-auto max-h-[calc(100vh-208px)] md:max-h-[calc(94vh-270px)]">
             <table className="sticky top-0 z-10 w-full min-w-[800px]">
               <thead className="sticky top-0 z-10 bg-gray-200 border-b border-gray-200">
                 <tr>
@@ -890,6 +913,11 @@ export default function ServiceOrderPayments() {
                   <th className="px-2 md:px-4 py-2 text-left">
                     <div className="text-[10px] md:text-xs font-semibold text-gray-700 uppercase tracking-wider">
                       VENDOR
+                    </div>
+                  </th>
+                  <th className="px-2 md:px-4 py-2 text-left">
+                    <div className="text-[10px] md:text-xs font-semibold text-gray-700 uppercase tracking-wider">
+                      Transaction Type
                     </div>
                   </th>
                   <th className="px-2 md:px-4 py-2 text-left">
@@ -957,7 +985,7 @@ export default function ServiceOrderPayments() {
                       />
                     </div>
                   </td>
-
+                  <td className="px-2 md:px-4 py-1"></td>
                   <td className="px-2 md:px-4 py-1">
                     <div className="relative">
                       <div className="absolute left-2 top-1/2 -translate-y-1/2">
@@ -1061,6 +1089,13 @@ export default function ServiceOrderPayments() {
                       <div className="text-gray-800 text-xs md:text-sm truncate max-w-[120px]">
                         {payment?.vendor || "-"}
                       </div>
+                    </td>
+                    <td className="px-2 md:px-4 py-2">
+                      <span
+                        className={`px-2 py-1 rounded-full text-[10px] md:text-xs font-medium ${getStatusColor(payment.transaction_type || "")}`}
+                      >
+                        {(payment.transaction_type || "--").toUpperCase()}
+                      </span>
                     </td>
                     <td className="px-2 md:px-4 py-2">
                       <div className="font-semibold text-green-600 text-xs md:text-sm">
@@ -1186,216 +1221,6 @@ export default function ServiceOrderPayments() {
         </div>
       )}
 
-      {/* Reminders Tab */}
-      {activeTab === "reminders" && (
-        <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
-          <div className="overflow-y-auto max-h-[calc(100vh-300px)] md:max-h-[calc(100vh-270px)]">
-            <table className="sticky top-0 z-10 w-full min-w-[1000px]">
-              <thead className="sticky top-0 z-10 bg-gray-200 border-b border-gray-200">
-                <tr>
-                  <th className="px-2 md:px-4 py-2 text-left">
-                    <div className="text-[10px] md:text-xs font-semibold text-gray-700 uppercase tracking-wider">
-                      PO NUMBER
-                    </div>
-                  </th>
-                  <th className="px-2 md:px-4 py-2 text-left">
-                    <div className="text-[10px] md:text-xs font-semibold text-gray-700 uppercase tracking-wider">
-                      VENDOR
-                    </div>
-                  </th>
-                  <th className="px-2 md:px-4 py-2 text-left">
-                    <div className="text-[10px] md:text-xs font-semibold text-gray-700 uppercase tracking-wider">
-                      BALANCE
-                    </div>
-                  </th>
-                  <th className="px-2 md:px-4 py-2 text-left">
-                    <div className="text-[10px] md:text-xs font-semibold text-gray-700 uppercase tracking-wider">
-                      DUE DATE
-                    </div>
-                  </th>
-                  <th className="px-2 md:px-4 py-2 text-left">
-                    <div className="text-[10px] md:text-xs font-semibold text-gray-700 uppercase tracking-wider">
-                      STATUS
-                    </div>
-                  </th>
-                  <th className="px-2 md:px-4 py-2 text-left">
-                    <div className="text-[10px] md:text-xs font-semibold text-gray-700 uppercase tracking-wider">
-                      ACTIONS
-                    </div>
-                  </th>
-                </tr>
-
-                {/* Search Row */}
-                <tr className="bg-gray-50 border-b border-gray-200">
-                  <td className="px-2 md:px-4 py-1">
-                    <div className="relative">
-                      <div className="absolute left-2 top-1/2 -translate-y-1/2">
-                        <Search className="w-3 h-3 text-gray-400" />
-                      </div>
-                      <input
-                        type="text"
-                        placeholder="Search..."
-                        value={remindersSearchPONumber}
-                        onChange={(e) =>
-                          setRemindersSearchPONumber(e.target.value)
-                        }
-                        className="w-full pl-7 pr-2 py-1 text-[10px] md:text-xs border border-gray-300 rounded focus:ring-1 focus:ring-blue-500 focus:border-transparent"
-                      />
-                    </div>
-                  </td>
-
-                  <td className="px-2 md:px-4 py-1">
-                    <div className="relative">
-                      <div className="absolute left-2 top-1/2 -translate-y-1/2">
-                        <User className="w-3 h-3 text-gray-400" />
-                      </div>
-                      <input
-                        type="text"
-                        placeholder="Search..."
-                        value={remindersSearchVendor}
-                        onChange={(e) =>
-                          setRemindersSearchVendor(e.target.value)
-                        }
-                        className="w-full pl-7 pr-2 py-1 text-[10px] md:text-xs border border-gray-300 rounded focus:ring-1 focus:ring-blue-500 focus:border-transparent"
-                      />
-                    </div>
-                  </td>
-
-                  <td className="px-2 md:px-4 py-1">
-                    <div className="relative">
-                      <div className="absolute left-2 top-1/2 -translate-y-1/2">
-                        <IndianRupee className="w-3 h-3 text-gray-400" />
-                      </div>
-                      <input
-                        type="text"
-                        placeholder="Search..."
-                        value={remindersSearchAmount}
-                        onChange={(e) =>
-                          setRemindersSearchAmount(e.target.value)
-                        }
-                        className="w-full pl-7 pr-2 py-1 text-[10px] md:text-xs border border-gray-300 rounded focus:ring-1 focus:ring-blue-500 focus:border-transparent"
-                      />
-                    </div>
-                  </td>
-
-                  <td className="px-2 md:px-4 py-1">
-                    <div className="relative">
-                      <div className="absolute left-2 top-1/2 -translate-y-1/2">
-                        <Calendar className="w-3 h-3 text-gray-400" />
-                      </div>
-                      <input
-                        type="date"
-                        value={remindersSearchDate}
-                        onChange={(e) => setRemindersSearchDate(e.target.value)}
-                        className="w-full pl-7 pr-2 py-1 text-[10px] md:text-xs border border-gray-300 rounded focus:ring-1 focus:ring-blue-500 focus:border-transparent"
-                      />
-                    </div>
-                  </td>
-
-                  <td className="px-2 md:px-4 py-1">
-                    <select
-                      value={remindersStatusFilter}
-                      onChange={(e) => setRemindersStatusFilter(e.target.value)}
-                      className="w-full px-2 py-1 text-[10px] md:text-xs border border-gray-300 rounded focus:ring-1 focus:ring-blue-500 focus:border-transparent"
-                    >
-                      <option value="all">All Status</option>
-                      <option value="unseen">Unseen</option>
-                      <option value="seen">Seen</option>
-                    </select>
-                  </td>
-
-                  <td className="px-2 md:px-4 py-1">
-                    <div className="flex gap-1">
-                      {paymentReminders.find(
-                        (d: any) => d.status === "unseen",
-                      ) && (
-                        <button
-                          onClick={markAllReminderSeen}
-                          className="inline-flex items-center px-2 py-1 border border-gray-300 rounded hover:bg-gray-50 transition text-[10px] md:text-xs font-medium text-gray-700"
-                        >
-                          <Check className="w-3 h-3 mr-1" />
-                          Mark All Seen
-                        </button>
-                      )}
-                    </div>
-                  </td>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-200">
-                {filteredReminders.map((reminder) => (
-                  <tr key={reminder.id} className="hover:bg-gray-50 transition">
-                    <td className="px-2 md:px-4 py-2">
-                      <div className="font-bold text-blue-600 text-xs md:text-sm">
-                        {reminder.po_number || "-"}
-                      </div>
-                    </td>
-                    <td className="px-2 md:px-4 py-2">
-                      <div className="text-gray-800 text-xs md:text-sm truncate max-w-[120px]">
-                        {reminder.vendor || "-"}
-                      </div>
-                    </td>
-                    <td className="px-2 md:px-4 py-2">
-                      <div className="font-semibold text-orange-600 text-xs md:text-sm">
-                        {formatCurrency(reminder.balance_amount || 0)}
-                      </div>
-                    </td>
-                    <td className="px-2 md:px-4 py-2">
-                      <div className="text-gray-800 text-xs md:text-sm">
-                        {reminder.due_date || "--"}
-                      </div>
-                    </td>
-                    <td className="px-2 md:px-4 py-2">
-                      <span
-                        className={`px-2 py-1 rounded-full text-[10px] md:text-xs font-medium ${getStatusColor(reminder.status)}`}
-                      >
-                        {(reminder.status || "pending").toUpperCase()}
-                      </span>
-                    </td>
-                    <td className="px-2 md:px-4 py-2">
-                      {reminder.status === "unseen" && (
-                        <div>
-                          {can("mark_seen") && (
-                            <button
-                              onClick={() => {
-                                markReminderSeen({
-                                  id: reminder.id,
-                                  seen_by: user?.id,
-                                });
-                              }}
-                              className="px-2 py-1 bg-green-600 text-white rounded hover:bg-green-700 transition-all duration-200 flex items-center gap-1 text-[10px] md:text-xs"
-                            >
-                              <Check className="w-3 h-3" /> Seen
-                            </button>
-                          )}
-                        </div>
-                      )}
-                    </td>
-                  </tr>
-                ))}
-
-                {filteredReminders.length === 0 && (
-                  <tr>
-                    <td colSpan={6} className="px-4 py-8 text-center">
-                      <Bell className="w-12 h-12 md:w-16 md:h-16 text-gray-300 mx-auto mb-3" />
-                      <p className="text-gray-600 text-sm md:text-lg font-medium">
-                        No payment reminders found
-                      </p>
-                      <p className="text-gray-500 text-xs md:text-sm mt-1">
-                        {remindersSearchPONumber ||
-                        remindersSearchVendor ||
-                        remindersSearchAmount
-                          ? "Try adjusting your search"
-                          : "No payment reminders available"}
-                      </p>
-                    </td>
-                  </tr>
-                )}
-              </tbody>
-            </table>
-          </div>
-        </div>
-      )}
-
       {/* Advanced Filters Sidebar */}
       {showFilters && (
         <div className="fixed inset-0 z-50 overflow-hidden">
@@ -1500,7 +1325,7 @@ export default function ServiceOrderPayments() {
                 </div>
                 <div>
                   <h2 className="text-base font-bold text-white">
-                    Record Advance Payment
+                    Record Work Order Payment
                   </h2>
                   <p className="text-xs text-white/90 font-medium mt-0.5">
                     WO: {selectedPO?.po_number}
@@ -1513,9 +1338,12 @@ export default function ServiceOrderPayments() {
                   setSelectedPO(null);
                   setPaymentData({
                     po_id: null,
-                    transaction_type: "advance",
+                    transaction_type: "payment",
+                    adjust_with_advance: false,
+                    advance_amount: "",
+                    retention_percentage: "",
                     amount_paid: "",
-                    venderId: "",
+                    vendorId: "",
                     payment_method: "bank_transfer",
                     payment_reference_no: "",
                     payment_proof: null,
@@ -1533,9 +1361,9 @@ export default function ServiceOrderPayments() {
 
             <form
               onSubmit={handleMakePayment}
-              className="p-4 max-h-[calc(90vh-80px)] overflow-y-auto"
+              className="pt-4 pl-4 pb-4 max-h-[calc(90vh-80px)] "
             >
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mb-4">
+              <div className="overflow-y-scroll max-h-[calc(80vh-80px)] grid grid-cols-1 md:grid-cols-2 gap-3 pr-4 scrollbar-thin">
                 <div className="space-y-1">
                   <p className="text-xs font-semibold text-gray-800">
                     Select Vendor
@@ -1547,7 +1375,6 @@ export default function ServiceOrderPayments() {
                     }))}
                     value={String(paymentData.vendorId)}
                     onChange={(id: any) => {
-                      console.log(id);
                       setShowVendorServiceOrders(
                         wos.filter(
                           (wo: any) => Number(wo.vendor_id) === Number(id),
@@ -1570,12 +1397,18 @@ export default function ServiceOrderPayments() {
                       name: v.so_number || "",
                     }))}
                     value={paymentData.po_id}
-                    onChange={(id: any) => {
-                      const woData = wos.find(
-                        (wo: any) => Number(wo.id) === Number(id),
-                      );
+                    onChange={async (id: any) => {
+                      const selectServiceOrder =
+                        await ServiceOrdersApi.getById(id);
 
-                      setPaymentData({ ...paymentData, po_id: id });
+                      setSelectedPO(selectServiceOrder);
+                      setPaymentData({
+                        ...paymentData,
+                        po_id: id,
+                        amount_paid:
+                          Number(selectServiceOrder.balance_amount) -
+                          Number(selectServiceOrder.advance_amount),
+                      });
                     }}
                     placeholder="Select a payment term"
                     required
@@ -1604,133 +1437,209 @@ export default function ServiceOrderPayments() {
                     </p>
                   </div>
                 </div>
-              </div>
-
-              <div className="space-y-3">
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                  <div className="space-y-1">
-                    <label className="block text-xs font-semibold text-gray-800">
-                      Payment Method <span className="text-red-500">*</span>
-                    </label>
-                    <select
-                      value={paymentData.payment_method || "bank_transfer"}
-                      onChange={(e) =>
-                        setPaymentData({
-                          ...paymentData,
-                          payment_method: e.target.value,
-                        })
-                      }
-                      className="w-full px-3 py-2 text-sm border-2 border-gray-200 rounded-xl focus:border-[#C62828] focus:ring-2 focus:ring-[#C62828]/20 outline-none"
-                    >
-                      <option value="bank_transfer">Bank Transfer</option>
-                      <option value="cheque">Cheque</option>
-                      <option value="cash">Cash</option>
-                      <option value="online">Online Payment</option>
-                    </select>
-                  </div>
-
-                  <div className="space-y-1">
-                    <label className="block text-xs font-semibold text-gray-800">
-                      Payment Date <span className="text-red-500">*</span>
-                    </label>
-                    <input
-                      type="date"
-                      value={paymentData.payment_date || ""}
-                      onChange={(e) => {
-                        setPaymentData({
-                          ...paymentData,
-                          payment_date: e.target.value,
-                        });
-                      }}
-                      className="w-full px-3 py-2 text-sm border-2 border-gray-200 rounded-xl focus:border-[#C62828] focus:ring-2 focus:ring-[#C62828]/20 outline-none"
-                      required
-                    />
-                  </div>
-                  <div className="space-y-1">
-                    <label className="block text-xs font-semibold text-gray-800">
-                      Payment Amount <span className="text-red-500">*</span>
-                    </label>
-                    <input
-                      type="number"
-                      value={paymentData.amount_paid || ""}
-                      onChange={(e) => {
-                        if (
-                          Number(e.target.value) >
-                          Number(selectedPO?.balance_amount)
-                        ) {
-                          toast.warning(
-                            "You can not enter amount greater than balance amount",
-                          );
-                          return;
-                        }
-                        setPaymentData({
-                          ...paymentData,
-                          amount_paid: Number(e.target.value) || "",
-                        });
-                      }}
-                      className="w-full px-3 py-2 text-sm border-2 border-gray-200 rounded-xl focus:border-[#C62828] focus:ring-2 focus:ring-[#C62828]/20 outline-none"
-                      min="0.01"
-                      max={selectedPO?.balance_amount}
-                      step="0.01"
-                      required
-                    />
-                  </div>
-                  <div className="space-y-1">
-                    <label className="block text-xs font-semibold text-gray-800">
-                      Reference Number <span className="text-red-500">*</span>
-                    </label>
-                    <input
-                      type="text"
-                      value={paymentData.payment_reference_no || ""}
-                      onChange={(e) =>
-                        setPaymentData({
-                          ...paymentData,
-                          payment_reference_no: e.target.value,
-                        })
-                      }
-                      className="w-full px-3 py-2 text-sm border-2 border-gray-200 rounded-xl focus:border-[#C62828] focus:ring-2 focus:ring-[#C62828]/20 outline-none"
-                      placeholder="Transaction reference"
-                      required
-                    />
-                  </div>
-
-                  <div className="space-y-1">
-                    <label className="block text-xs font-semibold text-gray-800">
-                      Upload Payment Proof{" "}
-                      <span className="text-red-500">*</span>
-                    </label>
-                    <input
-                      type="file"
-                      required
-                      id="payment_proof"
-                      onChange={handleFileUpload}
-                      className="w-full px-3 py-1 text-sm border-2 border-gray-200 rounded-xl focus:border-[#C62828] focus:ring-2 focus:ring-[#C62828]/20 outline-none file:border-none file:bg-gradient-to-r file:from-[#C62828] file:to-red-600 file:text-white file:font-medium file:px-3 file:py-1 file:rounded-lg file:cursor-pointer"
-                      accept=".pdf,.jpg,.jpeg,.png"
-                    />
-                  </div>
-                  <div className="space-y-1">
-                    <label className="block text-xs font-semibold text-gray-800">
-                      Payment Status <span className="text-red-500">*</span>
-                    </label>
-                    <select
-                      value={paymentData.status || "pending"}
-                      onChange={(e) =>
-                        setPaymentData({
-                          ...paymentData,
-                          status: e.target.value,
-                        })
-                      }
-                      className="w-full px-3 py-2 text-sm border-2 border-gray-200 rounded-xl focus:border-[#C62828] focus:ring-2 focus:ring-[#C62828]/20 outline-none"
-                    >
-                      <option value="PENDING">Pending</option>
-                      <option value="SUCCESS">Success</option>
-                      <option value="FAILED">Failed</option>
-                      <option value="CANCELLED">Cancelled</option>
-                    </select>
+                <div className="space-y-1">
+                  <p className="text-xs font-semibold text-gray-800">
+                    Advance Amount
+                  </p>
+                  <div className="p-2 bg-red-50 border border-red-200 rounded-lg">
+                    <p className="text-base font-bold text-red-600">
+                      {formatCurrency(selectedPO?.advance_amount || 0)}
+                    </p>
                   </div>
                 </div>
 
                 <div className="space-y-1">
+                  <label className="block text-xs font-semibold text-gray-800">
+                    Payment Method <span className="text-red-500">*</span>
+                  </label>
+                  <select
+                    value={paymentData.payment_method || "bank_transfer"}
+                    onChange={(e) =>
+                      setPaymentData({
+                        ...paymentData,
+                        payment_method: e.target.value,
+                      })
+                    }
+                    className="w-full px-3 py-2 text-sm border-2 border-gray-200 rounded-xl focus:border-[#C62828] focus:ring-2 focus:ring-[#C62828]/20 outline-none"
+                  >
+                    <option value="bank_transfer">Bank Transfer</option>
+                    <option value="cheque">Cheque</option>
+                    <option value="cash">Cash</option>
+                    <option value="online">Online Payment</option>
+                  </select>
+                </div>
+
+                <div className="space-y-1">
+                  <label className="block text-xs font-semibold text-gray-800">
+                    Payment Date <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    type="date"
+                    value={paymentData.payment_date || ""}
+                    onChange={(e) => {
+                      setPaymentData({
+                        ...paymentData,
+                        payment_date: e.target.value,
+                      });
+                    }}
+                    className="w-full px-3 py-2 text-sm border-2 border-gray-200 rounded-xl focus:border-[#C62828] focus:ring-2 focus:ring-[#C62828]/20 outline-none"
+                    required
+                  />
+                </div>
+                <div className="space-y-1">
+                  <label className="block text-xs font-semibold text-gray-800">
+                    Payment Amount <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    type="number"
+                    value={paymentData.amount_paid || ""}
+                    onChange={(e) => {
+                      if (
+                        Number(e.target.value) >
+                        Number(selectedPO?.balance_amount) -
+                          Number(selectedPO.advance_amount)
+                      ) {
+                        return;
+                      }
+                      setPaymentData({
+                        ...paymentData,
+                        amount_paid: Number(e.target.value) || "",
+                      });
+                    }}
+                    className="w-full px-3 py-2 text-sm border-2 border-gray-200 rounded-xl focus:border-[#C62828] focus:ring-2 focus:ring-[#C62828]/20 outline-none"
+                    min="0.01"
+                    max={selectedPO?.balance_amount}
+                    step="0.01"
+                    required
+                  />
+                </div>
+
+                <div className="space-y-1">
+                  <label className="block text-xs font-semibold text-gray-800">
+                    Payment Status <span className="text-red-500">*</span>
+                  </label>
+                  <select
+                    value={paymentData.status || "pending"}
+                    onChange={(e) =>
+                      setPaymentData({
+                        ...paymentData,
+                        status: e.target.value,
+                      })
+                    }
+                    className="w-full px-3 py-2 text-sm border-2 border-gray-200 rounded-xl focus:border-[#C62828] focus:ring-2 focus:ring-[#C62828]/20 outline-none"
+                  >
+                    <option value="PENDING">Pending</option>
+                    <option value="SUCCESS">Success</option>
+                    <option value="FAILED">Failed</option>
+                    <option value="CANCELLED">Cancelled</option>
+                  </select>
+                </div>
+                {selectedPO && Number(selectedPO.advance_amount) > 0 && (
+                  <div className="flex items-end gap-2 mb-2">
+                    <input
+                      type="checkbox"
+                      onChange={(e) => {
+                        setPaymentData({
+                          ...paymentData,
+                          adjust_with_advance: e.target.checked,
+                        });
+                      }}
+                      className="w-4 h-4 accent-[#b52124] cursor-pointer mt-0.5"
+                    />
+                    <h4 className="font-semibold text-sm text-[#40423f]">
+                      Adjust with Advance
+                    </h4>
+                  </div>
+                )}
+
+                {paymentData.adjust_with_advance && (
+                  <div className="space-y-1">
+                    <label className="block text-xs font-semibold text-gray-800">
+                      Amount Deduct From Advance{" "}
+                      <span className="text-red-500">*</span>
+                    </label>
+                    <input
+                      type="number"
+                      disabled={paymentData.amount_paid.length === 0}
+                      value={paymentData.advance_amount || ""}
+                      onChange={(e) => {
+                        if (
+                          Number(e.target.value) >
+                            Number(selectedPO?.advance_amount) ||
+                          Number(e.target.value) >
+                            Number(paymentData.amount_paid)
+                        ) {
+                          return;
+                        }
+                        setPaymentData({
+                          ...paymentData,
+                          advance_amount: Number(e.target.value) || "",
+                        });
+                      }}
+                      className="w-full px-3 py-2 text-sm border-2 border-gray-200 rounded-xl focus:border-[#C62828] focus:ring-2 focus:ring-[#C62828]/20 outline-none"
+                      min="0.01"
+                      max={selectedPO?.total_amount}
+                      step="0.01"
+                    />
+                  </div>
+                )}
+
+                <div className="space-y-1">
+                  <label className="block text-xs font-semibold text-gray-800">
+                    Reference Number <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    type="text"
+                    value={paymentData.payment_reference_no || ""}
+                    onChange={(e) =>
+                      setPaymentData({
+                        ...paymentData,
+                        payment_reference_no: e.target.value,
+                      })
+                    }
+                    className="w-full px-3 py-2 text-sm border-2 border-gray-200 rounded-xl focus:border-[#C62828] focus:ring-2 focus:ring-[#C62828]/20 outline-none"
+                    placeholder="Transaction reference"
+                    required
+                  />
+                </div>
+
+                <div className="space-y-1">
+                  <label className="block text-xs font-semibold text-gray-800">
+                    Upload Payment Proof <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    type="file"
+                    required
+                    id="payment_proof"
+                    onChange={handleFileUpload}
+                    className="w-full px-3 py-1 text-sm border-2 border-gray-200 rounded-xl focus:border-[#C62828] focus:ring-2 focus:ring-[#C62828]/20 outline-none file:border-none file:bg-gradient-to-r file:from-[#C62828] file:to-red-600 file:text-white file:font-medium file:px-3 file:py-1 file:rounded-lg file:cursor-pointer"
+                    accept=".pdf,.jpg,.jpeg,.png"
+                  />
+                </div>
+                <div className="space-y-1">
+                  <label className="block text-xs font-semibold text-gray-800">
+                    Retention % <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    type="number"
+                    value={paymentData.retention_percentage || ""}
+                    onChange={(e) => {
+                      if (Number(e.target.value) > 50) {
+                        return;
+                      }
+                      setPaymentData({
+                        ...paymentData,
+                        retention_percentage: Number(e.target.value) || "",
+                      });
+                    }}
+                    className="w-full px-3 py-2 text-sm border-2 border-gray-200 rounded-xl focus:border-[#C62828] focus:ring-2 focus:ring-[#C62828]/20 outline-none"
+                    min="0.01"
+                    max={100}
+                    step="0.01"
+                  />
+                </div>
+
+                <div className="space-y-1 col-span-1 md:col-span-2">
                   <label className="block text-xs font-semibold text-gray-800">
                     Remarks
                   </label>
@@ -1748,9 +1657,8 @@ export default function ServiceOrderPayments() {
                   />
                 </div>
               </div>
-
               {/* Modal Footer */}
-              <div className="border-t p-3 flex gap-2">
+              <div className="border-t  pb-3 flex gap-2 col-span-2 sticky bottom-0 bg-white">
                 <button
                   type="submit"
                   disabled={submitting}
@@ -1768,6 +1676,22 @@ export default function ServiceOrderPayments() {
                   onClick={() => {
                     setShowPaymentModal(false);
                     setSelectedPO(null);
+                    setPaymentData({
+                      po_id: null,
+                      transaction_type: "payment",
+                      adjust_with_advance: false,
+                      advance_amount: "",
+                      retention_percentage: "",
+                      amount_paid: "",
+                      vendorId: "",
+                      payment_method: "bank_transfer",
+                      payment_reference_no: "",
+                      payment_proof: null,
+                      payment_date: new Date().toISOString().split("T")[0],
+                      status: "pending",
+                      remarks: "",
+                      created_by: user?.id,
+                    });
                   }}
                   className="px-4 py-2 text-sm border border-gray-200 rounded-xl hover:bg-gray-50 transition-all duration-200 font-medium text-gray-700"
                 >
