@@ -436,13 +436,13 @@ export default function EmployeeProfile({
                         <Edit className="w-4 h-4" />
                         <span>Edit</span>
                       </button>
-                      <button
+                      {/* <button
                         onClick={() => setShowAddDetailsModal(true)}
                         className="flex items-center gap-2 px-3 py-2 bg-[#C62828] text-white text-sm font-medium rounded-lg hover:bg-red-700 transition"
                       >
                         <FileText className="w-4 h-4" />
                         <span>Add Details</span>
-                      </button>
+                      </button> */}
                     </div>
                   </div>
 
