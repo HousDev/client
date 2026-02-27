@@ -37,6 +37,7 @@ import Swal from "sweetalert2";
 import { toast } from "sonner";
 import HrmsEmployeesApi, { HrmsEmployee } from "../lib/employeeApi"; // ✅ Import Employee API
 import employeeReimbursementApi from "../lib/employeeReimbursementApi";
+import { useAuth } from "../contexts/AuthContext";
 
 interface Reimbursement {
   id: string;
@@ -84,6 +85,8 @@ export default function Reimbursements() {
   // ✅ NEW: Employee states
   const [employees, setEmployees] = useState<HrmsEmployee[]>([]);
   const [loadingEmployees, setLoadingEmployees] = useState(false);
+
+  const { can } = useAuth();
 
   // Search states for each column
   const [searchEmployee, setSearchEmployee] = useState("");
@@ -536,19 +539,21 @@ export default function Reimbursements() {
         {/* Right side - Export, Bulk Actions and Add button */}
         <div className="flex items-center gap-2 md:gap-3">
           {/* Export Button - Always visible */}
-          <Button
-            variant="secondary"
-            onClick={() => {
-              /* Export functionality */
-            }}
-            className="text-sm"
-          >
-            <Download className="h-4 w-4 mr-1.5" />
-            <span className="hidden sm:inline">Export</span>
-          </Button>
+          {can("export_reimbursement_data") && (
+            <Button
+              variant="secondary"
+              onClick={() => {
+                /* Export functionality */
+              }}
+              className="text-sm"
+            >
+              <Download className="h-4 w-4 mr-1.5" />
+              <span className="hidden sm:inline">Export</span>
+            </Button>
+          )}
 
           {/* Bulk Actions - Only shown when items are selected */}
-          {selectedItems.size > 0 && (
+          {selectedItems.size > 0 && can("reimbursement_bulk_actions") && (
             <div className="flex items-center gap-2 bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 rounded-md px-3 py-2">
               {/* Mobile View */}
               <div className="flex items-center gap-2 sm:hidden">
@@ -587,14 +592,16 @@ export default function Reimbursements() {
           )}
 
           {/* New Reimbursement Button */}
-          <Button
-            onClick={() => setShowAddModal(true)}
-            className="text-sm bg-gradient-to-r from-[#C62828] to-red-600 hover:from-red-600 hover:to-red-700"
-          >
-            <Plus className="h-4 w-4 mr-1.5" />
-            <span className="hidden sm:inline">New Reimbursement</span>
-            <span className="sm:hidden">New</span>
-          </Button>
+          {can("create_reimbursement_request") && (
+            <Button
+              onClick={() => setShowAddModal(true)}
+              className="text-sm bg-gradient-to-r from-[#C62828] to-red-600 hover:from-red-600 hover:to-red-700"
+            >
+              <Plus className="h-4 w-4 mr-1.5" />
+              <span className="hidden sm:inline">New Reimbursement</span>
+              <span className="sm:hidden">New</span>
+            </Button>
+          )}
         </div>
       </div>
 
@@ -916,18 +923,23 @@ export default function Reimbursements() {
 
                       {/* Actions Column - Only Three-dot menu */}
                       <td className="px-3 md:px-4 py-3 relative menu-container">
-                        <button
-                          onClick={() =>
-                            setOpenMenuId(
-                              openMenuId === reimbursement.id
-                                ? null
-                                : reimbursement.id,
-                            )
-                          }
-                          className="p-1.5 hover:bg-gray-100 rounded transition ml-auto"
-                        >
-                          <MoreVertical className="w-4 h-4 text-gray-600" />
-                        </button>
+                        {can("apprvoe_reimbursement_request") &&
+                          can("reject_reimbursement_request") &&
+                          can("disburse_reimbursement") &&
+                          can("delete_reimbursement_request") && (
+                            <button
+                              onClick={() =>
+                                setOpenMenuId(
+                                  openMenuId === reimbursement.id
+                                    ? null
+                                    : reimbursement.id,
+                                )
+                              }
+                              className="p-1.5 hover:bg-gray-100 rounded transition ml-auto"
+                            >
+                              <MoreVertical className="w-4 h-4 text-gray-600" />
+                            </button>
+                          )}
 
                         {openMenuId === reimbursement.id && (
                           <div className="absolute right-4 top-10 z-50 w-44 bg-white border border-gray-200 rounded-lg shadow-lg">
@@ -948,63 +960,72 @@ export default function Reimbursements() {
                               {/* Approve/Reject options only for pending status */}
                               {reimbursement.status === "pending" && (
                                 <>
-                                  <li>
-                                    <button
-                                      onClick={() => {
-                                        handleApprove(reimbursement.id);
-                                        setOpenMenuId(null);
-                                      }}
-                                      className="w-full flex items-center gap-2 px-4 py-2 hover:bg-gray-100 text-green-600 text-left"
-                                    >
-                                      <CheckCircle className="w-4 h-4" />
-                                      Approve
-                                    </button>
-                                  </li>
-                                  <li>
-                                    <button
-                                      onClick={() => {
-                                        handleReject(reimbursement);
-                                        setOpenMenuId(null);
-                                      }}
-                                      className="w-full flex items-center gap-2 px-4 py-2 hover:bg-gray-100 text-red-600 text-left"
-                                    >
-                                      <XCircle className="w-4 h-4" />
-                                      Reject
-                                    </button>
-                                  </li>
+                                  {can("apprvoe_reimbursement_request") && (
+                                    <li>
+                                      <button
+                                        onClick={() => {
+                                          handleApprove(reimbursement.id);
+                                          setOpenMenuId(null);
+                                        }}
+                                        className="w-full flex items-center gap-2 px-4 py-2 hover:bg-gray-100 text-green-600 text-left"
+                                      >
+                                        <CheckCircle className="w-4 h-4" />
+                                        Approve
+                                      </button>
+                                    </li>
+                                  )}
+                                  {can("reject_reimbursement_request") && (
+                                    <li>
+                                      <button
+                                        onClick={() => {
+                                          handleReject(reimbursement);
+                                          setOpenMenuId(null);
+                                        }}
+                                        className="w-full flex items-center gap-2 px-4 py-2 hover:bg-gray-100 text-red-600 text-left"
+                                      >
+                                        <XCircle className="w-4 h-4" />
+                                        Reject
+                                      </button>
+                                    </li>
+                                  )}
                                 </>
                               )}
 
                               {/* Pay option only for approved status */}
-                              {reimbursement.status === "approved" && (
-                                <li>
-                                  <button
-                                    onClick={() => {
-                                      handlePay(reimbursement.id);
-                                      setOpenMenuId(null);
-                                    }}
-                                    className="w-full flex items-center gap-2 px-4 py-2 hover:bg-gray-100 text-blue-600 text-left"
-                                  >
-                                    <IndianRupee className="w-4 h-4" />
-                                    Pay Now
-                                  </button>
-                                </li>
-                              )}
+                              {reimbursement.status === "approved" &&
+                                can("disburse_reimbursement") && (
+                                  <li>
+                                    <button
+                                      onClick={() => {
+                                        handlePay(reimbursement.id);
+                                        setOpenMenuId(null);
+                                      }}
+                                      className="w-full flex items-center gap-2 px-4 py-2 hover:bg-gray-100 text-blue-600 text-left"
+                                    >
+                                      <IndianRupee className="w-4 h-4" />
+                                      Pay Now
+                                    </button>
+                                  </li>
+                                )}
 
                               <hr className="my-1" />
 
-                              <li>
-                                <button
-                                  onClick={() => {
-                                    handleDeleteReimbursement(reimbursement.id);
-                                    setOpenMenuId(null);
-                                  }}
-                                  className="w-full flex items-center gap-2 px-4 py-2 hover:bg-red-50 text-red-600 text-left"
-                                >
-                                  <Trash2 className="w-4 h-4" />
-                                  Delete
-                                </button>
-                              </li>
+                              {can("delete_reimbursement_request") && (
+                                <li>
+                                  <button
+                                    onClick={() => {
+                                      handleDeleteReimbursement(
+                                        reimbursement.id,
+                                      );
+                                      setOpenMenuId(null);
+                                    }}
+                                    className="w-full flex items-center gap-2 px-4 py-2 hover:bg-red-50 text-red-600 text-left"
+                                  >
+                                    <Trash2 className="w-4 h-4" />
+                                    Delete
+                                  </button>
+                                </li>
+                              )}
                             </ul>
                           </div>
                         )}

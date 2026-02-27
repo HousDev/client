@@ -255,6 +255,11 @@ export default function Permissions() {
     },
 
     // Projects
+    {
+      action: "download_project_details",
+      label: "Download Project Data",
+      module: "Projects",
+    },
     { action: "view_projects", label: "View Projects", module: "Projects" },
     {
       action: "view_projects_details",

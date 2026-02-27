@@ -14,6 +14,7 @@ import {
   Filter,
   X,
   Home,
+  Download,
 } from "lucide-react";
 import projectApi from "../lib/projectApi";
 import CreateProjects from "../components/projectForms/CreateProjects";
@@ -29,6 +30,8 @@ import { enGB } from "date-fns/locale/en-GB";
 import "react-datepicker/dist/react-datepicker.css";
 import { Calendar } from "lucide-react";
 import { useAuth } from "../contexts/AuthContext";
+import * as XLSX from "xlsx";
+import { saveAs } from "file-saver";
 
 registerLocale("en-GB", enGB);
 
@@ -135,10 +138,91 @@ export default function ProjectsMaster() {
     }
   };
 
+  const exportProjectToExcel = async (projectId: number) => {
+    const response: any = await projectApi.getProjectById(projectId);
+    const projectData = response?.data;
+
+    if (!projectData?.buildings) {
+      console.error("Invalid project data");
+      return;
+    }
+
+    const rows: any[] = [];
+
+    projectData.buildings.forEach((building: any) => {
+      building.floors?.forEach((floor: any) => {
+        // 🔹 Flats
+        floor.flats?.forEach((flat: any) => {
+          rows.push({
+            "Project Name": projectData.name,
+            Location: projectData.location,
+            "Start Date": projectData.start_date?.split("T")[0],
+            "End Date": projectData.end_date?.split("T")[0],
+            "Building Name": building.building_name,
+            "Floor Name": floor.floor_name,
+            "Unit Type": "FLAT",
+            "Unit Name": flat.flat_name,
+          });
+        });
+
+        // 🔹 Common Areas
+        floor.common_areas?.forEach((area: any) => {
+          rows.push({
+            "Project Name": projectData.name,
+            Location: projectData.location,
+            "Start Date": projectData.start_date?.split("T")[0],
+            "End Date": projectData.end_date?.split("T")[0],
+            "Building Name": building.building_name,
+            "Floor Name": floor.floor_name,
+            "Unit Type": "COMMON_AREA",
+            "Unit Name": area.common_area_name,
+          });
+        });
+
+        // 🔹 If floor has no flats & no common areas
+        if (
+          (!floor.flats || floor.flats.length === 0) &&
+          (!floor.common_areas || floor.common_areas.length === 0)
+        ) {
+          rows.push({
+            "Project Name": projectData.name,
+            Location: projectData.location,
+            "Start Date": projectData.start_date?.split("T")[0],
+            "End Date": projectData.end_date?.split("T")[0],
+            "Building Name": building.building_name,
+            "Floor Name": floor.floor_name,
+            "Unit Type": "FLOOR",
+            "Unit Name": "",
+          });
+        }
+      });
+    });
+
+    // Maintain exact column order
+    const worksheet = XLSX.utils.json_to_sheet(rows, {
+      header: [
+        "Project Name",
+        "Location",
+        "Start Date",
+        "End Date",
+        "Building Name",
+        "Floor Name",
+        "Unit Type",
+        "Unit Name",
+      ],
+    });
+
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, "Sheet1");
+
+    XLSX.writeFile(workbook, `${projectData.name}_Export.xlsx`);
+  };
+
   const loadProjectDetails = async (id: string, isEdit = false) => {
     setLoading(true);
     try {
       const data: any = await projectApi.getProjectById(id);
+      console.log("details : ", data.data);
       if (data.success && !isEdit) {
         setSelectedProject(data.data);
         setViewProjectDetails(true);
@@ -857,6 +941,17 @@ export default function ProjectsMaster() {
                         </td>
                         <td className="px-3 md:px-4 py-3">
                           <div className="flex items-center justify-center gap-1.5 md:gap-2">
+                            {can("download_project_details") && (
+                              <button
+                                onClick={() => {
+                                  exportProjectToExcel(Number(project.id));
+                                }}
+                                className="p-1.5 md:p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition"
+                                title="View"
+                              >
+                                <Download className="w-3.5 h-3.5 md:w-4 md:h-4" />
+                              </button>
+                            )}
                             {can("view_projects") && (
                               <button
                                 onClick={() => {

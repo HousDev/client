@@ -120,7 +120,7 @@ export default function Permissions() {
     },
     {
       action: "view_ctc_config",
-      label: "View CTC Configuration",
+      label: "View Payroll CTC Configuration",
       module: "Payroll",
     },
     {
@@ -166,36 +166,191 @@ export default function Permissions() {
       module: "Payroll Summary",
     },
 
-    // CTC Configuration
+    // Payroll CTC Configuration
     {
       action: "assign_ctc",
       label: "Assign CTC",
-      module: "CTC Configuration",
+      module: "Payroll CTC Configuration",
+    },
+    {
+      action: "delete_assigned_ctc",
+      label: "Delete Assign CTC",
+      module: "Payroll CTC Configuration",
     },
     {
       action: "manage_ctc_template",
       label: "Manage CTC Template",
-      module: "CTC Configuration",
+      module: "Payroll CTC Configuration",
+    },
+    {
+      action: "ctc_config_bulk_action",
+      label: "CTC Bulk Actions",
+      module: "Payroll CTC Configuration",
     },
     {
       action: "create_ctc_template",
       label: "Create CTC Template",
-      module: "CTC Configuration",
+      module: "Payroll CTC Configuration",
     },
     {
       action: "update_ctc_template",
       label: "Update CTC Template",
-      module: "CTC Configuration",
+      module: "Payroll CTC Configuration",
     },
     {
       action: "view_ctc_template",
       label: "View CTC Template",
-      module: "CTC Configuration",
+      module: "Payroll CTC Configuration",
     },
     {
       action: "delete_ctc_template",
       label: "Delete CTC Template",
-      module: "CTC Configuration",
+      module: "Payroll CTC Configuration",
+    },
+    {
+      action: "make_ctc_template_default",
+      label: "Mark CTC Template Default",
+      module: "Payroll CTC Configuration",
+    },
+    {
+      action: "active_inactive_ctc_template",
+      label: "Active Inactive CTC Tamplate",
+      module: "Payroll CTC Configuration",
+    },
+
+    // Advance
+    {
+      action: "create_advance_request",
+      label: "Create Advance Request",
+      module: "Payroll Advance",
+    },
+    {
+      action: "approve_advance_request",
+      label: "Approve Advance Request",
+      module: "Payroll Advance",
+    },
+    {
+      action: "reject_advance_request",
+      label: "Reject Advance Request",
+      module: "Payroll Advance",
+    },
+    {
+      action: "disburse_advance",
+      label: "Disburse Advance",
+      module: "Payroll Advance",
+    },
+    {
+      action: "delete_advance_request",
+      label: "Delete Advance Request",
+      module: "Payroll Advance",
+    },
+
+    // Incentive
+    {
+      action: "import_incentive_csv",
+      label: "Import Incentive Data",
+      module: "Payroll Incentive",
+    },
+    {
+      action: "pay_incentive",
+      label: "Pay Incentive",
+      module: "Payroll Incentive",
+    },
+    {
+      action: "create_incentive_request",
+      label: "Create Advance Request",
+      module: "Payroll Incentive",
+    },
+    {
+      action: "incentive_bulk_action",
+      label: "Incentive Bulk Action",
+      module: "Payroll Incentive",
+    },
+    {
+      action: "approve_incentive_request",
+      label: "Approve Incentive Request.",
+      module: "Payroll Incentive",
+    },
+    {
+      action: "reject_incentive_request",
+      label: "Reject Incentive Request.",
+      module: "Payroll Incentive",
+    },
+    {
+      action: "delete_incentive_request",
+      label: "Delete Incentive Request.",
+      module: "Payroll Incentive",
+    },
+
+    // Reimbursement
+    {
+      action: "export_reimbursement_data",
+      label: "Export Reimbursement Data.",
+      module: "Payroll Reimbursement",
+    },
+    {
+      action: "reimbursement_bulk_actions",
+      label: "Reimbursement Bulk Actions.",
+      module: "Payroll Reimbursement",
+    },
+    {
+      action: "create_reimbursement_request",
+      label: "Create Reimbursement Request.",
+      module: "Payroll Reimbursement",
+    },
+    {
+      action: "delete_reimbursement_request",
+      label: "Delete Reimbursement Request.",
+      module: "Payroll Reimbursement",
+    },
+    {
+      action: "apprvoe_reimbursement_request",
+      label: "Approve Reimbursement Request.",
+      module: "Payroll Reimbursement",
+    },
+    {
+      action: "reject_reimbursement_request",
+      label: "Reject Reimbursement Request.",
+      module: "Payroll Reimbursement",
+    },
+    {
+      action: "disburse_reimbursement",
+      label: "Disburse Reimbursement.",
+      module: "Payroll Reimbursement",
+    },
+
+    // TDS
+    {
+      action: "generate_form16",
+      label: "Generate Form 16.",
+      module: "Payroll TDS",
+    },
+    {
+      action: "export_tds_return",
+      label: "Export TDS Return.",
+      module: "Payroll TDS",
+    },
+    {
+      action: "mark_filed_form16",
+      label: "Mark Form 16 Filed.",
+      module: "Payroll TDS",
+    },
+    {
+      action: "mark_tds_deposited",
+      label: "Mark TDS Deposited.",
+      module: "Payroll TDS",
+    },
+
+    // Payment History
+    {
+      action: "export_payment_history",
+      label: "Export Payment History Data.",
+      module: "Payroll Payment History",
+    },
+    {
+      action: "download_payment_receipt",
+      label: "Download Payment Receipt.",
+      module: "Payroll Payment History",
     },
 
     // Expenses
