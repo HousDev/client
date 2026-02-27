@@ -18,6 +18,8 @@ import Badge from "../components/ui/Badge";
 import MarkAttendanceModal from "../components/attendence/MarkAttendanceModal";
 import attendanceApi from "../lib/attendanceApi";
 import { useAuth } from "../contexts/AuthContext";
+import HrmsEmployeesApi from "../lib/employeeApi";
+import AttendanceCalender from "../components/attendence/AttendanceCalender";
 
 interface AttendanceRecord {
   id: number;
@@ -52,6 +54,9 @@ interface AttendanceStats {
 export default function Attendance() {
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("");
+  const [selectedDateForAttendance, setSelectedDateAttendance] =
+    useState<string>("");
+  const [selecteDate, setSelectedDate] = useState<string>("");
   const [showMarkModal, setShowMarkModal] = useState(false);
   const [attendanceData, setAttendanceData] = useState<AttendanceRecord[]>([]);
   const [selectedAttendance, setSelectedAttendance] = useState<any>();
@@ -120,9 +125,9 @@ export default function Attendance() {
       console.log("last check out : ", lastCheckOut);
 
       return {
-        ...firstCheckIn, // 👈 first check-in FULL OBJECT
+        ...firstCheckIn,
         last_punch_out_time: lastCheckOut?.punch_out_time ?? null,
-        trackingHistory: records, // 👈 ALL DATA
+        trackingHistory: records,
       };
     });
   };
@@ -132,6 +137,7 @@ export default function Attendance() {
 
     // 1️⃣ Group by user_id (changed from date)
     data.forEach((record) => {
+      console.log("clg records : ", record);
       const userKey = record.user_id; // 👈 changed here
 
       if (!grouped[userKey]) {
@@ -170,15 +176,53 @@ export default function Attendance() {
     });
   };
 
+  const isUserLate = (punchInISO: string) => {
+    const punchIn = new Date(punchInISO);
+
+    // Create 10:00 AM of same day (local time)
+    const tenAM = new Date(punchIn);
+    tenAM.setHours(10, 0, 0, 0);
+
+    return punchIn > tenAM;
+  };
+
   const loadAttendance = async () => {
     setLoading(true);
     if (user.role === "admin") {
       try {
         const response: any = await attendanceApi.getAllToday();
-        console.log("from load attendence", response);
+        const empRes: any = await HrmsEmployeesApi.getEmployees();
+        console.log("emp res for today", empRes);
+        console.log("from load attendence dfadafsd", response);
         const finalData = formatAttendanceForAdmin(response.data);
         console.log("for admin final", finalData);
+        let totalWorkingHours = 0;
+        let usersCount = 0;
+        let lateUsers = 0;
+
         if (response.success) {
+          for (let i = 0; i < finalData.length; i++) {
+            ++usersCount;
+            let totalHours = 0;
+            for (let j = 0; j < finalData[i].trackingHistory.length; j++) {
+              totalHours += Number(finalData[i].trackingHistory[j].total_hours);
+            }
+            finalData[i].total_hours = totalHours.toFixed(2);
+            totalWorkingHours += Number(totalHours.toFixed(2));
+            if (isUserLate(finalData[i].punch_in_time)) {
+              lateUsers += 1;
+            }
+          }
+          console.log("sakfl;jsldf : ", usersCount);
+
+          setStats({
+            ...stats,
+            average_hours: Number(totalWorkingHours) / Number(usersCount),
+            present: Number(usersCount),
+            absent: Number(empRes.length) - Number(usersCount),
+            late: lateUsers,
+          });
+          console.log("fdata", finalData);
           setAttendanceData(Array.isArray(finalData) ? finalData : []);
         }
       } catch (error) {
@@ -192,7 +236,9 @@ export default function Attendance() {
         const response: any = await attendanceApi.getCurrentMonthAttendance(
           user.id,
         );
-        console.log("from load attendence", response);
+
+        console.log("from load attendence dafsdfsadf", response);
+
         const finalData = formatAttendance(response.data.data);
         console.log(finalData);
         if (response.data.success) {
@@ -209,12 +255,8 @@ export default function Attendance() {
 
   const loadStatistics = async () => {
     try {
-      const today = new Date().toISOString().split("T")[0];
-      const response: any = await attendanceApi.getStatistics({
-        start_date: today,
-        end_date: today,
-      });
-
+      const response: any = await attendanceApi.getTodayStatistics();
+      console.log("stats of attendance : ", response);
       if (response.success && response.data) {
         setStats({
           present: response.data.present_today || 0,
@@ -305,6 +347,18 @@ export default function Attendance() {
     window.URL.revokeObjectURL(url);
   };
 
+  const formatDecimalToHourMinute = (decimalHours: number | string): string => {
+    const value = Number(decimalHours);
+
+    if (isNaN(value)) return "0:00h";
+
+    const totalMinutes = Math.round(value * 60);
+    const hours = Math.floor(totalMinutes / 60);
+    const minutes = totalMinutes % 60;
+
+    return `${hours}:${minutes.toString().padStart(2, "0")}h`;
+  };
+
   return (
     <div className="space-y-3  h-screen">
       {!(user.role === "admin") && (
@@ -321,82 +375,86 @@ export default function Attendance() {
         </div>
       )}
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        <Card className="p-6">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm text-slate-600">Present Today</p>
-              <p className="text-3xl font-bold text-green-600 mt-2">
-                {stats.present}
-              </p>
-              <p className="text-xs text-slate-500 mt-1">
-                {stats.total > 0
-                  ? Math.round((stats.present / stats.total) * 100)
-                  : 0}
-                % present
-              </p>
+      {user.role === "admin" && (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+          <Card className="p-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm text-slate-600">Present Today</p>
+                <p className="text-3xl font-bold text-green-600 mt-2">
+                  {stats.present}
+                </p>
+                <p className="text-xs text-slate-500 mt-1">
+                  {stats.total > 0
+                    ? Math.round((stats.present / stats.total) * 100)
+                    : 0}
+                  % present
+                </p>
+              </div>
+              <div className="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center">
+                <UserCheck className="h-6 w-6 text-green-600" />
+              </div>
             </div>
-            <div className="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center">
-              <UserCheck className="h-6 w-6 text-green-600" />
-            </div>
-          </div>
-        </Card>
+          </Card>
 
-        <Card className="p-6">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm text-slate-600">Absent Today</p>
-              <p className="text-3xl font-bold text-red-600 mt-2">
-                {stats.absent}
-              </p>
-              <p className="text-xs text-slate-500 mt-1">
-                {stats.total > 0
-                  ? Math.round((stats.absent / stats.total) * 100)
-                  : 0}
-                % absent
-              </p>
+          <Card className="p-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm text-slate-600">Absent Today</p>
+                <p className="text-3xl font-bold text-red-600 mt-2">
+                  {stats.absent}
+                </p>
+                <p className="text-xs text-slate-500 mt-1">
+                  {stats.total > 0
+                    ? Math.round((stats.absent / stats.total) * 100)
+                    : 0}
+                  % absent
+                </p>
+              </div>
+              <div className="w-12 h-12 bg-red-100 rounded-lg flex items-center justify-center">
+                <XCircle className="h-6 w-6 text-red-600" />
+              </div>
             </div>
-            <div className="w-12 h-12 bg-red-100 rounded-lg flex items-center justify-center">
-              <XCircle className="h-6 w-6 text-red-600" />
-            </div>
-          </div>
-        </Card>
+          </Card>
 
-        <Card className="p-6">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm text-slate-600">Late Arrivals</p>
-              <p className="text-3xl font-bold text-yellow-600 mt-2">
-                {stats.late}
-              </p>
-              <p className="text-xs text-slate-500 mt-1">
-                {stats.total > 0
-                  ? Math.round((stats.late / stats.total) * 100)
-                  : 0}
-                % late
-              </p>
+          <Card className="p-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm text-slate-600">Late Arrivals</p>
+                <p className="text-3xl font-bold text-yellow-600 mt-2">
+                  {stats.late}
+                </p>
+                <p className="text-xs text-slate-500 mt-1">
+                  {stats.total > 0
+                    ? Math.round((stats.late / stats.total) * 100)
+                    : 0}
+                  % late
+                </p>
+              </div>
+              <div className="w-12 h-12 bg-yellow-100 rounded-lg flex items-center justify-center">
+                <AlertTriangle className="h-6 w-6 text-yellow-600" />
+              </div>
             </div>
-            <div className="w-12 h-12 bg-yellow-100 rounded-lg flex items-center justify-center">
-              <AlertTriangle className="h-6 w-6 text-yellow-600" />
-            </div>
-          </div>
-        </Card>
+          </Card>
 
-        <Card className="p-6">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm text-slate-600">Avg. Hours</p>
-              <p className="text-3xl font-bold text-blue-600 mt-2">
-                {stats.average_hours.toFixed(1)}h
-              </p>
-              <p className="text-xs text-slate-500 mt-1">per employee</p>
+          <Card className="p-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm text-slate-600">Avg. Hours</p>
+                <p className="text-3xl font-bold text-blue-600 mt-2">
+                  {formatDecimalToHourMinute(
+                    Number(stats.average_hours).toFixed(2),
+                  )}
+                </p>
+                <p className="text-xs text-slate-500 mt-1">per employee</p>
+              </div>
+              <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center">
+                <TrendingUp className="h-6 w-6 text-blue-600" />
+              </div>
             </div>
-            <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center">
-              <TrendingUp className="h-6 w-6 text-blue-600" />
-            </div>
-          </div>
-        </Card>
-      </div>
+          </Card>
+        </div>
+      )}
 
       <Card>
         <div className="px-6 py-3 border-b border-slate-200">
@@ -404,7 +462,7 @@ export default function Attendance() {
             Today's Attendance
           </h2>
           <div className="flex items-center justify-between gap-4 flex-wrap">
-            <div className="flex-1 min-w-80 max-w-md">
+            <div className="flex w-1/2 ">
               <div className="relative">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-slate-400" />
                 <Input
@@ -415,7 +473,30 @@ export default function Attendance() {
                   className="pl-10"
                 />
               </div>
+              <input
+                type="month"
+                value={""}
+                onChange={(e) => {}}
+                className=" mx-3
+            appearance-none
+            bg-white/60
+            border border-gray-200
+            rounded-2xl
+            px-5 py-2
+            text-gray-800
+            font-medium
+            shadow-sm
+            transition-all duration-300
+            focus:outline-none
+            focus:ring-2
+            focus:ring-black/80
+            focus:border-black
+            hover:shadow-md
+            hover:border-gray-300
+          "
+              />
             </div>
+
             <div className="flex gap-2">
               <div className="relative">
                 <Button
@@ -425,6 +506,7 @@ export default function Attendance() {
                   <Filter className="h-4 w-4 mr-2" />
                   {statusFilter ? `Status: ${statusFilter}` : "Filter"}
                 </Button>
+
                 {showFilterDropdown && (
                   <div className="absolute right-0 mt-2 w-48 bg-white border border-slate-200 rounded-lg shadow-lg z-10">
                     <button
@@ -458,6 +540,7 @@ export default function Attendance() {
                   </div>
                 )}
               </div>
+
               {can("export_attendance") && (
                 <Button variant="secondary" onClick={exportToCSV}>
                   <Download className="h-4 w-4 mr-2" />
@@ -672,7 +755,7 @@ export default function Attendance() {
                       <td className="px-6 py-4 text-right">
                         <span className="text-xs font-medium text-slate-900">
                           {record.punch_out_time
-                            ? `${Number(record.total_hours)?.toFixed(1) || "0.0"}h`
+                            ? `${formatDecimalToHourMinute(Number(record.total_hours)?.toFixed(2)) || "0.0h"}`
                             : "In Progress"}
                         </span>
                       </td>
@@ -879,7 +962,7 @@ export default function Attendance() {
                                           <td className="px-4 py-3 text-right">
                                             <span className="text-xs font-medium text-slate-900">
                                               {recordHistory.punch_out_time
-                                                ? `${Number(recordHistory.total_hours)?.toFixed(1) || "0.0"}h`
+                                                ? `${formatDecimalToHourMinute(Number(recordHistory.total_hours)?.toFixed(2)) || "0.0h"}`
                                                 : "In Progress"}
                                             </span>
                                           </td>
@@ -987,6 +1070,8 @@ export default function Attendance() {
           </div>
         </div>
       )}
+
+      <AttendanceCalender month={2} year={2026} />
 
       {/* Modal - Yeh pehle ki tarah hi rahega */}
       <MarkAttendanceModal
