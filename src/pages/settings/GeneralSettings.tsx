@@ -75,7 +75,15 @@ interface SystemSettings {
 
 // ═══════════════════════════════════════════════════════════════════════════
 const GeneralSettings: React.FC = () => {
-const { user, profile, updateProfileLocally,updateAvatarLocally, updateSystemSettingsLocally, refreshSystemSettings, refreshUser } = useAuth();
+  const {
+    user,
+    profile,
+    updateProfileLocally,
+    updateAvatarLocally,
+    updateSystemSettingsLocally,
+    refreshSystemSettings,
+    refreshUser,
+  } = useAuth();
 
   const [activeTab, setActiveTab] = useState<string>("profile");
   const [loading, setLoading] = useState<boolean>(true);
@@ -238,39 +246,38 @@ const { user, profile, updateProfileLocally,updateAvatarLocally, updateSystemSet
   // };
   // GeneralSettings.tsx
 
-const handleAvatarUpload = async (file: File) => {
-  try {
-    const result = await SettingsApi.uploadAvatar(file);
-    console.log('📤 Avatar upload result:', result); // Debug log
-    
-    // ✅ Update local settings state
-    setUserProfile((prev) => ({ ...prev, avatar: result.avatar }));
-    
-    // ✅ Update header avatar immediately via context
-    updateAvatarLocally(result.avatar);
-    
-    toast.success("Profile picture updated");
-  } catch (error: any) {
-    console.error('❌ Avatar upload error:', error);
-    toast.error("Failed to upload profile picture");
-  }
-};
+  const handleAvatarUpload = async (file: File) => {
+    try {
+      const result = await SettingsApi.uploadAvatar(file);
+      console.log("📤 Avatar upload result:", result); // Debug log
 
-// 3. Fix handleRemoveAvatar:
-const handleRemoveAvatar = async () => {
-  try {
-    await SettingsApi.removeAvatar();
-    setUserProfile((prev) => ({ ...prev, avatar: null }));
-    
-    // ✅ Clear header avatar immediately
-    updateAvatarLocally(null);
-    
-    toast.success("Profile picture removed");
-  } catch (error: any) {
-    toast.error("Failed to remove profile picture");
-  }
-};
+      // ✅ Update local settings state
+      setUserProfile((prev) => ({ ...prev, avatar: result.avatar }));
 
+      // ✅ Update header avatar immediately via context
+      updateAvatarLocally(result.avatar);
+
+      toast.success("Profile picture updated");
+    } catch (error: any) {
+      console.error("❌ Avatar upload error:", error);
+      toast.error("Failed to upload profile picture");
+    }
+  };
+
+  // 3. Fix handleRemoveAvatar:
+  const handleRemoveAvatar = async () => {
+    try {
+      await SettingsApi.removeAvatar();
+      setUserProfile((prev) => ({ ...prev, avatar: null }));
+
+      // ✅ Clear header avatar immediately
+      updateAvatarLocally(null);
+
+      toast.success("Profile picture removed");
+    } catch (error: any) {
+      toast.error("Failed to remove profile picture");
+    }
+  };
 
   // ═══ NOTIFICATIONS ════════════════════════════════════════════════════════
   const handleSaveNotifications = async () => {
@@ -407,7 +414,7 @@ const handleRemoveAvatar = async () => {
     }
 
     try {
-      const result = await SettingsApi.uploadFavicon(file);
+      const result: any = await SettingsApi.uploadFavicon(file);
 
       // ✅ Update local state FIRST with the response
       setSystem(result);
@@ -626,9 +633,10 @@ const handleRemoveAvatar = async () => {
                     {/* Avatar */}
                     <div className="relative">
                       <div className="w-40 h-40 rounded-full border-8 border-white shadow-xl overflow-hidden bg-gradient-to-br from-gray-100 to-gray-200">
-{userProfile.avatar ? (
+                        {userProfile.avatar ? (
                           <img
-src={userProfile.avatar}                            alt="Profile"
+                            src={userProfile.avatar}
+                            alt="Profile"
                             className="w-full h-full object-cover"
                           />
                         ) : (
@@ -641,7 +649,7 @@ src={userProfile.avatar}                            alt="Profile"
                       </div>
 
                       {/* Camera button */}
-                      <button
+                      {/* <button
                         type="button"
                         onClick={() => fileInputRef.current?.click()}
                         className="absolute -bottom-2 -right-2 bg-white p-3 rounded-full shadow-lg hover:shadow-xl transition-all hover:scale-105 border-2 border-gray-100"
@@ -649,7 +657,6 @@ src={userProfile.avatar}                            alt="Profile"
                         <FaCamera className="w-5 h-5 text-gray-700" />
                       </button>
 
-                      {/* Hidden file input */}
                       <input
                         type="file"
                         ref={fileInputRef}
@@ -661,7 +668,7 @@ src={userProfile.avatar}                            alt="Profile"
                           // reset so the same file can be re-selected
                           e.target.value = "";
                         }}
-                      />
+                      /> */}
                     </div>
 
                     {/* Name + badges + Save button */}
@@ -687,7 +694,7 @@ src={userProfile.avatar}                            alt="Profile"
                         </div>
 
                         {/* Save + Remove avatar row */}
-                        <div className="flex items-center gap-2">
+                        {/* <div className="flex items-center gap-2">
                           {userProfile.avatar && (
                             <button
                               type="button"
@@ -715,7 +722,7 @@ src={userProfile.avatar}                            alt="Profile"
                               </>
                             )}
                           </button>
-                        </div>
+                        </div> */}
                       </div>
                     </div>
                   </div>
@@ -733,11 +740,13 @@ src={userProfile.avatar}                            alt="Profile"
                       {/* Full Name – EDITABLE */}
                       <div>
                         <label className="block text-sm font-medium text-gray-700 mb-2">
-                          Full Name
+                          Full Name{" "}
+                          <Lock className="w-3.5 h-3.5 inline ml-1.5 text-gray-400" />
                         </label>
                         <input
                           type="text"
                           value={userProfile.full_name}
+                          disabled
                           onChange={(e) =>
                             setUserProfile((prev) => ({
                               ...prev,
@@ -761,9 +770,9 @@ src={userProfile.avatar}                            alt="Profile"
                           readOnly
                           className="w-full px-4 py-3 border border-gray-200 rounded-xl text-gray-500 bg-gray-50 cursor-not-allowed"
                         />
-                        <p className="text-xs text-gray-400 mt-1">
+                        {/* <p className="text-xs text-gray-400 mt-1">
                           Email cannot be changed here. Contact admin.
-                        </p>
+                        </p> */}
                       </div>
 
                       {/* Phone – READ-ONLY */}
@@ -778,9 +787,9 @@ src={userProfile.avatar}                            alt="Profile"
                           readOnly
                           className="w-full px-4 py-3 border border-gray-200 rounded-xl text-gray-500 bg-gray-50 cursor-not-allowed"
                         />
-                        <p className="text-xs text-gray-400 mt-1">
+                        {/* <p className="text-xs text-gray-400 mt-1">
                           Phone cannot be changed here. Contact admin.
-                        </p>
+                        </p> */}
                       </div>
                     </div>
                   </div>
@@ -1109,13 +1118,12 @@ src={userProfile.avatar}                            alt="Profile"
                     </div>
 
                     {/* ── Security Features (local) ── */}
-                    <div className="space-y-5">
+                    {/* <div className="space-y-5">
                       <h3 className="text-lg font-semibold text-gray-900 flex items-center gap-2">
                         <Shield className="w-5 h-5" />
                         Security Features
                       </h3>
 
-                      {/* 2FA */}
                       <div className="p-5 rounded-xl border border-gray-100 bg-gradient-to-r from-gray-50 to-white">
                         <div className="flex items-center justify-between">
                           <div className="flex items-center gap-4">
@@ -1155,7 +1163,6 @@ src={userProfile.avatar}                            alt="Profile"
                         </div>
                       </div>
 
-                      {/* Session Timeout */}
                       <div className="p-5 rounded-xl border border-gray-100 bg-gradient-to-r from-gray-50 to-white">
                         <div className="flex items-center justify-between mb-4">
                           <div className="flex items-center gap-4">
@@ -1195,7 +1202,6 @@ src={userProfile.avatar}                            alt="Profile"
                         </div>
                       </div>
 
-                      {/* IP Whitelist */}
                       <div className="p-5 rounded-xl border border-gray-100 bg-gradient-to-r from-gray-50 to-white">
                         <div className="flex items-center gap-4 mb-4">
                           <div className="p-3 rounded-lg bg-green-100 text-green-600">
@@ -1259,17 +1265,16 @@ src={userProfile.avatar}                            alt="Profile"
                           </div>
                         )}
                       </div>
-                    </div>
+                    </div> */}
 
-                    {/* Save security (local) */}
-                    <div className="pt-6 border-t border-gray-100">
+                    {/* <div className="pt-6 border-t border-gray-100">
                       <button
                         onClick={handleSaveSecurity}
                         className="px-8 py-3.5 bg-gradient-to-r from-gray-900 to-gray-800 text-white font-medium rounded-xl hover:shadow-lg transition-all"
                       >
                         Save Security Settings
                       </button>
-                    </div>
+                    </div> */}
                   </div>
                 </div>
               </div>
