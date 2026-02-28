@@ -1,18 +1,45 @@
-import { useMemo } from "react";
-
+import { useEffect, useMemo, useState } from "react";
+import ViewTodayAttendanceModal from "./ViewTodayAttendanceModal";
+interface AttendanceRecord {
+  id: number;
+  user_id: number;
+  date: string;
+  punch_in_time: string;
+  punch_out_time: string | null;
+  total_hours: number | null;
+  status: string;
+  punch_in_location: string;
+  punch_out_location: string | null;
+  punch_in_selfie: string;
+  punch_out_selfie: string | null;
+  work_type: string;
+  project_id: number | null;
+  project_location: string | null;
+  user_name?: string;
+  employee_code?: string;
+  trackingHistory?: any;
+}
 const AttendanceCalender = ({
   month,
   year,
+  setSelectedDateAttendance,
+  attendanceData,
 }: {
   month: number; // 0-based (0 = Jan)
   year: number;
+  attendanceData: any;
+  setSelectedDateAttendance: any;
 }) => {
+  console.log("atd", attendanceData);
+  const [daysInMonth, setDaysInMonth] = useState<number>(0);
   const today = new Date();
+  const [dayAttendanceData, setDayAttendanceData] =
+    useState<AttendanceRecord>();
 
-  const daysInMonth = useMemo(
-    () => new Date(year, month + 1, 0).getDate(),
-    [month, year],
-  );
+  const calculateDays = () => new Date(year, month + 1, 0).getDate();
+  useEffect(() => {
+    setDaysInMonth(calculateDays());
+  }, [month, year]);
 
   const firstDayIndex = useMemo(
     () => new Date(year, month, 1).getDay(),
@@ -65,16 +92,26 @@ const AttendanceCalender = ({
             return (
               <div
                 key={day}
-                className={`
-                  relative h-16 flex items-center justify-center rounded-2xl
+                onClick={() => {
+                  const formattedMonth = String(Number(month) + 1).padStart(
+                    2,
+                    "0",
+                  );
+                  const formattedDay = String(day).padStart(2, "0");
+
+                  const date = `${year}-${formattedMonth}-${formattedDay}`;
+
+                  const data = attendanceData.find((a: any) => {
+                    return a.date === date;
+                  });
+
+                  setDayAttendanceData(data);
+                }}
+                className={`${attendanceData.find((d: any) => d.date.slice(8, 10) === String(day)) ? "text-green-600 bg-green-100" : "text-red-600 bg-red-100"} relative h-16 flex items-center justify-center rounded-2xl
                   text-sm font-medium
                   transition-all duration-200 ease-in-out
                   cursor-pointer
-                  ${
-                    isToday
-                      ? "bg-black text-white shadow-md scale-105"
-                      : "bg-gray-50 hover:bg-white hover:shadow-md hover:-translate-y-1"
-                  }
+                  
                   ${isSunday && !isToday ? "text-red-500" : "text-gray-700"}
                 `}
               >
@@ -89,6 +126,12 @@ const AttendanceCalender = ({
           })}
         </div>
       </div>
+      {dayAttendanceData && (
+        <ViewTodayAttendanceModal
+          dayData={dayAttendanceData}
+          setDayData={setDayAttendanceData}
+        />
+      )}
     </div>
   );
 };

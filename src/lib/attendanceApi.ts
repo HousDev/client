@@ -169,10 +169,10 @@ const attendanceApi = {
   },
 
   // Get current month attendance of user
-  async getCurrentMonthAttendance(user_id: number) {
+  async getCurrentMonthAttendance(user_id: number, date: string) {
     try {
       const response = await api.get(
-        `/attendance/currentMonthAttendance/${user_id}`,
+        `/attendance/currentMonthAttendance/${user_id}/${date}`,
       );
       return response;
     } catch (error: any) {
