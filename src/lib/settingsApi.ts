@@ -39,7 +39,7 @@ export const SettingsApi = {
     return res.data.data;
   },
 
-  updateProfile: async (data: { full_name: string }): Promise<UserProfileData> => {
+  updateProfile: async (data: { full_name: string, email:string , phone:string   }): Promise<UserProfileData> => {
     const res = await api.put("/settings/profile", data);
     return res.data.data;
   },

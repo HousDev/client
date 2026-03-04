@@ -213,6 +213,8 @@ const GeneralSettings: React.FC = () => {
     try {
       const updated = await SettingsApi.updateProfile({
         full_name: userProfile.full_name,
+        email: userProfile.email,
+        phone: userProfile.phone,
       });
       updateProfileLocally({ full_name: updated.full_name });
       toast.success("Profile updated successfully");
@@ -753,7 +755,7 @@ const GeneralSettings: React.FC = () => {
                               full_name: e.target.value,
                             }))
                           }
-                          className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-[#C62828]/20 focus:border-[#C62828] transition text-gray-900"
+                          className="w-full px-4 py-3 border border-gray-400 rounded-xl focus:ring-2 focus:ring-[#C62828]/20 focus:border-[#C62828] transition text-gray-900"
                           placeholder="Enter your full name"
                         />
                       </div>
@@ -765,10 +767,15 @@ const GeneralSettings: React.FC = () => {
                           <Lock className="w-3.5 h-3.5 inline ml-1.5 text-gray-400" />
                         </label>
                         <input
-                          type="email"
+                          type="email" disabled={user.role !== "admin"}
                           value={userProfile.email}
-                          readOnly
-                          className="w-full px-4 py-3 border border-gray-200 rounded-xl text-gray-500 bg-gray-50 cursor-not-allowed"
+                          onChange={(e) => {
+                            setUserProfile((prev) => ({
+                              ...prev,
+                              email: e.target.value,
+                            }))
+                          }}
+                          className="w-full px-4 py-3 border border-gray-400 rounded-xl text-gray-900 bg-gray-50 "
                         />
                         {/* <p className="text-xs text-gray-400 mt-1">
                           Email cannot be changed here. Contact admin.
@@ -784,8 +791,15 @@ const GeneralSettings: React.FC = () => {
                         <input
                           type="tel"
                           value={userProfile.phone}
-                          readOnly
-                          className="w-full px-4 py-3 border border-gray-200 rounded-xl text-gray-500 bg-gray-50 cursor-not-allowed"
+                          onChange={(e) => {
+                            if (e.target.value.length > 10 || !/^\d*$/.test(e.target.value)) return;
+                            setUserProfile((prev) => ({
+                              ...prev,
+                              phone: e.target.value,
+                            }))
+                          }}
+                          disabled={user.role !== "admin"} // Only admins can see phone number, but it's still read-only
+                          className="w-full px-4 py-3 border border-gray-400 rounded-xl text-gray-900 bg-gray-50 "
                         />
                         {/* <p className="text-xs text-gray-400 mt-1">
                           Phone cannot be changed here. Contact admin.
@@ -811,7 +825,7 @@ const GeneralSettings: React.FC = () => {
                           type="text"
                           value={userProfile.department || ""}
                           readOnly
-                          className="w-full px-4 py-3 border border-gray-200 rounded-xl text-gray-500 bg-gray-50 cursor-not-allowed"
+                          className="w-full px-4 py-3 border border-gray-400 rounded-xl text-gray-500 bg-gray-50 cursor-not-allowed"
                           placeholder="—"
                         />
                       </div>
@@ -826,7 +840,7 @@ const GeneralSettings: React.FC = () => {
                           type="text"
                           value={"—"}
                           readOnly
-                          className="w-full px-4 py-3 border border-gray-200 rounded-xl text-gray-500 bg-gray-50 cursor-not-allowed"
+                          className="w-full px-4 py-3 border border-gray-400 rounded-xl text-gray-500 bg-gray-50 cursor-not-allowed"
                           placeholder="—"
                         />
                       </div>
