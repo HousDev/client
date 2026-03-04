@@ -309,10 +309,17 @@ export default function CreateTask({
                       <DoorOpen className="w-3.5 h-3.5" />
                     </div>
                     <SearchableSelect
-                      options={commonAreas.filter((d: any) => !(allTasks || []).find((at: any) => at.common_area_id === d.id)).map((area: any) => ({
-                        id: area.id,
-                        name: area.common_area_name,
-                      }))}
+                      options={commonAreas
+                        .filter(
+                          (d: any) =>
+                            !(allTasks || []).find(
+                              (at: any) => at.common_area_id === d.id,
+                            ),
+                        )
+                        .map((area: any) => ({
+                          id: area.id,
+                          name: area.common_area_name,
+                        }))}
                       value={formData.commonAreaId}
                       onChange={(id) => {
                         const data = commonAreas.find(
@@ -354,10 +361,17 @@ export default function CreateTask({
                       <AreaChart className="w-3.5 h-3.5" />
                     </div>
                     <SearchableSelect
-                      options={areas.filter((d: any) => !(allTasks || []).find((at: any) => at.area_id === d.id)).map((a: any) => ({
-                        id: a.id,
-                        name: a.name,
-                      }))}
+                      options={areas
+                        .filter(
+                          (d: any) =>
+                            !(allTasks || []).find(
+                              (at: any) => at.area_id === d.id,
+                            ),
+                        )
+                        .map((a: any) => ({
+                          id: a.id,
+                          name: a.name,
+                        }))}
                       value={formData.area_id}
                       onChange={(id) => {
                         const data = areas.find((a: any) => a.id === id);
@@ -432,6 +446,7 @@ export default function CreateTask({
                     <input
                       type="text"
                       value={formData.total_work}
+                      disabled
                       onChange={(e) =>
                         setFormData({ ...formData, total_work: e.target.value })
                       }
@@ -452,6 +467,7 @@ export default function CreateTask({
                     </div>
                     <select
                       value={formData.unit}
+                      disabled
                       onChange={(e) => {
                         setFormData({ ...formData, unit: e.target.value });
                       }}
@@ -514,7 +530,7 @@ export default function CreateTask({
                         setFormData({
                           ...formData,
                           start_date: e.target.value,
-                          end_date: ""
+                          end_date: "",
                         })
                       }
                       className="w-full px-4 py-2 text-sm border border-gray-300 rounded-xl
@@ -544,7 +560,6 @@ export default function CreateTask({
              focus:border-amber-600 focus:ring-2 focus:ring-amber-600/20"
                       required
                     />
-
                   </div>
                 </div>
               </div>

@@ -3,7 +3,6 @@ import {
   ClipboardCheck,
   FileCheck,
   History,
-  Plus,
   User,
   X,
 } from "lucide-react";

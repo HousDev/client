@@ -338,6 +338,433 @@ export default function Permissions() {
       label: "User Bulk Actions",
       module: "Administration",
     },
+    // HRMS Dashboard
+    {
+      action: "hrms_dashboard",
+      label: "HRMS Dashboard",
+      module: "HRMS Dashboard",
+    },
+
+    // HRMS Employees
+    {
+      action: "view_employee",
+      label: "View Employees",
+      module: "HRMS Employees",
+    },
+    {
+      action: "create_employee",
+      label: "Create Employees",
+      module: "HRMS Employees",
+    },
+    {
+      action: "edit_employee",
+      label: "Edit Employees",
+      module: "HRMS Employees",
+    },
+    {
+      action: "delete_employee",
+      label: "Delete Employees",
+      module: "HRMS Employees",
+    },
+    {
+      action: "export_employee",
+      label: "Export Employees",
+      module: "HRMS Employees",
+    },
+    {
+      action: "bulk_actions_employee",
+      label: "Bulk Actions",
+      module: "HRMS Employees",
+    },
+
+    // HRMS Attendance
+    {
+      action: "view_attendance",
+      label: "View Attendance",
+      module: "Attendance",
+    },
+    {
+      action: "mark_attendance",
+      label: "Mark Attendance",
+      module: "Attendance",
+    },
+    {
+      action: "export_attendance",
+      label: "Export Attendance",
+      module: "Attendance",
+    },
+
+    // HRMS leaves
+    { action: "view_leaves", label: "View Leaves", module: "Leaves" },
+    { action: "apply_leaves", label: "Apply Leaves", module: "Leaves" },
+    { action: "delete_leaves", label: "Delete Leaves", module: "Leaves" },
+    { action: "approve_leaves", label: "Approve Leaves", module: "Leaves" },
+    { action: "reject_leaves", label: "Reject Leaves", module: "Leaves" },
+    { action: "configure_leaves", label: "Configure Leaves", module: "Leaves" },
+    {
+      action: "view_all_balances_leaves",
+      label: "View All Balances",
+      module: "Leaves",
+    },
+    { action: "export_leaves", label: "Export Leaves", module: "Leaves" },
+
+    // HRMS Payroll
+    {
+      action: "view_payroll_summary",
+      label: "View Payroll Summary",
+      module: "Payroll",
+    },
+    {
+      action: "view_ctc_config",
+      label: "View Payroll CTC Configuration",
+      module: "Payroll",
+    },
+    {
+      action: "view_advance",
+      label: "View Advance",
+      module: "Payroll",
+    },
+    {
+      action: "view_incentive",
+      label: "View Incentive",
+      module: "Payroll",
+    },
+    {
+      action: "view_reimbursements",
+      label: "View Reimbursements",
+      module: "Payroll",
+    },
+    {
+      action: "view_tds",
+      label: "View TDS",
+      module: "Payroll",
+    },
+    {
+      action: "view_payment_history",
+      label: "View Payment History",
+      module: "Payroll",
+    },
+
+    // HRMS Payroll Summary
+    {
+      action: "run_new_payroll",
+      label: "Run Payment Payroll",
+      module: "Payroll Summary",
+    },
+    {
+      action: "view_created_payroll",
+      label: "View Created Payroll",
+      module: "Payroll Summary",
+    },
+    {
+      action: "view_payroll_report",
+      label: "View Payroll Report",
+      module: "Payroll Summary",
+    },
+
+    // Payroll CTC Configuration
+    {
+      action: "assign_ctc",
+      label: "Assign CTC",
+      module: "Payroll CTC Configuration",
+    },
+    {
+      action: "delete_assigned_ctc",
+      label: "Delete Assign CTC",
+      module: "Payroll CTC Configuration",
+    },
+    {
+      action: "manage_ctc_template",
+      label: "Manage CTC Template",
+      module: "Payroll CTC Configuration",
+    },
+    {
+      action: "ctc_config_bulk_action",
+      label: "CTC Bulk Actions",
+      module: "Payroll CTC Configuration",
+    },
+    {
+      action: "create_ctc_template",
+      label: "Create CTC Template",
+      module: "Payroll CTC Configuration",
+    },
+    {
+      action: "update_ctc_template",
+      label: "Update CTC Template",
+      module: "Payroll CTC Configuration",
+    },
+    {
+      action: "view_ctc_template",
+      label: "View CTC Template",
+      module: "Payroll CTC Configuration",
+    },
+    {
+      action: "delete_ctc_template",
+      label: "Delete CTC Template",
+      module: "Payroll CTC Configuration",
+    },
+    {
+      action: "make_ctc_template_default",
+      label: "Mark CTC Template Default",
+      module: "Payroll CTC Configuration",
+    },
+    {
+      action: "active_inactive_ctc_template",
+      label: "Active Inactive CTC Tamplate",
+      module: "Payroll CTC Configuration",
+    },
+
+    // Advance
+    {
+      action: "view_advance",
+      label: "View Advance",
+      module: "Payroll Advance",
+    },
+    {
+      action: "create_advance_request",
+      label: "Create Advance Request",
+      module: "Payroll Advance",
+    },
+    {
+      action: "approve_advance_request",
+      label: "Approve Advance Request",
+      module: "Payroll Advance",
+    },
+    {
+      action: "reject_advance_request",
+      label: "Reject Advance Request",
+      module: "Payroll Advance",
+    },
+    {
+      action: "disburse_advance",
+      label: "Disburse Advance",
+      module: "Payroll Advance",
+    },
+    {
+      action: "delete_advance_request",
+      label: "Delete Advance Request",
+      module: "Payroll Advance",
+    },
+
+    // Incentive
+    {
+      action: "import_incentive_csv",
+      label: "Import Incentive Data",
+      module: "Payroll Incentive",
+    },
+    {
+      action: "pay_incentive",
+      label: "Pay Incentive",
+      module: "Payroll Incentive",
+    },
+    {
+      action: "create_incentive_request",
+      label: "Create Incentive Request",
+      module: "Payroll Incentive",
+    },
+    {
+      action: "incentive_bulk_action",
+      label: "Incentive Bulk Action",
+      module: "Payroll Incentive",
+    },
+    {
+      action: "approve_incentive_request",
+      label: "Approve Incentive Request.",
+      module: "Payroll Incentive",
+    },
+    {
+      action: "reject_incentive_request",
+      label: "Reject Incentive Request.",
+      module: "Payroll Incentive",
+    },
+    {
+      action: "delete_incentive_request",
+      label: "Delete Incentive Request.",
+      module: "Payroll Incentive",
+    },
+
+    // Reimbursement
+    {
+      action: "export_reimbursement_data",
+      label: "Export Reimbursement Data.",
+      module: "Payroll Reimbursement",
+    },
+    {
+      action: "reimbursement_bulk_actions",
+      label: "Reimbursement Bulk Actions.",
+      module: "Payroll Reimbursement",
+    },
+    {
+      action: "create_reimbursement_request",
+      label: "Create Reimbursement Request.",
+      module: "Payroll Reimbursement",
+    },
+    {
+      action: "delete_reimbursement_request",
+      label: "Delete Reimbursement Request.",
+      module: "Payroll Reimbursement",
+    },
+    {
+      action: "apprvoe_reimbursement_request",
+      label: "Approve Reimbursement Request.",
+      module: "Payroll Reimbursement",
+    },
+    {
+      action: "reject_reimbursement_request",
+      label: "Reject Reimbursement Request.",
+      module: "Payroll Reimbursement",
+    },
+    {
+      action: "disburse_reimbursement",
+      label: "Disburse Reimbursement.",
+      module: "Payroll Reimbursement",
+    },
+
+    // TDS
+    {
+      action: "generate_form16",
+      label: "Generate Form 16.",
+      module: "Payroll TDS",
+    },
+    {
+      action: "export_tds_return",
+      label: "Export TDS Return.",
+      module: "Payroll TDS",
+    },
+    {
+      action: "mark_filed_form16",
+      label: "Mark Form 16 Filed.",
+      module: "Payroll TDS",
+    },
+    {
+      action: "mark_tds_deposited",
+      label: "Mark TDS Deposited.",
+      module: "Payroll TDS",
+    },
+
+    // Payment History
+    {
+      action: "export_payment_history",
+      label: "Export Payment History Data.",
+      module: "Payroll Payment History",
+    },
+    {
+      action: "download_payment_receipt",
+      label: "Download Payment Receipt.",
+      module: "Payroll Payment History",
+    },
+
+    // Expenses
+    { action: "view_expenses", label: "View Expenses", module: "Expenses" },
+    { action: "submit_expenses", label: "Submit Expenses", module: "Expenses" },
+    {
+      action: "approve_expenses",
+      label: "Approve Expenses",
+      module: "Expenses",
+    },
+    { action: "reject_expenses", label: "Reject Expenses", module: "Expenses" },
+    { action: "export_expenses", label: "Export Expenses", module: "Expenses" },
+
+    // Recruitment
+    {
+      action: "view_recruitment",
+      label: "View Recruitment",
+      module: "Recruitment",
+    },
+    {
+      action: "create_recruitment",
+      label: "Create Recruitment",
+      module: "Recruitment",
+    },
+    {
+      action: "manage_recruitment",
+      label: "Manage Recruitment",
+      module: "Recruitment",
+    },
+    {
+      action: "export_recruitment",
+      label: "Export Recruitment",
+      module: "Recruitment",
+    },
+
+    // tickets
+    { action: "view_tickets", label: "View Tickets", module: "Tickets" },
+    { action: "create_tickets", label: "Create Tickets", module: "Tickets" },
+    { action: "assign_tickets", label: "Assign Tickets", module: "Tickets" },
+    { action: "resolve_tickets", label: "Resolve Tickets", module: "Tickets" },
+    {
+      action: "escalate_tickets",
+      label: "Escalate Tickets",
+      module: "Tickets",
+    },
+    { action: "export_tickets", label: "Export Tickets", module: "Tickets" },
+
+    // documents
+    { action: "view_documents", label: "View Documents", module: "Documents" },
+    {
+      action: "generate_documents",
+      label: "Generate Documents",
+      module: "Documents",
+    },
+    {
+      action: "approve_documents",
+      label: "Approve Documents",
+      module: "Documents",
+    },
+    {
+      action: "export_documents",
+      label: "Export Documents",
+      module: "Documents",
+    },
+
+    // HRMS Reports
+    {
+      action: "view_hrms_reports",
+      label: "View HRMS Reports",
+      module: "HRMS Reports",
+    },
+    {
+      action: "create_hrms_reports",
+      label: "Create HRMS Reports",
+      module: "HRMS Reports",
+    },
+    {
+      action: "schedule_hrms_reports",
+      label: "Schedule HRMS Reports",
+      module: "HRMS Reports",
+    },
+    {
+      action: "export_hrms_reports",
+      label: "Export HRMS Reports",
+      module: "HRMS Reports",
+    },
+
+    // HRMS Settings
+    {
+      action: "organization_hrms_settings",
+      label: "Organization Settings",
+      module: "HRMS Settings",
+    },
+    {
+      action: "locations_hrms_settings",
+      label: "Locations Settings",
+      module: "HRMS Settings",
+    },
+    {
+      action: "security_hrms_settings",
+      label: "Security Settings",
+      module: "HRMS Settings",
+    },
+    {
+      action: "roles_hrms_settings",
+      label: "Roles & Permissions Settings",
+      module: "HRMS Settings",
+    },
+    {
+      action: "integrations_hrms_settings",
+      label: "Integrations Settings",
+      module: "HRMS Settings",
+    },
   ];
 
   const loadUsers = async () => {

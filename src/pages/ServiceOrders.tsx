@@ -37,6 +37,7 @@ import CreateServiceOrderForm from "../components/ServiceOrder/CreateServiceOrde
 import UpdateServiceOrderForm from "../components/ServiceOrder/UpdateServiceOrders";
 import ServiceOrdersApi from "../lib/serviceOrderApi";
 import woPaymentApi from "../lib/woPayments";
+import woPaymentHistoryApi from "../lib/woPayments";
 
 type Vendor = {
   id: string;
@@ -126,16 +127,21 @@ export default function ServiceOrders() {
   const [showEditModal, setShowEditModal] = useState(false);
   const [showPaymentModal, setShowPaymentModal] = useState<boolean>(false);
   const [showCreatePro, setShowCreatePro] = useState(false);
-  const [selectedPO, setSelectedPO] = useState<PO | null>(null);
+  const [selectedPO, setSelectedPO] = useState<any>(null);
   const [editingPO, setEditingPO] = useState<any>(null);
   const [paymentAmount, setPaymentAmount] = useState(0);
   const [allStoreManagementEmployee, setAllStoreManagementEmployee] =
     useState<any>([]);
   const [from, setFrom] = useState("");
   const [to, setTo] = useState("");
-  const [paymentData, setPaymentData] = useState<PaymentDataType>({
+  const [paymentData, setPaymentData] = useState<any>({
     po_id: null,
-    transaction_type: "advance",
+    po_payment_id: null,
+    adjust_with_advance: false,
+    advance_amount: "",
+    retention_percentage: "",
+    vendorId: "",
+    transaction_type: "payment",
     amount_paid: "",
     payment_method: "bank_transfer",
     payment_reference_no: "",
@@ -145,6 +151,11 @@ export default function ServiceOrders() {
     remarks: "",
     created_by: user?.id,
   });
+  const [showVendorServiceOrders, setShowVendorServiceOrders] = useState<any>(
+    [],
+  );
+
+  const [allVendors, setAllVendors] = useState<any>([]);
 
   const [challanNumber, setChallanNumber] = useState("");
   const [challanImage, setChallanImage] = useState<File | null>(null);
@@ -476,6 +487,10 @@ export default function ServiceOrders() {
   const loadVendor = async () => {
     try {
       const response = await vendorApi.getVendors();
+      const filteredVendors = response.filter(
+        (v: any) => v.category_name === "Service",
+      );
+      setAllVendors(filteredVendors);
       return response;
     } catch (error) {
       console.log(error);
@@ -1061,7 +1076,7 @@ export default function ServiceOrders() {
   const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
-      setPaymentData((prev) => ({ ...prev, payment_proof: file }));
+      setPaymentData((prev: any) => ({ ...prev, payment_proof: file }));
     }
   };
 
@@ -1102,7 +1117,15 @@ export default function ServiceOrders() {
         "transaction_type",
         paymentData.transaction_type?.toUpperCase() || "",
       );
-      formData.append("amount_paid", String(paymentData.amount_paid));
+      formData.append("amount_paid", String(paymentData.amount_paid || "0"));
+      formData.append(
+        "advance_amount",
+        String(paymentData.advance_amount || "0"),
+      );
+      formData.append(
+        "retention_percentage",
+        String(paymentData.retention_percentage || "0"),
+      );
       formData.append(
         "payment_method",
         paymentData.payment_method?.toUpperCase() || "",
@@ -1120,9 +1143,9 @@ export default function ServiceOrders() {
       formData.append("payment_proof", paymentData.payment_proof);
 
       setSubmitting(true);
-
-      const res: any = await woPaymentApi.createWoPaymentHistory(formData);
-
+      const res: any =
+        await woPaymentHistoryApi.createWoPaymentHistory(formData);
+      console.log(res);
       if (res.success) {
         loadAllData();
         toast.success("WO Payment recorded successfully!");
@@ -1132,7 +1155,12 @@ export default function ServiceOrders() {
 
         setPaymentData({
           po_id: null,
-          transaction_type: "advance",
+          po_payment_id: null,
+          adjust_with_advance: false,
+          advance_amount: "",
+          retention_percentage: "",
+          vendorId: "",
+          transaction_type: "payment",
           amount_paid: "",
           payment_method: "bank_transfer",
           payment_reference_no: "",
@@ -2304,7 +2332,7 @@ export default function ServiceOrders() {
                 </div>
                 <div>
                   <h2 className="text-base font-bold text-white">
-                    Record Advance Payment
+                    Record Work Order Payment
                   </h2>
                   <p className="text-xs text-white/90 font-medium mt-0.5">
                     WO: {selectedPO?.po_number}
@@ -2317,8 +2345,12 @@ export default function ServiceOrders() {
                   setSelectedPO(null);
                   setPaymentData({
                     po_id: null,
-                    transaction_type: "advance",
+                    transaction_type: "payment",
+                    adjust_with_advance: false,
+                    advance_amount: "",
+                    retention_percentage: "",
                     amount_paid: "",
+                    vendorId: "",
                     payment_method: "bank_transfer",
                     payment_reference_no: "",
                     payment_proof: null,
@@ -2336,25 +2368,42 @@ export default function ServiceOrders() {
 
             <form
               onSubmit={handleMakePayment}
-              className="p-4 max-h-[calc(90vh-80px)] overflow-y-auto"
+              className="pt-4 pl-4 pb-4 max-h-[calc(90vh-80px)] "
             >
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mb-4">
-                <div className="space-y-1">
+              <div className="overflow-y-scroll max-h-[calc(80vh-80px)] grid grid-cols-1 md:grid-cols-2 gap-3 pr-4 scrollbar-thin">
+                <div className="space-y-1 col-span-1 md:col-span-2">
                   <p className="text-xs font-semibold text-gray-800">
-                    PO Number
+                    Select Transaction Type
                   </p>
-                  <div className="p-2 bg-gray-50 border border-gray-200 rounded-lg">
-                    <p className="font-bold text-gray-800">
-                      {selectedPO?.po_number}
+                  <SearchableSelect
+                    options={["Advance", "Payment"].map((v: any) => ({
+                      id: v.toLowerCase(),
+                      name: v,
+                    }))}
+                    value={String(paymentData.transaction_type)}
+                    onChange={(id: any) => {
+                      setPaymentData({ ...paymentData, transaction_type: id });
+                    }}
+                    placeholder="Select Transaction Type"
+                    required
+                  />
+                </div>
+                <div className="space-y-1">
+                  <p className="text-xs font-semibold text-gray-800">Vendor</p>
+                  <div className="p-2 bg-orange-50 border border-orange-200 rounded-lg">
+                    <p className="text-base font-bold text-yellow-600">
+                      {selectedPO?.vendor || "--"}
                     </p>
                   </div>
                 </div>
 
                 <div className="space-y-1">
-                  <p className="text-xs font-semibold text-gray-800">Vendor</p>
-                  <div className="p-2 bg-gray-50 border border-gray-200 rounded-lg">
-                    <p className="font-medium text-gray-800">
-                      {selectedPO?.vendors?.name}
+                  <p className="text-xs font-semibold text-gray-800">
+                    Work Order
+                  </p>
+                  <div className="p-2 bg-orange-50 border border-orange-200 rounded-lg">
+                    <p className="text-base font-bold text-yellow-600">
+                      {selectedPO?.po_number || "--"}
                     </p>
                   </div>
                 </div>
@@ -2380,133 +2429,213 @@ export default function ServiceOrders() {
                     </p>
                   </div>
                 </div>
-              </div>
-
-              <div className="space-y-3">
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                  <div className="space-y-1">
-                    <label className="block text-xs font-semibold text-gray-800">
-                      Payment Method <span className="text-red-500">*</span>
-                    </label>
-                    <select
-                      value={paymentData.payment_method || "bank_transfer"}
-                      onChange={(e) =>
-                        setPaymentData({
-                          ...paymentData,
-                          payment_method: e.target.value,
-                        })
-                      }
-                      className="w-full px-3 py-2 text-sm border-2 border-gray-200 rounded-xl focus:border-[#C62828] focus:ring-2 focus:ring-[#C62828]/20 outline-none"
-                    >
-                      <option value="bank_transfer">Bank Transfer</option>
-                      <option value="cheque">Cheque</option>
-                      <option value="cash">Cash</option>
-                      <option value="online">Online Payment</option>
-                    </select>
-                  </div>
-
-                  <div className="space-y-1">
-                    <label className="block text-xs font-semibold text-gray-800">
-                      Payment Date <span className="text-red-500">*</span>
-                    </label>
-                    <input
-                      type="date"
-                      value={paymentData.payment_date || ""}
-                      onChange={(e) => {
-                        setPaymentData({
-                          ...paymentData,
-                          payment_date: e.target.value,
-                        });
-                      }}
-                      className="w-full px-3 py-2 text-sm border-2 border-gray-200 rounded-xl focus:border-[#C62828] focus:ring-2 focus:ring-[#C62828]/20 outline-none"
-                      required
-                    />
-                  </div>
-                  <div className="space-y-1">
-                    <label className="block text-xs font-semibold text-gray-800">
-                      Payment Amount <span className="text-red-500">*</span>
-                    </label>
-                    <input
-                      type="number"
-                      value={paymentData.amount_paid || ""}
-                      onChange={(e) => {
-                        if (
-                          Number(e.target.value) >
-                          Number(selectedPO?.balance_amount)
-                        ) {
-                          toast.warning(
-                            "You can not enter amount greater than balance amount",
-                          );
-                          return;
-                        }
-                        setPaymentData({
-                          ...paymentData,
-                          amount_paid: Number(e.target.value) || "",
-                        });
-                      }}
-                      className="w-full px-3 py-2 text-sm border-2 border-gray-200 rounded-xl focus:border-[#C62828] focus:ring-2 focus:ring-[#C62828]/20 outline-none"
-                      min="0.01"
-                      max={selectedPO?.balance_amount}
-                      step="0.01"
-                      required
-                    />
-                  </div>
-                  <div className="space-y-1">
-                    <label className="block text-xs font-semibold text-gray-800">
-                      Reference Number <span className="text-red-500">*</span>
-                    </label>
-                    <input
-                      type="text"
-                      value={paymentData.payment_reference_no || ""}
-                      onChange={(e) =>
-                        setPaymentData({
-                          ...paymentData,
-                          payment_reference_no: e.target.value,
-                        })
-                      }
-                      className="w-full px-3 py-2 text-sm border-2 border-gray-200 rounded-xl focus:border-[#C62828] focus:ring-2 focus:ring-[#C62828]/20 outline-none"
-                      placeholder="Transaction reference"
-                      required
-                    />
-                  </div>
-
-                  <div className="space-y-1">
-                    <label className="block text-xs font-semibold text-gray-800">
-                      Upload Payment Proof{" "}
-                      <span className="text-red-500">*</span>
-                    </label>
-                    <input
-                      type="file"
-                      required
-                      id="payment_proof"
-                      onChange={handleFileUpload}
-                      className="w-full px-3 py-1 text-sm border-2 border-gray-200 rounded-xl focus:border-[#C62828] focus:ring-2 focus:ring-[#C62828]/20 outline-none file:border-none file:bg-gradient-to-r file:from-[#C62828] file:to-red-600 file:text-white file:font-medium file:px-3 file:py-1 file:rounded-lg file:cursor-pointer"
-                      accept=".pdf,.jpg,.jpeg,.png"
-                    />
-                  </div>
-                  <div className="space-y-1">
-                    <label className="block text-xs font-semibold text-gray-800">
-                      Payment Status <span className="text-red-500">*</span>
-                    </label>
-                    <select
-                      value={paymentData.status || "pending"}
-                      onChange={(e) =>
-                        setPaymentData({
-                          ...paymentData,
-                          status: e.target.value,
-                        })
-                      }
-                      className="w-full px-3 py-2 text-sm border-2 border-gray-200 rounded-xl focus:border-[#C62828] focus:ring-2 focus:ring-[#C62828]/20 outline-none"
-                    >
-                      <option value="PENDING">Pending</option>
-                      <option value="SUCCESS">Success</option>
-                      <option value="FAILED">Failed</option>
-                      <option value="CANCELLED">Cancelled</option>
-                    </select>
+                <div className="space-y-1">
+                  <p className="text-xs font-semibold text-gray-800">
+                    Advance Amount
+                  </p>
+                  <div className="p-2 bg-red-50 border border-red-200 rounded-lg">
+                    <p className="text-base font-bold text-red-600">
+                      {formatCurrency(selectedPO?.advance_amount || 0)}
+                    </p>
                   </div>
                 </div>
 
                 <div className="space-y-1">
+                  <label className="block text-xs font-semibold text-gray-800">
+                    Payment Method <span className="text-red-500">*</span>
+                  </label>
+                  <select
+                    value={paymentData.payment_method || "bank_transfer"}
+                    onChange={(e) =>
+                      setPaymentData({
+                        ...paymentData,
+                        payment_method: e.target.value,
+                      })
+                    }
+                    className="w-full px-3 py-2 text-sm border-2 border-gray-200 rounded-xl focus:border-[#C62828] focus:ring-2 focus:ring-[#C62828]/20 outline-none"
+                  >
+                    <option value="bank_transfer">Bank Transfer</option>
+                    <option value="cheque">Cheque</option>
+                    <option value="cash">Cash</option>
+                    <option value="online">Online Payment</option>
+                  </select>
+                </div>
+
+                <div className="space-y-1">
+                  <label className="block text-xs font-semibold text-gray-800">
+                    Payment Date <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    type="date"
+                    value={paymentData.payment_date || ""}
+                    onChange={(e) => {
+                      setPaymentData({
+                        ...paymentData,
+                        payment_date: e.target.value,
+                      });
+                    }}
+                    className="w-full px-3 py-2 text-sm border-2 border-gray-200 rounded-xl focus:border-[#C62828] focus:ring-2 focus:ring-[#C62828]/20 outline-none"
+                    required
+                  />
+                </div>
+                <div className="space-y-1">
+                  <label className="block text-xs font-semibold text-gray-800">
+                    Payment Amount <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    type="number"
+                    value={paymentData.amount_paid || ""}
+                    onChange={(e) => {
+                      if (
+                        Number(e.target.value) >
+                        Number(selectedPO?.balance_amount) -
+                          Number(selectedPO.advance_amount)
+                      ) {
+                        return;
+                      }
+                      setPaymentData({
+                        ...paymentData,
+                        amount_paid: Number(e.target.value) || "",
+                      });
+                    }}
+                    className="w-full px-3 py-2 text-sm border-2 border-gray-200 rounded-xl focus:border-[#C62828] focus:ring-2 focus:ring-[#C62828]/20 outline-none"
+                    min="0.01"
+                    max={selectedPO?.balance_amount}
+                    step="0.01"
+                    required
+                  />
+                </div>
+
+                <div className="space-y-1">
+                  <label className="block text-xs font-semibold text-gray-800">
+                    Payment Status <span className="text-red-500">*</span>
+                  </label>
+                  <select
+                    value={paymentData.status || "pending"}
+                    onChange={(e) =>
+                      setPaymentData({
+                        ...paymentData,
+                        status: e.target.value,
+                      })
+                    }
+                    className="w-full px-3 py-2 text-sm border-2 border-gray-200 rounded-xl focus:border-[#C62828] focus:ring-2 focus:ring-[#C62828]/20 outline-none"
+                  >
+                    <option value="PENDING">Pending</option>
+                    <option value="SUCCESS">Success</option>
+                    <option value="FAILED">Failed</option>
+                    <option value="CANCELLED">Cancelled</option>
+                  </select>
+                </div>
+                {selectedPO &&
+                  Number(selectedPO.advance_amount) > 0 &&
+                  paymentData.transaction_type === "payment" && (
+                    <div className="flex items-end gap-2 mb-2">
+                      <input
+                        type="checkbox"
+                        onChange={(e) => {
+                          setPaymentData({
+                            ...paymentData,
+                            adjust_with_advance: e.target.checked,
+                          });
+                        }}
+                        className="w-4 h-4 accent-[#b52124] cursor-pointer mt-0.5"
+                      />
+                      <h4 className="font-semibold text-sm text-[#40423f]">
+                        Adjust with Advance
+                      </h4>
+                    </div>
+                  )}
+
+                {paymentData.adjust_with_advance && (
+                  <div className="space-y-1">
+                    <label className="block text-xs font-semibold text-gray-800">
+                      Amount Deduct From Advance{" "}
+                      <span className="text-red-500">*</span>
+                    </label>
+                    <input
+                      type="number"
+                      disabled={paymentData.amount_paid.length === 0}
+                      value={paymentData.advance_amount || ""}
+                      onChange={(e) => {
+                        if (
+                          Number(e.target.value) >
+                            Number(selectedPO?.advance_amount) ||
+                          Number(e.target.value) >
+                            Number(paymentData.amount_paid)
+                        ) {
+                          return;
+                        }
+                        setPaymentData({
+                          ...paymentData,
+                          advance_amount: Number(e.target.value) || "",
+                        });
+                      }}
+                      className="w-full px-3 py-2 text-sm border-2 border-gray-200 rounded-xl focus:border-[#C62828] focus:ring-2 focus:ring-[#C62828]/20 outline-none"
+                      min="0.01"
+                      max={selectedPO?.total_amount}
+                      step="0.01"
+                    />
+                  </div>
+                )}
+
+                <div className="space-y-1">
+                  <label className="block text-xs font-semibold text-gray-800">
+                    Reference Number <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    type="text"
+                    value={paymentData.payment_reference_no || ""}
+                    onChange={(e) =>
+                      setPaymentData({
+                        ...paymentData,
+                        payment_reference_no: e.target.value,
+                      })
+                    }
+                    className="w-full px-3 py-2 text-sm border-2 border-gray-200 rounded-xl focus:border-[#C62828] focus:ring-2 focus:ring-[#C62828]/20 outline-none"
+                    placeholder="Transaction reference"
+                    required
+                  />
+                </div>
+
+                <div className="space-y-1">
+                  <label className="block text-xs font-semibold text-gray-800">
+                    Upload Payment Proof <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    type="file"
+                    required
+                    id="payment_proof"
+                    onChange={handleFileUpload}
+                    className="w-full px-3 py-1 text-sm border-2 border-gray-200 rounded-xl focus:border-[#C62828] focus:ring-2 focus:ring-[#C62828]/20 outline-none file:border-none file:bg-gradient-to-r file:from-[#C62828] file:to-red-600 file:text-white file:font-medium file:px-3 file:py-1 file:rounded-lg file:cursor-pointer"
+                    accept=".pdf,.jpg,.jpeg,.png"
+                  />
+                </div>
+                {paymentData.transaction_type === "payment" && (
+                  <div className="space-y-1">
+                    <label className="block text-xs font-semibold text-gray-800">
+                      Retention % <span className="text-red-500">*</span>
+                    </label>
+                    <input
+                      type="number"
+                      value={paymentData.retention_percentage || ""}
+                      onChange={(e) => {
+                        if (Number(e.target.value) > 50) {
+                          return;
+                        }
+                        setPaymentData({
+                          ...paymentData,
+                          retention_percentage: Number(e.target.value) || "",
+                        });
+                      }}
+                      className="w-full px-3 py-2 text-sm border-2 border-gray-200 rounded-xl focus:border-[#C62828] focus:ring-2 focus:ring-[#C62828]/20 outline-none"
+                      min="0.01"
+                      max={100}
+                      step="0.01"
+                    />
+                  </div>
+                )}
+
+                <div className="space-y-1 col-span-1 md:col-span-2">
                   <label className="block text-xs font-semibold text-gray-800">
                     Remarks
                   </label>
@@ -2524,9 +2653,8 @@ export default function ServiceOrders() {
                   />
                 </div>
               </div>
-
               {/* Modal Footer */}
-              <div className="border-t p-3 flex gap-2">
+              <div className="border-t  pb-3 flex gap-2 col-span-2 sticky bottom-0 bg-white">
                 <button
                   type="submit"
                   disabled={submitting}
@@ -2544,6 +2672,22 @@ export default function ServiceOrders() {
                   onClick={() => {
                     setShowPaymentModal(false);
                     setSelectedPO(null);
+                    setPaymentData({
+                      po_id: null,
+                      transaction_type: "payment",
+                      adjust_with_advance: false,
+                      advance_amount: "",
+                      retention_percentage: "",
+                      amount_paid: "",
+                      vendorId: "",
+                      payment_method: "bank_transfer",
+                      payment_reference_no: "",
+                      payment_proof: null,
+                      payment_date: new Date().toISOString().split("T")[0],
+                      status: "pending",
+                      remarks: "",
+                      created_by: user?.id,
+                    });
                   }}
                   className="px-4 py-2 text-sm border border-gray-200 rounded-xl hover:bg-gray-50 transition-all duration-200 font-medium text-gray-700"
                 >
