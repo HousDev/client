@@ -303,7 +303,10 @@ export default function CreateBranchModal({
                     placeholder="Pincode"
                     value={formData.pincode}
                     onChange={(e) => {
-                      if (!/^\d*$/.test(e.target.value)) {
+                      if (
+                        !/^\d*$/.test(e.target.value) ||
+                        e.target.value.length > 6
+                      ) {
                         return;
                       }
 

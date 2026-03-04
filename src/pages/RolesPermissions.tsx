@@ -220,6 +220,11 @@ export default function Permissions() {
 
     // Advance
     {
+      action: "view_advance",
+      label: "View Advance",
+      module: "Payroll Advance",
+    },
+    {
       action: "create_advance_request",
       label: "Create Advance Request",
       module: "Payroll Advance",
@@ -258,7 +263,7 @@ export default function Permissions() {
     },
     {
       action: "create_incentive_request",
-      label: "Create Advance Request",
+      label: "Create Incentive Request",
       module: "Payroll Incentive",
     },
     {

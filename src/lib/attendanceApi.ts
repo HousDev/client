@@ -169,10 +169,10 @@ const attendanceApi = {
   },
 
   // Get current month attendance of user
-  async getCurrentMonthAttendance(user_id: number) {
+  async getCurrentMonthAttendance(user_id: number, date: string) {
     try {
       const response = await api.get(
-        `/attendance/currentMonthAttendance/${user_id}`,
+        `/attendance/currentMonthAttendance/${user_id}/${date}`,
       );
       return response;
     } catch (error: any) {
@@ -196,7 +196,27 @@ const attendanceApi = {
   async getStatistics(params?: { start_date?: string; end_date?: string }) {
     try {
       const response = await api.get("/attendance/statistics", { params });
+
       return response;
+    } catch (error: any) {
+      console.error("Get Statistics API error:", error);
+      // Return mock data for testing
+      return {
+        success: true,
+        data: {
+          total_employees: 0,
+          present_today: 0,
+          currently_present: 0,
+          avg_working_hours: 0,
+        },
+      };
+    }
+  },
+  async getTodayStatistics() {
+    try {
+      const response = await api.get("/attendance/todayStatistics");
+
+      return response.data;
     } catch (error: any) {
       console.error("Get Statistics API error:", error);
       // Return mock data for testing

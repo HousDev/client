@@ -135,12 +135,6 @@ const hrmsSubmenuItems = [
     value: ["view_hrms_reports"],
   },
   {
-    id: "roles-permissions",
-    label: "Roles & Permissions",
-    icon: Shield,
-    value: ["hrms_permissions"],
-  },
-  {
     id: "hr-settings",
     label: "HR Settings",
     icon: MdSettings,

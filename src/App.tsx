@@ -53,7 +53,7 @@ import PaymentHistory from "./pages/PaymentHistory";
 
 function AppContent() {
   const { user, loading } = useAuth();
-
+  console.log("user details : ", user);
   // ✅ Restore activeTab from localStorage
   const [activeTab, setActiveTab] = useState(
     localStorage.getItem("activeTab") || "dashboard",
