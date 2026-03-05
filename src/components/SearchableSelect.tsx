@@ -73,7 +73,7 @@ export default function SearchableSelect({
   };
 
   return (
-    <div ref={containerRef} className="relative">
+    <div ref={containerRef} className="relative w-full">
       <div
         className={`w-full flex items-center gap-2 px-3 py-2 ${disabled ? "border" : "border border-slate-400"} rounded-lg bg-white cursor-pointer ${
           disabled ? "opacity-90 cursor-not-allowed" : "hover:shadow-sm"

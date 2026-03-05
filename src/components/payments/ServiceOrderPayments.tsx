@@ -213,6 +213,7 @@ export default function ServiceOrderPayments() {
   function groupByWoId(data: any[]) {
     const grouped = data.reduce((acc: any, item: any) => {
       const key = item.wo_id;
+      console.log("items : ", item);
 
       if (!acc[key]) {
         acc[key] = {
@@ -268,6 +269,7 @@ export default function ServiceOrderPayments() {
         await woPaymentHistoryApi.getWoPaymentHistory();
       console.log("History : ", poPaymentHistoryRes);
       const gruopedData = groupByWoId(poPaymentHistoryRes.data);
+
       console.log("History Grouped : ", gruopedData);
       setPaymentTransactionHistorys(
         Array.isArray(gruopedData) ? gruopedData : [],
@@ -779,6 +781,7 @@ export default function ServiceOrderPayments() {
             <tbody className="divide-y divide-gray-200">
               {paymentTransactionHistorys.map((po: any) => {
                 const isSelected = selectedItems.has(po.wo_id);
+                console.log("po data", po);
                 return (
                   <React.Fragment>
                     <tr
@@ -841,12 +844,12 @@ export default function ServiceOrderPayments() {
                       </td>
                       <td className="px-2 md:px-4 py-2">
                         <div className="text-red-600 font-bold text-xs md:text-sm">
-                          {formatCurrency(po.wo_balance_amount || 0)}
+                          {formatCurrency(po.wo_advance_amount || 0)}
                         </div>
                       </td>
                       <td className="px-2 md:px-4 py-2">
                         <div className="text-red-600 font-bold text-xs md:text-sm">
-                          {formatCurrency(po.wo_balance_amount || 0)}
+                          {formatCurrency(po.wo_retention_amount || 0)}
                         </div>
                       </td>
                       <td className="px-2 md:px-4 py-2">

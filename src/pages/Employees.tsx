@@ -224,6 +224,18 @@ export default function Employees({ onViewProfile }: EmployeesProps) {
   // ✅ FIXED TOGGLE STATUS FUNCTION
   const toggleEmployeeStatus = async (id: string, currentStatus: string) => {
     try {
+      const swalResult: any = await MySwal.fire({
+        title: "Are you sure?",
+        text: `You are about to ${!(currentStatus === "active") ? "activate" : "deactivate"} users!`,
+        icon: "warning",
+        showCancelButton: true,
+        confirmButtonColor: "#d33",
+        cancelButtonColor: "#3085d6",
+        confirmButtonText: `Yes, ${!(currentStatus === "active") ? "activate" : "deactivate"} it!`,
+        cancelButtonText: "Cancel",
+      });
+
+      if (!swalResult.isConfirmed) return;
       console.log("Toggling employee status:", { id, currentStatus });
 
       // Determine new status - FIXED LOGIC
