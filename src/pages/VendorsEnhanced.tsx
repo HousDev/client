@@ -41,16 +41,14 @@ registerLocale("en-GB", enGB);
    Mock Components & Utilities
 ----------------------------*/
 
-import PhoneInput from "../components/PhoneInput";
 import { validators, errorMessages } from "../utils/validators";
 import vendorApi from "../lib/vendorApi"; // getVendors, createVendor, updateVendor, deleteVendor
 import poTypeApi from "../lib/poTypeApi"; // getPOTypes
 import poApi from "../lib/poApi"; // getItems
-import SearchableSelect from "../components/SearchableSelect";
 import { toast } from "sonner";
-import locationData from "../data/india_city_state_pincode_country.json";
 import MySwal from "../utils/swal";
 import { useAuth } from "../contexts/AuthContext";
+import { locationApi } from "../lib/locationApi";
 
 /* ---------------------------
    Types
@@ -122,30 +120,11 @@ interface LocationType {
 
 // ADD THIS AT THE TOP (after imports, before component)
 const { states, stateCityMap, cityPincodeMap } = (() => {
-  const LOCATIONS_DATA = locationData as LocationType[];
   const stateMap = new Map();
   const cityPincodeMap = new Map();
   const seenCombinations = new Set();
 
-  for (const loc of LOCATIONS_DATA) {
-    const state = loc.state.trim();
-    const city = loc.city.trim();
-    const pincode = loc.pincode.toString();
-    const key = `${state}-${city}-${pincode}`;
 
-    if (seenCombinations.has(key)) continue;
-    seenCombinations.add(key);
-
-    if (!stateMap.has(state)) {
-      stateMap.set(state, new Set());
-    }
-    stateMap.get(state).add({ city, pincode });
-
-    const cityKey = `${state}-${city}`;
-    if (!cityPincodeMap.has(cityKey)) {
-      cityPincodeMap.set(cityKey, pincode);
-    }
-  }
 
   const states = Array.from(stateMap.keys()).sort();
   const stateCityMap = new Map();
@@ -160,43 +139,13 @@ const { states, stateCityMap, cityPincodeMap } = (() => {
   return { states, stateCityMap, cityPincodeMap };
 })();
 
-// Pre-process location data for performance
 
-export const INDIAN_STATES = [
-  "Andhra Pradesh",
-  "Arunachal Pradesh",
-  "Assam",
-  "Bihar",
-  "Chhattisgarh",
-  "Goa",
-  "Gujarat",
-  "Haryana",
-  "Himachal Pradesh",
-  "Jharkhand",
-  "Karnataka",
-  "Kerala",
-  "Madhya Pradesh",
-  "Maharashtra",
-  "Manipur",
-  "Meghalaya",
-  "Mizoram",
-  "Nagaland",
-  "Odisha",
-  "Punjab",
-  "Rajasthan",
-  "Sikkim",
-  "Tamil Nadu",
-  "Telangana",
-  "Tripura",
-  "Uttar Pradesh",
-  "Uttarakhand",
-  "West Bengal",
-];
 
 export default function VendorsEnhanced(): JSX.Element {
   const [availableCities, setAvailableCities] = useState<
     Array<{ city: string; pincode: string }>
-  >([]);
+    >([]);
+  const [states, setStates] = useState<string[]>([]);
   const [vendors, setVendors] = useState<Vendor[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
   const [poTypes, setPoTypes] = useState<Category[]>([]);
@@ -228,6 +177,8 @@ export default function VendorsEnhanced(): JSX.Element {
     new Set(),
   );
 
+  const [allLocationData, setAllLocationData] = useState<any>([]);
+
   const [formData, setFormData] = useState<VendorFormData>({
     name: "",
     category_name: "",
@@ -252,34 +203,20 @@ export default function VendorsEnhanced(): JSX.Element {
 
   const { can } = useAuth();
 
-  // Load cities when state changes
-  useEffect(() => {
-    if (formData.office_state) {
-      const cities = stateCityMap.get(formData.office_state) || [];
-      setAvailableCities(cities);
+  const loadAllLocationData = async () => {
+    try {
+      const locationResponse = await locationApi.getAll();
+      if (Array.isArray(locationResponse)) {
+        setAllLocationData(Array.isArray(locationResponse) ? locationResponse : []);
+        const uniqueStates: any = [...new Set(locationResponse.map((loc) => loc.state))];
+        setStates(uniqueStates.sort());
+      }
+      console.log(locationResponse)
+    } catch (error: any) { console.log(error) }
+  }
 
-      // Clear city and pincode when state changes
-      setFormData((prev) => ({
-        ...prev,
-        office_city: formData.office_city || "",
-        office_pincode: "",
-      }));
-    } else {
-      setAvailableCities([]);
-    }
-  }, [formData.office_state]);
+  useEffect(() => { loadAllLocationData() }, [])
 
-  // Update pincode when city changes
-  useEffect(() => {
-    if (formData.office_city && formData.office_state) {
-      const cityKey = `${formData.office_state}-${formData.office_city}`;
-      const pincode = cityPincodeMap.get(cityKey) || "";
-      setFormData((prev) => ({
-        ...prev,
-        office_pincode: pincode,
-      }));
-    }
-  }, [formData.office_city, formData.office_state]);
 
   useEffect(() => {
     loadData();
@@ -453,7 +390,7 @@ export default function VendorsEnhanced(): JSX.Element {
         ...formData,
         sub_item_id:
           isCategoryMaterial(formData.category_name) ||
-          isCategoryService(formData.category_name)
+            isCategoryService(formData.category_name)
             ? formData.sub_item_id
             : null,
       };
@@ -469,7 +406,7 @@ export default function VendorsEnhanced(): JSX.Element {
       console.error("Error saving vendor:", error.response);
       toast.error(
         error.response.data.message ??
-          "Something went wrong while creating venodr. Please try again.",
+        "Something went wrong while creating venodr. Please try again.",
       );
     } finally {
       setSubmitting(false);
@@ -711,9 +648,9 @@ export default function VendorsEnhanced(): JSX.Element {
   return (
     <div className="p-0 px-0 bg-gray-50 min-h-screen">
       {can("create_vendors") && (
-        <div className="mb-2 sticky top-16 z-20  py-2">
-          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-            <div className="flex gap-3">
+        <div className="mb-2 sticky top-16 w-full z-20  py-2">
+          <div className="flex justify-end w-full md:flex-row md:items-center md:justify-between gap-4">
+            <div className=" gap-3 w-full flex justify-end">
               <button
                 onClick={() => {
                   resetForm();
@@ -1325,11 +1262,10 @@ export default function VendorsEnhanced(): JSX.Element {
                                   name: e.target.value,
                                 })
                               }
-                              className={`w-full pl-8 pr-2 py-1.5 text-xs border rounded focus:ring-1 focus:ring-blue-500 focus:border-blue-500 transition-all duration-150 ${
-                                errors.name
+                              className={`w-full pl-8 pr-2 py-1.5 text-xs border rounded focus:ring-1 focus:ring-blue-500 focus:border-blue-500 transition-all duration-150 ${errors.name
                                   ? "border-red-300 bg-red-50"
                                   : "border-gray-300 hover:border-gray-400"
-                              }`}
+                                }`}
                               placeholder="Company name"
                               required
                             />
@@ -1363,11 +1299,10 @@ export default function VendorsEnhanced(): JSX.Element {
                                     sub_item_id: "",
                                   });
                                 }}
-                                className={`w-full pl-8 pr-6 py-1.5 text-xs border rounded focus:ring-1 focus:ring-blue-500 focus:border-blue-500 transition-all duration-150 appearance-none ${
-                                  errors.category_name
+                                className={`w-full pl-8 pr-6 py-1.5 text-xs border rounded focus:ring-1 focus:ring-blue-500 focus:border-blue-500 transition-all duration-150 appearance-none ${errors.category_name
                                     ? "border-red-300 bg-red-50"
                                     : "border-gray-300 hover:border-gray-400"
-                                }`}
+                                  }`}
                                 required
                               >
                                 <option value="">Select</option>
@@ -1403,20 +1338,19 @@ export default function VendorsEnhanced(): JSX.Element {
                                       sub_item_id: e.target.value,
                                     })
                                   }
-                                  className="
-          w-full 
-          border border-gray-300 
-          rounded 
-          appearance-none
-          transition-all duration-150 
-          hover:border-gray-400
-          focus:ring-1 focus:ring-blue-500 focus:border-blue-500
-          pl-6 sm:pl-7 md:pl-8
-          pr-5 sm:pr-5.5 md:pr-6
-          py-1 sm:py-1.5
-          text-[10px] xs:text-[11px] sm:text-xs
-          overflow-hidden
-          text-ellipsis
+                                  className="w-full 
+                                      border border-gray-300 
+                                      rounded 
+                                      appearance-none
+                                      transition-all duration-150 
+                                     hover:border-gray-400
+                                      focus:ring-1 focus:ring-blue-500 focus:border-blue-500
+                                      pl-6 sm:pl-7 md:pl-8
+                                      pr-5 sm:pr-5.5 md:pr-6
+                                      py-1 sm:py-1.5
+                                      text-[10px] xs:text-[11px] sm:text-xs
+                                      overflow-hidden
+                                      text-ellipsis
         "
                                   style={{
                                     maxWidth: "100%",
@@ -1536,11 +1470,10 @@ export default function VendorsEnhanced(): JSX.Element {
                                       ),
                                     })
                                   }
-                                  className={`w-full pl-8 pr-2 py-1.5 text-xs border rounded focus:ring-1 focus:ring-blue-500 focus:border-blue-500 transition-all duration-150 uppercase ${
-                                    errors.pan_number
+                                  className={`w-full pl-8 pr-2 py-1.5 text-xs border rounded focus:ring-1 focus:ring-blue-500 focus:border-blue-500 transition-all duration-150 uppercase ${errors.pan_number
                                       ? "border-red-300 bg-red-50"
                                       : "border-gray-300 hover:border-gray-400"
-                                  }`}
+                                    }`}
                                   placeholder="ABCDE1234F"
                                   maxLength={10}
                                 />
@@ -1574,11 +1507,10 @@ export default function VendorsEnhanced(): JSX.Element {
                                       ),
                                     })
                                   }
-                                  className={`w-full pl-8 pr-2 py-1.5 text-xs border rounded focus:ring-1 focus:ring-blue-500 focus:border-blue-500 transition-all duration-150 uppercase ${
-                                    errors.gst_number
+                                  className={`w-full pl-8 pr-2 py-1.5 text-xs border rounded focus:ring-1 focus:ring-blue-500 focus:border-blue-500 transition-all duration-150 uppercase ${errors.gst_number
                                       ? "border-red-300 bg-red-50"
                                       : "border-gray-300 hover:border-gray-400"
-                                  }`}
+                                    }`}
                                   placeholder="22ABCDE1234F1Z5"
                                   maxLength={15}
                                 />
@@ -1645,11 +1577,10 @@ export default function VendorsEnhanced(): JSX.Element {
                                   contact_person_name: e.target.value,
                                 })
                               }
-                              className={`w-full pl-8 pr-2 py-1.5 text-xs border rounded focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 transition-all duration-150 ${
-                                errors.contact_person_name
+                              className={`w-full pl-8 pr-2 py-1.5 text-xs border rounded focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 transition-all duration-150 ${errors.contact_person_name
                                   ? "border-red-300 bg-red-50"
                                   : "border-gray-300 hover:border-gray-400"
-                              }`}
+                                }`}
                               placeholder="John Doe"
                               required
                             />
@@ -1692,11 +1623,10 @@ export default function VendorsEnhanced(): JSX.Element {
                                     contact_person_phone: e.target.value,
                                   });
                                 }}
-                                className={`w-full pl-8 pr-2 py-1.5 text-xs border rounded focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 transition-all duration-150 ${
-                                  errors.contact_person_phone
+                                className={`w-full pl-8 pr-2 py-1.5 text-xs border rounded focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 transition-all duration-150 ${errors.contact_person_phone
                                     ? "border-red-300 bg-red-50"
                                     : "border-gray-300 hover:border-gray-400"
-                                }`}
+                                  }`}
                                 placeholder="9876543210"
                                 required
                               />
@@ -1730,11 +1660,10 @@ export default function VendorsEnhanced(): JSX.Element {
                                       e.target.value.toLowerCase(),
                                   })
                                 }
-                                className={`w-full pl-8 pr-2 py-1.5 text-xs border rounded focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 transition-all duration-150 ${
-                                  errors.contact_person_email
+                                className={`w-full pl-8 pr-2 py-1.5 text-xs border rounded focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 transition-all duration-150 ${errors.contact_person_email
                                     ? "border-red-300 bg-red-50"
                                     : "border-gray-300 hover:border-gray-400"
-                                }`}
+                                  }`}
                                 placeholder="john@example.com"
                                 required
                               />
@@ -1781,11 +1710,10 @@ export default function VendorsEnhanced(): JSX.Element {
                                     ),
                                   });
                                 }}
-                                className={`w-full pl-8 pr-2 py-1.5 text-xs border rounded focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 transition-all duration-150 ${
-                                  errors.company_phone
+                                className={`w-full pl-8 pr-2 py-1.5 text-xs border rounded focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 transition-all duration-150 ${errors.company_phone
                                     ? "border-red-300 bg-red-50"
                                     : "border-gray-300 hover:border-gray-400"
-                                }`}
+                                  }`}
                                 placeholder="9876543210"
                                 maxLength={10}
                               />
@@ -1811,11 +1739,10 @@ export default function VendorsEnhanced(): JSX.Element {
                                     company_email: e.target.value.toLowerCase(),
                                   })
                                 }
-                                className={`w-full pl-8 pr-2 py-1.5 text-xs border rounded focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 transition-all duration-150 ${
-                                  errors.company_email
+                                className={`w-full pl-8 pr-2 py-1.5 text-xs border rounded focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 transition-all duration-150 ${errors.company_email
                                     ? "border-red-300 bg-red-50"
                                     : "border-gray-300 hover:border-gray-400"
-                                }`}
+                                  }`}
                                 placeholder="info@company.com"
                               />
                             </div>
@@ -1885,27 +1812,57 @@ export default function VendorsEnhanced(): JSX.Element {
 
                         {/* Country & State */}
                         <div className="grid grid-cols-2 gap-1.5">
-                          {/* Country */}
+
+
+                          {/* City */}
                           <div className="space-y-1">
                             <label className="block text-[11px] font-medium text-gray-700">
-                              Country
+                              City
                             </label>
                             <div className="relative">
                               <div className="absolute inset-y-0 left-0 pl-2.5 flex items-center pointer-events-none">
-                                <Flag className="h-3 w-3 text-gray-400" />
+                                <Building className="h-3 w-3 text-gray-400" />
                               </div>
-                              <input
-                                type="text"
-                                value={formData.office_country}
-                                onChange={(e) =>
-                                  setFormData({
-                                    ...formData,
-                                    office_country: e.target.value,
-                                  })
-                                }
-                                className="w-full pl-8 pr-2 py-1.5 text-xs border border-gray-300 rounded focus:ring-1 focus:ring-green-500 focus:border-green-500 transition-all duration-150 hover:border-gray-400"
-                                placeholder="India"
-                              />
+                              <select
+                                value={formData.office_city}
+                                onChange={(e) => {
+                                  const location = allLocationData.find(
+                                    (l) => l.city === e.target.value
+                                  );
+
+                                  if (location) {
+                                    setFormData({
+                                      ...formData,
+                                      office_city: location.city,
+                                      office_pincode: location.pincode,
+                                      office_state: location.state,
+                                      office_country: location.country
+                                    });
+                                  }
+                                }}
+                                className="w-full pl-8 pr-6 py-1.5 text-xs border border-gray-300 rounded focus:ring-1 focus:ring-green-500 focus:border-green-500 transition-all duration-150 hover:border-gray-400 appearance-none disabled:bg-gray-50 disabled:text-gray-400"
+                              >
+                                <option value="">Select City</option>
+                                {/* {formData.office_city && (
+                                  <option
+                                    value={formData.office_city}
+                                    key="current-city"
+                                  >
+                                    {formData.office_city}
+                                  </option>
+                                )} */}
+                                {allLocationData.map((location) => (
+                                  <option
+                                    key={`${location.city}-${location.pincode}`}
+                                    value={location.city}
+                                  >
+                                    {location.city}
+                                  </option>
+                                ))}
+                              </select>
+                              <div className="absolute inset-y-0 right-0 pr-1.5 flex items-center pointer-events-none">
+                                <ChevronDown className="h-3 w-3 text-gray-400" />
+                              </div>
                             </div>
                           </div>
 
@@ -1920,22 +1877,23 @@ export default function VendorsEnhanced(): JSX.Element {
                               </div>
                               <select
                                 value={formData.office_state}
-                                onChange={(e) => {
-                                  const state = e.target.value;
+                                // onChange={(e) => {
+                                //   const state = e.target.value;
 
-                                  setFormData({
-                                    ...formData,
-                                    office_state: state,
-                                    office_city: "",
-                                    office_pincode: "",
-                                  });
-                                }}
+                                //   setFormData({
+                                //     ...formData,
+                                //     office_state: state,
+                                //     office_city: "",
+                                //     office_pincode: "",
+                                //   });
+                                // }}
+                                disabled
                                 className="w-full pl-8 pr-6 py-1.5 text-xs border border-gray-300 rounded focus:ring-1 focus:ring-green-500 focus:border-green-500 transition-all duration-150 hover:border-gray-400 appearance-none"
                               >
                                 <option value="">Select State</option>
-                                {states.map((state: any) => (
-                                  <option key={state} value={state}>
-                                    {state}
+                                {allLocationData.map((location: any) => (
+                                  <option key={location.state + location.pincode} value={location.state}>
+                                    {location.state}
                                   </option>
                                 ))}
                               </select>
@@ -1948,50 +1906,7 @@ export default function VendorsEnhanced(): JSX.Element {
 
                         {/* City & Pincode */}
                         <div className="grid grid-cols-2 gap-1.5">
-                          {/* City */}
-                          <div className="space-y-1">
-                            <label className="block text-[11px] font-medium text-gray-700">
-                              City
-                            </label>
-                            <div className="relative">
-                              <div className="absolute inset-y-0 left-0 pl-2.5 flex items-center pointer-events-none">
-                                <Building className="h-3 w-3 text-gray-400" />
-                              </div>
-                              <select
-                                value={formData.office_city}
-                                onChange={(e) => {
-                                  const city = e.target.value;
-                                  setFormData({
-                                    ...formData,
-                                    office_city: city,
-                                  });
-                                }}
-                                disabled={!formData.office_state}
-                                className="w-full pl-8 pr-6 py-1.5 text-xs border border-gray-300 rounded focus:ring-1 focus:ring-green-500 focus:border-green-500 transition-all duration-150 hover:border-gray-400 appearance-none disabled:bg-gray-50 disabled:text-gray-400"
-                              >
-                                <option value="">Select City</option>
-                                {formData.office_city && (
-                                  <option
-                                    value={formData.office_city}
-                                    key="current-city"
-                                  >
-                                    {formData.office_city}
-                                  </option>
-                                )}
-                                {availableCities.map(({ city, pincode }) => (
-                                  <option
-                                    key={`${city}-${pincode}`}
-                                    value={city}
-                                  >
-                                    {city}
-                                  </option>
-                                ))}
-                              </select>
-                              <div className="absolute inset-y-0 right-0 pr-1.5 flex items-center pointer-events-none">
-                                <ChevronDown className="h-3 w-3 text-gray-400" />
-                              </div>
-                            </div>
-                          </div>
+
 
                           {/* Pincode */}
                           <div className="space-y-1">
@@ -2005,27 +1920,27 @@ export default function VendorsEnhanced(): JSX.Element {
                               <input
                                 type="text"
                                 value={formData.office_pincode}
-                                onChange={(e) =>
-                                  setFormData({
-                                    ...formData,
-                                    office_pincode: validators.formatPincode(
-                                      e.target.value,
-                                    ),
-                                  })
-                                }
+                                // onChange={(e) =>
+                                //   setFormData({
+                                //     ...formData,
+                                //     office_pincode: validators.formatPincode(
+                                //       e.target.value,
+                                //     ),
+                                //   })
+                                // }
                                 readOnly={!!formData.office_city} // Make it read-only when city is selected
-                                className={`w-full pl-8 pr-2 py-1.5 text-xs border rounded focus:ring-1 focus:ring-green-500 focus:border-green-500 transition-all duration-150 ${
-                                  errors.office_pincode
+                                className={`w-full pl-8 pr-2 py-1.5 text-xs border rounded focus:ring-1 focus:ring-green-500 focus:border-green-500 transition-all duration-150 ${errors.office_pincode
                                     ? "border-red-300 bg-red-50"
                                     : formData.office_city
                                       ? "border-gray-300 bg-gray-50"
                                       : "border-gray-300 hover:border-gray-400"
-                                }`}
+                                  }`}
                                 placeholder={
                                   formData.office_city
                                     ? "Auto-filled"
                                     : "400001"
                                 }
+                                disabled
                                 maxLength={6}
                               />
                             </div>
@@ -2042,6 +1957,30 @@ export default function VendorsEnhanced(): JSX.Element {
                                 {errors.office_pincode}
                               </p>
                             )}
+                          </div>
+                          {/* Country */}
+                          <div className="space-y-1">
+                            <label className="block text-[11px] font-medium text-gray-700">
+                              Country
+                            </label>
+                            <div className="relative">
+                              <div className="absolute inset-y-0 left-0 pl-2.5 flex items-center pointer-events-none">
+                                <Flag className="h-3 w-3 text-gray-400" />
+                              </div>
+                              <input
+                                type="text"
+                                value={formData.office_country}
+                                // onChange={(e) =>
+                                //   setFormData({
+                                //     ...formData,
+                                //     office_country: e.target.value,
+                                //   })
+                                // }
+                                disabled
+                                className="w-full pl-8 pr-2 py-1.5 text-xs border border-gray-300 rounded focus:ring-1 focus:ring-green-500 focus:border-green-500 transition-all duration-150 hover:border-gray-400"
+                                placeholder="India"
+                              />
+                            </div>
                           </div>
                         </div>
                       </div>
@@ -2109,11 +2048,10 @@ export default function VendorsEnhanced(): JSX.Element {
                                     manager_email: e.target.value.toLowerCase(),
                                   })
                                 }
-                                className={`w-full pl-8 pr-2 py-1.5 text-xs border rounded focus:ring-1 focus:ring-amber-500 focus:border-amber-500 transition-all duration-150 ${
-                                  errors.manager_email
+                                className={`w-full pl-8 pr-2 py-1.5 text-xs border rounded focus:ring-1 focus:ring-amber-500 focus:border-amber-500 transition-all duration-150 ${errors.manager_email
                                     ? "border-red-300 bg-red-50"
                                     : "border-gray-300 hover:border-gray-400"
-                                }`}
+                                  }`}
                                 placeholder="jane@company.com"
                               />
                             </div>
@@ -2149,11 +2087,10 @@ export default function VendorsEnhanced(): JSX.Element {
                                     ),
                                   });
                                 }}
-                                className={`w-full pl-8 pr-2 py-1.5 text-xs border rounded focus:ring-1 focus:ring-amber-500 focus:border-amber-500 transition-all duration-150 ${
-                                  errors.manager_phone
+                                className={`w-full pl-8 pr-2 py-1.5 text-xs border rounded focus:ring-1 focus:ring-amber-500 focus:border-amber-500 transition-all duration-150 ${errors.manager_phone
                                     ? "border-red-300 bg-red-50"
                                     : "border-gray-300 hover:border-gray-400"
-                                }`}
+                                  }`}
                                 placeholder="9876543210"
                                 maxLength={10}
                               />
@@ -2196,12 +2133,12 @@ export default function VendorsEnhanced(): JSX.Element {
               </div>
 
               {/* Form Actions */}
-              <div className="mt-4 pt-4 border-t border-gray-200">
+              <div className="mt-4 pt-4 border-t border-gray-200 sticky bottom-0 bg-white">
                 <div className="flex flex-col sm:flex-row gap-1.5 justify-center items-center">
                   <button
                     type="submit"
                     disabled={submitting}
-                    className="w-48 bg-red-700 text-white py-1.5 px-3 rounded // Changed from flex-1 to w-48 (fixed width)
+                    className=" bg-red-700 text-white py-1.5 px-3 rounded // Changed from flex-1 to w-48 (fixed width)
       hover:from-red-700 hover:to-red-800 transition-all duration-150 font-medium 
       shadow-xs hover:shadow-sm disabled:opacity-50 disabled:cursor-not-allowed 
       flex items-center justify-center gap-1 text-xs"
