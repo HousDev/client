@@ -2488,8 +2488,7 @@ export default function ServiceOrders() {
                     onChange={(e) => {
                       if (
                         Number(e.target.value) >
-                        Number(selectedPO?.balance_amount) -
-                          Number(selectedPO.advance_amount)
+                        Number(selectedPO?.balance_amount)
                       ) {
                         return;
                       }

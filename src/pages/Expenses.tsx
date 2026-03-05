@@ -23,6 +23,7 @@ import SubmitExpenseModal from "../components/modals/SubmitExpenseModal";
 import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
 import Swal from "sweetalert2";
+import { useAuth } from "../contexts/AuthContext";
 
 export default function Expenses() {
   const [expenses, setExpenses] = useState<Expense[]>([]);
@@ -42,6 +43,7 @@ export default function Expenses() {
     rejected: 0,
     total_amount: 0,
   });
+  const { user } = useAuth();
   const [employees, setEmployees] = useState<any[]>([]);
   const [employeeMap, setEmployeeMap] = useState<Map<number, any>>(new Map());
 
@@ -570,13 +572,15 @@ export default function Expenses() {
             </div>
           )}
         </div>
-        <Button
-          onClick={() => setShowSubmitModal(true)}
-          className="text-sm ml-2"
-        >
-          <Plus className="h-4 w-4 mr-1.5" />
-          Submit Expense
-        </Button>
+        {user.role !== "admin" && (
+          <Button
+            onClick={() => setShowSubmitModal(true)}
+            className="text-sm ml-2"
+          >
+            <Plus className="h-4 w-4 mr-1.5" />
+            Submit Expense
+          </Button>
+        )}
       </div>
 
       {/* Stats Cards - Sticky & Compact */}

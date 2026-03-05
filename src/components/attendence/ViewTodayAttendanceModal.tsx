@@ -112,6 +112,51 @@ const ViewTodayAttendanceModal = ({
               <div>
                 {dayData.trackingHistory.map((track: any) => (
                   <div>
+                    {track.punch_out_time && (
+                      <div className="px-2 py-3 border-t border-b border-gray-300 flex">
+                        <button
+                          onClick={() => {
+                            setSelectedAttendance({
+                              ...track,
+                              type: "out",
+                            });
+                            setSelectedAttendanceImage(
+                              `${import.meta.env.VITE_API_URL}/uploads/${
+                                track.punch_out_selfie
+                              }`,
+                            );
+                            setShowViewSelfieModal(true);
+                          }}
+                          className="mr-6 w-1/5"
+                        >
+                          <img
+                            src={`${import.meta.env.VITE_API_URL}/uploads/${
+                              track.punch_out_selfie
+                            }`}
+                            alt="view selfie"
+                            className="w-14 h-14 rounded-full"
+                          />
+                        </button>
+                        <div className="">
+                          <h1 className="font-semibold flex items-center text-sm">
+                            {new Date(track.punch_out_time).toLocaleTimeString(
+                              "en-US",
+                              {
+                                hour: "2-digit",
+                                minute: "2-digit",
+                                hour12: true,
+                              },
+                            )}{" "}
+                            <div className="w-2 h-2 rounded-full bg-red-400 ml-3 mr-1"></div>
+                            Out
+                          </h1>
+                          <address className="flex items-center text-xs">
+                            <MapPin className="w-7 h-7 mx-1" />
+                            {track.punch_out_location}
+                          </address>
+                        </div>
+                      </div>
+                    )}
                     <div className="px-2 py-3 border-t border-b border-gray-300 flex">
                       <button
                         onClick={() => {
@@ -126,7 +171,7 @@ const ViewTodayAttendanceModal = ({
                           );
                           setShowViewSelfieModal(true);
                         }}
-                        className="mr-6 w-1/4"
+                        className="mr-6 w-1/5"
                       >
                         <img
                           src={`${import.meta.env.VITE_API_URL}/uploads/${
@@ -137,7 +182,7 @@ const ViewTodayAttendanceModal = ({
                         />
                       </button>
                       <div className="">
-                        <h1 className="font-semibold flex items-center">
+                        <h1 className="font-semibold flex items-center text-sm">
                           {new Date(track.punch_in_time).toLocaleTimeString(
                             "en-US",
                             {
@@ -146,7 +191,7 @@ const ViewTodayAttendanceModal = ({
                               hour12: true,
                             },
                           )}{" "}
-                          <div className="w-2 h-2 rounded-full bg-slate-400 ml-3 mr-1"></div>
+                          <div className="w-2 h-2 rounded-full bg-green-400 ml-3 mr-1"></div>
                           In
                         </h1>
                         <address className="flex items-center text-xs">
@@ -155,61 +200,23 @@ const ViewTodayAttendanceModal = ({
                         </address>
                       </div>
                     </div>
-                    {track.punch_out_time && (
-                      <div className="px-2 py-3 border-t border-b border-gray-300 flex">
-                        <button
-                          onClick={() => {
-                            setSelectedAttendance({
-                              ...track,
-                              type: "in",
-                            });
-                            setSelectedAttendanceImage(
-                              `${import.meta.env.VITE_API_URL}/uploads/${
-                                track.punch_out_selfie
-                              }`,
-                            );
-                            setShowViewSelfieModal(true);
-                          }}
-                          className="mr-6 w-1/4"
-                        >
-                          <img
-                            src={`${import.meta.env.VITE_API_URL}/uploads/${
-                              track.punch_out_selfie
-                            }`}
-                            alt="view selfie"
-                            className="w-14 h-14 rounded-full"
-                          />
-                        </button>
-                        <div className="">
-                          <h1 className="font-semibold flex items-center">
-                            {new Date(track.punch_out_time).toLocaleTimeString(
-                              "en-US",
-                              {
-                                hour: "2-digit",
-                                minute: "2-digit",
-                                hour12: true,
-                              },
-                            )}{" "}
-                            <div className="w-2 h-2 rounded-full bg-slate-400 ml-3 mr-1"></div>
-                            Out
-                          </h1>
-                          <address className="flex items-center text-xs">
-                            <MapPin className="w-7 h-7 mx-1" />
-                            {track.punch_out_location}
-                          </address>
-                        </div>
-                      </div>
-                    )}
                   </div>
                 ))}
+                <div>
+                  <textarea
+                    name="border border-gray-400 outline-none"
+                    rows={2}
+                    id=""
+                  ></textarea>
+                </div>
               </div>
             </div>
           )}
           {showViewSelfieModal && (
             <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
               <div className="bg-white rounded-2xl shadow-2xl w-2xl h-[40rem] overflow-hidden">
-                <div className=" bg-[#C62828] px-6 py-4 flex justify-between items-center">
-                  <h2 className="text-2xl font-bold text-white">
+                <div className=" bg-[#C62828] px-6 py-3 flex justify-between items-center">
+                  <h2 className="text-lg sm:text-xl font-bold text-white">
                     {selectedAttendance?.type === "out"
                       ? "Check Out"
                       : "Check In"}{" "}
@@ -222,7 +229,7 @@ const ViewTodayAttendanceModal = ({
                     <X className="w-6 h-6" />
                   </button>
                 </div>
-                <div className=" overflow-y-auto h-[40rem]">
+                <div className=" overflow-y-auto h-[40rem] py-16">
                   {selectedAttendanceImage ? (
                     <div className="flex items-center justify-center h-64 pt-36">
                       <img

@@ -101,11 +101,22 @@ const AttendanceCalender = ({
 
                   const date = `${year}-${formattedMonth}-${formattedDay}`;
 
-                  const data = attendanceData.find((a: any) => {
-                    return a.date === date;
-                  });
+                  const data = attendanceData.find((a: any) => a.date === date);
 
-                  setDayAttendanceData(data);
+                  if (data && Array.isArray(data.trackingHistory)) {
+                    const sortedTracking = [...data.trackingHistory].sort(
+                      (a: any, b: any) =>
+                        new Date(b.punch_in_time).getTime() -
+                        new Date(a.punch_in_time).getTime(),
+                    );
+
+                    setDayAttendanceData({
+                      ...data,
+                      trackingHistory: sortedTracking,
+                    });
+                  } else {
+                    setDayAttendanceData(data);
+                  }
                 }}
                 className={`${attendanceData.find((d: any) => d.date.slice(8, 10) === (String(day).length === 1 ? "0" + String(day) : String(day))) ? "text-green-600 bg-green-100" : "text-red-600 bg-red-100"} relative h-16 flex items-center justify-center rounded-2xl
                   text-sm font-medium

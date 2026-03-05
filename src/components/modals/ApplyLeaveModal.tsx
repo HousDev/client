@@ -430,7 +430,7 @@ export default function ApplyLeaveForm({
         </div>
 
         {/* Content */}
-        <div className="p-6 max-h-[70vh] overflow-y-auto custom-scrollbar">
+        <div className="px-6 pt-6 max-h-[70vh] overflow-y-auto custom-scrollbar">
           <form onSubmit={handleSubmit} className="space-y-6">
             {/* AUTO-SELECTED EMPLOYEE SECTION - NO DROPDOWN */}
             <div className="space-y-1.5">
@@ -951,7 +951,7 @@ export default function ApplyLeaveForm({
             </div>
 
             {/* Important Notes */}
-            <div className="border-2 border-yellow-200 rounded-xl overflow-hidden bg-gradient-to-b from-yellow-50 to-white">
+            {/* <div className="border-2 border-yellow-200 rounded-xl overflow-hidden bg-gradient-to-b from-yellow-50 to-white">
               <div className="bg-gradient-to-r from-yellow-100 to-yellow-50 px-5 py-3 border-b border-yellow-200">
                 <h3 className="font-bold text-sm text-gray-800 flex items-center gap-2">
                   <div className="p-1.5 bg-yellow-500/10 rounded-lg">
@@ -992,10 +992,10 @@ export default function ApplyLeaveForm({
                   </li>
                 </ul>
               </div>
-            </div>
+            </div> */}
 
             {/* Submit Buttons */}
-            <div className="flex gap-3 pt-4 border-t border-gray-200">
+            <div className="flex gap-3 pt-4 border-t border-gray-200 sticky bottom-0 bg-white pb-4">
               <button
                 type="button"
                 onClick={() => {

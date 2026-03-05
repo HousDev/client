@@ -61,6 +61,17 @@ const attendanceApi = {
     }
   },
 
+  async addNote(id: any, note: string) {
+    try {
+      const response = await api.post("/attendance/add-note/" + id, note);
+
+      return response;
+    } catch (error: any) {
+      console.error("Punch In API error:", error);
+      throw error;
+    }
+  },
+
   // Punch Out with error handling
   async punchOut(data: {
     user_id: number;

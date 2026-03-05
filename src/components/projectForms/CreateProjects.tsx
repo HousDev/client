@@ -140,6 +140,7 @@ export default function ConstructionProjectWizardForm({
   const [floorFlatCounts, setFloorFlatCounts] = useState<{
     [key: string]: number;
   }>({});
+  const [isDraftLoaded, setIsDraftLoaded] = useState(false);
 
   const [selectedArea, setSelectedArea] = useState<any>({
     id: "",
@@ -343,6 +344,34 @@ export default function ConstructionProjectWizardForm({
     setCurrentStep(Math.max(currentStep - 1, 1));
   };
 
+  useEffect(() => {
+    const draft = localStorage.getItem("projectDraft");
+
+    if (draft) {
+      try {
+        const data = JSON.parse(draft);
+        console.log("draft loaded");
+        setFormData(data);
+      } catch (err) {
+        console.error("Invalid draft data", err);
+        localStorage.removeItem("projectDraft");
+      }
+    }
+
+    setIsDraftLoaded(true);
+  }, []);
+
+  useEffect(() => {
+    if (!isDraftLoaded) return;
+
+    try {
+      const data = JSON.stringify(formData);
+      localStorage.setItem("projectDraft", data);
+    } catch (err) {
+      console.error("LocalStorage error:", err);
+    }
+  }, [formData, isDraftLoaded]);
+
   const handleSubmit = async () => {
     if (validateStep(5)) {
       let hasError = false;
@@ -410,6 +439,9 @@ export default function ConstructionProjectWizardForm({
         toast.warning("Please fill required fields.");
         return;
       }
+
+      console.log(finalData);
+      return;
 
       const projectRes: any = await projectApi.createProject(finalData);
 
@@ -965,10 +997,6 @@ export default function ConstructionProjectWizardForm({
     }));
   };
 
-  useEffect(() => {
-    console.log(formData);
-  }, [formData]);
-
   function convertSqmToSqft(value: number) {
     if (!value || isNaN(value)) return 0;
     return value * 10.7639;
@@ -993,7 +1021,10 @@ export default function ConstructionProjectWizardForm({
             </div>
           </div>
           <button
-            onClick={() => setShowModel(false)}
+            onClick={() => {
+              setShowModel(false);
+              localStorage.removeItem("projectDraft");
+            }}
             className="text-white hover:bg-white/20 rounded-xl p-2 transition-all duration-200 hover:scale-105 active:scale-95"
           >
             <X className="w-5 h-5" />

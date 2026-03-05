@@ -766,6 +766,7 @@ export default function Permissions() {
       module: "HRMS Settings",
     },
   ];
+  const [groupedPermissions, setGroupedPermissions] = useState(permissionsList);
 
   const loadUsers = async () => {
     try {
@@ -799,12 +800,6 @@ export default function Permissions() {
     loadRoles();
     loadUsers();
   }, []);
-
-  const groupedPermissions = permissionsList.reduce((acc: any, p) => {
-    if (!acc[p.module]) acc[p.module] = [];
-    acc[p.module].push(p);
-    return acc;
-  }, {});
 
   const handlePermissionChange = (action: string, value: boolean) => {
     if (activeTab === "role-permissions") {
@@ -879,6 +874,37 @@ export default function Permissions() {
       toast.error("Failed to update user permissions");
     }
   };
+  useEffect(() => {
+    const gp = permissionsList.reduce((acc: any, p) => {
+      if (!acc[p.module]) acc[p.module] = [];
+      acc[p.module].push(p);
+      return acc;
+    }, {});
+
+    setGroupedPermissions(gp);
+  }, []);
+
+  useEffect(() => {
+    if (searchQuery.length === 0) {
+      const gp = permissionsList.reduce((acc: any, p) => {
+        if (!acc[p.module]) acc[p.module] = [];
+        acc[p.module].push(p);
+        return acc;
+      }, {});
+
+      setGroupedPermissions(gp);
+    } else {
+      const gp = permissionsList
+        .filter((search) => search.module.includes(searchQuery))
+        .reduce((acc: any, p) => {
+          if (!acc[p.module]) acc[p.module] = [];
+          acc[p.module].push(p);
+          return acc;
+        }, {});
+
+      setGroupedPermissions(gp);
+    }
+  }, [searchQuery]);
 
   if (loading) {
     return (
@@ -895,8 +921,8 @@ export default function Permissions() {
     // ✅ REMOVED ALL PADDING - Changed from "p-4 md:p-6 lg:p-8" to NO padding classes
     <div className="min-h-screen px-0 mx-0 bg-gray-50">
       {/* Tabs - NO padding */}
-      <div className="bg-white border-b">
-        <div className="flex">
+      <div className="bg-white border-b flex items-center w-full">
+        <div className="flex items-center ">
           <button
             onClick={() => setActiveTab("role-permissions")}
             className={`flex-1 md:flex-none px-6 py-4 text-sm font-medium transition-colors border-b-2 ${
@@ -926,6 +952,20 @@ export default function Permissions() {
             <Users className="w-4 h-4 inline-block mr-2" />
             Direct User Overrides
           </button>
+        </div>
+        <div className="w-[30vw]">
+          <div className="relative flex-1 w-full">
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
+            <input
+              type="text"
+              placeholder="Search notifications..."
+              value={searchQuery}
+              onChange={(e) => {
+                setSearchQuery(e.target.value);
+              }}
+              className="w-full pl-10 pr-4 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent outline-none"
+            />
+          </div>
         </div>
       </div>
 

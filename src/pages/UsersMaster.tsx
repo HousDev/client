@@ -1536,6 +1536,18 @@ export default function UsersMaster() {
   // Toggle active status - FIXED VERSION
   const toggleActive = async (id: string, currentStatus: boolean) => {
     try {
+      const swalResult: any = await MySwal.fire({
+        title: "Are you sure?",
+        text: `You are about to ${!currentStatus ? "activate" : "deactivate"} user!`,
+        icon: "warning",
+        showCancelButton: true,
+        confirmButtonColor: "#d33",
+        cancelButtonColor: "#3085d6",
+        confirmButtonText: `Yes, ${!currentStatus ? "activate" : "deactivate"} it!`,
+        cancelButtonText: "Cancel",
+      });
+
+      if (!swalResult.isConfirmed) return;
       console.log("Toggling user status:", { id, currentStatus });
 
       // Call API
