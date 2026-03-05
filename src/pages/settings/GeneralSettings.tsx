@@ -71,6 +71,7 @@ interface SystemSettings {
   timezone: string;
   dateFormat: string;
   language: string;
+  site_name: string
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
@@ -131,6 +132,7 @@ const GeneralSettings: React.FC = () => {
     timezone: "Asia/Kolkata",
     dateFormat: "DD/MM/YYYY",
     language: "en",
+    site_name: "Vendor Management System",
   });
 
   // ── Password Change State ───────────────────────────────────────────────
@@ -180,6 +182,7 @@ const GeneralSettings: React.FC = () => {
       // 3. System settings (admin only)
       if (isAdmin) {
         const sys = await SettingsApi.getSystemSettings();
+        console.log(sys, "asfdjdlfjaoij")
         setSystem(sys);
       }
 
@@ -205,6 +208,7 @@ const GeneralSettings: React.FC = () => {
       setLoading(false);
     }
   };
+
 
   // ═══ PROFILE ══════════════════════════════════════════════════════════════
   const handleProfileUpdate = async (e: React.FormEvent) => {
@@ -468,6 +472,7 @@ const GeneralSettings: React.FC = () => {
         timezone: system.timezone,
         dateFormat: system.dateFormat,
         language: system.language,
+        site_name: system.site_name,
       });
 
       updateSystemSettingsLocally(result);
@@ -1318,6 +1323,7 @@ const GeneralSettings: React.FC = () => {
                             timezone: "Asia/Kolkata",
                             dateFormat: "DD/MM/YYYY",
                             language: "en",
+                            site_name: "Vendor Management System",
                           });
                           toast.success(
                             "Settings reset locally – click Save to persist",
@@ -1327,13 +1333,13 @@ const GeneralSettings: React.FC = () => {
                       >
                         Reset
                       </button>
-                      {/* <button
+                      <button
                         onClick={handleSaveSystem}
                         className="px-4 py-2 bg-[#C62828] text-white text-sm font-medium rounded-lg hover:bg-[#A62222] transition flex items-center gap-1.5"
                       >
                         <FaSave className="w-3.5 h-3.5" />
                         Save
-                      </button> */}
+                      </button>
                     </div>
                   </div>
 
@@ -1426,6 +1432,11 @@ const GeneralSettings: React.FC = () => {
                     </div>
                   </div>
                 </div> */}
+                    <div className="flex flex-col">
+                      <p className="text-sm pb-2 font-medium">Site Name</p>
+                      <input type="text" value={system.site_name} className="outline-none border border-slate-600 px-3 rounded-md py-2 focus:border-red-600 w-1/2"
+                        onChange={(e) => { setSystem({ ...system, site_name: e.target.value }) }} placeholder="Site Name" />
+                    </div>
 
                     <div className="space-y-4">
                       <h3 className="text-base font-semibold text-gray-900">

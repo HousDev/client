@@ -239,6 +239,7 @@ import Layout from "./components/Layout";
 import Login from "./pages/Login";
 import { Buffer } from "buffer";
 import { Toaster } from "sonner";
+import { SettingsApi } from "./lib/settingsApi";
 
 // Lazy loaded pages
 const Dashboard = lazy(() => import("./pages/Dashboard"));
@@ -287,7 +288,11 @@ const TDS = lazy(() => import("./pages/TDS"));
 const PaymentHistory = lazy(() => import("./pages/PaymentHistory"));
 
 function AppContent() {
-  const { user, loading } = useAuth();
+  const { user, loading, refreshSystemSettings } = useAuth();
+
+  useEffect(() => {
+    refreshSystemSettings();
+  }, []); // Placeholder for any future side effects on app load
 
   const [activeTab, setActiveTab] = useState(
     localStorage.getItem("activeTab") || "dashboard"
@@ -449,6 +454,7 @@ function App() {
   if (!window.Buffer) {
     window.Buffer = Buffer;
   }
+  
 
   return (
     <AuthProvider>

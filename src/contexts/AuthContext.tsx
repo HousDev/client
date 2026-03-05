@@ -145,6 +145,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
     if (!apiGetToken()) return;
     try {
       const sysData = await SettingsApi.getSystemSettings();
+      document.title = sysData.site_name || "Vendor Management System"; // Update document title
       setSystemSettings(sysData);
     } catch (error) {
       console.error("Failed to refresh system settings:", error);

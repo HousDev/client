@@ -29,6 +29,7 @@ export type SystemSettingsData = {
   timezone: string;
   dateFormat: string;
   language: string;
+  site_name:string
 };
 
 // ─── API OBJECT ───────────────────────────────────────────────────────────
