@@ -22,13 +22,13 @@ interface AttendanceRecord {
 const AttendanceCalender = ({
   month,
   year,
-  setSelectedDateAttendance,
   attendanceData,
+  loadAttendance,
 }: {
   month: number; // 0-based (0 = Jan)
   year: number;
   attendanceData: any;
-  setSelectedDateAttendance: any;
+  loadAttendance: any;
 }) => {
   console.log("atd", attendanceData);
   const [daysInMonth, setDaysInMonth] = useState<number>(0);
@@ -139,6 +139,7 @@ const AttendanceCalender = ({
       </div>
       {dayAttendanceData && (
         <ViewTodayAttendanceModal
+          loadAttendance={loadAttendance}
           dayData={dayAttendanceData}
           setDayData={setDayAttendanceData}
         />

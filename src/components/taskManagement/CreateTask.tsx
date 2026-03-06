@@ -524,6 +524,8 @@ export default function CreateTask({
                     </div>
                     <input
                       type="date"
+                      min={today}
+                      max={formData.end_date}
                       value={formData.start_date}
                       // min={today}   // 👈 Is line ko comment ya remove kar den
                       onChange={(e) =>

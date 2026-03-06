@@ -34,7 +34,10 @@ import {
   Globe as GlobeIcon,
   FileText,
   Lock,
+  Edit,
 } from "lucide-react";
+import EditEmployeeModal from "../../components/modals/EditEmployeeModal";
+import HrmsEmployeesApi from "../../lib/employeeApi";
 
 // ─── INTERFACES ───────────────────────────────────────────────────────────
 interface UserProfile {
@@ -71,7 +74,7 @@ interface SystemSettings {
   timezone: string;
   dateFormat: string;
   language: string;
-  site_name: string
+  site_name: string;
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
@@ -85,6 +88,8 @@ const GeneralSettings: React.FC = () => {
     refreshSystemSettings,
     refreshUser,
   } = useAuth();
+
+  const [employee, setEmployee] = useState<any>(null);
 
   const [activeTab, setActiveTab] = useState<string>("profile");
   const [loading, setLoading] = useState<boolean>(true);
@@ -135,6 +140,8 @@ const GeneralSettings: React.FC = () => {
     site_name: "Vendor Management System",
   });
 
+  const [showEditModal, setShowEditModal] = useState(false);
+
   // ── Password Change State ───────────────────────────────────────────────
   const [passwordData, setPasswordData] = useState({
     current: "",
@@ -159,10 +166,12 @@ const GeneralSettings: React.FC = () => {
   }, []);
 
   const loadAll = async () => {
+    console.log("loadAll data");
     setLoading(true);
     try {
       // 1. Profile
       const profileData = await SettingsApi.getProfile();
+
       setUserProfile({
         id: profileData.id,
         full_name: profileData.full_name || "",
@@ -182,7 +191,6 @@ const GeneralSettings: React.FC = () => {
       // 3. System settings (admin only)
       if (isAdmin) {
         const sys = await SettingsApi.getSystemSettings();
-        console.log(sys, "asfdjdlfjaoij")
         setSystem(sys);
       }
 
@@ -208,7 +216,6 @@ const GeneralSettings: React.FC = () => {
       setLoading(false);
     }
   };
-
 
   // ═══ PROFILE ══════════════════════════════════════════════════════════════
   const handleProfileUpdate = async (e: React.FormEvent) => {
@@ -506,6 +513,23 @@ const GeneralSettings: React.FC = () => {
       : []),
   ];
 
+  const loadEmpDetails = async () => {
+    try {
+      const empRes = await HrmsEmployeesApi.getEmployeeByEmail(user.email);
+      if (empRes) {
+        setEmployee(empRes);
+      }
+    } catch (error: any) {
+      console.log(error);
+    }
+  };
+
+  useEffect(() => {
+    if (user.role !== "admin") {
+      loadEmpDetails();
+    }
+  }, []);
+
   // ═══ LOADING SCREEN ═══════════════════════════════════════════════════════
   if (loading) {
     return (
@@ -548,84 +572,86 @@ const GeneralSettings: React.FC = () => {
 
         <div className="flex flex-col lg:flex-row gap-6">
           {/* ── Sidebar Tabs ── */}
-          <div className="lg:w-80 flex-shrink-0">
-            <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-4 space-y-1">
-              <div className="px-4 py-3 mb-2">
-                <h3 className="text-sm font-semibold text-gray-500 uppercase tracking-wider">
-                  Settings
-                </h3>
-              </div>
-              {tabs.map((tab) => {
-                const Icon = tab.icon;
-                return (
-                  <button
-                    key={tab.id}
-                    onClick={() => setActiveTab(tab.id)}
-                    className={`w-full flex items-center gap-4 px-4 py-3.5 rounded-xl transition-all duration-200 group ${
-                      activeTab === tab.id
-                        ? "bg-gradient-to-r from-[#C62828] to-[#D84343] text-white shadow-lg"
-                        : "text-gray-700 hover:bg-gray-50 hover:shadow-sm"
-                    }`}
-                  >
-                    <div
-                      className={`p-2.5 rounded-lg ${
+          {user.role === "admin" && (
+            <div className="lg:w-80 flex-shrink-0">
+              <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-4 space-y-1">
+                <div className="px-4 py-3 mb-2">
+                  <h3 className="text-sm font-semibold text-gray-500 uppercase tracking-wider">
+                    Settings
+                  </h3>
+                </div>
+                {tabs.map((tab) => {
+                  const Icon = tab.icon;
+                  return (
+                    <button
+                      key={tab.id}
+                      onClick={() => setActiveTab(tab.id)}
+                      className={`w-full flex items-center gap-4 px-4 py-3.5 rounded-xl transition-all duration-200 group ${
                         activeTab === tab.id
-                          ? "bg-white/20"
-                          : "bg-gray-100 group-hover:bg-gray-200"
+                          ? "bg-gradient-to-r from-[#C62828] to-[#D84343] text-white shadow-lg"
+                          : "text-gray-700 hover:bg-gray-50 hover:shadow-sm"
                       }`}
                     >
-                      <Icon
-                        className={`w-5 h-5 ${
-                          activeTab === tab.id ? "text-white" : tab.color
+                      <div
+                        className={`p-2.5 rounded-lg ${
+                          activeTab === tab.id
+                            ? "bg-white/20"
+                            : "bg-gray-100 group-hover:bg-gray-200"
                         }`}
-                      />
-                    </div>
-                    <span className="font-medium flex-1 text-left">
-                      {tab.label}
-                    </span>
-                    {activeTab === tab.id && (
-                      <div className="w-2 h-2 bg-white rounded-full"></div>
-                    )}
-                  </button>
-                );
-              })}
-            </div>
+                      >
+                        <Icon
+                          className={`w-5 h-5 ${
+                            activeTab === tab.id ? "text-white" : tab.color
+                          }`}
+                        />
+                      </div>
+                      <span className="font-medium flex-1 text-left">
+                        {tab.label}
+                      </span>
+                      {activeTab === tab.id && (
+                        <div className="w-2 h-2 bg-white rounded-full"></div>
+                      )}
+                    </button>
+                  );
+                })}
+              </div>
 
-            {/* ── Quick Stats Card ── */}
-            <div className="mt-6 bg-gradient-to-br from-gray-900 to-gray-800 rounded-2xl shadow-lg p-6 text-white">
-              <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
-                <GlobeIcon className="w-5 h-5" />
-                Account Overview
-              </h3>
-              <div className="space-y-4">
-                <div className="flex items-center justify-between pb-3 border-b border-gray-700">
-                  <span className="text-gray-300">Role</span>
-                  <span className="font-medium capitalize">
-                    {userProfile.role}
-                  </span>
-                </div>
-                <div className="flex items-center justify-between pb-3 border-b border-gray-700">
-                  <span className="text-gray-300">Member Since</span>
-                  <span className="font-medium">
-                    {new Date(userProfile.created_at).toLocaleDateString(
-                      "en-US",
-                      {
-                        month: "short",
-                        year: "numeric",
-                      },
-                    )}
-                  </span>
-                </div>
-                <div className="flex items-center justify-between">
-                  <span className="text-gray-300">Status</span>
-                  <span className="flex items-center gap-1.5 text-green-400 font-medium">
-                    <FaCheckCircle className="w-4 h-4" />
-                    Active
-                  </span>
+              {/* ── Quick Stats Card ── */}
+              <div className="mt-6 bg-gradient-to-br from-gray-900 to-gray-800 rounded-2xl shadow-lg p-6 text-white">
+                <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
+                  <GlobeIcon className="w-5 h-5" />
+                  Account Overview
+                </h3>
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between pb-3 border-b border-gray-700">
+                    <span className="text-gray-300">Role</span>
+                    <span className="font-medium capitalize">
+                      {userProfile.role}
+                    </span>
+                  </div>
+                  <div className="flex items-center justify-between pb-3 border-b border-gray-700">
+                    <span className="text-gray-300">Member Since</span>
+                    <span className="font-medium">
+                      {new Date(userProfile.created_at).toLocaleDateString(
+                        "en-US",
+                        {
+                          month: "short",
+                          year: "numeric",
+                        },
+                      )}
+                    </span>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span className="text-gray-300">Status</span>
+                    <span className="flex items-center gap-1.5 text-green-400 font-medium">
+                      <FaCheckCircle className="w-4 h-4" />
+                      Active
+                    </span>
+                  </div>
                 </div>
               </div>
             </div>
-          </div>
+          )}
 
           {/* ════════════════════════════════════════════════════════════════
                MAIN CONTENT
@@ -699,7 +725,17 @@ const GeneralSettings: React.FC = () => {
                             )}
                           </div>
                         </div>
-
+                        {user.role !== "admin" && (
+                          <div className="">
+                            <button
+                              onClick={() => setShowEditModal(true)}
+                              className="flex items-center gap-2 px-3 py-2 bg-red-600 text-white text-sm font-medium rounded-lg hover:bg-red-700 transition-colors"
+                            >
+                              <Edit className="w-4 h-4" />
+                              <span>Edit Profile</span>
+                            </button>
+                          </div>
+                        )}
                         {/* Save + Remove avatar row */}
                         {/* <div className="flex items-center gap-2">
                           {userProfile.avatar && (
@@ -772,13 +808,14 @@ const GeneralSettings: React.FC = () => {
                           <Lock className="w-3.5 h-3.5 inline ml-1.5 text-gray-400" />
                         </label>
                         <input
-                          type="email" disabled={user.role !== "admin"}
+                          type="email"
+                          disabled={user.role !== "admin"}
                           value={userProfile.email}
                           onChange={(e) => {
                             setUserProfile((prev) => ({
                               ...prev,
                               email: e.target.value,
-                            }))
+                            }));
                           }}
                           className="w-full px-4 py-3 border border-gray-400 rounded-xl text-gray-900 bg-gray-50 "
                         />
@@ -797,11 +834,15 @@ const GeneralSettings: React.FC = () => {
                           type="tel"
                           value={userProfile.phone}
                           onChange={(e) => {
-                            if (e.target.value.length > 10 || !/^\d*$/.test(e.target.value)) return;
+                            if (
+                              e.target.value.length > 10 ||
+                              !/^\d*$/.test(e.target.value)
+                            )
+                              return;
                             setUserProfile((prev) => ({
                               ...prev,
                               phone: e.target.value,
-                            }))
+                            }));
                           }}
                           disabled={user.role !== "admin"} // Only admins can see phone number, but it's still read-only
                           className="w-full px-4 py-3 border border-gray-400 rounded-xl text-gray-900 bg-gray-50 "
@@ -1434,8 +1475,15 @@ const GeneralSettings: React.FC = () => {
                 </div> */}
                     <div className="flex flex-col">
                       <p className="text-sm pb-2 font-medium">Site Name</p>
-                      <input type="text" value={system.site_name} className="outline-none border border-slate-600 px-3 rounded-md py-2 focus:border-red-600 w-1/2"
-                        onChange={(e) => { setSystem({ ...system, site_name: e.target.value }) }} placeholder="Site Name" />
+                      <input
+                        type="text"
+                        value={system.site_name}
+                        className="outline-none border border-slate-600 px-3 rounded-md py-2 focus:border-red-600 w-1/2"
+                        onChange={(e) => {
+                          setSystem({ ...system, site_name: e.target.value });
+                        }}
+                        placeholder="Site Name"
+                      />
                     </div>
 
                     <div className="space-y-4">
@@ -1699,6 +1747,19 @@ const GeneralSettings: React.FC = () => {
                   </div>
                 </div>
               </div>
+            )}
+            {/* Modals */}
+            {showEditModal && (
+              <EditEmployeeModal
+                isOpen={showEditModal}
+                onClose={() => {
+                  setShowEditModal(false);
+                }}
+                employeeId={employee.id}
+                onSuccess={async () => {
+                  await loadAll();
+                }}
+              />
             )}
           </div>
         </div>

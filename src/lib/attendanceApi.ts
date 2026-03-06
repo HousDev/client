@@ -63,9 +63,9 @@ const attendanceApi = {
 
   async addNote(id: any, note: string) {
     try {
-      const response = await api.post("/attendance/add-note/" + id, note);
+      const response = await api.put("/attendance/add-note/" + id, { note });
 
-      return response;
+      return response.data;
     } catch (error: any) {
       console.error("Punch In API error:", error);
       throw error;
