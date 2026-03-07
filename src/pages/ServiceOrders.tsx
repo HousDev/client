@@ -17,6 +17,7 @@ import {
   FileDown,
   Loader2,
   CircleX,
+  ReceiptIndianRupee,
 } from "lucide-react";
 import { useAuth } from "../contexts/AuthContext";
 import vendorApi from "../lib/vendorApi";
@@ -24,20 +25,17 @@ import projectApi from "../lib/projectApi";
 import poTypeApi from "../lib/poTypeApi";
 import poApi from "../lib/poApi";
 import po_trackingApi from "../lib/po_tracking";
-import CreatePurchaseOrderForm from "../components/CreatePurchaseOrderForm";
-import UpdatePurchaseOrderForm from "../components/updatePurchaseOrderForm";
 import ItemsApi from "../lib/itemsApi";
 import SearchableSelect from "../components/SearchableSelect";
 import { UsersApi } from "../lib/Api";
 import { toast } from "sonner";
 import MySwal from "../utils/swal";
 import TermsConditionsApi from "../lib/termsConditionsApi";
-import poPaymentApi from "../lib/poPaymentApi";
 import CreateServiceOrderForm from "../components/ServiceOrder/CreateServiceOrder";
 import UpdateServiceOrderForm from "../components/ServiceOrder/UpdateServiceOrders";
 import ServiceOrdersApi from "../lib/serviceOrderApi";
-import woPaymentApi from "../lib/woPayments";
 import woPaymentHistoryApi from "../lib/woPayments";
+import CreateWoBill from "../components/ServiceOrder/CreateWoBill";
 
 type Vendor = {
   id: string;
@@ -94,26 +92,12 @@ type Tracking = {
   };
 };
 
-type PaymentDataType = {
-  id?: number | string | null;
-  po_id: number | string | null;
-  transaction_type: string | null;
-  amount_paid: string | number | null;
-  payment_method: string | null;
-  payment_reference_no: string | null;
-  payment_proof: File | null;
-  payment_date: string | null;
-  status: string | null;
-  remarks: string | null;
-  purchase_order?: any;
-  created_by: string | null;
-};
-
 export default function ServiceOrders() {
   const { user, profile, can } = useAuth();
   const [pos, setPOs] = useState<PO[]>([]);
   const [showChallans, setShowChallans] = useState(false);
   const [trackingData, setTrackingData] = useState<Tracking[]>([]);
+  const [showWoBill, setShowWoBill] = useState(false);
   const [vendors, setVendors] = useState<Vendor[]>([]);
   const [projects, setProjects] = useState<Project[]>([]);
   const [pdfUrl, setPdfUrl] = useState<any>("");
@@ -164,9 +148,9 @@ export default function ServiceOrders() {
     null,
   );
   const [allChallans, setAllChallans] = useState<string[]>([]);
-  const [activeTab, setActiveTab] = useState<"tracking" | "management">(
-    "management",
-  );
+  const [activeTab, setActiveTab] = useState<
+    "tracking" | "management" | "bills"
+  >("management");
   const [showUpdateMaterialQuantity, setShowUpdateMaterialQuantity] =
     useState<boolean>(false);
   const [materialQuantity, setMaterialQuantity] = useState<number>(1);
@@ -215,6 +199,8 @@ export default function ServiceOrders() {
     type: "",
     date: "",
   });
+
+  const loadWoBillData = async () => {};
 
   useEffect(() => {
     if (activeTab === "tracking") {
@@ -1224,16 +1210,31 @@ export default function ServiceOrders() {
         <div className=" w-full sm:flex-1">
           <div className="flex bg-white border border-gray-200 rounded-lg overflow-hidden">
             <button
+              onClick={() => setActiveTab("bills")}
+              className={`flex-1 flex items-center justify-center gap-1.5
+                        px-2 py-2
+                        text-[11px] sm:text-sm
+                        font-medium transition
+          ${
+            activeTab === "bills"
+              ? "bg-blue-50 text-blue-600 border-b-2 border-blue-600"
+              : "text-gray-600 hover:bg-gray-50"
+          }`}
+            >
+              <Package className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+              WO Bills
+            </button>
+            <button
               onClick={() => setActiveTab("tracking")}
               className={`flex-1 flex items-center justify-center gap-1.5
-          px-2 py-2
-          text-[11px] sm:text-sm
-          font-medium transition
+                        px-2 py-2
+                        text-[11px] sm:text-sm
+                        font-medium transition
           ${
             activeTab === "tracking"
               ? "bg-blue-50 text-blue-600 border-b-2 border-blue-600"
               : "text-gray-600 hover:bg-gray-50"
-          }`}
+          } border-r border-l border-slate-300`}
             >
               <Package className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
               WO Tracking
@@ -1258,10 +1259,12 @@ export default function ServiceOrders() {
         </div>
 
         {/* Create SO Button */}
-        {can("create_wo") && (
-          <button
-            onClick={() => setShowCreatePro(true)}
-            className="
+        {
+          <div>
+            {can("create_wo") && (
+              <button
+                onClick={() => setShowCreatePro(true)}
+                className="
         w-full sm:w-auto
         bg-[#C62828] text-white
         px-3 py-2
@@ -1274,11 +1277,13 @@ export default function ServiceOrders() {
         transition
         whitespace-nowrap
       "
-          >
-            <Plus className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
-            Create WO
-          </button>
-        )}
+              >
+                <Plus className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+                Create WO
+              </button>
+            )}
+          </div>
+        }
       </div>
 
       {showCreatePro && (
@@ -1944,6 +1949,20 @@ export default function ServiceOrders() {
                               title="Make Payment"
                             >
                               <IndianRupee className="w-3.5 h-3.5 md:w-4 md:h-4" />
+                            </button>
+                          )}
+                        {can("make_payment_wo") &&
+                          po.balance_amount! > 0 &&
+                          po.status === "authorize" && (
+                            <button
+                              onClick={() => {
+                                setShowWoBill(true);
+                                setSelectedPO(po);
+                              }}
+                              className="p-1.5 md:p-2 text-green-600 hover:bg-green-50 rounded-lg transition"
+                              title="Make Payment"
+                            >
+                              <ReceiptIndianRupee className="w-3.5 h-3.5 md:w-4 md:h-4" />
                             </button>
                           )}
                         <div className="relative">
@@ -2696,6 +2715,14 @@ export default function ServiceOrders() {
             </form>
           </div>
         </div>
+      )}
+
+      {showWoBill && (
+        <CreateWoBill
+          loadAllData={loadAllData}
+          setShowWoBill={setShowWoBill}
+          selectedWO={selectedPO}
+        />
       )}
     </div>
   );
