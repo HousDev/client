@@ -11,6 +11,9 @@ import {
   File,
   Percent,
 } from "lucide-react";
+import { useAuth } from "../../contexts/AuthContext";
+import { api } from "../../lib/Api";
+import { toast } from "sonner";
 
 type WoBillForm = {
   wo_id: number | string;
@@ -33,6 +36,8 @@ export default function CreateWoBill({
   loadAllData: () => void;
   selectedWO: any;
 }): JSX.Element {
+  const { user } = useAuth();
+
   const [formData, setFormData] = useState<WoBillForm>({
     wo_id: selectedWO.id,
     bill_number: "",
@@ -42,15 +47,67 @@ export default function CreateWoBill({
     bill_date: new Date().toISOString().split("T")[0],
     bill_due_date: "",
     bill_proof: "",
-    created_by: "",
+    created_by: user.id,
   });
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    console.log("object", formData);
+  const handleSubmit = async (e: React.FormEvent) => {
+    try {
+      if (!formData.wo_id) {
+        toast.error("Work order id required.");
+      }
+      if (!formData.bill_number) {
+        toast.error("Bill number required.");
+      }
+      if (!formData.bill_retention) {
+        toast.error("Retention required.");
+      }
+      if (!formData.bill_date) {
+        toast.error("Bill date required.");
+      }
+      if (!formData.bill_due_date) {
+        toast.error("Bill due date required.");
+      }
+      if (!formData.bill_proof) {
+        toast.error("Bill proof required.");
+      }
+      e.preventDefault();
+      const formDataObj = new FormData();
+
+      // 🔹 Basic fields
+      formDataObj.append("wo_id", String(formData.wo_id));
+      formDataObj.append("bill_number", String(formData.bill_number));
+      formDataObj.append("bill_amount", formData.bill_amount);
+      formDataObj.append("bill_balance", formData.bill_amount);
+      formDataObj.append("bill_retention", formData.bill_retention);
+      formDataObj.append("bill_date", formData.bill_date);
+      formDataObj.append("bill_due_date", formData.bill_due_date);
+      formDataObj.append("created_by", formData.created_by);
+
+      // 🔹 Challan image
+      if (formData.bill_proof) {
+        formDataObj.append("bill_proof", formData.bill_proof);
+      }
+
+      const response: any = await api.post("/wo-bill", formDataObj, {
+        headers: { "Content-Type": "multipart/form-data" },
+      });
+
+      if (response.data.success) {
+        toast.success(response.message);
+        loadAllData();
+        setShowWoBill(false);
+      } else {
+        toast.error("Errors : ", response.data.message);
+      }
+    } catch (error: any) {
+      toast.error("Error : ", error.response.data.message);
+      console.log(error);
+    }
   };
+
   const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
+
     if (file) {
       setFormData((prev: any) => ({ ...prev, bill_proof: file }));
     }
@@ -133,12 +190,17 @@ export default function CreateWoBill({
                   <input
                     type="text"
                     value={formData.bill_amount}
-                    onChange={(e) =>
+                    onChange={(e) => {
+                      if (
+                        !/^\d*\.?\d*$/.test(e.target.value) ||
+                        Number(e.target.value) < 0
+                      )
+                        return;
                       setFormData({
                         ...formData,
                         bill_amount: e.target.value,
-                      })
-                    }
+                      });
+                    }}
                     className="w-full pl-10 pr-4 py-2 text-sm border border-gray-300 rounded-xl focus:border-amber-600 focus:ring-2 focus:ring-amber-600/20 outline-none transition-all duration-200 hover:border-gray-400"
                     required
                   />
@@ -158,6 +220,11 @@ export default function CreateWoBill({
                     type="text"
                     value={formData.bill_retention}
                     onChange={(e) => {
+                      if (
+                        !/^\d*\.?\d*$/.test(e.target.value) ||
+                        Number(e.target.value) < 0
+                      )
+                        return;
                       if (Number(e.target.value) > 100) return;
                       setFormData({
                         ...formData,

@@ -437,9 +437,9 @@ function AppContent() {
       activeFormTab={activeFormTab}
       setActiveFormTab={setActiveFormTab}
     >
-      <Suspense fallback={<div style={{ padding: 20 }}>Loading...</div>}>
-        {renderContent()}
-      </Suspense>
+      {/* <Suspense fallback={<div style={{ padding: 20 }}>Loading...</div>}> */}
+      {renderContent()}
+      {/* </Suspense> */}
     </Layout>
   );
 }

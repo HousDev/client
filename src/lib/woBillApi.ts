@@ -1,10 +1,10 @@
 import { api, unwrap } from "./Api";
 
 /**
- * Get all WO bills
+ * Get all WO bill
  */
 async function getWoBills() {
-  const res: any = await api.get("/wo-bills");
+  const res: any = await api.get("/wo-bill");
   return unwrap(res);
 }
 
@@ -12,15 +12,15 @@ async function getWoBills() {
  * Get WO bill by ID
  */
 async function getWoBillById(id: number | string) {
-  const res: any = await api.get(`/wo-bills/${id}`);
+  const res: any = await api.get(`/wo-bill/${id}`);
   return unwrap(res);
 }
 
 /**
- * Get bills by Work Order ID
+ * Get bill by Work Order ID
  */
 async function getBillsByWoId(woId: number | string) {
-  const res: any = await api.get(`/wo-bills/work-order/${woId}`);
+  const res: any = await api.get(`/wo-bill/work-order/${woId}`);
   return unwrap(res);
 }
 
@@ -28,7 +28,7 @@ async function getBillsByWoId(woId: number | string) {
  * Create WO bill
  */
 async function createWoBill(payload: any) {
-  const res: any = await api.post("/wo-bills", payload);
+  const res: any = await api.post("/wo-bill", payload);
   return unwrap(res);
 }
 
@@ -36,7 +36,7 @@ async function createWoBill(payload: any) {
  * Update WO bill
  */
 async function updateWoBill(id: number | string, payload: any) {
-  const res: any = await api.put(`/wo-bills/${id}`, payload);
+  const res: any = await api.put(`/wo-bill/${id}`, payload);
   return unwrap(res);
 }
 
@@ -44,7 +44,7 @@ async function updateWoBill(id: number | string, payload: any) {
  * Delete WO bill
  */
 async function deleteWoBill(id: number | string) {
-  const res: any = await api.delete(`/wo-bills/${id}`);
+  const res: any = await api.delete(`/wo-bill/${id}`);
   return unwrap(res);
 }
 

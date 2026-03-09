@@ -142,6 +142,7 @@ export default function EditEmployeeModal({
     office_email_password: "",
 
     // Bank Details
+    account_holder_name: "",
     bank_account_number: "",
     bank_name: "",
     ifsc_code: "",
@@ -212,6 +213,7 @@ export default function EditEmployeeModal({
     office_email_password: "",
 
     // Bank Details
+    account_holder_name: "",
     bank_account_number: "",
     bank_name: "",
     ifsc_code: "",
@@ -337,6 +339,7 @@ export default function EditEmployeeModal({
         office_email_password: data.office_email_password || "",
 
         // Bank Details
+        account_holder_name: data.account_holder_name || "",
         bank_account_number: data.bank_account_number || "",
         bank_name: data.bank_name || "",
         ifsc_code: data.ifsc_code || "",
@@ -857,7 +860,6 @@ export default function EditEmployeeModal({
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
-
     try {
       const formDataObj = new FormData();
       console.log("this is my : ", formData);
@@ -2540,10 +2542,29 @@ export default function EditEmployeeModal({
                   </div>
 
                   <div className="mb-6">
-                    <h5 className="text-xs font-semibold text-gray-700 mb-3">
-                      Account Details
-                    </h5>
                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+                      <div className="space-y-1">
+                        <label className="block text-xs font-semibold text-gray-700">
+                          Account Holder Name
+                        </label>
+                        <input
+                          type="text"
+                          value={formData.account_holder_name}
+                          disabled={
+                            user.role !== "admin" &&
+                            (validationFormData.account_holder_name || "")
+                              .length !== 0
+                          }
+                          onChange={(e) =>
+                            setFormData({
+                              ...formData,
+                              account_holder_name: e.target.value,
+                            })
+                          }
+                          className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:border-[#C62828] focus:ring-1 focus:ring-[#C62828] outline-none"
+                          placeholder="Bank name"
+                        />
+                      </div>
                       {/* Bank Name */}
                       <div className="space-y-1">
                         <label className="block text-xs font-semibold text-gray-700">
@@ -2580,12 +2601,17 @@ export default function EditEmployeeModal({
                             (validationFormData.bank_account_number || "")
                               .length !== 0
                           }
-                          onChange={(e) =>
+                          onChange={(e) => {
+                            if (
+                              e.target.value.length > 18 ||
+                              !/^\d+$/.test(e.target.value)
+                            )
+                              return;
                             setFormData({
                               ...formData,
                               bank_account_number: e.target.value,
-                            })
-                          }
+                            });
+                          }}
                           className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:border-[#C62828] focus:ring-1 focus:ring-[#C62828] outline-none"
                           placeholder="Account number"
                         />

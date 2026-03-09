@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 // src/components/PurchaseOrders.tsx
 import axios from "axios";
-import { useState, useEffect } from "react";
+import React, { useState, useEffect } from "react";
 import {
   Plus,
   Edit2,
@@ -18,6 +18,11 @@ import {
   Loader2,
   CircleX,
   ReceiptIndianRupee,
+  Eye,
+  ChevronDown,
+  Search,
+  User,
+  ChevronUp,
 } from "lucide-react";
 import { useAuth } from "../contexts/AuthContext";
 import vendorApi from "../lib/vendorApi";
@@ -36,6 +41,7 @@ import UpdateServiceOrderForm from "../components/ServiceOrder/UpdateServiceOrde
 import ServiceOrdersApi from "../lib/serviceOrderApi";
 import woPaymentHistoryApi from "../lib/woPayments";
 import CreateWoBill from "../components/ServiceOrder/CreateWoBill";
+import woBillsApi from "../lib/woBillApi";
 
 type Vendor = {
   id: string;
@@ -97,6 +103,10 @@ export default function ServiceOrders() {
   const [pos, setPOs] = useState<PO[]>([]);
   const [showChallans, setShowChallans] = useState(false);
   const [trackingData, setTrackingData] = useState<Tracking[]>([]);
+  const [selectWorkOrder, setSelectWorkOrder] = useState<any>();
+  const [showPaymentProofModal, setShowPaymentProofModal] =
+    useState<boolean>(false);
+  const [paymentProofUrl, setPaymentProofUrl] = useState("");
   const [showWoBill, setShowWoBill] = useState(false);
   const [vendors, setVendors] = useState<Vendor[]>([]);
   const [projects, setProjects] = useState<Project[]>([]);
@@ -158,6 +168,8 @@ export default function ServiceOrders() {
     number | null
   >(null);
 
+  const [woBills, setWoBills] = useState<any>([]);
+
   const [selectedPOForUdate, setSelectedPOForUpdate] = useState<any>();
   const [allPurchaseOrderItems, setAllPurchaseOrderItems] = useState<any>([]);
   const [pdfLoading, setPdfLoading] = useState(false);
@@ -200,7 +212,51 @@ export default function ServiceOrders() {
     date: "",
   });
 
-  const loadWoBillData = async () => {};
+  const groupWoBills = (woData: any) => {
+    try {
+      return woData.reduce((woBill: any, crr: any) => {
+        let existing = woBill.find((wo: any) => wo.wo_number === crr.so_number);
+
+        if (!existing) {
+          existing = {
+            id: crr.id,
+            wo_number: crr.so_number,
+            vendor: crr.vendor,
+            project: crr.project_name,
+            building: crr.building_name,
+            wo_status: crr.so_status,
+            wo_date: crr.so_date,
+            bills: [],
+            totalBills: 0,
+          };
+          woBill.push(existing);
+        }
+        existing.bills.push(crr);
+        existing.totalBills += 1;
+        return woBill;
+      }, []);
+    } catch (error) {
+      console.log(error);
+    }
+  };
+
+  const loadWoBillData = async () => {
+    try {
+      const woBillRes: any = await woBillsApi.getWoBills();
+      console.log(woBillRes);
+
+      const woBillsData = await groupWoBills(
+        Array.isArray(woBillRes) ? woBillRes : [],
+      );
+
+      console.log(woBillsData, "data for wo bills ");
+
+      setWoBills(Array.isArray(woBillsData) ? woBillsData : []);
+    } catch (error: any) {
+      console.log(error);
+      toast.error("Error", error.response.data.message);
+    }
+  };
 
   useEffect(() => {
     if (activeTab === "tracking") {
@@ -575,6 +631,8 @@ export default function ServiceOrders() {
           : t.purchase_orders,
       }));
 
+      loadWoBillData();
+
       // console.log("venders results", vs);
       // console.log("projects results", ps);
       // console.log("Types results", ts);
@@ -807,7 +865,7 @@ export default function ServiceOrders() {
     try {
       const deleteRes = await ServiceOrdersApi.delete(id);
 
-      console.log("delete res", deleteRes);
+      // console.log("delete res", deleteRes);
       if (deleteRes.success) {
         loadAllData();
         toast.success(deleteRes.message);
@@ -999,7 +1057,7 @@ export default function ServiceOrders() {
   }, []);
 
   const getStatusColor = (status?: string) => {
-    console.log(status);
+    // console.log(status);
     const colors: Record<string, string> = {
       draft: "bg-gray-100 text-gray-700",
       pending: "bg-yellow-100 text-yellow-700",
@@ -1291,6 +1349,341 @@ export default function ServiceOrders() {
           setShowCreatePro={setShowCreatePro}
           loadAllData={loadAllData}
         />
+      )}
+
+      {activeTab === "bills" && (
+        <div className="bg-white rounded-xl shadow-sm border border-gray-200">
+          <div className="overflow-y-auto max-h-[calc(100vh-340px)] md:max-h-[calc(93vh-280px)]">
+            <table className="sticky top-0 z-10 w-full min-w-[820px] lg:min-w-full">
+              <thead className="sticky top-0 z-10 bg-gray-200 border-b border-gray-200">
+                <tr>
+                  <th className="px-2 md:px-4 py-2 text-left"></th>
+                  <th className="px-2 md:px-4 py-2 text-left">
+                    <div className="text-[10px] md:text-xs font-semibold text-gray-700 uppercase tracking-wider">
+                      WO NUMBER
+                    </div>
+                  </th>
+                  <th className="px-2 md:px-4 py-2 text-left">
+                    <div className="text-[10px] md:text-xs font-semibold text-gray-700 uppercase tracking-wider">
+                      VENDOR
+                    </div>
+                  </th>
+                  <th className="px-2 md:px-4 py-2 text-left">
+                    <div className="text-[10px] md:text-xs font-semibold text-gray-700 uppercase tracking-wider">
+                      Project
+                    </div>
+                  </th>
+                  <th className="px-2 md:px-4 py-2 text-left">
+                    <div className="text-[10px] md:text-xs font-semibold text-gray-700 uppercase tracking-wider">
+                      Building
+                    </div>
+                  </th>
+                  <th className="px-2 md:px-4 py-2 text-left">
+                    <div className="text-[10px] md:text-xs font-semibold text-gray-700 uppercase tracking-wider">
+                      Total Bills
+                    </div>
+                  </th>
+                  <th className="px-2 md:px-4 py-2 text-left">
+                    <div className="text-[10px] md:text-xs font-semibold text-gray-700 uppercase tracking-wider">
+                      WO Status
+                    </div>
+                  </th>
+                  <th className="px-2 md:px-4 py-2 text-left">
+                    <div className="text-[10px] md:text-xs font-semibold text-gray-700 uppercase tracking-wider">
+                      Actions
+                    </div>
+                  </th>
+                </tr>
+
+                {/* Search Row */}
+                {/* <tr className="bg-gray-50 border-b border-gray-200">
+                  <td className="px-2 md:px-4 py-1"></td>
+
+                  <td className="px-2 md:px-4 py-1">
+                    <div className="relative">
+                      <div className="absolute left-2 top-1/2 -translate-y-1/2">
+                        <Search className="w-3 h-3 text-gray-400" />
+                      </div>
+                      <input
+                        type="text"
+                        placeholder="Search..."
+                        value={poSearchPONumber}
+                        // onChange={(e) => setPoSearchPONumber(e.target.value)}
+                        className="w-auto pl-7 pr-2 py-1 text-[10px] md:text-xs border border-gray-300 rounded focus:ring-1 focus:ring-blue-500 focus:border-transparent"
+                      />
+                    </div>
+                  </td>
+
+                  <td className="px-2 md:px-4 py-1">
+                    <div className="relative">
+                      <div className="absolute left-2 top-1/2 -translate-y-1/2">
+                        <User className="w-3 h-3 text-gray-400" />
+                      </div>
+                      <input
+                        type="text"
+                        placeholder="Search..."
+                        value={poSearchVendor}
+                        // onChange={(e) => setPoSearchVendor(e.target.value)}
+                        className="w-auto pl-7 pr-2 py-1 text-[10px] md:text-xs border border-gray-300 rounded focus:ring-1 focus:ring-blue-500 focus:border-transparent"
+                      />
+                    </div>
+                  </td>
+
+                  <td className="px-2 md:px-4 py-1">
+                    <div className="relative">
+                      <div className="absolute left-2 top-1/2 -translate-y-1/2">
+                        <IndianRupee className="w-3 h-3 text-gray-400" />
+                      </div>
+                      <input
+                        type="text"
+                        placeholder="Search..."
+                        value={poSearchAmount}
+                        // onChange={(e) => setPoSearchAmount(e.target.value)}
+                        className="w-auto pl-7 pr-2 py-1 text-[10px] md:text-xs border border-gray-300 rounded focus:ring-1 focus:ring-blue-500 focus:border-transparent"
+                      />
+                    </div>
+                  </td>
+
+                  <td className="px-2 md:px-4 py-1"></td>
+
+                  <td className="px-2 md:px-4 py-1"></td>
+                  <td className="px-2 md:px-4 py-1"></td>
+                  <td className="px-2 md:px-4 py-1"></td>
+
+                  <td className="px-2 md:px-4 py-1">
+                    <div className="relative">
+                      <select
+                        value={poStatusFilter}
+                        // onChange={(e) => setPoStatusFilter(e.target.value)}
+                        className="w-full px-2 py-1 text-[10px] md:text-xs border border-gray-300 rounded focus:ring-1 focus:ring-blue-500 focus:border-transparent appearance-none"
+                      >
+                        <option value="all">All Status</option>
+                        <option value="pending">Pending</option>
+                        <option value="completed">Completed</option>
+                        <option value="partial">Partial</option>
+                        <option value="overdue">Overdue</option>
+                      </select>
+                      <div className="absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none">
+                        <ChevronDown className="w-3 h-3 text-gray-400" />
+                      </div>
+                    </div>
+                  </td>
+                </tr> */}
+              </thead>
+              <tbody className="divide-y divide-gray-200">
+                {woBills.map((po: any) => {
+                  return (
+                    <React.Fragment>
+                      <tr
+                        key={po.po_id}
+                        onClick={() => {
+                          setSelectWorkOrder(
+                            selectWorkOrder === ""
+                              ? po.id
+                              : selectWorkOrder === po.id
+                                ? ""
+                                : po.id,
+                          );
+                        }}
+                        className={`hover:bg-gray-50 transition ${
+                          selectWorkOrder?.id === po.id ? "bg-blue-50" : ""
+                        }`}
+                      >
+                        <td className="px-2 md:px-4 py-2 text-center flex space-x-3">
+                          {selectWorkOrder === po.id ? (
+                            <ChevronUp className="w-4 h-4" />
+                          ) : (
+                            <ChevronDown className="w-4 h-4" />
+                          )}
+                        </td>
+                        <td className="px-2 md:px-4 py-2">
+                          <div className="font-bold text-blue-600 text-xs md:text-sm">
+                            {po.wo_number}
+                          </div>
+                          <div className="text-[10px] md:text-xs text-gray-500">
+                            {po.wo_date
+                              ? new Date(po.wo_date).toLocaleDateString()
+                              : ""}
+                          </div>
+                        </td>
+                        <td className="px-2 md:px-4 py-2">
+                          <div className="text-gray-800 text-xs md:text-sm truncate max-w-[120px]">
+                            {po?.vendor || "N/A"}
+                          </div>
+                        </td>
+                        <td className="px-2 md:px-4 py-2">
+                          <div className="font-semibold text-gray-800 text-xs md:text-sm">
+                            {po.project}
+                          </div>
+                        </td>
+                        <td className="px-2 md:px-4 py-2">
+                          <div className="text-green-600 font-medium text-xs md:text-sm">
+                            {po.building}
+                          </div>
+                        </td>
+                        <td className="px-2 md:px-4 py-2">
+                          <div className="text-red-600 font-bold text-xs md:text-sm">
+                            {po.totalBills}
+                          </div>
+                        </td>
+                        <td className="px-2 md:px-4 py-2">
+                          <span
+                            className={`px-2 py-1 rounded-full text-[10px] md:text-xs font-medium ${getStatusColor(
+                              (po.wo_status || "").toLowerCase(),
+                            )}`}
+                          >
+                            {(po.wo_status || "pendings").toUpperCase()}
+                          </span>
+                        </td>
+                        <td className="px-3 md:px-4 py-3">
+                          <div className="flex items-center justify-center gap-1.5 md:gap-2">
+                            {can("make_payment_wo") && (
+                              <button
+                                onClick={() => {
+                                  setShowWoBill(true);
+                                  setSelectedPO(po);
+                                }}
+                                className="p-1.5 md:p-2 text-green-600 hover:bg-green-50 rounded-lg transition"
+                                title="Make Payment"
+                              >
+                                <ReceiptIndianRupee className="w-3.5 h-3.5 md:w-4 md:h-4" />
+                              </button>
+                            )}
+                          </div>
+                        </td>
+                      </tr>
+                      {Number(selectWorkOrder) === Number(po.id) && (
+                        <tr className="bg-gray-50">
+                          <td colSpan={10} className="p-0">
+                            <div className="px-3 py-2 border-t border-gray-200">
+                              <h4 className="text-xs font-semibold text-gray-700 mb-2 flex items-center gap-1">
+                                <FileText className="w-3 h-3" />
+                                Work Order Payment Transactions {po.wo_number}
+                              </h4>
+                              <div className="overflow-x-auto">
+                                <table className="w-full bg-white rounded-lg border border-gray-200 min-w-[600px]">
+                                  <thead className="bg-gray-100">
+                                    <tr>
+                                      <th className="text-left px-2 py-1.5 text-[10px] md:text-xs font-medium text-gray-700">
+                                        Bill Number
+                                      </th>
+                                      <th className="text-left px-2 py-1.5 text-[10px] md:text-xs font-medium text-gray-700">
+                                        Bill Date
+                                      </th>
+                                      <th className="text-left px-2 py-1.5 text-[10px] md:text-xs font-medium text-gray-700">
+                                        Due Date
+                                      </th>
+                                      <th className="text-left px-2 py-1.5 text-[10px] md:text-xs font-medium text-gray-700">
+                                        Bill Amount
+                                      </th>
+                                      <th className="text-left px-2 py-1.5 text-[10px] md:text-xs font-medium text-gray-700">
+                                        Bill Balance
+                                      </th>
+                                      <th className="text-left px-2 py-1.5 text-[10px] md:text-xs font-medium text-gray-700">
+                                        Retention %
+                                      </th>
+                                      <th className="text-left px-2 py-1.5 text-[10px] md:text-xs font-medium text-gray-700">
+                                        REFERENCE
+                                      </th>
+                                      <th className="text-left px-2 py-1.5 text-[10px] md:text-xs font-medium text-gray-700">
+                                        Actions
+                                      </th>
+                                    </tr>
+                                  </thead>
+                                  <tbody className="divide-y divide-gray-200">
+                                    {po.bills.map(
+                                      (transaction: any, idx: number) => {
+                                        return (
+                                          <tr
+                                            key={transaction.id}
+                                            className={`hover:bg-gray-50 ${
+                                              idx % 2 === 0
+                                                ? "bg-white"
+                                                : "bg-gray-50/50"
+                                            }`}
+                                          >
+                                            <td className="px-2 py-1.5">
+                                              <div
+                                                className="font-medium text-gray-800 text-xs truncate max-w-[150px]"
+                                                title={
+                                                  transaction.bill_number ||
+                                                  "--"
+                                                }
+                                              >
+                                                {transaction.bill_number ||
+                                                  "--"}
+                                              </div>
+                                            </td>
+                                            <td className="px-2 py-1.5 font-medium  text-xs">
+                                              {new Date(
+                                                transaction.bill_date || "",
+                                              ).toLocaleDateString() || "-"}
+                                            </td>
+                                            <td className="px-2 py-1.5 text-gray-700 text-xs">
+                                              {new Date(
+                                                transaction.bill_due_date || "",
+                                              ).toLocaleDateString() || "-"}
+                                            </td>
+                                            <td className="px-2 py-1.5 font-medium text-green-600 text-xs">
+                                              {transaction.bill_amount}
+                                            </td>
+                                            <td className="px-2 py-1.5 font-medium text-red-600 text-xs">
+                                              {transaction.bill_balance || "-"}
+                                            </td>
+                                            <td className="px-2 py-1.5 font-medium text-red-600 text-xs">
+                                              {transaction.bill_retention ||
+                                                "-"}
+                                            </td>
+
+                                            <td className="px-2 py-1.5">
+                                              <span
+                                                className={`px-2 py-0.5 rounded-full text-[10px] font-medium ${getStatusColor(
+                                                  transaction.status,
+                                                )} whitespace-nowrap`}
+                                              >
+                                                {transaction.status?.toUpperCase() ||
+                                                  "PENDING"}
+                                              </span>
+                                            </td>
+                                            <td className="px-2 md:px-4 py-2">
+                                              {can("verify_payments") && (
+                                                <button
+                                                  onClick={() => {
+                                                    console.log(
+                                                      transaction.payment_proof,
+                                                    );
+                                                    setShowPaymentProofModal(
+                                                      true,
+                                                    );
+                                                    setPaymentProofUrl(
+                                                      transaction.bill_proof,
+                                                    );
+                                                  }}
+                                                  className={`px-2 py-1 rounded-full text-[10px] md:text-xs font-medium cursor-pointer text-blue-600 hover:bg-blue-50 transition`}
+                                                  title="View Payment Proof"
+                                                >
+                                                  <Eye className="w-4 h-4" />
+                                                </button>
+                                              )}
+                                            </td>
+                                          </tr>
+                                        );
+                                      },
+                                    )}
+                                  </tbody>
+                                </table>
+                              </div>
+                            </div>
+                          </td>
+                        </tr>
+                      )}
+                    </React.Fragment>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        </div>
       )}
 
       {activeTab === "tracking" && (
@@ -2713,6 +3106,55 @@ export default function ServiceOrders() {
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {showPaymentProofModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-hidden">
+            <div
+              className="bg-gradient-to-r from-[#4b4e4b] via-[#5a5d5a] to-[#6b6e6b]
+                        px-6 py-4 flex justify-between items-center
+                        rounded-t-2xl border-b border-white/10
+                        backdrop-blur-md"
+            >
+              <h2 className="text-2xl font-bold text-white">Payment Proof</h2>
+              <button
+                onClick={() => {
+                  setShowPaymentProofModal(false);
+                }}
+                className="text-white hover:bg-white hover:bg-opacity-20 rounded-lg p-2 transition"
+              >
+                <X className="w-6 h-6" />
+              </button>
+            </div>
+            <div className="overflow-y-scroll h-[500px]">
+              {paymentProofUrl.toLowerCase().endsWith(".pdf") ? (
+                <iframe
+                  src={`${import.meta.env.VITE_API_URL}${paymentProofUrl}`}
+                  title="Challan PDF"
+                  className="w-full h-full border rounded-lg"
+                />
+              ) : (
+                <img
+                  src={`${import.meta.env.VITE_API_URL}${paymentProofUrl}`}
+                  alt=""
+                  className="w-full h-full"
+                />
+              )}
+            </div>
+            <div className="flex justify-end gap-3 p-3 border-t">
+              <button
+                type="button"
+                onClick={() => {
+                  setShowPaymentProofModal(false);
+                }}
+                className="px-6 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition font-medium"
+              >
+                Cancel
+              </button>
+            </div>
           </div>
         </div>
       )}

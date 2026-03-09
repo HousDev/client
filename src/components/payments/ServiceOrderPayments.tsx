@@ -868,7 +868,7 @@ export default function ServiceOrderPayments() {
                           <div className="px-3 py-2 border-t border-gray-200">
                             <h4 className="text-xs font-semibold text-gray-700 mb-2 flex items-center gap-1">
                               <FileText className="w-3 h-3" />
-                              Purchase Order Payment Transactions {po.po_number}
+                              Work Order Payment Transactions {po.po_number}
                             </h4>
                             <div className="overflow-x-auto">
                               <table className="w-full bg-white rounded-lg border border-gray-200 min-w-[600px]">
