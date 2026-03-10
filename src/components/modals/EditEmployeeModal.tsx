@@ -147,6 +147,7 @@ export default function EditEmployeeModal({
     bank_name: "",
     ifsc_code: "",
     upi_id: "",
+    user_id: "",
   });
 
   const [validationFormData, setValidationFormData] = useState({
@@ -344,6 +345,7 @@ export default function EditEmployeeModal({
         bank_name: data.bank_name || "",
         ifsc_code: data.ifsc_code || "",
         upi_id: data.upi_id || "",
+        user_id: data.user_id || "",
       };
 
       // SET THE FORM DATA FIRST
@@ -905,7 +907,8 @@ export default function EditEmployeeModal({
         email: formData.email,
         phone: formData.phone,
       };
-      await SettingsApi.updateProfile(payload);
+
+      await SettingsApi.updateProfile(formData.user_id, payload);
 
       toast.success("Employee updated successfully!");
 

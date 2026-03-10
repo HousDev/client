@@ -23,6 +23,7 @@ import {
   Search,
   User,
   ChevronUp,
+  FilePlus,
 } from "lucide-react";
 import { useAuth } from "../contexts/AuthContext";
 import vendorApi from "../lib/vendorApi";
@@ -104,6 +105,7 @@ export default function ServiceOrders() {
   const [showChallans, setShowChallans] = useState(false);
   const [trackingData, setTrackingData] = useState<Tracking[]>([]);
   const [selectWorkOrder, setSelectWorkOrder] = useState<any>();
+  const [showPaymentRequestModal, setShowPaymentRequestModal] = useState(false);
   const [showPaymentProofModal, setShowPaymentProofModal] =
     useState<boolean>(false);
   const [paymentProofUrl, setPaymentProofUrl] = useState("");
@@ -148,6 +150,12 @@ export default function ServiceOrders() {
   const [showVendorServiceOrders, setShowVendorServiceOrders] = useState<any>(
     [],
   );
+
+  const [searchWoNumber, setSearchWoNumber] = useState("");
+  const [searchVendor, setSearchVendor] = useState("");
+  const [searchProject, setSearchProject] = useState("");
+  const [searchBuilding, setSearchBuilding] = useState("");
+  const [searchStatusFilter, setSearchStatusFilter] = useState("");
 
   const [allVendors, setAllVendors] = useState<any>([]);
 
@@ -220,6 +228,7 @@ export default function ServiceOrders() {
         if (!existing) {
           existing = {
             id: crr.id,
+            wo_id: crr.wo_id,
             wo_number: crr.so_number,
             vendor: crr.vendor,
             project: crr.project_name,
@@ -1396,7 +1405,7 @@ export default function ServiceOrders() {
                 </tr>
 
                 {/* Search Row */}
-                {/* <tr className="bg-gray-50 border-b border-gray-200">
+                <tr className="bg-gray-50 border-b border-gray-200">
                   <td className="px-2 md:px-4 py-1"></td>
 
                   <td className="px-2 md:px-4 py-1">
@@ -1407,8 +1416,19 @@ export default function ServiceOrders() {
                       <input
                         type="text"
                         placeholder="Search..."
-                        value={poSearchPONumber}
-                        // onChange={(e) => setPoSearchPONumber(e.target.value)}
+                        value={searchWoNumber}
+                        onChange={(e) => setSearchWoNumber(e.target.value)}
+                        className="w-auto pl-7 pr-2 py-1 text-[10px] md:text-xs border border-gray-300 rounded focus:ring-1 focus:ring-blue-500 focus:border-transparent"
+                      />
+                    </div>
+                  </td>
+                  <td className="px-2 md:px-4 py-1">
+                    <div className="relative">
+                      <input
+                        type="text"
+                        placeholder="Search..."
+                        value={searchVendor}
+                        onChange={(e) => setSearchVendor(e.target.value)}
                         className="w-auto pl-7 pr-2 py-1 text-[10px] md:text-xs border border-gray-300 rounded focus:ring-1 focus:ring-blue-500 focus:border-transparent"
                       />
                     </div>
@@ -1416,45 +1436,33 @@ export default function ServiceOrders() {
 
                   <td className="px-2 md:px-4 py-1">
                     <div className="relative">
-                      <div className="absolute left-2 top-1/2 -translate-y-1/2">
-                        <User className="w-3 h-3 text-gray-400" />
-                      </div>
                       <input
                         type="text"
                         placeholder="Search..."
-                        value={poSearchVendor}
-                        // onChange={(e) => setPoSearchVendor(e.target.value)}
+                        value={searchProject}
+                        onChange={(e) => setSearchProject(e.target.value)}
                         className="w-auto pl-7 pr-2 py-1 text-[10px] md:text-xs border border-gray-300 rounded focus:ring-1 focus:ring-blue-500 focus:border-transparent"
                       />
                     </div>
                   </td>
-
                   <td className="px-2 md:px-4 py-1">
                     <div className="relative">
-                      <div className="absolute left-2 top-1/2 -translate-y-1/2">
-                        <IndianRupee className="w-3 h-3 text-gray-400" />
-                      </div>
                       <input
                         type="text"
                         placeholder="Search..."
-                        value={poSearchAmount}
-                        // onChange={(e) => setPoSearchAmount(e.target.value)}
+                        value={searchBuilding}
+                        onChange={(e) => setSearchBuilding(e.target.value)}
                         className="w-auto pl-7 pr-2 py-1 text-[10px] md:text-xs border border-gray-300 rounded focus:ring-1 focus:ring-blue-500 focus:border-transparent"
                       />
                     </div>
                   </td>
 
                   <td className="px-2 md:px-4 py-1"></td>
-
-                  <td className="px-2 md:px-4 py-1"></td>
-                  <td className="px-2 md:px-4 py-1"></td>
-                  <td className="px-2 md:px-4 py-1"></td>
-
                   <td className="px-2 md:px-4 py-1">
                     <div className="relative">
                       <select
-                        value={poStatusFilter}
-                        // onChange={(e) => setPoStatusFilter(e.target.value)}
+                        value={searchStatusFilter}
+                        onChange={(e) => setSearchStatusFilter(e.target.value)}
                         className="w-full px-2 py-1 text-[10px] md:text-xs border border-gray-300 rounded focus:ring-1 focus:ring-blue-500 focus:border-transparent appearance-none"
                       >
                         <option value="all">All Status</option>
@@ -1468,7 +1476,8 @@ export default function ServiceOrders() {
                       </div>
                     </div>
                   </td>
-                </tr> */}
+                  <td className="px-2 md:px-4 py-1"></td>
+                </tr>
               </thead>
               <tbody className="divide-y divide-gray-200">
                 {woBills.map((po: any) => {
@@ -1541,10 +1550,11 @@ export default function ServiceOrders() {
                               <button
                                 onClick={() => {
                                   setShowWoBill(true);
-                                  setSelectedPO(po);
+                                  console.log("po details : ", po);
+                                  setSelectedPO({ ...po, id: po.wo_id });
                                 }}
                                 className="p-1.5 md:p-2 text-green-600 hover:bg-green-50 rounded-lg transition"
-                                title="Make Payment"
+                                title="Add Bill"
                               >
                                 <ReceiptIndianRupee className="w-3.5 h-3.5 md:w-4 md:h-4" />
                               </button>
@@ -1663,6 +1673,19 @@ export default function ServiceOrders() {
                                                   title="View Payment Proof"
                                                 >
                                                   <Eye className="w-4 h-4" />
+                                                </button>
+                                              )}
+                                              {can("make_payment_wo") && (
+                                                <button
+                                                  onClick={() => {
+                                                    setShowPaymentRequestModal(
+                                                      true,
+                                                    );
+                                                  }}
+                                                  className="p-1.5 md:p-2 text-green-600 hover:bg-green-50 rounded-lg transition"
+                                                  title="Rise Payment Request"
+                                                >
+                                                  <FilePlus className="w-3.5 h-3.5 md:w-4 md:h-4" />
                                                 </button>
                                               )}
                                             </td>
@@ -2353,7 +2376,7 @@ export default function ServiceOrders() {
                                 setSelectedPO(po);
                               }}
                               className="p-1.5 md:p-2 text-green-600 hover:bg-green-50 rounded-lg transition"
-                              title="Make Payment"
+                              title="Add Bill"
                             >
                               <ReceiptIndianRupee className="w-3.5 h-3.5 md:w-4 md:h-4" />
                             </button>
@@ -2748,6 +2771,383 @@ export default function ServiceOrders() {
                   </h2>
                   <p className="text-xs text-white/90 font-medium mt-0.5">
                     WO: {selectedPO?.po_number}
+                  </p>
+                </div>
+              </div>
+              <button
+                onClick={() => {
+                  setShowPaymentModal(false);
+                  setSelectedPO(null);
+                  setPaymentData({
+                    po_id: null,
+                    transaction_type: "payment",
+                    adjust_with_advance: false,
+                    advance_amount: "",
+                    retention_percentage: "",
+                    amount_paid: "",
+                    vendorId: "",
+                    payment_method: "bank_transfer",
+                    payment_reference_no: "",
+                    payment_proof: null,
+                    payment_date: new Date().toISOString().split("T")[0],
+                    status: "pending",
+                    remarks: "",
+                    created_by: user?.id,
+                  });
+                }}
+                className="text-white hover:bg-white/20 rounded-xl p-1.5 transition-all duration-200"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            <form
+              onSubmit={handleMakePayment}
+              className="pt-4 pl-4 pb-4 max-h-[calc(90vh-80px)] "
+            >
+              <div className="overflow-y-scroll max-h-[calc(80vh-80px)] grid grid-cols-1 md:grid-cols-2 gap-3 pr-4 scrollbar-thin">
+                <div className="space-y-1 col-span-1 md:col-span-2">
+                  <p className="text-xs font-semibold text-gray-800">
+                    Select Transaction Type
+                  </p>
+                  <SearchableSelect
+                    options={["Advance", "Payment"].map((v: any) => ({
+                      id: v.toLowerCase(),
+                      name: v,
+                    }))}
+                    value={String(paymentData.transaction_type)}
+                    onChange={(id: any) => {
+                      setPaymentData({ ...paymentData, transaction_type: id });
+                    }}
+                    placeholder="Select Transaction Type"
+                    required
+                  />
+                </div>
+                <div className="space-y-1">
+                  <p className="text-xs font-semibold text-gray-800">Vendor</p>
+                  <div className="p-2 bg-orange-50 border border-orange-200 rounded-lg">
+                    <p className="text-base font-bold text-yellow-600">
+                      {selectedPO?.vendor || "--"}
+                    </p>
+                  </div>
+                </div>
+
+                <div className="space-y-1">
+                  <p className="text-xs font-semibold text-gray-800">
+                    Work Order
+                  </p>
+                  <div className="p-2 bg-orange-50 border border-orange-200 rounded-lg">
+                    <p className="text-base font-bold text-yellow-600">
+                      {selectedPO?.po_number || "--"}
+                    </p>
+                  </div>
+                </div>
+
+                <div className="space-y-1">
+                  <p className="text-xs font-semibold text-gray-800">
+                    Total Amount
+                  </p>
+                  <div className="p-2 bg-orange-50 border border-orange-200 rounded-lg">
+                    <p className="text-base font-bold text-orange-600">
+                      {formatCurrency(selectedPO?.grand_total || 0)}
+                    </p>
+                  </div>
+                </div>
+
+                <div className="space-y-1">
+                  <p className="text-xs font-semibold text-gray-800">
+                    Balance Amount
+                  </p>
+                  <div className="p-2 bg-red-50 border border-red-200 rounded-lg">
+                    <p className="text-base font-bold text-red-600">
+                      {formatCurrency(selectedPO?.balance_amount || 0)}
+                    </p>
+                  </div>
+                </div>
+                <div className="space-y-1">
+                  <p className="text-xs font-semibold text-gray-800">
+                    Advance Amount
+                  </p>
+                  <div className="p-2 bg-red-50 border border-red-200 rounded-lg">
+                    <p className="text-base font-bold text-red-600">
+                      {formatCurrency(selectedPO?.advance_amount || 0)}
+                    </p>
+                  </div>
+                </div>
+
+                <div className="space-y-1">
+                  <label className="block text-xs font-semibold text-gray-800">
+                    Payment Method <span className="text-red-500">*</span>
+                  </label>
+                  <select
+                    value={paymentData.payment_method || "bank_transfer"}
+                    onChange={(e) =>
+                      setPaymentData({
+                        ...paymentData,
+                        payment_method: e.target.value,
+                      })
+                    }
+                    className="w-full px-3 py-2 text-sm border-2 border-gray-200 rounded-xl focus:border-[#C62828] focus:ring-2 focus:ring-[#C62828]/20 outline-none"
+                  >
+                    <option value="bank_transfer">Bank Transfer</option>
+                    <option value="cheque">Cheque</option>
+                    <option value="cash">Cash</option>
+                    <option value="online">Online Payment</option>
+                  </select>
+                </div>
+
+                <div className="space-y-1">
+                  <label className="block text-xs font-semibold text-gray-800">
+                    Payment Date <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    type="date"
+                    value={paymentData.payment_date || ""}
+                    onChange={(e) => {
+                      setPaymentData({
+                        ...paymentData,
+                        payment_date: e.target.value,
+                      });
+                    }}
+                    className="w-full px-3 py-2 text-sm border-2 border-gray-200 rounded-xl focus:border-[#C62828] focus:ring-2 focus:ring-[#C62828]/20 outline-none"
+                    required
+                  />
+                </div>
+                <div className="space-y-1">
+                  <label className="block text-xs font-semibold text-gray-800">
+                    Payment Amount <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    type="number"
+                    value={paymentData.amount_paid || ""}
+                    onChange={(e) => {
+                      if (
+                        Number(e.target.value) >
+                        Number(selectedPO?.balance_amount)
+                      ) {
+                        return;
+                      }
+                      setPaymentData({
+                        ...paymentData,
+                        amount_paid: Number(e.target.value) || "",
+                      });
+                    }}
+                    className="w-full px-3 py-2 text-sm border-2 border-gray-200 rounded-xl focus:border-[#C62828] focus:ring-2 focus:ring-[#C62828]/20 outline-none"
+                    min="0.01"
+                    max={selectedPO?.balance_amount}
+                    step="0.01"
+                    required
+                  />
+                </div>
+
+                <div className="space-y-1">
+                  <label className="block text-xs font-semibold text-gray-800">
+                    Payment Status <span className="text-red-500">*</span>
+                  </label>
+                  <select
+                    value={paymentData.status || "pending"}
+                    onChange={(e) =>
+                      setPaymentData({
+                        ...paymentData,
+                        status: e.target.value,
+                      })
+                    }
+                    className="w-full px-3 py-2 text-sm border-2 border-gray-200 rounded-xl focus:border-[#C62828] focus:ring-2 focus:ring-[#C62828]/20 outline-none"
+                  >
+                    <option value="PENDING">Pending</option>
+                    <option value="SUCCESS">Success</option>
+                    <option value="FAILED">Failed</option>
+                    <option value="CANCELLED">Cancelled</option>
+                  </select>
+                </div>
+                {selectedPO &&
+                  Number(selectedPO.advance_amount) > 0 &&
+                  paymentData.transaction_type === "payment" && (
+                    <div className="flex items-end gap-2 mb-2">
+                      <input
+                        type="checkbox"
+                        onChange={(e) => {
+                          setPaymentData({
+                            ...paymentData,
+                            adjust_with_advance: e.target.checked,
+                          });
+                        }}
+                        className="w-4 h-4 accent-[#b52124] cursor-pointer mt-0.5"
+                      />
+                      <h4 className="font-semibold text-sm text-[#40423f]">
+                        Adjust with Advance
+                      </h4>
+                    </div>
+                  )}
+
+                {paymentData.adjust_with_advance && (
+                  <div className="space-y-1">
+                    <label className="block text-xs font-semibold text-gray-800">
+                      Amount Deduct From Advance{" "}
+                      <span className="text-red-500">*</span>
+                    </label>
+                    <input
+                      type="number"
+                      disabled={paymentData.amount_paid.length === 0}
+                      value={paymentData.advance_amount || ""}
+                      onChange={(e) => {
+                        if (
+                          Number(e.target.value) >
+                            Number(selectedPO?.advance_amount) ||
+                          Number(e.target.value) >
+                            Number(paymentData.amount_paid)
+                        ) {
+                          return;
+                        }
+                        setPaymentData({
+                          ...paymentData,
+                          advance_amount: Number(e.target.value) || "",
+                        });
+                      }}
+                      className="w-full px-3 py-2 text-sm border-2 border-gray-200 rounded-xl focus:border-[#C62828] focus:ring-2 focus:ring-[#C62828]/20 outline-none"
+                      min="0.01"
+                      max={selectedPO?.total_amount}
+                      step="0.01"
+                    />
+                  </div>
+                )}
+
+                <div className="space-y-1">
+                  <label className="block text-xs font-semibold text-gray-800">
+                    Reference Number <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    type="text"
+                    value={paymentData.payment_reference_no || ""}
+                    onChange={(e) =>
+                      setPaymentData({
+                        ...paymentData,
+                        payment_reference_no: e.target.value,
+                      })
+                    }
+                    className="w-full px-3 py-2 text-sm border-2 border-gray-200 rounded-xl focus:border-[#C62828] focus:ring-2 focus:ring-[#C62828]/20 outline-none"
+                    placeholder="Transaction reference"
+                    required
+                  />
+                </div>
+
+                <div className="space-y-1">
+                  <label className="block text-xs font-semibold text-gray-800">
+                    Upload Payment Proof <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    type="file"
+                    required
+                    id="payment_proof"
+                    onChange={handleFileUpload}
+                    className="w-full px-3 py-1 text-sm border-2 border-gray-200 rounded-xl focus:border-[#C62828] focus:ring-2 focus:ring-[#C62828]/20 outline-none file:border-none file:bg-gradient-to-r file:from-[#C62828] file:to-red-600 file:text-white file:font-medium file:px-3 file:py-1 file:rounded-lg file:cursor-pointer"
+                    accept=".pdf,.jpg,.jpeg,.png"
+                  />
+                </div>
+                {paymentData.transaction_type === "payment" && (
+                  <div className="space-y-1">
+                    <label className="block text-xs font-semibold text-gray-800">
+                      Retention % <span className="text-red-500">*</span>
+                    </label>
+                    <input
+                      type="number"
+                      value={paymentData.retention_percentage || ""}
+                      onChange={(e) => {
+                        if (Number(e.target.value) > 50) {
+                          return;
+                        }
+                        setPaymentData({
+                          ...paymentData,
+                          retention_percentage: Number(e.target.value) || "",
+                        });
+                      }}
+                      className="w-full px-3 py-2 text-sm border-2 border-gray-200 rounded-xl focus:border-[#C62828] focus:ring-2 focus:ring-[#C62828]/20 outline-none"
+                      min="0.01"
+                      max={100}
+                      step="0.01"
+                    />
+                  </div>
+                )}
+
+                <div className="space-y-1 col-span-1 md:col-span-2">
+                  <label className="block text-xs font-semibold text-gray-800">
+                    Remarks
+                  </label>
+                  <textarea
+                    value={paymentData.remarks || ""}
+                    onChange={(e) =>
+                      setPaymentData({
+                        ...paymentData,
+                        remarks: e.target.value || "",
+                      })
+                    }
+                    className="w-full px-3 py-2 text-sm border-2 border-gray-200 rounded-xl focus:border-[#C62828] focus:ring-2 focus:ring-[#C62828]/20 outline-none"
+                    rows={2}
+                    placeholder="Add any remarks..."
+                  />
+                </div>
+              </div>
+              {/* Modal Footer */}
+              <div className="border-t  pb-3 flex gap-2 col-span-2 sticky bottom-0 bg-white">
+                <button
+                  type="submit"
+                  disabled={submitting}
+                  className="flex-1 bg-gradient-to-r from-[#C62828] to-red-600 text-white py-2 px-4 rounded-xl hover:from-red-600 hover:to-red-700 transition-all duration-200 font-semibold flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed text-sm"
+                >
+                  {submitting ? (
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                  ) : (
+                    <IndianRupee className="w-4 h-4" />
+                  )}
+                  {submitting ? "Processing..." : "Record Payment"}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowPaymentModal(false);
+                    setSelectedPO(null);
+                    setPaymentData({
+                      po_id: null,
+                      transaction_type: "payment",
+                      adjust_with_advance: false,
+                      advance_amount: "",
+                      retention_percentage: "",
+                      amount_paid: "",
+                      vendorId: "",
+                      payment_method: "bank_transfer",
+                      payment_reference_no: "",
+                      payment_proof: null,
+                      payment_date: new Date().toISOString().split("T")[0],
+                      status: "pending",
+                      remarks: "",
+                      created_by: user?.id,
+                    });
+                  }}
+                  className="px-4 py-2 text-sm border border-gray-200 rounded-xl hover:bg-gray-50 transition-all duration-200 font-medium text-gray-700"
+                >
+                  Cancel
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {showPaymentRequestModal && selectedPO && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-md flex items-center justify-center z-50 p-4">
+          <div className="bg-gradient-to-br from-gray-50 to-white rounded-2xl shadow-2xl shadow-gray-900/20 w-full max-w-lg border border-gray-200 overflow-hidden">
+            {/* Modal Header */}
+            <div className="bg-gradient-to-r from-[#40423f] via-[#4a4c49] to-[#5a5d5a] px-5 py-3 flex justify-between items-center border-b border-gray-700/30">
+              <div className="flex items-center gap-2.5">
+                <div className="p-1.5 bg-white/20 rounded-xl backdrop-blur-sm">
+                  <IndianRupee className="w-4 h-4 text-white" />
+                </div>
+                <div>
+                  <h2 className="text-base font-bold text-white">
+                    Rise Payment Request
+                  </h2>
+                  <p className="text-xs text-white/90 font-medium mt-0.5">
+                    Rise payment request for this bill.
                   </p>
                 </div>
               </div>

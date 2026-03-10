@@ -118,7 +118,7 @@ export default function Masters() {
     <div className=" bg-gray-50">
       {/* Tab Navigation */}
       <div className="sticky top-20 z-10 bg-white border-b border-gray-200 shadow-sm">
-        <div className="overflow-x-auto">
+        <div className="overflow-x-scroll z-20 scrollbar-thin">
           <div className="flex gap-1.5 p-2 min-w-max">
             {tabs.map((tab) => {
               const Icon = tab.icon;

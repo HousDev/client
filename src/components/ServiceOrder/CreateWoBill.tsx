@@ -36,6 +36,7 @@ export default function CreateWoBill({
   loadAllData: () => void;
   selectedWO: any;
 }): JSX.Element {
+  console.log(selectedWO);
   const { user } = useAuth();
 
   const [formData, setFormData] = useState<WoBillForm>({
@@ -93,7 +94,7 @@ export default function CreateWoBill({
       });
 
       if (response.data.success) {
-        toast.success(response.message);
+        toast.success(response.data.message);
         loadAllData();
         setShowWoBill(false);
       } else {
