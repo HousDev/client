@@ -5,7 +5,7 @@ import { api, unwrap } from "./Api";
  * Optional filters can be added later (category, status, lowStock, etc.)
  */
 async function getInventory() {
-  const res = await api.get("/inventory");
+  const res: any = await api.get("/inventory");
   return unwrap(res);
 }
 
@@ -13,7 +13,7 @@ async function getInventory() {
  * Get inventory item by ID
  */
 async function getInventoryById(id: number | string) {
-  const res = await api.get(`/inventory/${id}`);
+  const res: any = await api.get(`/inventory/${id}`);
   return unwrap(res);
 }
 
@@ -21,7 +21,7 @@ async function getInventoryById(id: number | string) {
  * Create inventory item
  */
 async function createInventory(payload: any) {
-  const res = await api.post("/inventory", payload);
+  const res: any = await api.post("/inventory", payload);
   return unwrap(res);
 }
 
@@ -29,7 +29,7 @@ async function createInventory(payload: any) {
  * Update inventory item
  */
 async function updateInventory(id: number | string, payload: any) {
-  const res = await api.put(`/inventory/${id}`, payload);
+  const res: any = await api.put(`/inventory/${id}`, payload);
   return unwrap(res);
 }
 
@@ -37,7 +37,7 @@ async function updateInventory(id: number | string, payload: any) {
  * Delete inventory item
  */
 async function deleteInventory(id: number | string) {
-  const res = await api.delete(`/inventory/${id}`);
+  const res: any = await api.delete(`/inventory/${id}`);
   return unwrap(res);
 }
 

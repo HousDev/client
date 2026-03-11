@@ -29,7 +29,7 @@ export type SystemSettingsData = {
   timezone: string;
   dateFormat: string;
   language: string;
-  site_name:string
+  site_name: string;
 };
 
 // ─── API OBJECT ───────────────────────────────────────────────────────────
@@ -40,8 +40,11 @@ export const SettingsApi = {
     return res.data.data;
   },
 
-  updateProfile: async (data: { full_name: string, email:string , phone:string   }): Promise<UserProfileData> => {
-    const res = await api.put("/settings/profile", data);
+  updateProfile: async (
+    user_id: string,
+    data: { full_name: string; email: string; phone: string },
+  ): Promise<UserProfileData> => {
+    const res = await api.put("/settings/profile/" + user_id, data);
     return res.data.data;
   },
 
@@ -51,7 +54,7 @@ export const SettingsApi = {
     const res = await api.post("/settings/profile/avatar", formData, {
       headers: { "Content-Type": "multipart/form-data" },
     });
-    return res.data.data;                 // { avatar: "http://…/uploads/xxx.jpg" }
+    return res.data.data; // { avatar: "http://…/uploads/xxx.jpg" }
   },
 
   removeAvatar: async (): Promise<{ avatar: null }> => {
@@ -66,7 +69,7 @@ export const SettingsApi = {
   },
 
   updateNotificationPreferences: async (
-    prefs: NotificationPreferences
+    prefs: NotificationPreferences,
   ): Promise<NotificationPreferences> => {
     const res = await api.put("/settings/notifications", prefs);
     return res.data.data;
@@ -78,7 +81,7 @@ export const SettingsApi = {
     new_password: string;
   }): Promise<{ message: string }> => {
     const res = await api.post("/settings/password/change", payload);
-    return res.data;                      // { success: true, message: "…" }
+    return res.data; // { success: true, message: "…" }
   },
 
   // ── System (admin) ──────────────────────────────────────────────────────
@@ -88,7 +91,7 @@ export const SettingsApi = {
   },
 
   updateSystemSettings: async (
-    settings: Partial<SystemSettingsData>
+    settings: Partial<SystemSettingsData>,
   ): Promise<SystemSettingsData> => {
     const res = await api.put("/settings/system", settings);
     return res.data.data;

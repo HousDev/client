@@ -11,17 +11,23 @@ import {
 } from "lucide-react";
 import { useAuth } from "../../contexts/AuthContext";
 import { useState } from "react";
+import attendanceApi from "../../lib/attendanceApi";
+import { toast } from "sonner";
 
 const ViewTodayAttendanceModal = ({
   dayData,
+  loadAttendance,
   setDayData,
 }: {
   dayData: any;
+  loadAttendance: any;
   setDayData: any;
 }) => {
+  console.log(dayData);
   const { user } = useAuth();
   const [showViewSelfieModal, setShowViewSelfieModal] =
     useState<boolean>(false);
+  const [attendanceNote, setAttendanceNote] = useState(dayData.note || "");
   const [selectedAttendance, setSelectedAttendance] = useState<any>();
   const [selectedAttendanceImage, setSelectedAttendanceImage] =
     useState<string>("");
@@ -35,6 +41,27 @@ const ViewTodayAttendanceModal = ({
     const minutes = totalMinutes % 60;
 
     return `${hours}:${minutes.toString().padStart(2, "0")}h`;
+  };
+
+  const handleAttendanceNote = async (e: React.FormEvent) => {
+    e.preventDefault();
+    try {
+      const attendanceRes: any = await attendanceApi.addNote(
+        dayData.id,
+        attendanceNote,
+      );
+
+      console.log("this is nte :", attendanceRes);
+
+      if (attendanceRes.success) {
+        await loadAttendance();
+        toast.success(attendanceRes.message);
+      } else {
+        toast.error(attendanceRes.message || "Faild to add note.");
+      }
+    } catch (error: any) {
+      console.log("Error : ", error);
+    }
   };
   return (
     <div className="fixed inset-0 bg-gray-900/70 backdrop-blur-md flex items-center justify-center z-[70] p-2 md:p-4">
@@ -166,7 +193,7 @@ const ViewTodayAttendanceModal = ({
                           });
                           setSelectedAttendanceImage(
                             `${import.meta.env.VITE_API_URL}/uploads/${
-                              track.punch_out_selfie
+                              track.punch_in_selfie
                             }`,
                           );
                           setShowViewSelfieModal(true);
@@ -202,13 +229,27 @@ const ViewTodayAttendanceModal = ({
                     </div>
                   </div>
                 ))}
-                <div>
-                  <textarea
-                    name="border border-gray-400 outline-none"
-                    rows={2}
-                    id=""
-                  ></textarea>
-                </div>
+                <form onSubmit={handleAttendanceNote}>
+                  <div className="w-full mt-3">
+                    <textarea
+                      value={attendanceNote}
+                      onChange={(e) => {
+                        setAttendanceNote(e.target.value);
+                      }}
+                      rows={3}
+                      placeholder="Enter your message..."
+                      className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition mb-3"
+                    ></textarea>
+                    {attendanceNote && (
+                      <button
+                        type="submit"
+                        className="bg-gradient-to-r from-[#C62828] to-red-600 text-white px-4 py-2.5 md:px-8 md:py-2.5 rounded-lg hover:from-red-600 hover:to-red-700 transition-all duration-200 font-medium shadow-sm hover:shadow text-sm md:text-base order-1 sm:order-2 w-full"
+                      >
+                        Save Noe
+                      </button>
+                    )}
+                  </div>
+                </form>
               </div>
             </div>
           )}

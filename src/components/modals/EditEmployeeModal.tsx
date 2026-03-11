@@ -22,6 +22,8 @@ import { departmentsApi } from "../../lib/departmentApi";
 import employeeAPI from "../../lib/employeeApi";
 import companyApi from "../../lib/companyApi";
 import { designationApi } from "../../lib/designationApi";
+import { SettingsApi } from "../../lib/settingsApi";
+import { useAuth } from "../../contexts/AuthContext";
 
 interface EditEmployeeModalProps {
   isOpen: boolean;
@@ -47,6 +49,7 @@ export default function EditEmployeeModal({
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [showProjectDropdown, setShowProjectDropdown] = useState(false);
   const [locations, setLocations] = useState([]);
+  const { user } = useAuth();
 
   // For attendance locations
   const [companies, setCompanies] = useState<any[]>([]);
@@ -139,6 +142,79 @@ export default function EditEmployeeModal({
     office_email_password: "",
 
     // Bank Details
+    account_holder_name: "",
+    bank_account_number: "",
+    bank_name: "",
+    ifsc_code: "",
+    upi_id: "",
+    user_id: "",
+  });
+
+  const [validationFormData, setValidationFormData] = useState({
+    // Basic Details
+    first_name: "",
+    middle_name: "",
+    last_name: "",
+    email: "",
+    phone: "",
+    role: "", // For display
+    role_id: "",
+    department: "", // For display
+    department_id: "",
+    designation: "",
+    designation_id: "",
+    joining_date: new Date().toISOString().split("T")[0],
+    gender: "male",
+    allotted_project: [] as number[],
+    company_id: "", // Add this field
+    attendence_location: [] as string[],
+    employee_status: "active",
+
+    // Personal Details
+    blood_group: "",
+    date_of_birth: "",
+    marital_status: "",
+    emergency_contact: "",
+    emergency_contact_relationship: "",
+    emergency_contact_name: "",
+    nationality: "Indian",
+
+    // Address Details
+    current_address: "",
+    permanent_address: "",
+    city: "",
+    state: "",
+    pincode: "",
+    same_as_permanent: false,
+
+    // Identification Details
+    aadhar_number: "",
+    pan_number: "",
+
+    // Educational Details
+    highest_qualification: "",
+    university: "",
+    passing_year: "",
+    percentage: "",
+
+    // Employment Details
+    employee_type: "permanent",
+    probation_period: "",
+    work_mode: "office",
+    date_of_leaving: "",
+    notice_period: "30",
+    salary: "",
+    salary_type: "monthly",
+
+    // System Details
+    laptop_assigned: "no",
+    system_login_id: "",
+    system_password: "",
+    office_email_id: "",
+    office_email_password: "",
+
+    // Bank Details
+    account_holder_name: "",
     bank_account_number: "",
     bank_name: "",
     ifsc_code: "",
@@ -264,15 +340,17 @@ export default function EditEmployeeModal({
         office_email_password: data.office_email_password || "",
 
         // Bank Details
+        account_holder_name: data.account_holder_name || "",
         bank_account_number: data.bank_account_number || "",
         bank_name: data.bank_name || "",
         ifsc_code: data.ifsc_code || "",
         upi_id: data.upi_id || "",
+        user_id: data.user_id || "",
       };
 
       // SET THE FORM DATA FIRST
       setFormData(formDataUpdate);
-
+      setValidationFormData(formDataUpdate);
       if (data.profile_picture) {
         setExistingImage(data.profile_picture);
       }
@@ -291,18 +369,6 @@ export default function EditEmployeeModal({
           data.role_id,
           data.role_name,
         );
-      }
-
-      // Load designations when department and role are available
-      if (data.department_id && data.role_id) {
-        // Load designations AFTER setting form data and roles
-        setTimeout(() => {
-          loadDesignationsForEmployee(
-            data.department_id,
-            data.role_id,
-            data.designation,
-          );
-        }, 200);
       }
 
       // Set active section based on existing data
@@ -434,6 +500,11 @@ export default function EditEmployeeModal({
                 role: foundRole.name, // यहाँ .toUpperCase() हटाएं
                 role_id: foundRole.id.toString(),
               }));
+              setValidationFormData((prev) => ({
+                ...prev,
+                role: foundRole.name, // यहाँ .toUpperCase() हटाएं
+                role_id: foundRole.id.toString(),
+              }));
             }
           }
         } else {
@@ -461,6 +532,11 @@ export default function EditEmployeeModal({
 
             if (foundRole) {
               setFormData((prev) => ({
+                ...prev,
+                role: foundRole.name,
+                role_id: foundRole.id.toString(),
+              }));
+              setValidationFormData((prev) => ({
                 ...prev,
                 role: foundRole.name,
                 role_id: foundRole.id.toString(),
@@ -500,6 +576,11 @@ export default function EditEmployeeModal({
         // Only auto-select if form doesn't already have a designation
         if (!formData.designation_id && filteredDesignations.length > 0) {
           setFormData((prev) => ({
+            ...prev,
+            designation_id: filteredDesignations[0].id.toString(),
+            designation: filteredDesignations[0].name,
+          }));
+          setValidationFormData((prev) => ({
             ...prev,
             designation_id: filteredDesignations[0].id.toString(),
             designation: filteredDesignations[0].name,
@@ -781,10 +862,9 @@ export default function EditEmployeeModal({
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
-
     try {
       const formDataObj = new FormData();
-
+      console.log("this is my : ", formData);
       // Append all form data
       Object.entries(formData).forEach(([key, value]) => {
         if (value || value === false || Number(value) === 0) {
@@ -822,6 +902,13 @@ export default function EditEmployeeModal({
         Object.fromEntries(formDataObj),
       );
       await employeeAPI.updateEmployee(employeeId, formDataObj);
+      const payload = {
+        full_name: formData.first_name + " " + formData.last_name,
+        email: formData.email,
+        phone: formData.phone,
+      };
+
+      await SettingsApi.updateProfile(formData.user_id, payload);
 
       toast.success("Employee updated successfully!");
 
@@ -1133,7 +1220,7 @@ export default function EditEmployeeModal({
                       onChange={(e) => handleDepartmentChange(e.target.value)}
                       className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:border-[#C62828] focus:ring-1 focus:ring-[#C62828] outline-none bg-white"
                       required
-                      disabled={loadingDepartments}
+                      disabled={loadingDepartments || user.role !== "admin"}
                     >
                       <option value="">Select Department</option>
                       {loadingDepartments ? (
@@ -1167,7 +1254,9 @@ export default function EditEmployeeModal({
                       className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:border-[#C62828] focus:ring-1 focus:ring-[#C62828] outline-none bg-white"
                       required
                       disabled={
-                        !formData.department_id || loadingDepartmentRoles
+                        !formData.department_id ||
+                        loadingDepartmentRoles ||
+                        user.role !== "admin"
                       }
                     >
                       <option value="">Select Role</option>
@@ -1210,15 +1299,17 @@ export default function EditEmployeeModal({
                     <label className="block text-xs font-semibold text-gray-700">
                       Designation <span className="text-red-500">*</span>
                     </label>
+
                     <select
                       value={formData.designation_id || formData.designation}
                       onChange={(e) => {
                         const selectedValue = e.target.value;
+
                         if (selectedValue) {
-                          // Check if it's an ID or a custom designation
                           const selectedDesignation = designations.find(
                             (d) => d.id.toString() === selectedValue,
                           );
+
                           if (selectedDesignation) {
                             setFormData((prev) => ({
                               ...prev,
@@ -1226,7 +1317,6 @@ export default function EditEmployeeModal({
                               designation: selectedDesignation.name,
                             }));
                           } else {
-                            // It's a custom designation (from existing data)
                             setFormData((prev) => ({
                               ...prev,
                               designation_id: "",
@@ -1237,9 +1327,10 @@ export default function EditEmployeeModal({
                       }}
                       className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:border-[#C62828] focus:ring-1 focus:ring-[#C62828] outline-none bg-white"
                       required
-                      disabled={loadingDesignations}
+                      disabled={loadingDesignations || user.role !== "admin"}
                     >
                       <option value="">Select Designation</option>
+
                       {loadingDesignations ? (
                         <option value="" disabled>
                           Loading designations...
@@ -1249,19 +1340,13 @@ export default function EditEmployeeModal({
                           <option
                             key={designation.id}
                             value={designation.id.toString()}
-                            selected={
-                              formData.designation_id ===
-                                designation.id.toString() ||
-                              formData.designation === designation.name
-                            }
                           >
                             {designation.name} (Level{" "}
                             {designation.hierarchy_level})
                           </option>
                         ))
                       ) : formData.designation ? (
-                        // Show existing designation as option if not in list
-                        <option value={formData.designation} selected>
+                        <option value={formData.designation}>
                           {formData.designation} (Custom)
                         </option>
                       ) : (
@@ -1309,6 +1394,7 @@ export default function EditEmployeeModal({
                     <input
                       type="date"
                       value={formData.joining_date}
+                      disabled={user.role !== "admin"}
                       onChange={(e) =>
                         setFormData({
                           ...formData,
@@ -1331,6 +1417,7 @@ export default function EditEmployeeModal({
                         onClick={() =>
                           setShowProjectDropdown(!showProjectDropdown)
                         }
+                        disabled={user.role !== "admin"}
                         className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:border-[#C62828] focus:ring-1 focus:ring-[#C62828] outline-none bg-white text-left flex justify-between items-center hover:bg-gray-50"
                       >
                         <span className="truncate">
@@ -1394,13 +1481,17 @@ export default function EditEmployeeModal({
                               <span className="truncate max-w-[120px]">
                                 {project.name}
                               </span>
-                              <button
-                                type="button"
-                                onClick={() => handleProjectToggle(project.id)}
-                                className="hover:bg-red-700 rounded-full p-0.5 flex-shrink-0"
-                              >
-                                <X className="w-3 h-3" />
-                              </button>
+                              {user.role === "admin" && (
+                                <button
+                                  type="button"
+                                  onClick={() =>
+                                    handleProjectToggle(project.id)
+                                  }
+                                  className="hover:bg-red-700 rounded-full p-0.5 flex-shrink-0"
+                                >
+                                  <X className="w-3 h-3" />
+                                </button>
+                              )}
                             </div>
                           ))}
                       </div>
@@ -1415,6 +1506,7 @@ export default function EditEmployeeModal({
                     </label>
                     <select
                       value={formData.company_id}
+                      disabled={user.role !== "admin"}
                       onChange={(e) => {
                         const companyId = e.target.value;
                         setFormData((prev) => ({
@@ -1448,6 +1540,7 @@ export default function EditEmployeeModal({
                           onClick={() =>
                             setShowAttendanceDropdown(!showAttendanceDropdown)
                           }
+                          disabled={user.role !== "admin"}
                           className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:border-[#C62828] focus:ring-1 focus:ring-[#C62828] outline-none bg-white text-left flex justify-between items-center hover:bg-gray-50"
                         >
                           <span className="truncate">
@@ -1508,15 +1601,17 @@ export default function EditEmployeeModal({
                                 <span className="truncate max-w-[120px]">
                                   {location.name}
                                 </span>
-                                <button
-                                  type="button"
-                                  onClick={() =>
-                                    handleAttendanceToggle(location.id)
-                                  }
-                                  className="hover:bg-blue-700 rounded-full p-0.5 flex-shrink-0"
-                                >
-                                  <X className="w-3 h-3" />
-                                </button>
+                                {user.role === "admin" && (
+                                  <button
+                                    type="button"
+                                    onClick={() =>
+                                      handleAttendanceToggle(location.id)
+                                    }
+                                    className="hover:bg-blue-700 rounded-full p-0.5 flex-shrink-0"
+                                  >
+                                    <X className="w-3 h-3" />
+                                  </button>
+                                )}
                               </div>
                             ))}
                         </div>
@@ -1537,6 +1632,7 @@ export default function EditEmployeeModal({
                           employee_status: e.target.value,
                         })
                       }
+                      disabled={user.role !== "admin"}
                       className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:border-[#C62828] focus:ring-1 focus:ring-[#C62828] outline-none bg-white"
                     >
                       <option value="active">Active</option>
@@ -1664,13 +1760,6 @@ export default function EditEmployeeModal({
                       <Heart className="w-4 h-4 text-red-500" />
                       Personal Details
                     </h4>
-                    <button
-                      type="button"
-                      onClick={() => setActiveSection(null)}
-                      className="text-gray-400 hover:text-gray-600"
-                    >
-                      <X className="w-4 h-4" />
-                    </button>
                   </div>
                   <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
                     {/* Date of Birth */}
@@ -1682,6 +1771,10 @@ export default function EditEmployeeModal({
                         type="date"
                         value={formData.date_of_birth}
                         max={maxDate}
+                        disabled={
+                          user.role !== "admin" &&
+                          (validationFormData.date_of_birth || "").length !== 0
+                        }
                         onChange={(e) =>
                           setFormData({
                             ...formData,
@@ -1710,6 +1803,10 @@ export default function EditEmployeeModal({
                             marital_status: e.target.value,
                           })
                         }
+                        disabled={
+                          user.role !== "admin" &&
+                          (validationFormData.marital_status || "").length !== 0
+                        }
                         className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:border-[#C62828] focus:ring-1 focus:ring-[#C62828] outline-none bg-white"
                       >
                         <option value="">Select</option>
@@ -1728,6 +1825,11 @@ export default function EditEmployeeModal({
                       <input
                         type="tel"
                         value={formData.emergency_contact}
+                        disabled={
+                          user.role !== "admin" &&
+                          (validationFormData.emergency_contact || "")
+                            .length !== 0
+                        }
                         onChange={handleEmergencyContactChange}
                         className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:border-[#C62828] focus:ring-1 focus:ring-[#C62828] outline-none"
                         placeholder="10-digit number"
@@ -1747,6 +1849,13 @@ export default function EditEmployeeModal({
                             ...formData,
                             emergency_contact_relationship: e.target.value,
                           })
+                        }
+                        disabled={
+                          user.role !== "admin" &&
+                          (
+                            validationFormData.emergency_contact_relationship ||
+                            ""
+                          ).length !== 0
                         }
                         className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:border-[#C62828] focus:ring-1 focus:ring-[#C62828] outline-none bg-white"
                       >
@@ -1774,6 +1883,13 @@ export default function EditEmployeeModal({
                             emergency_contact_name: e.target.value,
                           })
                         }
+                        disabled={
+                          user.role !== "admin" &&
+                          (
+                            validationFormData.emergency_contact_relationship ||
+                            ""
+                          ).length !== 0
+                        }
                         className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:border-[#C62828] focus:ring-1 focus:ring-[#C62828] outline-none"
                         placeholder="Full name"
                       />
@@ -1793,6 +1909,10 @@ export default function EditEmployeeModal({
                             nationality: e.target.value,
                           })
                         }
+                        disabled={
+                          user.role !== "admin" &&
+                          (validationFormData.nationality || "").length !== 0
+                        }
                         className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:border-[#C62828] focus:ring-1 focus:ring-[#C62828] outline-none"
                         placeholder="e.g. Indian"
                       />
@@ -1807,6 +1927,10 @@ export default function EditEmployeeModal({
                         type="text"
                         value={formData.aadhar_number}
                         onChange={handleAadharChange}
+                        disabled={
+                          user.role !== "admin" &&
+                          (validationFormData.aadhar_number || "").length !== 0
+                        }
                         className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:border-[#C62828] focus:ring-1 focus:ring-[#C62828] outline-none"
                         placeholder="12-digit Aadhar"
                         maxLength={12}
@@ -1822,6 +1946,10 @@ export default function EditEmployeeModal({
                         type="text"
                         value={formData.pan_number}
                         onChange={handlePANChange}
+                        disabled={
+                          user.role !== "admin" &&
+                          (validationFormData.pan_number || "").length !== 0
+                        }
                         className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:border-[#C62828] focus:ring-1 focus:ring-[#C62828] outline-none"
                         placeholder="ABCDE1234F"
                         maxLength={10}
@@ -1839,13 +1967,6 @@ export default function EditEmployeeModal({
                       <Home className="w-4 h-4 text-blue-500" />
                       Address Details
                     </h4>
-                    <button
-                      type="button"
-                      onClick={() => setActiveSection(null)}
-                      className="text-gray-400 hover:text-gray-600"
-                    >
-                      <X className="w-4 h-4" />
-                    </button>
                   </div>
 
                   {/* Permanent Address Section */}
@@ -1858,6 +1979,11 @@ export default function EditEmployeeModal({
                         </label>
                         <textarea
                           value={formData.permanent_address}
+                          disabled={
+                            user.role !== "admin" &&
+                            (validationFormData.permanent_address || "")
+                              .length !== 0
+                          }
                           onChange={(e) => {
                             const value = e.target.value;
                             setFormData((prev) => ({
@@ -1885,6 +2011,10 @@ export default function EditEmployeeModal({
                           <input
                             type="text"
                             value={formData.city}
+                            disabled={
+                              user.role !== "admin" &&
+                              (validationFormData.city || "").length !== 0
+                            }
                             onChange={(e) => {
                               const value = e.target.value;
                               setFormData((prev) => ({
@@ -1909,6 +2039,10 @@ export default function EditEmployeeModal({
                           <input
                             type="text"
                             value={formData.state}
+                            disabled={
+                              user.role !== "admin" &&
+                              (validationFormData.state || "").length !== 0
+                            }
                             onChange={(e) => {
                               const value = e.target.value;
                               setFormData((prev) => ({
@@ -1933,6 +2067,10 @@ export default function EditEmployeeModal({
                           <input
                             type="text"
                             value={formData.pincode}
+                            disabled={
+                              user.role !== "admin" &&
+                              (validationFormData.pincode || "").length !== 0
+                            }
                             onChange={(e) => {
                               const value = e.target.value
                                 .replace(/\D/g, "")
@@ -1988,6 +2126,11 @@ export default function EditEmployeeModal({
                       </label>
                       <textarea
                         value={formData.current_address}
+                        disabled={
+                          user.role !== "admin" &&
+                          (validationFormData.current_address || "").length !==
+                            0
+                        }
                         onChange={(e) =>
                           setFormData({
                             ...formData,
@@ -2011,13 +2154,6 @@ export default function EditEmployeeModal({
                       <GraduationCap className="w-4 h-4 text-green-500" />
                       Educational Details
                     </h4>
-                    <button
-                      type="button"
-                      onClick={() => setActiveSection(null)}
-                      className="text-gray-400 hover:text-gray-600"
-                    >
-                      <X className="w-4 h-4" />
-                    </button>
                   </div>
                   <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
                     {/* Highest Qualification */}
@@ -2027,6 +2163,11 @@ export default function EditEmployeeModal({
                       </label>
                       <select
                         value={formData.highest_qualification}
+                        disabled={
+                          user.role !== "admin" &&
+                          (validationFormData.highest_qualification || "")
+                            .length !== 0
+                        }
                         onChange={(e) =>
                           setFormData({
                             ...formData,
@@ -2054,6 +2195,10 @@ export default function EditEmployeeModal({
                       <input
                         type="text"
                         value={formData.university}
+                        disabled={
+                          user.role !== "admin" &&
+                          (validationFormData.university || "").length !== 0
+                        }
                         onChange={(e) =>
                           setFormData({
                             ...formData,
@@ -2073,6 +2218,10 @@ export default function EditEmployeeModal({
                       <input
                         type="number"
                         value={formData.passing_year}
+                        disabled={
+                          user.role !== "admin" &&
+                          (validationFormData.passing_year || "").length !== 0
+                        }
                         onChange={(e) =>
                           setFormData({
                             ...formData,
@@ -2094,6 +2243,10 @@ export default function EditEmployeeModal({
                       <input
                         type="text"
                         value={formData.percentage}
+                        disabled={
+                          user.role !== "admin" &&
+                          (validationFormData.percentage || "").length !== 0
+                        }
                         onChange={handlePercentageChange}
                         className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:border-[#C62828] focus:ring-1 focus:ring-[#C62828] outline-none"
                         placeholder="e.g. 85.5"
@@ -2111,13 +2264,6 @@ export default function EditEmployeeModal({
                       <Briefcase className="w-4 h-4 text-purple-500" />
                       Employment Details
                     </h4>
-                    <button
-                      type="button"
-                      onClick={() => setActiveSection(null)}
-                      className="text-gray-400 hover:text-gray-600"
-                    >
-                      <X className="w-4 h-4" />
-                    </button>
                   </div>
                   <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
                     {/* Employee Type */}
@@ -2133,6 +2279,7 @@ export default function EditEmployeeModal({
                             employee_type: e.target.value,
                           })
                         }
+                        disabled={user.role !== "admin"}
                         className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:border-[#C62828] focus:ring-1 focus:ring-[#C62828] outline-none bg-white"
                       >
                         <option value="permanent">Permanent</option>
@@ -2149,6 +2296,7 @@ export default function EditEmployeeModal({
                       </label>
                       <select
                         value={formData.work_mode}
+                        disabled={user.role !== "admin"}
                         onChange={(e) =>
                           setFormData({
                             ...formData,
@@ -2176,6 +2324,7 @@ export default function EditEmployeeModal({
                             probation_period: e.target.value,
                           })
                         }
+                        disabled={user.role !== "admin"}
                         className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:border-[#C62828] focus:ring-1 focus:ring-[#C62828] outline-none bg-white"
                       >
                         <option value="">Select</option>
@@ -2193,6 +2342,7 @@ export default function EditEmployeeModal({
                       <input
                         type="date"
                         value={formData.date_of_leaving}
+                        disabled={user.role !== "admin"}
                         onChange={(e) =>
                           setFormData({
                             ...formData,
@@ -2210,6 +2360,7 @@ export default function EditEmployeeModal({
                       </label>
                       <select
                         value={formData.notice_period}
+                        disabled={user.role !== "admin"}
                         onChange={(e) =>
                           setFormData({
                             ...formData,
@@ -2233,6 +2384,7 @@ export default function EditEmployeeModal({
                       <input
                         type="number"
                         value={formData.salary}
+                        disabled={user.role !== "admin"}
                         onChange={(e) =>
                           setFormData({ ...formData, salary: e.target.value })
                         }
@@ -2250,6 +2402,7 @@ export default function EditEmployeeModal({
                       </label>
                       <select
                         value={formData.salary_type}
+                        disabled={user.role !== "admin"}
                         onChange={(e) =>
                           setFormData({
                             ...formData,
@@ -2275,13 +2428,6 @@ export default function EditEmployeeModal({
                       <Laptop className="w-4 h-4 text-yellow-500" />
                       System Details
                     </h4>
-                    <button
-                      type="button"
-                      onClick={() => setActiveSection(null)}
-                      className="text-gray-400 hover:text-gray-600"
-                    >
-                      <X className="w-4 h-4" />
-                    </button>
                   </div>
                   <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
                     {/* Laptop Assigned */}
@@ -2291,6 +2437,7 @@ export default function EditEmployeeModal({
                       </label>
                       <select
                         value={formData.laptop_assigned}
+                        disabled={user.role !== "admin"}
                         onChange={(e) =>
                           setFormData({
                             ...formData,
@@ -2312,6 +2459,7 @@ export default function EditEmployeeModal({
                       <input
                         type="text"
                         value={formData.system_login_id}
+                        disabled={user.role !== "admin"}
                         onChange={(e) =>
                           setFormData({
                             ...formData,
@@ -2331,6 +2479,7 @@ export default function EditEmployeeModal({
                       <input
                         type="password"
                         value={formData.system_password}
+                        disabled={user.role !== "admin"}
                         onChange={(e) =>
                           setFormData({
                             ...formData,
@@ -2350,6 +2499,7 @@ export default function EditEmployeeModal({
                       <input
                         type="email"
                         value={formData.office_email_id}
+                        disabled={user.role !== "admin"}
                         onChange={(e) =>
                           setFormData({
                             ...formData,
@@ -2369,6 +2519,7 @@ export default function EditEmployeeModal({
                       <input
                         type="password"
                         value={formData.office_email_password}
+                        disabled={user.role !== "admin"}
                         onChange={(e) =>
                           setFormData({
                             ...formData,
@@ -2391,20 +2542,32 @@ export default function EditEmployeeModal({
                       <CreditCard className="w-4 h-4 text-indigo-500" />
                       Bank Details
                     </h4>
-                    <button
-                      type="button"
-                      onClick={() => setActiveSection(null)}
-                      className="text-gray-400 hover:text-gray-600"
-                    >
-                      <X className="w-4 h-4" />
-                    </button>
                   </div>
 
                   <div className="mb-6">
-                    <h5 className="text-xs font-semibold text-gray-700 mb-3">
-                      Account Details
-                    </h5>
                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+                      <div className="space-y-1">
+                        <label className="block text-xs font-semibold text-gray-700">
+                          Account Holder Name
+                        </label>
+                        <input
+                          type="text"
+                          value={formData.account_holder_name}
+                          disabled={
+                            user.role !== "admin" &&
+                            (validationFormData.account_holder_name || "")
+                              .length !== 0
+                          }
+                          onChange={(e) =>
+                            setFormData({
+                              ...formData,
+                              account_holder_name: e.target.value,
+                            })
+                          }
+                          className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:border-[#C62828] focus:ring-1 focus:ring-[#C62828] outline-none"
+                          placeholder="Bank name"
+                        />
+                      </div>
                       {/* Bank Name */}
                       <div className="space-y-1">
                         <label className="block text-xs font-semibold text-gray-700">
@@ -2413,6 +2576,10 @@ export default function EditEmployeeModal({
                         <input
                           type="text"
                           value={formData.bank_name}
+                          disabled={
+                            user.role !== "admin" &&
+                            (validationFormData.bank_name || "").length !== 0
+                          }
                           onChange={(e) =>
                             setFormData({
                               ...formData,
@@ -2432,12 +2599,22 @@ export default function EditEmployeeModal({
                         <input
                           type="text"
                           value={formData.bank_account_number}
-                          onChange={(e) =>
+                          disabled={
+                            user.role !== "admin" &&
+                            (validationFormData.bank_account_number || "")
+                              .length !== 0
+                          }
+                          onChange={(e) => {
+                            if (
+                              e.target.value.length > 18 ||
+                              !/^\d+$/.test(e.target.value)
+                            )
+                              return;
                             setFormData({
                               ...formData,
                               bank_account_number: e.target.value,
-                            })
-                          }
+                            });
+                          }}
                           className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:border-[#C62828] focus:ring-1 focus:ring-[#C62828] outline-none"
                           placeholder="Account number"
                         />
@@ -2451,6 +2628,10 @@ export default function EditEmployeeModal({
                         <input
                           type="text"
                           value={formData.ifsc_code}
+                          disabled={
+                            user.role !== "admin" &&
+                            (validationFormData.ifsc_code || "").length !== 0
+                          }
                           onChange={(e) =>
                             setFormData({
                               ...formData,
@@ -2475,6 +2656,10 @@ export default function EditEmployeeModal({
                       <input
                         type="text"
                         value={formData.upi_id}
+                        disabled={
+                          user.role !== "admin" &&
+                          (validationFormData.upi_id || "").length !== 0
+                        }
                         onChange={(e) =>
                           setFormData({ ...formData, upi_id: e.target.value })
                         }
@@ -2522,12 +2707,4 @@ export default function EditEmployeeModal({
       </div>
     </div>
   );
-}
-
-function loadDesignationsForEmployee(
-  department_id: any,
-  role_id: any,
-  designation: any,
-) {
-  throw new Error("Function not implemented.");
 }

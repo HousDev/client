@@ -1093,8 +1093,8 @@ export default function Attendance() {
                 <AttendanceCalender
                   month={Number(selecteDate.slice(5)) - 1}
                   year={Number(selecteDate.slice(0, 4))}
-                  setSelectedDateAttendance={setSelectedDateAttendance}
                   attendanceData={attendanceData}
+                  loadAttendance={loadAttendance}
                 />
               )}
             </div>

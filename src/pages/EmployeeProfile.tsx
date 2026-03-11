@@ -35,11 +35,14 @@ import {
   X,
   MoreVertical,
   ChevronDown,
+  Eye,
+  EyeOff,
 } from "lucide-react";
 import { toast } from "sonner";
 import employeeAPI from "../lib/employeeApi";
 import EditEmployeeModal from "../components/modals/EditEmployeeModal";
 import AddMoreDetailsModal from "../components/modals/AddMoreDetailsModal";
+import { useAuth } from "../contexts/AuthContext";
 
 interface EmployeeProfileProps {
   employeeId: string;
@@ -57,11 +60,13 @@ export default function EmployeeProfile({
   const [showAddDetailsModal, setShowAddDetailsModal] = useState(false);
   const [imageError, setImageError] = useState(false);
   const [showMobileTabs, setShowMobileTabs] = useState(false);
-
+  const [showAccountNumber, setShowAccountNumber] = useState<boolean>(false);
+  const { user } = useAuth();
   const loadEmployee = async () => {
     try {
       setLoading(true);
       const data = await employeeAPI.getEmployee(Number(employeeId));
+      console.log("Employee Details : ", data);
       setEmployee(data);
       setImageError(false);
     } catch (error) {
@@ -584,7 +589,7 @@ export default function EmployeeProfile({
             <div className="space-y-4">
               {/* Personal Details */}
               <div className="bg-white rounded-xl border p-4">
-                <h3 className="text-base font-semibold text-gray-900 mb-4 flex items-center gap-2">
+                <h3 className="text-base font-semibold text-gray-900 mb-4 flex items-center gap-2 ">
                   <User className="w-5 h-5 text-[#C62828]" />
                   Personal Details
                 </h3>
@@ -675,8 +680,8 @@ export default function EmployeeProfile({
             <div className="space-y-4">
               {/* Identification */}
               {(employee.aadhar_number || employee.pan_number) && (
-                <div className="bg-white rounded-xl border p-4">
-                  <h3 className="text-base font-semibold text-gray-900 mb-4 flex items-center gap-2">
+                <div className="bg-white rounded-xl border p-4 ">
+                  <h3 className="text-base font-semibold text-gray-900 mb-4 flex items-center gap-2 ">
                     <IdCard className="w-5 h-5 text-[#C62828]" />
                     Identification
                   </h3>
@@ -940,17 +945,42 @@ export default function EmployeeProfile({
                 {employee.bank_name ? (
                   <div className="space-y-4">
                     <div className="bg-gradient-to-r from-blue-500 to-cyan-600 rounded-lg p-4 text-white">
+                      <p className="text-lg font-bold mb-1">
+                        {employee.account_holder_name}
+                      </p>
                       <p className="text-lg font-bold mb-2">
                         {employee.bank_name}
                       </p>
                       {employee.bank_account_number && (
-                        <div className="bg-white/20 rounded-lg p-3">
-                          <p className="text-xs font-medium uppercase mb-1 opacity-70">
-                            Account Number
-                          </p>
-                          <p className="text-sm font-mono font-bold tracking-wider truncate">
-                            •••• •••• {employee.bank_account_number.slice(-4)}
-                          </p>
+                        <div className="bg-white/20 rounded-lg p-3 flex justify-between items-center">
+                          <div>
+                            <p className="text-xs font-medium uppercase mb-1 opacity-70">
+                              Account Number
+                            </p>
+                            {showAccountNumber ? (
+                              <p className="text-sm font-mono font-bold tracking-wider truncate">
+                                {employee.bank_account_number}
+                              </p>
+                            ) : (
+                              <p className="text-sm font-mono font-bold tracking-wider truncate">
+                                •••• ••••{" "}
+                                {employee.bank_account_number.slice(-4)}
+                              </p>
+                            )}
+                          </div>
+                          <div>
+                            <button
+                              onClick={() => {
+                                setShowAccountNumber(!showAccountNumber);
+                              }}
+                            >
+                              {showAccountNumber && user.role === "admin" ? (
+                                <EyeOff className="w-5 h-5 text-white " />
+                              ) : (
+                                <Eye className="w-5 h-5 text-white " />
+                              )}
+                            </button>
+                          </div>
                         </div>
                       )}
                     </div>
@@ -1193,8 +1223,354 @@ export default function EmployeeProfile({
             </div>
           )}
 
-          {/* Rest of the desktop tab content remains exactly the same */}
-          {/* ... other desktop tab content ... */}
+          {activeTab === "personal" && (
+            <div className=" grid grid-cols-2 gap-3">
+              {/* Identification */}
+              {(employee.aadhar_number || employee.pan_number) && (
+                <div className="bg-white rounded-xl border p-4 ">
+                  <h3 className="text-base font-semibold text-gray-900 mb-4 flex items-center gap-2 ">
+                    <IdCard className="w-5 h-5 text-[#C62828]" />
+                    Identification
+                  </h3>
+                  <div className="space-y-3 ">
+                    {employee.aadhar_number && (
+                      <div className="bg-blue-50 rounded-lg p-3">
+                        <p className="text-xs text-blue-700 font-medium mb-1">
+                          Aadhar Number
+                        </p>
+                        <p className="text-base font-semibold text-blue-900">
+                          {employee.aadhar_number}
+                        </p>
+                      </div>
+                    )}
+                    {employee.pan_number && (
+                      <div className="bg-green-50 rounded-lg p-3">
+                        <p className="text-xs text-green-700 font-medium mb-1">
+                          PAN Number
+                        </p>
+                        <p className="text-base font-semibold text-green-900">
+                          {employee.pan_number}
+                        </p>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
+
+              {/* Emergency Contact */}
+              {employee.emergency_contact && (
+                <div className="bg-white rounded-xl border p-4">
+                  <h3 className="text-base font-semibold text-gray-900 mb-4 flex items-center gap-2">
+                    <Phone className="w-5 h-5 text-[#C62828]" />
+                    Emergency Contact
+                  </h3>
+                  <div className="bg-red-50 rounded-lg p-3">
+                    <p className="text-sm text-red-700 font-medium mb-1">
+                      Emergency Number
+                    </p>
+                    <p className="text-base font-semibold text-red-900">
+                      {employee.emergency_contact}
+                    </p>
+                    {employee.emergency_contact_name && (
+                      <p className="text-xs text-red-700 mt-2">
+                        {employee.emergency_contact_name} (
+                        {employee.emergency_contact_relationship})
+                      </p>
+                    )}
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+
+          {activeTab === "employment" && (
+            <div className="space-y-4">
+              {/* Employment Details */}
+              <div className="bg-white rounded-xl border p-4">
+                <h3 className="text-base font-semibold text-gray-900 mb-4 flex items-center gap-2">
+                  <Briefcase className="w-5 h-5 text-[#C62828]" />
+                  Employment Details
+                </h3>
+                <div className="space-y-4">
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <p className="text-xs text-gray-500 mb-1">
+                        Employee Type
+                      </p>
+                      <p className="text-sm font-semibold text-gray-900 capitalize">
+                        {employee.employee_type || "N/A"}
+                      </p>
+                    </div>
+                    <div>
+                      <p className="text-xs text-gray-500 mb-1">Work Mode</p>
+                      <p className="text-sm font-semibold text-gray-900 capitalize">
+                        {employee.work_mode || "N/A"}
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="pt-3 border-t">
+                    <p className="text-xs text-gray-500 mb-1">Joining Date</p>
+                    <p className="text-sm font-semibold text-gray-900">
+                      {employee.joining_date
+                        ? new Date(employee.joining_date).toLocaleDateString(
+                            "en-US",
+                            {
+                              year: "numeric",
+                              month: "short",
+                              day: "numeric",
+                            },
+                          )
+                        : "N/A"}
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Salary */}
+              {employee.salary && (
+                <div className="bg-white rounded-xl border p-4">
+                  <h3 className="text-base font-semibold text-gray-900 mb-4 flex items-center gap-2">
+                    <Wallet className="w-5 h-5 text-[#C62828]" />
+                    Salary Details
+                  </h3>
+                  <div className="bg-gradient-to-r from-green-500 to-emerald-600 rounded-lg p-4 text-white">
+                    <p className="text-sm font-medium opacity-90 mb-1">
+                      Current Salary
+                    </p>
+                    <p className="text-2xl font-bold">₹{employee.salary}</p>
+                    <p className="text-xs opacity-80 mt-2">
+                      {employee.salary_type || "Monthly"}
+                    </p>
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+
+          {activeTab === "education" && (
+            <div className="bg-white rounded-xl border p-4">
+              <h3 className="text-base font-semibold text-gray-900 mb-4 flex items-center gap-2">
+                <GraduationCap className="w-5 h-5 text-[#C62828]" />
+                Education
+              </h3>
+
+              {employee.highest_qualification ? (
+                <div className="space-y-4">
+                  <div className="bg-gradient-to-r from-blue-500 to-indigo-600 rounded-lg p-4 text-white">
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 bg-white/20 rounded-lg flex items-center justify-center">
+                        <GraduationCap className="w-5 h-5" />
+                      </div>
+                      <div>
+                        <p className="text-lg font-bold">
+                          {employee.highest_qualification}
+                        </p>
+                        <p className="text-xs font-medium opacity-90 truncate">
+                          {employee.university || ""}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-3">
+                    {employee.passing_year && (
+                      <div className="bg-gray-50 rounded-lg p-3">
+                        <p className="text-xs text-gray-500">Passing Year</p>
+                        <p className="text-sm font-semibold text-gray-900">
+                          {employee.passing_year}
+                        </p>
+                      </div>
+                    )}
+                    {employee.percentage && (
+                      <div className="bg-gray-50 rounded-lg p-3">
+                        <p className="text-xs text-gray-500">Percentage</p>
+                        <p className="text-sm font-semibold text-gray-900">
+                          {employee.percentage}%
+                        </p>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              ) : (
+                <div className="text-center py-8">
+                  <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                    <School className="w-8 h-8 text-gray-400" />
+                  </div>
+                  <p className="text-gray-600 font-medium mb-4">
+                    No education details
+                  </p>
+                  <button
+                    onClick={() => setShowAddDetailsModal(true)}
+                    className="inline-flex items-center gap-2 px-4 py-2.5 bg-[#C62828] text-white text-sm font-medium rounded-lg hover:bg-red-700 transition"
+                  >
+                    <FileText className="w-4 h-4" />
+                    Add Education
+                  </button>
+                </div>
+              )}
+            </div>
+          )}
+
+          {activeTab === "system" && (
+            <div className="space-y-4">
+              {/* System Access */}
+              <div className="bg-white rounded-xl border p-4">
+                <h3 className="text-base font-semibold text-gray-900 mb-4 flex items-center gap-2">
+                  <Laptop className="w-5 h-5 text-[#C62828]" />
+                  System Access
+                </h3>
+                <div className="space-y-3">
+                  <div className="bg-gray-50 rounded-lg p-3">
+                    <div className="flex items-center justify-between">
+                      <p className="text-sm font-medium text-gray-700">
+                        Laptop Assigned
+                      </p>
+                      <p
+                        className={`text-sm font-semibold ${employee.laptop_assigned === "yes" ? "text-green-600" : "text-gray-600"}`}
+                      >
+                        {employee.laptop_assigned === "yes" ? "Yes ✓" : "No"}
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="space-y-2">
+                    <div>
+                      <p className="text-xs text-gray-500">System Login ID</p>
+                      <p className="text-sm font-semibold text-gray-900 truncate">
+                        {employee.system_login_id || "Not set"}
+                      </p>
+                    </div>
+                    <div>
+                      <p className="text-xs text-gray-500">Office Email</p>
+                      <p className="text-sm font-semibold text-gray-900 truncate">
+                        {employee.office_email_id || "Not set"}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Security Status */}
+              <div className="bg-white rounded-xl border p-4">
+                <h3 className="text-base font-semibold text-gray-900 mb-4 flex items-center gap-2">
+                  <Lock className="w-5 h-5 text-[#C62828]" />
+                  Security Status
+                </h3>
+                <div className="bg-gradient-to-r from-purple-500 to-pink-600 rounded-lg p-4 text-white">
+                  <div className="space-y-3">
+                    <div className="flex items-center justify-between">
+                      <span className="text-sm font-medium">
+                        Account Status
+                      </span>
+                      <span className="px-3 py-1 bg-green-400 text-green-900 rounded-full text-xs font-bold">
+                        Active
+                      </span>
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <span className="text-sm font-medium">Email Setup</span>
+                      <span
+                        className={`px-3 py-1 rounded-full text-xs font-bold ${employee.office_email_id ? "bg-green-400 text-green-900" : "bg-yellow-400 text-yellow-900"}`}
+                      >
+                        {employee.office_email_id ? "Configured" : "Pending"}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {activeTab === "bank" && (
+            <div className="space-y-4">
+              {/* Bank Details */}
+              <div className="bg-white rounded-xl border p-4">
+                <h3 className="text-base font-semibold text-gray-900 mb-4 flex items-center gap-2">
+                  <CreditCard className="w-5 h-5 text-[#C62828]" />
+                  Bank Details
+                </h3>
+                {employee.bank_name ? (
+                  <div className=" grid grid-cols-2 gap-3">
+                    <div className="bg-gradient-to-r from-blue-500 to-cyan-600 rounded-lg p-4 text-white">
+                      <p className="text-lg font-bold mb-1">
+                        {employee.account_holder_name}
+                      </p>
+                      <p className="text-lg font-bold mb-2">
+                        {employee.bank_name}
+                      </p>
+                      {employee.bank_account_number && (
+                        <div className="bg-white/20 rounded-lg p-3 flex justify-between items-center">
+                          <div>
+                            <p className="text-xs font-medium uppercase mb-1 opacity-70">
+                              Account Number
+                            </p>
+                            {showAccountNumber ? (
+                              <p className="text-sm font-mono font-bold tracking-wider truncate">
+                                {employee.bank_account_number}
+                              </p>
+                            ) : (
+                              <p className="text-sm font-mono font-bold tracking-wider truncate">
+                                •••• ••••{" "}
+                                {employee.bank_account_number.slice(-4)}
+                              </p>
+                            )}
+                          </div>
+                          <div>
+                            <button
+                              onClick={() => {
+                                setShowAccountNumber(!showAccountNumber);
+                              }}
+                            >
+                              {showAccountNumber && user.role === "admin" ? (
+                                <EyeOff className="w-5 h-5 text-white " />
+                              ) : (
+                                <Eye className="w-5 h-5 text-white " />
+                              )}
+                            </button>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+
+                    <div className="grid grid-cols-1 gap-3">
+                      {employee.ifsc_code && (
+                        <div className="bg-gray-50 rounded-lg p-3">
+                          <p className="text-xs text-gray-500">IFSC Code</p>
+                          <p className="text-sm font-semibold text-gray-900">
+                            {employee.ifsc_code}
+                          </p>
+                        </div>
+                      )}
+                      {employee.upi_id && (
+                        <div className="bg-gray-50 rounded-lg p-3">
+                          <p className="text-xs text-gray-500">UPI ID</p>
+                          <p className="text-sm font-semibold text-gray-900 truncate">
+                            {employee.upi_id}
+                          </p>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                ) : (
+                  <div className="text-center py-8">
+                    <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                      <CreditCard className="w-8 h-8 text-gray-400" />
+                    </div>
+                    <p className="text-gray-600 font-medium mb-4">
+                      No bank details
+                    </p>
+                    <button
+                      onClick={() => setShowAddDetailsModal(true)}
+                      className="inline-flex items-center gap-2 px-4 py-2.5 bg-[#C62828] text-white text-sm font-medium rounded-lg hover:bg-red-700 transition"
+                    >
+                      <FileText className="w-4 h-4" />
+                      Add Bank Details
+                    </button>
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
         </div>
       </div>
 

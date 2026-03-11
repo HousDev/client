@@ -232,14 +232,12 @@
 
 // export default App;
 
-
 import { useState, useEffect, lazy, Suspense } from "react";
 import { AuthProvider, useAuth } from "./contexts/AuthContext";
 import Layout from "./components/Layout";
 import Login from "./pages/Login";
 import { Buffer } from "buffer";
 import { Toaster } from "sonner";
-import { SettingsApi } from "./lib/settingsApi";
 
 // Lazy loaded pages
 const Dashboard = lazy(() => import("./pages/Dashboard"));
@@ -256,7 +254,9 @@ const Permissions = lazy(() => import("./pages/Permissions"));
 const StoreManagement = lazy(() => import("./pages/StoreManagement"));
 const MaterialRequests = lazy(() => import("./pages/MaterialRequests"));
 const TaskManagement = lazy(() => import("./pages/TaskManagement"));
-const UsersManagement = lazy(() => import("./components/users/UsersManagement"));
+const UsersManagement = lazy(
+  () => import("./components/users/UsersManagement"),
+);
 
 // HRMS
 const HrmsDashboard = lazy(() => import("./pages/HrmsDashboard"));
@@ -295,12 +295,12 @@ function AppContent() {
   }, []); // Placeholder for any future side effects on app load
 
   const [activeTab, setActiveTab] = useState(
-    localStorage.getItem("activeTab") || "dashboard"
+    localStorage.getItem("activeTab") || "dashboard",
   );
 
   const [activeFormTab, setActiveFormTab] = useState("");
   const [selectedEmployeeId, setSelectedEmployeeId] = useState<string | null>(
-    localStorage.getItem("selectedEmployeeId")
+    localStorage.getItem("selectedEmployeeId"),
   );
 
   useEffect(() => {
@@ -437,9 +437,9 @@ function AppContent() {
       activeFormTab={activeFormTab}
       setActiveFormTab={setActiveFormTab}
     >
-      <Suspense fallback={<div style={{ padding: 20 }}>Loading...</div>}>
-        {renderContent()}
-      </Suspense>
+      {/* <Suspense fallback={<div style={{ padding: 20 }}>Loading...</div>}> */}
+      {renderContent()}
+      {/* </Suspense> */}
     </Layout>
   );
 }
@@ -454,7 +454,6 @@ function App() {
   if (!window.Buffer) {
     window.Buffer = Buffer;
   }
-  
 
   return (
     <AuthProvider>

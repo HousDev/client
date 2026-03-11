@@ -332,10 +332,10 @@ api.interceptors.response.use(
     console.log(url);
 
     // redirect ONLY if auth truly failed
-    if (status === 401 && !url.includes("/auth/login")) {
-      setToken(null);
-      window.location.replace("/login"); // safer than href
-    }
+    // if (status === 401 && !url.includes("/auth/login")) {
+    //   setToken(null);
+    //   window.location.replace("/login"); // safer than href
+    // }
 
     return Promise.reject(error);
   },
