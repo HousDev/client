@@ -404,13 +404,13 @@ export default function ApplyLeaveForm({
         className="bg-gradient-to-br from-gray-50 to-white rounded-2xl shadow-2xl shadow-gray-900/20 w-full max-w-3xl my-4 border border-gray-200 overflow-hidden relative z-10"
       >
         {/* Header */}
-        <div className="bg-gradient-to-r from-[#40423f] via-[#4a4c49] to-[#5a5d5a] px-6 py-4 flex justify-between items-center border-b border-gray-700/30 relative overflow-hidden">
+        <div className="bg-gradient-to-r from-[#40423f] via-[#4a4c49] to-[#5a5d5a] px-6 py-2 sm:py-4 flex justify-between items-center border-b border-gray-700/30 relative overflow-hidden">
           <div className="flex items-center gap-3">
             <div className="p-2 bg-white/20 rounded-xl backdrop-blur-sm">
               <Calendar className="w-5 h-5 text-white" />
             </div>
             <div>
-              <h2 className="text-lg font-bold text-white flex items-center gap-2">
+              <h2 className="text-md sm:text-lg font-bold text-white flex items-center gap-2">
                 Apply for Leave
               </h2>
               <p className="text-xs text-white/90 font-medium mt-0.5">
@@ -524,7 +524,7 @@ export default function ApplyLeaveForm({
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               {/* Leave Type */}
               <div className="space-y-1.5">
-                <label className="block text-sm font-semibold text-gray-800 mb-1 flex items-center gap-2">
+                <label className=" text-sm font-semibold text-gray-800 mb-1 flex items-center gap-2">
                   <FileText className="w-4 h-4 text-[#C62828]" />
                   Leave Type <span className="text-red-500">*</span>
                 </label>
@@ -622,12 +622,6 @@ export default function ApplyLeaveForm({
                     </div>
                   )}
                 </div>
-                {formData.is_half_day && (
-                  <p className="text-xs text-blue-600 mt-1">
-                    To date automatically set to{" "}
-                    {formData.from_date || "selected date"} for half day leave
-                  </p>
-                )}
               </div>
 
               {/* Half Day Checkbox */}
@@ -664,11 +658,6 @@ export default function ApplyLeaveForm({
                     </span>
                   </label>
                 </div>
-                <p className="text-xs text-gray-500 ml-14">
-                  {formData.is_half_day
-                    ? "Half day leave selected (0.5 day). To date will be auto-set same as from date."
-                    : "Check this if you're only taking half day leave"}
-                </p>
               </div>
 
               {/* Days Calculation */}
@@ -686,7 +675,7 @@ export default function ApplyLeaveForm({
                     <div className="w-full pl-10 pr-4 py-2.5 text-sm border-2 border-gray-200 rounded-xl bg-gradient-to-r from-blue-50 to-white">
                       <div className="flex items-center justify-between">
                         <div>
-                          <span className="text-xl font-bold text-blue-600">
+                          <span className="text-lg sm:text-xl font-bold text-blue-600">
                             {calculateDays()}{" "}
                             {formData.is_half_day
                               ? "day"
@@ -801,9 +790,9 @@ export default function ApplyLeaveForm({
                   onChange={(e) =>
                     setFormData({ ...formData, reason: e.target.value })
                   }
-                  rows={4}
+                  rows={3}
                   className="w-full px-4 py-2.5 text-sm border-2 border-gray-200 rounded-xl focus:border-[#C62828] focus:ring-2 focus:ring-[#C62828]/20 outline-none transition-all duration-200 resize-none hover:border-gray-300"
-                  placeholder="Please provide a detailed reason for your leave application. Include any relevant details that would help in the approval process..."
+                  placeholder="Please provide a detailed reason."
                   required
                 />
                 <div className="absolute bottom-2 right-2 text-xs text-gray-400">
@@ -942,12 +931,6 @@ export default function ApplyLeaveForm({
                   </div>
                 )}
               </div>
-
-              <p className="text-xs text-gray-500 mt-1">
-                Upload supporting documents like medical certificates, travel
-                tickets, or invitation letters. Maximum file size: 5MB. Allowed
-                formats: PDF, JPG, JPEG, PNG.
-              </p>
             </div>
 
             {/* Important Notes */}
@@ -1002,14 +985,14 @@ export default function ApplyLeaveForm({
                   onClose();
                   resetForm();
                 }}
-                className="flex-1 px-6 py-3 border-2 border-gray-200 rounded-xl hover:bg-gray-50 hover:border-gray-300 transition-all duration-200 font-medium text-gray-700 hover:text-gray-900"
+                className="flex-1 px-6 py-2 sm:py-3 border-2 border-gray-200 rounded-xl hover:bg-gray-50 hover:border-gray-300 transition-all duration-200 font-medium text-gray-700 hover:text-gray-900"
               >
                 Cancel
               </button>
               <button
                 type="submit"
                 disabled={loading || !isFormValid()}
-                className="flex-1 bg-gradient-to-r from-[#C62828] to-red-600 text-white py-3 px-6 rounded-xl hover:from-red-600 hover:to-red-700 transition-all duration-200 font-semibold shadow-lg hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 group transform hover:-translate-y-0.5 active:translate-y-0"
+                className="flex-1 bg-gradient-to-r from-[#C62828] to-red-600 text-white py-2 sm:py-3 px-6 rounded-xl hover:from-red-600 hover:to-red-700 transition-all duration-200 font-semibold shadow-lg hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 group transform hover:-translate-y-0.5 active:translate-y-0"
               >
                 {loading ? (
                   <>
@@ -1017,10 +1000,7 @@ export default function ApplyLeaveForm({
                     Submitting...
                   </>
                 ) : (
-                  <>
-                    <Save className="w-5 h-5 group-hover:scale-110 transition-transform" />
-                    Submit Leave Application
-                  </>
+                  <>Submit</>
                 )}
               </button>
             </div>

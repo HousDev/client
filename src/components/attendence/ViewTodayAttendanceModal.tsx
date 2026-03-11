@@ -94,7 +94,7 @@ const ViewTodayAttendanceModal = ({
 
         <div className="p-4 overflow-y-scroll flex-grow min-h-32 max-h-[70vh]">
           <h1 className="pl-3 font-semibold mb-3">Employee Details : </h1>
-          <div className="grid grid-col-1 sm:grid-cols-2">
+          <div className="grid grid-col-1 sm:grid-cols-2 text-xs">
             <div className="flex items-center mb-2">
               <User className="w-4 h-4 bg-green-100 mx-2 text-green-600" />
               <span className="font-semibold">Name :</span>
@@ -154,18 +154,18 @@ const ViewTodayAttendanceModal = ({
                             );
                             setShowViewSelfieModal(true);
                           }}
-                          className="mr-6 w-1/5"
+                          className="mr-3 sm:mr-6 flex-shrink-0"
                         >
                           <img
                             src={`${import.meta.env.VITE_API_URL}/uploads/${
                               track.punch_out_selfie
                             }`}
                             alt="view selfie"
-                            className="w-14 h-14 rounded-full"
+                            className="w-12 h-12 sm:w-14 sm:h-14 rounded-full object-cover"
                           />
                         </button>
-                        <div className="">
-                          <h1 className="font-semibold flex items-center text-sm">
+                        <div className="text-xs sm:text-sm">
+                          <h1 className="font-medium flex items-center text-xs sm:text-sm">
                             {new Date(track.punch_out_time).toLocaleTimeString(
                               "en-US",
                               {
@@ -177,10 +177,9 @@ const ViewTodayAttendanceModal = ({
                             <div className="w-2 h-2 rounded-full bg-red-400 ml-3 mr-1"></div>
                             Out
                           </h1>
-                          <address className="flex items-center text-xs">
-                            <MapPin className="w-7 h-7 mx-1" />
+                          <p className="flex items-center text-xs">
                             {track.punch_out_location}
-                          </address>
+                          </p>
                         </div>
                       </div>
                     )}
@@ -198,18 +197,18 @@ const ViewTodayAttendanceModal = ({
                           );
                           setShowViewSelfieModal(true);
                         }}
-                        className="mr-6 w-1/5"
+                        className="mr-3 sm:mr-6 flex-shrink-0"
                       >
                         <img
                           src={`${import.meta.env.VITE_API_URL}/uploads/${
                             track.punch_in_selfie
                           }`}
                           alt="view selfie"
-                          className="w-14 h-14 rounded-full"
+                          className="w-12 h-12 sm:w-14 sm:h-14 rounded-full object-cover"
                         />
                       </button>
                       <div className="">
-                        <h1 className="font-semibold flex items-center text-sm">
+                        <h1 className="font-semibold flex items-center text-xs sm:text-sm">
                           {new Date(track.punch_in_time).toLocaleTimeString(
                             "en-US",
                             {
@@ -221,10 +220,9 @@ const ViewTodayAttendanceModal = ({
                           <div className="w-2 h-2 rounded-full bg-green-400 ml-3 mr-1"></div>
                           In
                         </h1>
-                        <address className="flex items-center text-xs">
-                          <MapPin className="w-7 h-7 mx-1" />
+                        <p className="flex items-center text-xs">
                           {track.punch_in_location}
-                        </address>
+                        </p>
                       </div>
                     </div>
                   </div>
@@ -245,7 +243,7 @@ const ViewTodayAttendanceModal = ({
                         type="submit"
                         className="bg-gradient-to-r from-[#C62828] to-red-600 text-white px-4 py-2.5 md:px-8 md:py-2.5 rounded-lg hover:from-red-600 hover:to-red-700 transition-all duration-200 font-medium shadow-sm hover:shadow text-sm md:text-base order-1 sm:order-2 w-full"
                       >
-                        Save Noe
+                        Save Note
                       </button>
                     )}
                   </div>

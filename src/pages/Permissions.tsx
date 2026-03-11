@@ -921,7 +921,7 @@ export default function Permissions() {
     // ✅ REMOVED ALL PADDING - Changed from "p-4 md:p-6 lg:p-8" to NO padding classes
     <div className="min-h-screen px-0 mx-0 bg-gray-50">
       {/* Tabs - NO padding */}
-      <div className="bg-white border-b flex items-center w-full">
+      <div className="bg-white border-b grid grid-cols-1 sm:grid-cols-2 w-full">
         <div className="flex items-center ">
           <button
             onClick={() => setActiveTab("role-permissions")}
@@ -950,15 +950,15 @@ export default function Permissions() {
             }`}
           >
             <Users className="w-4 h-4 inline-block mr-2" />
-            Direct User Overrides
+            User Permissions
           </button>
         </div>
-        <div className="w-[30vw]">
-          <div className="relative flex-1 w-full">
+        <div className="w-[80vw] sm:w-[30vw] flex justify-center items-center mt-3 sm:mt-0 mx-3 sm:mx-0">
+          <div className="relative flex-1 w-full ">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
             <input
               type="text"
-              placeholder="Search notifications..."
+              placeholder="Search permission..."
               value={searchQuery}
               onChange={(e) => {
                 setSearchQuery(e.target.value);
@@ -973,7 +973,7 @@ export default function Permissions() {
       <div className="bg-white shadow-sm p-4">
         {/* Role/User Selection with Global Select All Button - Reduced margin */}
         <div className="mb-4 flex flex-col md:flex-row md:items-center justify-between gap-4">
-          <div className="w-1/2">
+          <div className="sm:w-1/4">
             <label className="block text-xs font-semibold text-gray-700 mb-2 uppercase tracking-wider">
               TARGET {activeTab === "role-permissions" ? "ROLE" : "USER"}
             </label>
@@ -1047,7 +1047,7 @@ export default function Permissions() {
           {/* Global Select All Button */}
           <button
             onClick={handleGlobalSelectAll}
-            className={`px-6 py-3 text-sm font-semibold rounded-lg transition-colors shadow-sm ${selectAllEnabled ? "bg-[#C62828] text-white hover:bg-red-700" : "bg-[#C62828] text-white hover:bg-red-700"}`}
+            className={`px-6 py-2 sm:py-3 text-sm font-semibold rounded-lg transition-colors shadow-sm ${selectAllEnabled ? "bg-[#C62828] text-white hover:bg-red-700" : "bg-[#C62828] text-white hover:bg-red-700"}`}
           >
             {selectAllEnabled ? "Deselect All" : "Select All"}
           </button>
@@ -1163,7 +1163,7 @@ export default function Permissions() {
                 ? updateRolePermissions
                 : saveUserPermissions
             }
-            className="px-8 py-3 bg-blue-600 text-white text-sm font-semibold rounded-lg hover:bg-blue-700 transition-colors shadow-sm"
+            className="bg-gradient-to-r from-[#C62828] to-red-600 text-white py-2 px-4 rounded-xl hover:from-red-600 hover:to-red-700 *:transition-colors shadow-sm"
           >
             Save Changes
           </button>
