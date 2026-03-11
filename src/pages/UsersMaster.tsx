@@ -137,6 +137,8 @@ export default function UsersMaster() {
     setShowViewModal(true);
   }, []);
 
+  const { user } = useAuth();
+
   const [showPasswordChange, setShowPasswordChange] = useState<boolean>(false);
   // Department roles
   const [departmentRoles, setDepartmentRoles] = useState<Role[]>([]);
@@ -2379,7 +2381,7 @@ export default function UsersMaster() {
                         required
                       />
                     </div>
-                    {editingId && (
+                    {editingId && user.role === "admin" && (
                       <div className="space-y-1 h-full flex items-end">
                         <button
                           type="button"

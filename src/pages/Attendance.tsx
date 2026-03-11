@@ -551,38 +551,40 @@ export default function Attendance() {
         <h2 className="text-lg sm:text-xl font-semibold text-slate-900 mb-2">
           {selectedDateForAttendance ? "Attendance" : "Attendance Calendar"}
         </h2>
-        <div className="flex items-center justify-between gap-4 flex-wrap">
-          <div className="flex ">
-            {selectedDateForAttendance && (
-              <div className="relative">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-slate-400" />
-                <Input
-                  type="text"
-                  placeholder="Search by name or employee code..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  className="pl-10"
-                />
-              </div>
-            )}
-            <input
-              type="month"
-              value={selecteDate}
-              min={
-                selectedUser?.joining_date
-                  ? selectedUser?.joining_date.slice(0, 7)
-                  : employeeDetails?.joining_date.slice(0, 7)
-              }
-              max={new Date().toISOString().slice(0, 7)}
-              onChange={(e) => {
-                setSelectedDate(e.target.value);
-              }}
-              className=" mx-3 appearance-none bg-white/60 border border-gray-200 rounded-2xl px-5 py-1 sm:py-2  text-gray-800
-                font-medium shadow-sm transition-all duration-300 focus:outline-none focus:ring-2  focus:ring-black/80  focus:border-black hover:shadow-md hover:border-gray-300 text-xs sm:text-sm
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 flex-wrap">
+          <div className="flex flex-col sm:flex-row">
+            <div className="flex ">
+              {selectedDateForAttendance && (
+                <div className="relative">
+                  <Search className="absolute sm:left-3 top-1/2 sm:-translate-y-1/2 h-5 w-5 text-slate-400" />
+                  <Input
+                    type="text"
+                    placeholder="Search by name or employee code..."
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    className="pl-10"
+                  />
+                </div>
+              )}
+              <input
+                type="month"
+                value={selecteDate}
+                min={
+                  selectedUser?.joining_date
+                    ? selectedUser?.joining_date.slice(0, 7)
+                    : employeeDetails?.joining_date.slice(0, 7)
+                }
+                max={new Date().toISOString().slice(0, 7)}
+                onChange={(e) => {
+                  setSelectedDate(e.target.value);
+                }}
+                className=" sm:mx-3 appearance-none bg-white/60 border border-gray-200 rounded-2xl px-5 py-1 sm:py-2  text-gray-800
+                font-medium shadow-sm transition-all duration-300 focus:outline-none focus:ring-2  focus:ring-black/80  focus:border-black hover:shadow-md hover:border-gray-300 text-xs sm:text-sm w-1/2 sm:w-fit
                 "
-            />
+              />
+            </div>
             {allEmployees && user.role === "admin" && (
-              <div className="w-[20vw]">
+              <div className="w-[70vw] sm:w-[20vw] mt-3 sm:mt-0">
                 <SearchableSelect
                   options={allEmployees.map((v: any) => ({
                     id: v.id,
