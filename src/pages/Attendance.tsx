@@ -451,10 +451,11 @@ export default function Attendance() {
             {can("mark_attendance") && (
               <Button
                 onClick={() => setShowMarkModal(true)}
-                className="cursor-pointer"
+                className="cursor-pointer text-xs sm:text-sm"
               >
                 <Clock className="h-4 w-4 mr-2" />
-                Mark Attendance
+                <span className="hidden sm:block">Mark</span>{" "}
+                <span> Attendance</span>
               </Button>
             )}
           </div>
@@ -462,12 +463,14 @@ export default function Attendance() {
       </div>
 
       {
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-          <Card className="p-6">
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-2 sm:gap-6">
+          <Card className="p-3 sm:p-6 flex justify-center items-center h-fit sm:h-auto sm:block">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-slate-600">Present Days</p>
-                <p className="text-3xl font-bold text-green-600 mt-2">
+                <p className="text-xs sm:text-sm text-slate-600">
+                  Present Days
+                </p>
+                <p className="text-xl sm:text-3xl font-bold text-green-600 mt-2">
                   {stats.present}
                 </p>
                 <p className="text-xs text-slate-500 mt-1">
@@ -477,17 +480,17 @@ export default function Attendance() {
                   % present
                 </p>
               </div>
-              <div className="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center">
-                <UserCheck className="h-6 w-6 text-green-600" />
+              <div className="w-8 sm:w-12 h-8 sm:h-12 bg-green-100 rounded-lg flex items-center justify-center">
+                <UserCheck className="h-4 sm:h-6  w-4 sm:w-6 text-green-600" />
               </div>
             </div>
           </Card>
 
-          <Card className="p-6">
+          <Card className="p-3 sm:p-6 flex justify-center items-center h-fit sm:h-auto sm:block">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-slate-600">Absent Days</p>
-                <p className="text-3xl font-bold text-red-600 mt-2">
+                <p className="text-xs sm:text-sm text-slate-600">Absent Days</p>
+                <p className="text-xl sm:text-3xl font-bold text-red-600 mt-2">
                   {stats.absent}
                 </p>
                 <p className="text-xs text-slate-500 mt-1">
@@ -497,17 +500,19 @@ export default function Attendance() {
                   % absent
                 </p>
               </div>
-              <div className="w-12 h-12 bg-red-100 rounded-lg flex items-center justify-center">
-                <XCircle className="h-6 w-6 text-red-600" />
+              <div className="w-8 sm:w-12 h-8 sm:h-12 bg-red-100 rounded-lg flex items-center justify-center">
+                <XCircle className="h-4 sm:h-6  w-4 sm:w-6 text-red-600" />
               </div>
             </div>
           </Card>
 
-          <Card className="p-6">
+          <Card className="p-3 sm:p-6 flex justify-center items-center h-fit sm:h-auto sm:block">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-slate-600">Late Arrivals Days</p>
-                <p className="text-3xl font-bold text-yellow-600 mt-2">
+                <p className="text-xs sm:text-sm text-slate-600">
+                  Late Arrivals Days
+                </p>
+                <p className="text-xl sm:text-3xl font-bold text-yellow-600 mt-2">
                   {stats.late}
                 </p>
                 <p className="text-xs text-slate-500 mt-1">
@@ -517,590 +522,588 @@ export default function Attendance() {
                   % late
                 </p>
               </div>
-              <div className="w-12 h-12 bg-yellow-100 rounded-lg flex items-center justify-center">
-                <AlertTriangle className="h-6 w-6 text-yellow-600" />
+              <div className="w-8 sm:w-12 h-8 sm:h-12 bg-yellow-100 rounded-lg flex items-center justify-center">
+                <AlertTriangle className="h-4 sm:h-6  w-4 sm:w-6 text-yellow-600" />
               </div>
             </div>
           </Card>
 
-          <Card className="p-6">
+          <Card className="p-3 sm:p-6 flex justify-center items-center h-fit sm:h-auto sm:block">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-slate-600">Avg. Hours</p>
-                <p className="text-3xl font-bold text-blue-600 mt-2">
+                <p className="text-xs sm:text-sm text-slate-600">Avg. Hours</p>
+                <p className="text-xl sm:text-3xl font-bold text-blue-600 mt-2">
                   {formatDecimalToHourMinute(
                     Number(stats.average_hours).toFixed(2),
                   )}
                 </p>
                 <p className="text-xs text-slate-500 mt-1">per employee</p>
               </div>
-              <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center">
-                <TrendingUp className="h-6 w-6 text-blue-600" />
+              <div className="w-8 sm:w-12 h-8 sm:h-12 bg-blue-100 rounded-lg flex items-center justify-center">
+                <TrendingUp className="h-4 sm:h-6  w-4 sm:w-6 text-blue-600" />
               </div>
             </div>
           </Card>
         </div>
       }
 
-      <Card>
-        <div className="px-6 py-3 border-b border-slate-200">
-          <h2 className="text-xl font-semibold text-slate-900 mb-2">
-            {selectedDateForAttendance ? "Attendance" : "Attendance Calendar"}
-          </h2>
-          <div className="flex items-center justify-between gap-4 flex-wrap">
-            <div className="flex ">
-              {selectedDateForAttendance && (
-                <div className="relative">
-                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-slate-400" />
-                  <Input
-                    type="text"
-                    placeholder="Search by name or employee code..."
-                    value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
-                    className="pl-10"
-                  />
-                </div>
-              )}
-              <input
-                type="month"
-                value={selecteDate}
-                min={
-                  selectedUser?.joining_date
-                    ? selectedUser?.joining_date.slice(0, 7)
-                    : employeeDetails?.joining_date.slice(0, 7)
-                }
-                max={new Date().toISOString().slice(0, 7)}
-                onChange={(e) => {
-                  setSelectedDate(e.target.value);
-                }}
-                className=" mx-3 appearance-none bg-white/60 border border-gray-200 rounded-2xl px-5 py-2  text-gray-800
-                font-medium shadow-sm transition-all duration-300 focus:outline-none focus:ring-2  focus:ring-black/80  focus:border-black hover:shadow-md hover:border-gray-300
-                "
-              />
-              {allEmployees && user.role === "admin" && (
-                <div className="w-[20vw]">
-                  <SearchableSelect
-                    options={allEmployees.map((v: any) => ({
-                      id: v.id,
-                      name:
-                        v.first_name +
-                          " " +
-                          v.last_name +
-                          " ( " +
-                          v.employee_code +
-                          " ) " || "",
-                    }))}
-                    value={selectedUser.id || employeeDetails.id}
-                    onChange={(id) => {
-                      const emp = allEmployees.find(
-                        (e: any) => Number(e.id) === Number(id),
-                      );
-                      setSelectedUser(emp);
-                      setSelectedDate(new Date().toISOString().slice(0, 7));
-                    }}
-                    placeholder="Select Vendor"
-                    required
-                  />
-                </div>
-              )}
-            </div>
-
+      <div className="sm:px-6 py-3 border-b border-slate-200">
+        <h2 className="text-lg sm:text-xl font-semibold text-slate-900 mb-2">
+          {selectedDateForAttendance ? "Attendance" : "Attendance Calendar"}
+        </h2>
+        <div className="flex items-center justify-between gap-4 flex-wrap">
+          <div className="flex ">
             {selectedDateForAttendance && (
-              <div className="flex gap-2">
-                <div className="relative">
-                  <Button
-                    variant="secondary"
-                    onClick={() => setShowFilterDropdown(!showFilterDropdown)}
-                  >
-                    <Filter className="h-4 w-4 mr-2" />
-                    {statusFilter ? `Status: ${statusFilter}` : "Filter"}
-                  </Button>
-
-                  {showFilterDropdown && (
-                    <div className="absolute right-0 mt-2 w-48 bg-white border border-slate-200 rounded-lg shadow-lg z-10">
-                      <button
-                        onClick={() => {
-                          setStatusFilter("");
-                          setShowFilterDropdown(false);
-                        }}
-                        className="w-full text-left px-4 py-2 hover:bg-slate-50 text-slate-700 text-sm"
-                      >
-                        All Status
-                      </button>
-                      {["present", "absent", "late", "half_day", "leave"].map(
-                        (status) => (
-                          <button
-                            key={status}
-                            onClick={() => {
-                              setStatusFilter(status);
-                              setShowFilterDropdown(false);
-                            }}
-                            className={`w-full text-left px-4 py-2 text-sm ${
-                              statusFilter === status
-                                ? "bg-blue-50 text-blue-700"
-                                : "hover:bg-slate-50 text-slate-700"
-                            }`}
-                          >
-                            {status.charAt(0).toUpperCase() +
-                              status.slice(1).replace("_", " ")}
-                          </button>
-                        ),
-                      )}
-                    </div>
-                  )}
-                </div>
-
-                {can("export_attendance") && (
-                  <Button variant="secondary" onClick={exportToCSV}>
-                    <Download className="h-4 w-4 mr-2" />
-                    Export CSV
-                  </Button>
-                )}
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-slate-400" />
+                <Input
+                  type="text"
+                  placeholder="Search by name or employee code..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="pl-10"
+                />
+              </div>
+            )}
+            <input
+              type="month"
+              value={selecteDate}
+              min={
+                selectedUser?.joining_date
+                  ? selectedUser?.joining_date.slice(0, 7)
+                  : employeeDetails?.joining_date.slice(0, 7)
+              }
+              max={new Date().toISOString().slice(0, 7)}
+              onChange={(e) => {
+                setSelectedDate(e.target.value);
+              }}
+              className=" mx-3 appearance-none bg-white/60 border border-gray-200 rounded-2xl px-5 py-1 sm:py-2  text-gray-800
+                font-medium shadow-sm transition-all duration-300 focus:outline-none focus:ring-2  focus:ring-black/80  focus:border-black hover:shadow-md hover:border-gray-300 text-xs sm:text-sm
+                "
+            />
+            {allEmployees && user.role === "admin" && (
+              <div className="w-[20vw]">
+                <SearchableSelect
+                  options={allEmployees.map((v: any) => ({
+                    id: v.id,
+                    name:
+                      v.first_name +
+                        " " +
+                        v.last_name +
+                        " ( " +
+                        v.employee_code +
+                        " ) " || "",
+                  }))}
+                  value={selectedUser.id || employeeDetails.id}
+                  onChange={(id) => {
+                    const emp = allEmployees.find(
+                      (e: any) => Number(e.id) === Number(id),
+                    );
+                    setSelectedUser(emp);
+                    setSelectedDate(new Date().toISOString().slice(0, 7));
+                  }}
+                  placeholder="Select Vendor"
+                  required
+                />
               </div>
             )}
           </div>
-        </div>
 
-        <div className="overflow-x-auto">
-          {selectedDateForAttendance ? (
-            <table className="w-full">
-              <thead className="bg-slate-50 border-b border-slate-200">
-                <tr>
-                  <th className="text-left px-6 py-2 text-sm font-semibold text-slate-900">
-                    Employee
-                  </th>
-                  <th className="text-left px-6 py-2 text-sm font-semibold text-slate-900">
-                    Date
-                  </th>
-                  <th className="text-left px-6 py-2 text-sm font-semibold text-slate-900">
-                    Check In
-                  </th>
-                  <th className="text-left px-6 py-2 text-sm font-semibold text-slate-900">
-                    Check Out
-                  </th>
-                  <th className="text-left px-6 py-2 text-sm font-semibold text-slate-900">
-                    Attendance Location
-                  </th>
-                  <th className="text-left px-6 py-2 text-sm font-semibold text-slate-900">
-                    Status
-                  </th>
-                  <th className="text-right px-6 py-2 text-sm font-semibold text-slate-900">
-                    Work Hours
-                  </th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-200">
-                {loading ? (
-                  <tr>
-                    <td
-                      colSpan={7}
-                      className="px-6 py-8 text-center text-slate-600"
+          {selectedDateForAttendance && (
+            <div className="flex gap-2">
+              <div className="relative">
+                <Button
+                  variant="secondary"
+                  onClick={() => setShowFilterDropdown(!showFilterDropdown)}
+                >
+                  <Filter className="h-4 w-4 mr-2" />
+                  {statusFilter ? `Status: ${statusFilter}` : "Filter"}
+                </Button>
+
+                {showFilterDropdown && (
+                  <div className="absolute right-0 mt-2 w-48 bg-white border border-slate-200 rounded-lg shadow-lg z-10">
+                    <button
+                      onClick={() => {
+                        setStatusFilter("");
+                        setShowFilterDropdown(false);
+                      }}
+                      className="w-full text-left px-4 py-2 hover:bg-slate-50 text-slate-700 text-sm"
                     >
-                      <div className="flex items-center justify-center">
-                        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-red-600"></div>
-                        <span className="ml-3">
-                          Loading attendance records...
-                        </span>
-                      </div>
-                    </td>
-                  </tr>
-                ) : filteredData.length === 0 ? (
-                  <tr>
-                    <td
-                      colSpan={7}
-                      className="px-6 py-8 text-center text-slate-600"
-                    >
-                      No attendance records found for today
-                    </td>
-                  </tr>
-                ) : (
-                  filteredData.map((record: any) => (
-                    <React.Fragment key={record.id}>
-                      <tr
-                        className="hover:bg-slate-50 transition-colors"
-                        onClick={() => {
-                          setExpandRow(
-                            expandRow === record.id ? null : record.id,
-                          );
-                        }}
-                      >
-                        <td className="px-6 py-4">
-                          <div>
-                            <p className="font-medium text-slate-900 text-sm">
-                              {record.user_name || "Unknown"}
-                            </p>
-                            <p className="text-slate-600 text-xs">
-                              {record.employee_code || "-"}
-                            </p>
-                          </div>
-                        </td>
-
-                        <td className="px-6 py-4">
-                          <div>
-                            <p className="font-medium text-slate-900 text-xs">
-                              {new Date(record.date).toLocaleDateString() ||
-                                "Unknown"}
-                            </p>
-                          </div>
-                        </td>
-
-                        <td className="px-6 py-4">
-                          {record.punch_in_time ? (
-                            <div className="flex">
-                              <div className="mr-3">
-                                <button
-                                  onClick={() => {
-                                    setSelectedAttendanceImage(
-                                      `${import.meta.env.VITE_API_URL}/uploads/${
-                                        record.punch_in_selfie
-                                      }`,
-                                    );
-                                  }}
-                                  className="text-blue-600 hover:text-blue-700 text-xs w-fit h-fit"
-                                >
-                                  <img
-                                    src={`${import.meta.env.VITE_API_URL}/uploads/${
-                                      record.punch_in_selfie
-                                    }`}
-                                    alt="view selfie"
-                                    className="w-12 h-12 rounded-full"
-                                  />
-                                </button>
-                              </div>
-                              <div>
-                                <p className="text-xs leading-2 text-slate-900 mb-1">
-                                  {formatTime(record.punch_in_time)}
-                                </p>
-                                <button
-                                  onClick={() => {
-                                    setShowViewLocationModal(true);
-                                    setMapLoading(true);
-                                    setSelectedAttendance({
-                                      ...record,
-                                      type: "in",
-                                    });
-                                  }}
-                                  className="text-blue-600 hover:text-blue-700 text-xs w-fit h-fit"
-                                >
-                                  View Location
-                                </button>
-                              </div>
-                            </div>
-                          ) : (
-                            <p className="text-sm text-slate-600">-</p>
-                          )}
-                        </td>
-                        <td className="px-6 py-4">
-                          {record.punch_out_time ? (
-                            <div className="flex">
-                              <div className="mr-3">
-                                <button
-                                  // onClick={() => {
-                                  //   setShowViewSelfieModal(true);
-                                  //   setSelectedAttendanceImage(
-                                  //     `${import.meta.env.VITE_API_URL}/uploads/${
-                                  //       record.punch_out_selfie
-                                  //     }`,
-                                  //   );
-                                  //   setSelectedAttendance({
-                                  //     ...record,
-                                  //     type: "out",
-                                  //   });
-                                  // }}
-                                  className="text-blue-600 hover:text-blue-700 text-xs"
-                                >
-                                  <img
-                                    src={`${import.meta.env.VITE_API_URL}/uploads/${
-                                      record.punch_out_selfie
-                                    }`}
-                                    alt="view selfie"
-                                    className="w-12 h-12 rounded-full"
-                                  />
-                                </button>
-                              </div>
-                              <div>
-                                <p className="text-sm text-slate-900 mb-1">
-                                  {formatTime(record.last_punch_out_time)}
-                                </p>
-                                <button
-                                  onClick={() => {
-                                    setShowViewLocationModal(true);
-                                    setMapLoading(true);
-                                    setSelectedAttendance({
-                                      ...record,
-                                      type: "out",
-                                    });
-                                  }}
-                                  className="text-blue-600 hover:text-blue-700 text-xs"
-                                >
-                                  View Location
-                                </button>
-                              </div>
-                            </div>
-                          ) : (
-                            <p className="text-sm text-slate-600">-</p>
-                          )}
-                        </td>
-                        <td className="px-6 py-4">
-                          <div>
-                            <p className="text-sm text-slate-900">
-                              <span className="font-semibold">Punch In :</span>{" "}
-                              {record.punch_in_address || "-"}
-                            </p>
-                            <p className="text-sm text-slate-900">
-                              <span className="font-semibold">Punch Out :</span>{" "}
-                              {record.punch_out_address || "-"}
-                            </p>
-                          </div>
-                        </td>
-                        <td className="px-6 py-4">
-                          <Badge variant={getStatusBadgeVariant(record.status)}>
-                            {record.status.replace("_", " ").toUpperCase()}
-                          </Badge>
-                        </td>
-                        <td className="px-6 py-4 text-right">
-                          <span className="text-xs font-medium text-slate-900">
-                            {record.punch_out_time
-                              ? `${formatDecimalToHourMinute(Number(record.total_hours)?.toFixed(2)) || "0.0h"}`
-                              : "In Progress"}
-                          </span>
-                        </td>
-                      </tr>
-
-                      {/* Expanded details row for tracking history */}
-                      {record.trackingHistory &&
-                        record.trackingHistory.length > 0 &&
-                        expandRow === record.id && (
-                          <tr className="hover:bg-slate-50 transition-colors">
-                            <td colSpan={7} className="p-0">
-                              <div className="px-6 py-4 bg-slate-50 border-t border-slate-200">
-                                <h4 className="text-sm font-semibold text-gray-700 mb-3 flex items-center gap-2">
-                                  <User className="w-4 h-4" />
-                                  Tracking History for {record?.user_name} (
-                                  {record?.employee_code})
-                                </h4>
-                                <div className="overflow-x-auto">
-                                  <table className="w-full">
-                                    <thead className="bg-white border-b border-slate-200">
-                                      <tr>
-                                        <th className="text-left px-4 py-2 text-xs font-medium text-slate-700">
-                                          Date
-                                        </th>
-                                        <th className="text-left px-4 py-2 text-xs font-medium text-slate-700">
-                                          Check In
-                                        </th>
-                                        <th className="text-left px-4 py-2 text-xs font-medium text-slate-700">
-                                          Check Out
-                                        </th>
-                                        <th className="text-left px-4 py-2 text-xs font-medium text-slate-700">
-                                          Location
-                                        </th>
-                                        <th className="text-left px-4 py-2 text-xs font-medium text-slate-700">
-                                          Status
-                                        </th>
-                                        <th className="text-right px-4 py-2 text-xs font-medium text-slate-700">
-                                          Hours
-                                        </th>
-                                      </tr>
-                                    </thead>
-                                    <tbody className="divide-y divide-slate-100">
-                                      {record.trackingHistory.map(
-                                        (recordHistory: any) => (
-                                          <tr
-                                            key={recordHistory.id}
-                                            className="hover:bg-slate-50"
-                                          >
-                                            <td className="px-4 py-3">
-                                              <p className="text-xs text-slate-900">
-                                                {new Date(
-                                                  recordHistory.date,
-                                                ).toLocaleDateString()}
-                                              </p>
-                                            </td>
-                                            <td className="px-4 py-3">
-                                              {recordHistory.punch_in_time ? (
-                                                <div className="flex items-start">
-                                                  {recordHistory.punch_in_selfie && (
-                                                    <button
-                                                      // onClick={() => {
-                                                      //   setShowViewSelfieModal(
-                                                      //     true,
-                                                      //   );
-                                                      //   setSelectedAttendanceImage(
-                                                      //     `${import.meta.env.VITE_API_URL}/uploads/${
-                                                      //       recordHistory.punch_in_selfie
-                                                      //     }`,
-                                                      //   );
-                                                      //   setSelectedAttendance({
-                                                      //     ...recordHistory,
-                                                      //     type: "in",
-                                                      //   });
-                                                      // }}
-                                                      className="mr-2"
-                                                    >
-                                                      <img
-                                                        src={`${import.meta.env.VITE_API_URL}/uploads/${
-                                                          recordHistory.punch_in_selfie
-                                                        }`}
-                                                        alt="in selfie"
-                                                        className="w-10 h-10 rounded-full"
-                                                      />
-                                                    </button>
-                                                  )}
-                                                  <div>
-                                                    <p className="text-xs text-slate-900">
-                                                      {formatTime(
-                                                        recordHistory.punch_in_time,
-                                                      )}
-                                                    </p>
-                                                    <button
-                                                      onClick={() => {
-                                                        setShowViewLocationModal(
-                                                          true,
-                                                        );
-                                                        setMapLoading(true);
-                                                        setSelectedAttendance({
-                                                          ...recordHistory,
-                                                          type: "in",
-                                                        });
-                                                      }}
-                                                      className="text-xs text-blue-600 hover:text-blue-700"
-                                                    >
-                                                      View Location
-                                                    </button>
-                                                  </div>
-                                                </div>
-                                              ) : (
-                                                <p className="text-xs text-slate-400">
-                                                  -
-                                                </p>
-                                              )}
-                                            </td>
-                                            <td className="px-4 py-3">
-                                              {recordHistory.punch_out_time ? (
-                                                <div className="flex items-start">
-                                                  {recordHistory.punch_out_selfie && (
-                                                    <button
-                                                      // onClick={() => {
-                                                      //   setShowViewSelfieModal(
-                                                      //     true,
-                                                      //   );
-                                                      //   setSelectedAttendanceImage(
-                                                      //     `${import.meta.env.VITE_API_URL}/uploads/${
-                                                      //       recordHistory.punch_out_selfie
-                                                      //     }`,
-                                                      //   );
-                                                      //   setSelectedAttendance({
-                                                      //     ...recordHistory,
-                                                      //     type: "out",
-                                                      //   });
-                                                      // }}
-                                                      className="mr-2"
-                                                    >
-                                                      <img
-                                                        src={`${import.meta.env.VITE_API_URL}/uploads/${
-                                                          recordHistory.punch_out_selfie
-                                                        }`}
-                                                        alt="out selfie"
-                                                        className="w-10 h-10 rounded-full"
-                                                      />
-                                                    </button>
-                                                  )}
-                                                  <div>
-                                                    <p className="text-xs text-slate-900">
-                                                      {formatTime(
-                                                        recordHistory.punch_out_time,
-                                                      )}
-                                                    </p>
-                                                    <button
-                                                      onClick={() => {
-                                                        setShowViewLocationModal(
-                                                          true,
-                                                        );
-                                                        setMapLoading(true);
-                                                        setSelectedAttendance({
-                                                          ...recordHistory,
-                                                          type: "out",
-                                                        });
-                                                      }}
-                                                      className="text-xs text-blue-600 hover:text-blue-700"
-                                                    >
-                                                      View Location
-                                                    </button>
-                                                  </div>
-                                                </div>
-                                              ) : (
-                                                <p className="text-xs text-slate-400">
-                                                  -
-                                                </p>
-                                              )}
-                                            </td>
-                                            <td className="px-4 py-3">
-                                              <div>
-                                                <p className="text-sm text-slate-900">
-                                                  <span className="font-semibold">
-                                                    Punch In :
-                                                  </span>{" "}
-                                                  {recordHistory.punch_in_address ||
-                                                    "-"}
-                                                </p>
-                                                <p className="text-sm text-slate-900">
-                                                  <span className="font-semibold">
-                                                    Punch Out :
-                                                  </span>{" "}
-                                                  {recordHistory.punch_out_address ||
-                                                    "-"}
-                                                </p>
-                                              </div>
-                                            </td>
-                                            <td className="px-4 py-3">
-                                              <Badge
-                                                variant={getStatusBadgeVariant(
-                                                  recordHistory.status,
-                                                )}
-                                                className="text-xs"
-                                              >
-                                                {recordHistory.status
-                                                  .replace("_", " ")
-                                                  .toUpperCase()}
-                                              </Badge>
-                                            </td>
-                                            <td className="px-4 py-3 text-right">
-                                              <span className="text-xs font-medium text-slate-900">
-                                                {recordHistory.punch_out_time
-                                                  ? `${formatDecimalToHourMinute(Number(recordHistory.total_hours)?.toFixed(2)) || "0.0h"}`
-                                                  : "In Progress"}
-                                              </span>
-                                            </td>
-                                          </tr>
-                                        ),
-                                      )}
-                                    </tbody>
-                                  </table>
-                                </div>
-                              </div>
-                            </td>
-                          </tr>
-                        )}
-                    </React.Fragment>
-                  ))
+                      All Status
+                    </button>
+                    {["present", "absent", "late", "half_day", "leave"].map(
+                      (status) => (
+                        <button
+                          key={status}
+                          onClick={() => {
+                            setStatusFilter(status);
+                            setShowFilterDropdown(false);
+                          }}
+                          className={`w-full text-left px-4 py-2 text-sm ${
+                            statusFilter === status
+                              ? "bg-blue-50 text-blue-700"
+                              : "hover:bg-slate-50 text-slate-700"
+                          }`}
+                        >
+                          {status.charAt(0).toUpperCase() +
+                            status.slice(1).replace("_", " ")}
+                        </button>
+                      ),
+                    )}
+                  </div>
                 )}
-              </tbody>
-            </table>
-          ) : (
-            <div>
-              {attendanceData && (
-                <AttendanceCalender
-                  month={Number(selecteDate.slice(5)) - 1}
-                  year={Number(selecteDate.slice(0, 4))}
-                  attendanceData={attendanceData}
-                  loadAttendance={loadAttendance}
-                />
+              </div>
+
+              {can("export_attendance") && (
+                <Button variant="secondary" onClick={exportToCSV}>
+                  <Download className="h-4 w-4 mr-2" />
+                  Export CSV
+                </Button>
               )}
             </div>
           )}
         </div>
-      </Card>
+      </div>
+
+      <div className="overflow-x-auto">
+        {selectedDateForAttendance ? (
+          <table className="w-full">
+            <thead className="bg-slate-50 border-b border-slate-200">
+              <tr>
+                <th className="text-left px-6 py-2 text-sm font-semibold text-slate-900">
+                  Employee
+                </th>
+                <th className="text-left px-6 py-2 text-sm font-semibold text-slate-900">
+                  Date
+                </th>
+                <th className="text-left px-6 py-2 text-sm font-semibold text-slate-900">
+                  Check In
+                </th>
+                <th className="text-left px-6 py-2 text-sm font-semibold text-slate-900">
+                  Check Out
+                </th>
+                <th className="text-left px-6 py-2 text-sm font-semibold text-slate-900">
+                  Attendance Location
+                </th>
+                <th className="text-left px-6 py-2 text-sm font-semibold text-slate-900">
+                  Status
+                </th>
+                <th className="text-right px-6 py-2 text-sm font-semibold text-slate-900">
+                  Work Hours
+                </th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-slate-200">
+              {loading ? (
+                <tr>
+                  <td
+                    colSpan={7}
+                    className="px-6 py-8 text-center text-slate-600"
+                  >
+                    <div className="flex items-center justify-center">
+                      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-red-600"></div>
+                      <span className="ml-3">
+                        Loading attendance records...
+                      </span>
+                    </div>
+                  </td>
+                </tr>
+              ) : filteredData.length === 0 ? (
+                <tr>
+                  <td
+                    colSpan={7}
+                    className="px-6 py-8 text-center text-slate-600"
+                  >
+                    No attendance records found for today
+                  </td>
+                </tr>
+              ) : (
+                filteredData.map((record: any) => (
+                  <React.Fragment key={record.id}>
+                    <tr
+                      className="hover:bg-slate-50 transition-colors"
+                      onClick={() => {
+                        setExpandRow(
+                          expandRow === record.id ? null : record.id,
+                        );
+                      }}
+                    >
+                      <td className="px-6 py-4">
+                        <div>
+                          <p className="font-medium text-slate-900 text-sm">
+                            {record.user_name || "Unknown"}
+                          </p>
+                          <p className="text-slate-600 text-xs">
+                            {record.employee_code || "-"}
+                          </p>
+                        </div>
+                      </td>
+
+                      <td className="px-6 py-4">
+                        <div>
+                          <p className="font-medium text-slate-900 text-xs">
+                            {new Date(record.date).toLocaleDateString() ||
+                              "Unknown"}
+                          </p>
+                        </div>
+                      </td>
+
+                      <td className="px-6 py-4">
+                        {record.punch_in_time ? (
+                          <div className="flex">
+                            <div className="mr-3">
+                              <button
+                                onClick={() => {
+                                  setSelectedAttendanceImage(
+                                    `${import.meta.env.VITE_API_URL}/uploads/${
+                                      record.punch_in_selfie
+                                    }`,
+                                  );
+                                }}
+                                className="text-blue-600 hover:text-blue-700 text-xs w-fit h-fit"
+                              >
+                                <img
+                                  src={`${import.meta.env.VITE_API_URL}/uploads/${
+                                    record.punch_in_selfie
+                                  }`}
+                                  alt="view selfie"
+                                  className="w-12 h-12 rounded-full"
+                                />
+                              </button>
+                            </div>
+                            <div>
+                              <p className="text-xs leading-2 text-slate-900 mb-1">
+                                {formatTime(record.punch_in_time)}
+                              </p>
+                              <button
+                                onClick={() => {
+                                  setShowViewLocationModal(true);
+                                  setMapLoading(true);
+                                  setSelectedAttendance({
+                                    ...record,
+                                    type: "in",
+                                  });
+                                }}
+                                className="text-blue-600 hover:text-blue-700 text-xs w-fit h-fit"
+                              >
+                                View Location
+                              </button>
+                            </div>
+                          </div>
+                        ) : (
+                          <p className="text-sm text-slate-600">-</p>
+                        )}
+                      </td>
+                      <td className="px-6 py-4">
+                        {record.punch_out_time ? (
+                          <div className="flex">
+                            <div className="mr-3">
+                              <button
+                                // onClick={() => {
+                                //   setShowViewSelfieModal(true);
+                                //   setSelectedAttendanceImage(
+                                //     `${import.meta.env.VITE_API_URL}/uploads/${
+                                //       record.punch_out_selfie
+                                //     }`,
+                                //   );
+                                //   setSelectedAttendance({
+                                //     ...record,
+                                //     type: "out",
+                                //   });
+                                // }}
+                                className="text-blue-600 hover:text-blue-700 text-xs"
+                              >
+                                <img
+                                  src={`${import.meta.env.VITE_API_URL}/uploads/${
+                                    record.punch_out_selfie
+                                  }`}
+                                  alt="view selfie"
+                                  className="w-12 h-12 rounded-full"
+                                />
+                              </button>
+                            </div>
+                            <div>
+                              <p className="text-sm text-slate-900 mb-1">
+                                {formatTime(record.last_punch_out_time)}
+                              </p>
+                              <button
+                                onClick={() => {
+                                  setShowViewLocationModal(true);
+                                  setMapLoading(true);
+                                  setSelectedAttendance({
+                                    ...record,
+                                    type: "out",
+                                  });
+                                }}
+                                className="text-blue-600 hover:text-blue-700 text-xs"
+                              >
+                                View Location
+                              </button>
+                            </div>
+                          </div>
+                        ) : (
+                          <p className="text-sm text-slate-600">-</p>
+                        )}
+                      </td>
+                      <td className="px-6 py-4">
+                        <div>
+                          <p className="text-sm text-slate-900">
+                            <span className="font-semibold">Punch In :</span>{" "}
+                            {record.punch_in_address || "-"}
+                          </p>
+                          <p className="text-sm text-slate-900">
+                            <span className="font-semibold">Punch Out :</span>{" "}
+                            {record.punch_out_address || "-"}
+                          </p>
+                        </div>
+                      </td>
+                      <td className="px-6 py-4">
+                        <Badge variant={getStatusBadgeVariant(record.status)}>
+                          {record.status.replace("_", " ").toUpperCase()}
+                        </Badge>
+                      </td>
+                      <td className="px-6 py-4 text-right">
+                        <span className="text-xs font-medium text-slate-900">
+                          {record.punch_out_time
+                            ? `${formatDecimalToHourMinute(Number(record.total_hours)?.toFixed(2)) || "0.0h"}`
+                            : "In Progress"}
+                        </span>
+                      </td>
+                    </tr>
+
+                    {/* Expanded details row for tracking history */}
+                    {record.trackingHistory &&
+                      record.trackingHistory.length > 0 &&
+                      expandRow === record.id && (
+                        <tr className="hover:bg-slate-50 transition-colors">
+                          <td colSpan={7} className="p-0">
+                            <div className="px-6 py-4 bg-slate-50 border-t border-slate-200">
+                              <h4 className="text-sm font-semibold text-gray-700 mb-3 flex items-center gap-2">
+                                <User className="w-4 h-4" />
+                                Tracking History for {record?.user_name} (
+                                {record?.employee_code})
+                              </h4>
+                              <div className="overflow-x-auto">
+                                <table className="w-full">
+                                  <thead className="bg-white border-b border-slate-200">
+                                    <tr>
+                                      <th className="text-left px-4 py-2 text-xs font-medium text-slate-700">
+                                        Date
+                                      </th>
+                                      <th className="text-left px-4 py-2 text-xs font-medium text-slate-700">
+                                        Check In
+                                      </th>
+                                      <th className="text-left px-4 py-2 text-xs font-medium text-slate-700">
+                                        Check Out
+                                      </th>
+                                      <th className="text-left px-4 py-2 text-xs font-medium text-slate-700">
+                                        Location
+                                      </th>
+                                      <th className="text-left px-4 py-2 text-xs font-medium text-slate-700">
+                                        Status
+                                      </th>
+                                      <th className="text-right px-4 py-2 text-xs font-medium text-slate-700">
+                                        Hours
+                                      </th>
+                                    </tr>
+                                  </thead>
+                                  <tbody className="divide-y divide-slate-100">
+                                    {record.trackingHistory.map(
+                                      (recordHistory: any) => (
+                                        <tr
+                                          key={recordHistory.id}
+                                          className="hover:bg-slate-50"
+                                        >
+                                          <td className="px-4 py-3">
+                                            <p className="text-xs text-slate-900">
+                                              {new Date(
+                                                recordHistory.date,
+                                              ).toLocaleDateString()}
+                                            </p>
+                                          </td>
+                                          <td className="px-4 py-3">
+                                            {recordHistory.punch_in_time ? (
+                                              <div className="flex items-start">
+                                                {recordHistory.punch_in_selfie && (
+                                                  <button
+                                                    // onClick={() => {
+                                                    //   setShowViewSelfieModal(
+                                                    //     true,
+                                                    //   );
+                                                    //   setSelectedAttendanceImage(
+                                                    //     `${import.meta.env.VITE_API_URL}/uploads/${
+                                                    //       recordHistory.punch_in_selfie
+                                                    //     }`,
+                                                    //   );
+                                                    //   setSelectedAttendance({
+                                                    //     ...recordHistory,
+                                                    //     type: "in",
+                                                    //   });
+                                                    // }}
+                                                    className="mr-2"
+                                                  >
+                                                    <img
+                                                      src={`${import.meta.env.VITE_API_URL}/uploads/${
+                                                        recordHistory.punch_in_selfie
+                                                      }`}
+                                                      alt="in selfie"
+                                                      className="w-10 h-10 rounded-full"
+                                                    />
+                                                  </button>
+                                                )}
+                                                <div>
+                                                  <p className="text-xs text-slate-900">
+                                                    {formatTime(
+                                                      recordHistory.punch_in_time,
+                                                    )}
+                                                  </p>
+                                                  <button
+                                                    onClick={() => {
+                                                      setShowViewLocationModal(
+                                                        true,
+                                                      );
+                                                      setMapLoading(true);
+                                                      setSelectedAttendance({
+                                                        ...recordHistory,
+                                                        type: "in",
+                                                      });
+                                                    }}
+                                                    className="text-xs text-blue-600 hover:text-blue-700"
+                                                  >
+                                                    View Location
+                                                  </button>
+                                                </div>
+                                              </div>
+                                            ) : (
+                                              <p className="text-xs text-slate-400">
+                                                -
+                                              </p>
+                                            )}
+                                          </td>
+                                          <td className="px-4 py-3">
+                                            {recordHistory.punch_out_time ? (
+                                              <div className="flex items-start">
+                                                {recordHistory.punch_out_selfie && (
+                                                  <button
+                                                    // onClick={() => {
+                                                    //   setShowViewSelfieModal(
+                                                    //     true,
+                                                    //   );
+                                                    //   setSelectedAttendanceImage(
+                                                    //     `${import.meta.env.VITE_API_URL}/uploads/${
+                                                    //       recordHistory.punch_out_selfie
+                                                    //     }`,
+                                                    //   );
+                                                    //   setSelectedAttendance({
+                                                    //     ...recordHistory,
+                                                    //     type: "out",
+                                                    //   });
+                                                    // }}
+                                                    className="mr-2"
+                                                  >
+                                                    <img
+                                                      src={`${import.meta.env.VITE_API_URL}/uploads/${
+                                                        recordHistory.punch_out_selfie
+                                                      }`}
+                                                      alt="out selfie"
+                                                      className="w-10 h-10 rounded-full"
+                                                    />
+                                                  </button>
+                                                )}
+                                                <div>
+                                                  <p className="text-xs text-slate-900">
+                                                    {formatTime(
+                                                      recordHistory.punch_out_time,
+                                                    )}
+                                                  </p>
+                                                  <button
+                                                    onClick={() => {
+                                                      setShowViewLocationModal(
+                                                        true,
+                                                      );
+                                                      setMapLoading(true);
+                                                      setSelectedAttendance({
+                                                        ...recordHistory,
+                                                        type: "out",
+                                                      });
+                                                    }}
+                                                    className="text-xs text-blue-600 hover:text-blue-700"
+                                                  >
+                                                    View Location
+                                                  </button>
+                                                </div>
+                                              </div>
+                                            ) : (
+                                              <p className="text-xs text-slate-400">
+                                                -
+                                              </p>
+                                            )}
+                                          </td>
+                                          <td className="px-4 py-3">
+                                            <div>
+                                              <p className="text-sm text-slate-900">
+                                                <span className="font-semibold">
+                                                  Punch In :
+                                                </span>{" "}
+                                                {recordHistory.punch_in_address ||
+                                                  "-"}
+                                              </p>
+                                              <p className="text-sm text-slate-900">
+                                                <span className="font-semibold">
+                                                  Punch Out :
+                                                </span>{" "}
+                                                {recordHistory.punch_out_address ||
+                                                  "-"}
+                                              </p>
+                                            </div>
+                                          </td>
+                                          <td className="px-4 py-3">
+                                            <Badge
+                                              variant={getStatusBadgeVariant(
+                                                recordHistory.status,
+                                              )}
+                                              className="text-xs"
+                                            >
+                                              {recordHistory.status
+                                                .replace("_", " ")
+                                                .toUpperCase()}
+                                            </Badge>
+                                          </td>
+                                          <td className="px-4 py-3 text-right">
+                                            <span className="text-xs font-medium text-slate-900">
+                                              {recordHistory.punch_out_time
+                                                ? `${formatDecimalToHourMinute(Number(recordHistory.total_hours)?.toFixed(2)) || "0.0h"}`
+                                                : "In Progress"}
+                                            </span>
+                                          </td>
+                                        </tr>
+                                      ),
+                                    )}
+                                  </tbody>
+                                </table>
+                              </div>
+                            </div>
+                          </td>
+                        </tr>
+                      )}
+                  </React.Fragment>
+                ))
+              )}
+            </tbody>
+          </table>
+        ) : (
+          <div>
+            {attendanceData && (
+              <AttendanceCalender
+                month={Number(selecteDate.slice(5)) - 1}
+                year={Number(selecteDate.slice(0, 4))}
+                attendanceData={attendanceData}
+                loadAttendance={loadAttendance}
+              />
+            )}
+          </div>
+        )}
+      </div>
 
       {showViewLocationModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">

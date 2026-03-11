@@ -49,12 +49,12 @@ const AttendanceCalender = ({
   const weekDays = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 
   return (
-    <div className="w-full max-w-5xl mx-auto p-6">
+    <div className="w-full max-w-5xl mx-auto mb-6">
       {/* Calendar Card */}
       <div className="bg-white/70 backdrop-blur-xl shadow-xl rounded-3xl overflow-hidden border border-gray-200">
         {/* Header */}
-        <div className="px-6 py-4 border-b bg-gradient-to-r from-white to-gray-50">
-          <h2 className="text-2xl font-semibold tracking-tight text-gray-800">
+        <div className="px-6 py-2 sm:py-4 border-b bg-gradient-to-r from-white to-gray-50">
+          <h2 className="text-md sm:text-xl font-semibold tracking-tight text-gray-800">
             {new Date(year, month).toLocaleString("default", {
               month: "long",
             })}{" "}
@@ -118,7 +118,7 @@ const AttendanceCalender = ({
                     setDayAttendanceData(data);
                   }
                 }}
-                className={`${attendanceData.find((d: any) => d.date.slice(8, 10) === (String(day).length === 1 ? "0" + String(day) : String(day))) ? "text-green-600 bg-green-100" : "text-red-600 bg-red-100"} relative h-16 flex items-center justify-center rounded-2xl
+                className={`${attendanceData.find((d: any) => d.date.slice(8, 10) === (String(day).length === 1 ? "0" + String(day) : String(day))) ? "text-green-600 bg-green-100" : "text-red-600 bg-red-100"} relative h-8 sm:h-16 flex items-center justify-center rounded-2xl
                   text-sm font-medium
                   transition-all duration-200 ease-in-out
                   cursor-pointer

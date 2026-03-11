@@ -899,7 +899,7 @@ export default function ServiceOrderPayments() {
                                       STATUS
                                     </th>
                                     <th className="text-left px-2 py-1.5 text-[10px] md:text-xs font-medium text-gray-700">
-                                      PROOF
+                                      ACTIONS
                                     </th>
                                   </tr>
                                 </thead>
@@ -960,25 +960,26 @@ export default function ServiceOrderPayments() {
                                             </span>
                                           </td>
                                           <td className="px-2 md:px-4 py-2">
-                                            {can("verify_payments") && (
-                                              <button
-                                                onClick={() => {
-                                                  console.log(
-                                                    transaction.payment_proof,
-                                                  );
-                                                  setShowPaymentProofModal(
-                                                    true,
-                                                  );
-                                                  setPaymentProofUrl(
-                                                    transaction.payment_proof,
-                                                  );
-                                                }}
-                                                className={`px-2 py-1 rounded-full text-[10px] md:text-xs font-medium cursor-pointer text-blue-600 hover:bg-blue-50 transition`}
-                                                title="View Payment Proof"
-                                              >
-                                                <Eye className="w-4 h-4" />
-                                              </button>
-                                            )}
+                                            {can("verify_payments") &&
+                                              transaction.payment_proof && (
+                                                <button
+                                                  onClick={() => {
+                                                    console.log(
+                                                      transaction.payment_proof,
+                                                    );
+                                                    setShowPaymentProofModal(
+                                                      true,
+                                                    );
+                                                    setPaymentProofUrl(
+                                                      transaction.payment_proof,
+                                                    );
+                                                  }}
+                                                  className={`px-2 py-1 rounded-full text-[10px] md:text-xs font-medium cursor-pointer text-blue-600 hover:bg-blue-50 transition`}
+                                                  title="View Payment Proof"
+                                                >
+                                                  <Eye className="w-4 h-4" />
+                                                </button>
+                                              )}
                                           </td>
                                         </tr>
                                       );

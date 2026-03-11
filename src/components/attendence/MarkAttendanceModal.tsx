@@ -484,9 +484,9 @@ const AttendanceTracker: React.FC<AttendanceTrackerProps> = ({
         {!selfie && (
           <button
             onClick={capture}
-            className={`w-full py-5 text-white font-black text-xl shadow-lg transition-all active:scale-[0.98] rounded-2xl ${
+            className={`w-full py-3 sm:py-5 text-white font-black shadow-lg transition-all active:scale-[0.98] rounded-2xl ${
               currentStatus === PunchStatus.IN ? "bg-[#12e5b1]" : "bg-[#f14641]"
-            } disabled:opacity-50`}
+            } disabled:opacity-50 text-md sm:text-xl`}
           >
             {loading ? (
               <Loader2 className="animate-spin mx-auto" />
@@ -504,7 +504,7 @@ const AttendanceTracker: React.FC<AttendanceTrackerProps> = ({
               disabled={
                 loading || (!selfie && currentStatus === PunchStatus.OUT)
               }
-              className={`w-full py-5 bg-green-500 text-white  font-black text-xl shadow-lg transition-all active:scale-[0.98] rounded-2xl  disabled:opacity-50`}
+              className={`w-full py-3 sm:py-5 bg-green-500 text-white  font-black text-md sm:text-xl shadow-lg transition-all active:scale-[0.98] rounded-2xl  disabled:opacity-50`}
             >
               {loading ? (
                 <Loader2 className="animate-spin mx-auto" />
@@ -520,7 +520,7 @@ const AttendanceTracker: React.FC<AttendanceTrackerProps> = ({
               disabled={
                 loading || (!selfie && currentStatus === PunchStatus.OUT)
               }
-              className={`w-full py-5  bg-slate-500 text-white font-black text-xl shadow-lg transition-all active:scale-[0.98] rounded-2xl  disabled:opacity-50`}
+              className={`w-full py-3 sm:py-5  bg-slate-500 text-white font-black text-md sm:text-xl shadow-lg transition-all active:scale-[0.98] rounded-2xl  disabled:opacity-50`}
             >
               {loading ? (
                 <Loader2 className="animate-spin mx-auto" />
@@ -618,7 +618,7 @@ const MarkAttendanceModal: React.FC<MarkAttendanceModalProps> = ({
       <div className="flex min-h-full items-center justify-center p-4">
         <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-md mx-auto">
           {/* Modal Header */}
-          <div className="flex items-center justify-between p-6 border-b border-slate-100">
+          <div className="flex items-center justify-between p-4 sm:p-6 border-b border-slate-100">
             <div>
               <h2 className="text-xl font-bold text-slate-900">
                 Mark Attendance
@@ -639,7 +639,7 @@ const MarkAttendanceModal: React.FC<MarkAttendanceModalProps> = ({
           </div>
 
           {/* Modal Content */}
-          <div className="p-6">
+          <div className="sm:p-6">
             {isLoading ? (
               <div className="h-96 flex flex-col items-center justify-center gap-4 text-slate-300">
                 <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-slate-200" />

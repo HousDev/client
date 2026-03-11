@@ -355,6 +355,16 @@ export async function unwrap<T>(p: Promise<any>): Promise<T> {
 
 /* ---------------- Users API ---------------- */
 export const UsersApi = {
+  updatePassword: async (
+    id: number | string,
+    payload: any,
+  ): Promise<UserProfile> => {
+    try {
+      return await unwrap(api.put(`/users/password-change/${id}`, payload));
+    } catch (error: any) {
+      throw error;
+    }
+  },
   list: async (): Promise<UserProfile[]> => {
     const response = await api.get("/users");
     if (response.data.success && response.data.data) return response.data.data;

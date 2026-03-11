@@ -136,6 +136,8 @@ export default function UsersMaster() {
     setViewingUser(user);
     setShowViewModal(true);
   }, []);
+
+  const [showPasswordChange, setShowPasswordChange] = useState<boolean>(false);
   // Department roles
   const [departmentRoles, setDepartmentRoles] = useState<Role[]>([]);
   const [loadingDepartmentRoles, setLoadingDepartmentRoles] = useState(false);
@@ -144,7 +146,8 @@ export default function UsersMaster() {
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string>("");
   const [uploadingProfile, setUploadingProfile] = useState(false);
-
+  const [password, setPassword] = useState("");
+  const [passwordConfirm, setPasswordConfirm] = useState("");
   // Search states
   const [searchName, setSearchName] = useState("");
   const [searchEmail, setSearchEmail] = useState("");
@@ -1764,6 +1767,30 @@ export default function UsersMaster() {
     }
   };
 
+  const handlePasswordChange = async () => {
+    try {
+      if (password !== passwordConfirm) {
+        toast.error("Password and confirm password not match.");
+        return;
+      }
+      const res: any = await UsersApi.updatePassword(editingId || "", {
+        password: password,
+      });
+
+      if (res.success) {
+        toast.success(res.message);
+        setShowPasswordChange(false);
+        setPassword("");
+        setPasswordConfirm("");
+      } else {
+        toast.error(res.message);
+      }
+    } catch (error: any) {
+      console.log(error);
+      toast.error(error.response.message);
+    }
+  };
+
   // Loading state
   if (loading) {
     return (
@@ -2352,6 +2379,19 @@ export default function UsersMaster() {
                         required
                       />
                     </div>
+                    {editingId && (
+                      <div className="space-y-1 h-full flex items-end">
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setShowPasswordChange(!showConfirmPassword);
+                          }}
+                          className="w-full px-3 py-2 h-fit border  border-slate-300 rounded-full hover:bg-slate-100 text-sm"
+                        >
+                          Change Password
+                        </button>
+                      </div>
+                    )}
 
                     {/* Password (only for new users) */}
                     {!editingId && (
@@ -2899,11 +2939,11 @@ export default function UsersMaster() {
               </div>
 
               {/* Modal Footer */}
-              <div className="border-t p-4 bg-gray-50 flex gap-2">
+              <div className="border-t p-4 bg-gray-50 flex gap-2 justify-end">
                 <button
                   type="submit"
                   disabled={submitting}
-                  className="flex-1 bg-gradient-to-r from-red-600 to-red-700 text-white py-2.5 px-4 rounded-lg hover:from-black hover:to-black transition-all font-semibold flex items-center justify-center gap-2 disabled:opacity-50"
+                  className="bg-gradient-to-r from-red-600 to-red-700 text-white py-2 px-4 rounded-lg hover:from-black hover:to-black transition-all font-semibold flex items-center justify-center gap-2 disabled:opacity-50"
                 >
                   {submitting ? (
                     <>
@@ -2925,7 +2965,7 @@ export default function UsersMaster() {
                     setShowModal(false);
                     resetForm();
                   }}
-                  className="px-4 py-2.5 text-sm border border-gray-300 rounded-lg hover:bg-gray-50 transition font-medium text-gray-700"
+                  className="px-4 py-2 text-sm border border-gray-300 rounded-lg hover:bg-gray-50 transition font-medium text-gray-700"
                 >
                   Cancel
                 </button>
@@ -3137,6 +3177,127 @@ export default function UsersMaster() {
                 </button>
               </div>
             </div>
+          </div>
+        </div>
+      )}
+
+      {showPasswordChange && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-md flex items-center justify-center z-50 p-2">
+          <div className="bg-white rounded-xl shadow-2xl w-full max-w-md max-h-[85vh] overflow-hidden mx-2 border border-gray-200">
+            {/* Modal Header */}
+            <div className="bg-gradient-to-r from-gray-800 to-gray-900 px-4 py-3 flex justify-between items-center">
+              <div className="flex items-center gap-2">
+                <div className="p-1.5 bg-white/20 rounded-lg">
+                  <Users className="w-4 h-4 text-white" />
+                </div>
+                <div>
+                  <h2 className="font-bold text-white text-sm">
+                    Change Password
+                  </h2>
+                  <p className="text-xs text-white/90">Change user password.</p>
+                </div>
+              </div>
+              <button
+                onClick={() => {
+                  setShowPasswordChange(false);
+                  setPassword("");
+                  setPasswordConfirm("");
+                }}
+                className="text-white hover:bg-white/20 rounded-lg p-1.5 transition"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            <form className="flex flex-col h-fit p-3">
+              <div className="space-y-1 mb-3">
+                <label className="block text-xs font-semibold text-gray-700">
+                  Password <span className="text-red-500">*</span>
+                </label>
+                <div className="relative">
+                  <input
+                    type={showPassword ? "text" : "password"}
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    className="w-full px-3 py-2 pr-10 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
+                    placeholder="Min 6 characters"
+                    required
+                    minLength={6}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700"
+                  >
+                    {showPassword ? (
+                      <EyeOff className="w-4 h-4" />
+                    ) : (
+                      <Eye className="w-4 h-4" />
+                    )}
+                  </button>
+                </div>
+              </div>
+
+              {/* Confirm Password (only for new users) */}
+
+              <div className="space-y-1 mb-3">
+                <label className="block text-xs font-semibold text-gray-700">
+                  Confirm Password <span className="text-red-500">*</span>
+                </label>
+                <div className="relative">
+                  <input
+                    type={showConfirmPassword ? "text" : "password"}
+                    value={passwordConfirm}
+                    onChange={(e) => setPasswordConfirm(e.target.value)}
+                    className="w-full px-3 py-2 pr-10 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
+                    placeholder="Confirm password"
+                    required
+                    minLength={6}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700"
+                  >
+                    {showConfirmPassword ? (
+                      <EyeOff className="w-4 h-4" />
+                    ) : (
+                      <Eye className="w-4 h-4" />
+                    )}
+                  </button>
+                </div>
+                {password &&
+                  passwordConfirm &&
+                  password !== passwordConfirm && (
+                    <p className="text-xs text-red-600 mt-1">
+                      Passwords do not match
+                    </p>
+                  )}
+              </div>
+              <div className="border-t pt-2 bg-gray-50 flex gap-2">
+                <button
+                  type="button"
+                  disabled={password !== passwordConfirm}
+                  onClick={() => {
+                    handlePasswordChange();
+                  }}
+                  className="flex-1 bg-gradient-to-r from-red-600 to-red-700 text-white py-2 px-4 rounded-lg hover:from-red-700 hover:to-red-800 transition-all font-semibold text-xs sm:text-sm"
+                >
+                  Change Password
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowPasswordChange(false);
+                    setPassword("");
+                    setPasswordConfirm("");
+                  }}
+                  className="px-4 py-2  border border-red-600 text-red-600 rounded-lg hover:bg-blue-50 transition font-medium text-xs sm:text-sm"
+                >
+                  Close
+                </button>
+              </div>
+            </form>
           </div>
         </div>
       )}
