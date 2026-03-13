@@ -24,6 +24,7 @@ import {
   User,
   ChevronUp,
   FilePlus,
+  Percent,
 } from "lucide-react";
 import { useAuth } from "../contexts/AuthContext";
 import vendorApi from "../lib/vendorApi";
@@ -108,6 +109,8 @@ export default function ServiceOrders() {
   const [showPaymentRequestModal, setShowPaymentRequestModal] = useState(false);
   const [showPaymentProofModal, setShowPaymentProofModal] =
     useState<boolean>(false);
+  const [showWoBillRejectionModal, setShowWoBillRejectionModal] =
+    useState(false);
   const [paymentProofUrl, setPaymentProofUrl] = useState("");
   const [showWoBill, setShowWoBill] = useState(false);
   const [vendors, setVendors] = useState<Vendor[]>([]);
@@ -153,6 +156,12 @@ export default function ServiceOrders() {
     [],
   );
 
+  const [woBillStatusData, setWoBillStatusData] = useState({
+    id: "",
+    status: "",
+    rejectionReason: "",
+  });
+
   const [searchWoNumber, setSearchWoNumber] = useState("");
   const [searchVendor, setSearchVendor] = useState("");
   const [searchProject, setSearchProject] = useState("");
@@ -185,6 +194,8 @@ export default function ServiceOrders() {
   const [pdfLoading, setPdfLoading] = useState(false);
   const [showRejectionModule, setShowRejectionModule] =
     useState<boolean>(false);
+  const [showWoBillApprovalButtons, setShowWoBillApprovalButtons] =
+    useState("");
 
   const [serviceOrderRejection, setServiceOrderRejection] = useState<{
     id: number | string;
@@ -1211,8 +1222,8 @@ export default function ServiceOrders() {
           String(selectedPO.bill_retention || "0"),
         );
         formData.append("payment_date", paymentData.payment_date || "");
-        formData.append("payment_due_date", paymentData.payment_due_data || "");
-        formData.append("status", "DRAFT");
+        formData.append("payment_due_date", paymentData.payment_due_date || "");
+        formData.append("status", "PENDING");
         formData.append("remarks", paymentData.remarks || "");
         formData.append("created_by", String(user?.id || ""));
 
@@ -1270,6 +1281,66 @@ export default function ServiceOrders() {
     });
 
     setShowPaymentModal(true);
+  };
+  useEffect(() => {
+    if (!amountError) return;
+
+    const timer = setTimeout(() => {
+      setAmountError("");
+    }, 3000);
+
+    return () => clearTimeout(timer);
+  }, [amountError]);
+
+  const approveWoBillStatus = async () => {
+    try {
+      const billRes: any = await woBillsApi.updateWoBillStatus(
+        woBillStatusData.id,
+        woBillStatusData,
+      );
+      console.log("bill res : ", billRes);
+      if (billRes.success) {
+        loadAllData();
+        setWoBillStatusData({
+          id: "",
+          status: "",
+          rejectionReason: "",
+        });
+        setShowWoBillApprovalButtons("");
+        toast.success(billRes.message);
+      } else {
+        toast.error(billRes.message);
+      }
+    } catch (error: any) {
+      console.log(error);
+      toast.error("Error", error.response.data.messge);
+    }
+  };
+  const rejectWoBillStatus = async (e: React.FormEvent) => {
+    e.preventDefault();
+    try {
+      const billRes: any = await woBillsApi.updateWoBillStatus(
+        woBillStatusData.id,
+        woBillStatusData,
+      );
+      console.log("bill res : ", billRes);
+      if (billRes.success) {
+        loadAllData();
+        setShowWoBillRejectionModal(false);
+        setWoBillStatusData({
+          id: "",
+          status: "",
+          rejectionReason: "",
+        });
+        setShowWoBillApprovalButtons("");
+        toast.success(billRes.message);
+      } else {
+        toast.error(billRes.message);
+      }
+    } catch (error: any) {
+      console.log(error);
+      toast.error("Error", error.response.data.messge);
+    }
   };
 
   // --- UI states while loading ---
@@ -1358,18 +1429,18 @@ export default function ServiceOrders() {
               <button
                 onClick={() => setShowCreatePro(true)}
                 className="
-        w-full sm:w-auto
-        bg-[#C62828] text-white
-        px-3 py-2
-        sm:px-5 sm:py-2
-        rounded-lg
-        flex items-center justify-center gap-1.5
-        text-[11px] sm:text-sm
-        shadow-sm
-        hover:bg-[#A62222]
-        transition
-        whitespace-nowrap
-      "
+              w-full sm:w-auto
+            bg-[#C62828] text-white
+              px-3 py-2
+              sm:px-5 sm:py-2
+              rounded-lg
+              flex items-center justify-center gap-1.5
+              text-[11px] sm:text-sm
+              shadow-sm
+            hover:bg-[#A62222]
+              transition
+              whitespace-nowrap
+              "
               >
                 <Plus className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
                 Create WO
@@ -1681,7 +1752,7 @@ export default function ServiceOrders() {
                                                   "PENDING"}
                                               </span>
                                             </td>
-                                            <td className="px-2 md:px-4 py-2">
+                                            <td className="px-2 md:px-4 py-2 flex">
                                               {can("verify_payments") && (
                                                 <button
                                                   onClick={() => {
@@ -1701,21 +1772,100 @@ export default function ServiceOrders() {
                                                   <Eye className="w-4 h-4" />
                                                 </button>
                                               )}
-                                              {can("make_payment_wo") && (
-                                                <button
-                                                  onClick={() => {
-                                                    setShowPaymentRequestModal(
-                                                      true,
-                                                    );
-                                                    console.log(transaction);
-                                                    setSelectedPO(transaction);
-                                                  }}
-                                                  className="p-1.5 md:p-2 text-green-600 hover:bg-green-50 rounded-lg transition"
-                                                  title="Rise Payment Request"
-                                                >
-                                                  <FilePlus className="w-3.5 h-3.5 md:w-4 md:h-4" />
-                                                </button>
-                                              )}
+                                              <div className="relative flex items-center">
+                                                {showWoBillApprovalButtons ===
+                                                  transaction.id && (
+                                                  <div className="absolute top-0 right-8 z-50 space-x-3 bg-white flex shadow-xl px-6 py-3 rounded-md border border-slate-300">
+                                                    {" "}
+                                                    {transaction.status ===
+                                                      "draft" && (
+                                                      <button
+                                                        onClick={() => {
+                                                          approveWoBillStatus();
+                                                        }}
+                                                        className="p-2 px-6 text-white bg-green-600 hover:bg-green-500 rounded-lg transition flex items-center text-xs"
+                                                        title="Approve"
+                                                      >
+                                                        <Check
+                                                          size={20}
+                                                          className="w-4 h-4 mr-2"
+                                                        />
+                                                        Approve
+                                                      </button>
+                                                    )}
+                                                    {transaction.status ===
+                                                      "draft" && (
+                                                      <button
+                                                        onClick={() => {
+                                                          setShowWoBillRejectionModal(
+                                                            true,
+                                                          );
+                                                          setWoBillStatusData({
+                                                            ...woBillStatusData,
+                                                            status: "rejected",
+                                                          });
+                                                        }}
+                                                        className="p-2 px-6 text-white bg-red-600 hover:bg-red-500 rounded-lg transition flex items-center text-xs"
+                                                        title="Reject"
+                                                      >
+                                                        <XCircle className="w-4 h-4 mr-2" />{" "}
+                                                        Reject
+                                                      </button>
+                                                    )}
+                                                  </div>
+                                                )}
+                                                {transaction.status ===
+                                                  "draft" && (
+                                                  <button
+                                                    onClick={() => {
+                                                      setWoBillStatusData({
+                                                        id: transaction.id,
+                                                        status: "pending",
+                                                        rejectionReason: "",
+                                                      });
+                                                      setShowWoBillApprovalButtons(
+                                                        String(
+                                                          showWoBillApprovalButtons,
+                                                        ) ===
+                                                          String(transaction.id)
+                                                          ? ""
+                                                          : transaction.id,
+                                                      );
+                                                    }}
+                                                    className={`px-2 py-1 rounded-full text-[10px] md:text-xs font-medium cursor-pointer text-green-600 hover:bg-green-50 transition`}
+                                                    title="View Payment Proof"
+                                                  >
+                                                    <FileCheck2 className="w-4 h-4" />
+                                                  </button>
+                                                )}
+                                              </div>
+
+                                              {can("make_payment_wo") &&
+                                                Number(
+                                                  transaction.request_amount,
+                                                ) !==
+                                                  Number(
+                                                    transaction.bill_amount,
+                                                  ) &&
+                                                (transaction.status ===
+                                                  "pending" ||
+                                                  transaction.status ===
+                                                    "partial") && (
+                                                  <button
+                                                    onClick={() => {
+                                                      setShowPaymentRequestModal(
+                                                        true,
+                                                      );
+                                                      setSelectedPO(
+                                                        transaction,
+                                                      );
+                                                    }}
+                                                    className="p-1.5 md:p-2 text-green-600 hover:bg-green-50 rounded-lg transition"
+                                                    title="Rise Payment Request"
+                                                  >
+                                                    <FilePlus className="w-3.5 h-3.5 md:w-4 md:h-4" />
+                                                  </button>
+                                                )}
                                             </td>
                                           </tr>
                                         );
@@ -2705,6 +2855,92 @@ export default function ServiceOrders() {
         </div>
       )}
 
+      {showWoBillRejectionModal && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-md flex items-center justify-center z-50 p-4">
+          <div className="bg-gradient-to-br from-gray-50 to-white rounded-2xl shadow-2xl shadow-gray-900/20 w-full max-w-2xl border border-gray-200 overflow-hidden">
+            {/* Modal Header */}
+            <div className="bg-gradient-to-r from-[#40423f] via-[#4a4c49] to-[#5a5d5a] px-5 py-3 flex justify-between items-center border-b border-gray-700/30">
+              <div className="flex items-center gap-2.5">
+                <div className="p-1.5 bg-white/20 rounded-xl backdrop-blur-sm">
+                  <IndianRupee className="w-4 h-4 text-white" />
+                </div>
+                <div>
+                  <h2 className="text-base font-bold text-white">
+                    Reject WO Bill
+                  </h2>
+                  <p className="text-xs text-white/90 font-medium mt-0.5">
+                    Reject Work Order Bill
+                  </p>
+                </div>
+              </div>
+              <button
+                onClick={() => {
+                  setShowWoBillRejectionModal(false);
+                  setWoBillStatusData({
+                    id: "",
+                    status: "",
+                    rejectionReason: "",
+                  });
+                  setShowWoBillApprovalButtons("");
+                }}
+                className="text-white hover:bg-white/20 rounded-xl p-1.5 transition-all duration-200"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            <form
+              onSubmit={rejectWoBillStatus}
+              className="p-4 max-h-[calc(90vh-80px)] overflow-y-auto"
+            >
+              <div className="space-y-1">
+                <label className="block text-xs font-semibold text-gray-800">
+                  Work Order Bill Rejection Reason
+                </label>
+                <textarea
+                  value={woBillStatusData.rejectionReason || ""}
+                  onChange={(e) =>
+                    setWoBillStatusData({
+                      ...woBillStatusData,
+                      rejectionReason: e.target.value || "",
+                    })
+                  }
+                  className="w-full px-3 py-2 text-sm border-2 border-gray-200 rounded-xl focus:border-[#C62828] focus:ring-2 focus:ring-[#C62828]/20 outline-none"
+                  rows={2}
+                  placeholder="Add any remarks..."
+                />
+              </div>
+
+              {/* Modal Footer */}
+              <div className="border-t p-3 flex gap-2">
+                <button
+                  type="submit"
+                  disabled={submitting}
+                  className="flex-1 bg-gradient-to-r from-[#C62828] to-red-600 text-white py-2 px-4 rounded-xl hover:from-red-600 hover:to-red-700 transition-all duration-200 font-semibold flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed text-sm"
+                >
+                  <CircleX className="w-4 h-4" /> Reject Work Order Bill
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowWoBillRejectionModal(false);
+                    setWoBillStatusData({
+                      id: "",
+                      status: "",
+                      rejectionReason: "",
+                    });
+                    setShowWoBillApprovalButtons("");
+                  }}
+                  className="px-4 py-2 text-sm border border-gray-200 rounded-xl hover:bg-gray-50 transition-all duration-200 font-medium text-gray-700"
+                >
+                  Cancel
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
       {/* Rejection Module */}
       {showRejectionModule && (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-md flex items-center justify-center z-50 p-4">
@@ -3256,7 +3492,7 @@ export default function ServiceOrders() {
                   </p>
                   <div className="p-2 bg-red-50 border border-red-200 rounded-lg">
                     <p className="text-base font-bold text-red-600">
-                      {formatCurrency(selectedPO?.bill_balance || 0)}
+                      {formatCurrency(selectedPO?.bill_paid || 0)}
                     </p>
                   </div>
                 </div>
@@ -3265,8 +3501,9 @@ export default function ServiceOrders() {
                     Bill Retention %
                   </p>
                   <div className="p-2 bg-red-50 border border-red-200 rounded-lg">
-                    <p className="text-base font-bold text-red-600">
-                      {formatCurrency(selectedPO?.bill_retention || 0)}
+                    <p className="text-base font-bold text-red-600 flex items-center">
+                      {selectedPO?.bill_retention || 0}{" "}
+                      <Percent className="w-4 h-4 ml-2" />
                     </p>
                   </div>
                 </div>
@@ -3294,11 +3531,11 @@ export default function ServiceOrders() {
                   </label>
                   <input
                     type="date"
-                    value={paymentData.payment_date || ""}
+                    value={paymentData.payment_due_date || ""}
                     onChange={(e) => {
                       setPaymentData({
                         ...paymentData,
-                        payment_date: e.target.value,
+                        payment_due_date: e.target.value,
                       });
                     }}
                     className="w-full px-3 py-2 text-sm border-2 border-gray-200 rounded-xl focus:border-[#C62828] focus:ring-2 focus:ring-[#C62828]/20 outline-none"
@@ -3313,27 +3550,41 @@ export default function ServiceOrders() {
                     type="text"
                     value={paymentData.amount_paid || ""}
                     onChange={(e) => {
+                      const value = Number(e.target.value);
+                      const retentionAmount =
+                        (Number(selectedPO.bill_amount) *
+                          Number(selectedPO.bill_retention)) /
+                        100;
+
                       if (
-                        Number(e.target.value) >
-                        Number(selectedPO?.bill_balance)
+                        value >
+                        Number(selectedPO.bill_amount) - retentionAmount
                       ) {
                         setAmountError(
-                          "Entered value is greater than bill" +
-                            selectedPO.request_amount,
+                          `You can not enter value greater than ${Number(selectedPO.bill_amount) - retentionAmount}`,
+                        );
+                        return;
+                      }
+
+                      if (value > Number(selectedPO.bill_balance)) {
+                        setAmountError(
+                          `You can not enter value greater than ${selectedPO.bill_balance}`,
                         );
                         return;
                       }
                       if (
-                        Number(e.target.value) >
-                        Number(selectedPO?.request_amount)
+                        value >
+                          Number(selectedPO.bill_amount) -
+                            retentionAmount -
+                            Number(selectedPO.request_amount) &&
+                        Number(selectedPO.request_amount) !== 0
                       ) {
-                        console.log("Show me this msg", e.target.value);
                         setAmountError(
-                          "You have already raised a request for this bill with amount " +
-                            selectedPO.request_amount,
+                          `You can not enter value greater than ${retentionAmount - Number(selectedPO.request_amount)}`,
                         );
                         return;
                       }
+
                       setAmountError("");
                       setPaymentData({
                         ...paymentData,
@@ -3420,7 +3671,9 @@ export default function ServiceOrders() {
                         rounded-t-2xl border-b border-white/10
                         backdrop-blur-md"
             >
-              <h2 className="text-2xl font-bold text-white">Payment Proof</h2>
+              <h2 className="text-2xl font-bold text-white">
+                Work Worder Bill
+              </h2>
               <button
                 onClick={() => {
                   setShowPaymentProofModal(false);

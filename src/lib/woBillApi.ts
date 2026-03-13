@@ -41,6 +41,14 @@ async function updateWoBill(id: number | string, payload: any) {
 }
 
 /**
+ * Update WO bill status
+ */
+async function updateWoBillStatus(id: number | string, payload: any) {
+  const res: any = await api.put(`/wo-bill/bill-status/${id}`, payload);
+  return unwrap(res);
+}
+
+/**
  * Delete WO bill
  */
 async function deleteWoBill(id: number | string) {
@@ -55,6 +63,7 @@ const woBillsApi = {
   createWoBill,
   updateWoBill,
   deleteWoBill,
+  updateWoBillStatus,
 };
 
 export default woBillsApi;

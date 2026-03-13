@@ -13,6 +13,12 @@ import {
   FileText,
   ChevronUp,
   Eye,
+  FileCheck2,
+  XCircle,
+  Check,
+  CircleX,
+  Loader2,
+  Percent,
 } from "lucide-react";
 import { useAuth } from "../../contexts/AuthContext";
 import { toast } from "sonner";
@@ -107,11 +113,51 @@ export default function ServiceOrderPayments() {
   const [paymentReminders, setPaymentReminders] = useState<PaymentReminder[]>(
     [],
   );
+  const [showPaymentRequestModal, setShowPaymentRequestModal] = useState(false);
 
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [paymentProofUrl, setPaymentProofUrl] = useState<String>("");
   const [expandPO, setExpandPO] = useState("");
+
+  const [showWoBillModal, setShowWoBillModal] = useState(false);
+  const [paymentStatusData, setPaymentStatusData] = useState({
+    id: "",
+    status: "",
+    rejectionReason: "",
+    approved_amount_paid: "",
+  });
+  const [selectedPaymentData, setSelectedPayemntData] = useState({
+    id: "",
+    transaction_type: "",
+    amount_paid: "",
+    retention_percent: "",
+    payment_method: "",
+    payment_date: "",
+    payment_due_date: "",
+    payment_proof: "",
+    payment_reference_no: "",
+    status: "",
+    remarks: "",
+    //bill details
+    approved_amount_paid: "",
+    bill_amount: "",
+    bill_balance: "",
+    bill_created_by: "",
+    bill_date: "",
+    bill_due_date: "",
+    bill_id: "",
+    bill_number: "",
+    bill_proof: "",
+    bill_retention: "",
+    bill_status: "",
+  });
+
+  const [showPaymentRejectionModal, setShowPaymentRejectionModal] =
+    useState(false);
+
+  const [showPaymentApprovalModal, setShowPaymentApprovalModal] =
+    useState(false);
 
   // Search states - Separate for each tab
   const [searchTerm, setSearchTerm] = useState("");
@@ -160,6 +206,8 @@ export default function ServiceOrderPayments() {
   // Modal states
   const [showPaymentModal, setShowPaymentModal] = useState(false);
   const [selectedPO, setSelectedPO] = useState<any>(null);
+
+  const [adjustWithAdvance, setAdjustWithAdvance] = useState<boolean>(false);
 
   // Payment form data
   const [paymentData, setPaymentData] = useState<any>({
@@ -213,7 +261,6 @@ export default function ServiceOrderPayments() {
   function groupByWoId(data: any[]) {
     const grouped = data.reduce((acc: any, item: any) => {
       const key = item.wo_id;
-      console.log("items : ", item);
 
       if (!acc[key]) {
         acc[key] = {
@@ -238,10 +285,23 @@ export default function ServiceOrderPayments() {
         retention_percent: item.retention_percent,
         payment_method: item.payment_method,
         payment_date: item.payment_date,
+        payment_due_date: item.payment_due_date,
         payment_proof: item.payment_proof,
         payment_reference_no: item.payment_reference_no,
         status: item.status,
         remarks: item.remarks,
+        //bill details
+        approved_amount_paid: item.approved_amount_paid,
+        bill_amount: item.bill_amount,
+        bill_balance: item.bill_balance,
+        bill_created_by: item.bill_created_by,
+        bill_date: item.bill_date,
+        bill_due_date: item.bill_due_date,
+        bill_id: item.bill_id,
+        bill_number: item.bill_number,
+        bill_proof: item.bill_proof,
+        bill_retention: item.bill_retention,
+        bill_status: item.bill_status,
       });
 
       return acc;
@@ -512,6 +572,8 @@ export default function ServiceOrderPayments() {
       overdue: "bg-red-100 text-red-700",
       FAILED: "bg-red-100 text-red-700",
       CANCELLED: "bg-red-100 text-red-700",
+      REJECTED: "bg-red-100 text-red-700",
+      rejected: "bg-red-100 text-red-700",
       partial: "bg-orange-100 text-orange-700",
       PARTIAL: "bg-orange-100 text-orange-700",
     };
@@ -530,6 +592,175 @@ export default function ServiceOrderPayments() {
   };
 
   const filteredPOs = getFilteredPOs();
+
+  const approveWoBillStatus = async (e: React.FormEvent) => {
+    e.preventDefault();
+    try {
+      const payload = {
+        id: paymentStatusData.id,
+        status: "pending",
+        rejectionReason: "",
+        approved_amount_paid: selectedPaymentData.approved_amount_paid,
+        amount_paid: selectedPaymentData.amount_paid,
+        wo_id: selectedPaymentData.bill_id,
+      };
+      console.log(payload);
+      const paymentRes: any = await woPaymentHistoryApi.updateWoPaymentStatus(
+        paymentStatusData.id,
+        payload,
+      );
+
+      if (paymentRes.success) {
+        loadPOData();
+        setShowPaymentApprovalModal(false);
+
+        setPaymentStatusData({
+          id: "",
+          status: "",
+          rejectionReason: "",
+          approved_amount_paid: "",
+        });
+
+        setSelectedPayemntData({
+          id: "",
+          transaction_type: "",
+          amount_paid: "",
+          retention_percent: "",
+          payment_method: "",
+          payment_date: "",
+          payment_due_date: "",
+          payment_proof: "",
+          payment_reference_no: "",
+          status: "",
+          remarks: "",
+          //bill details
+          approved_amount_paid: "",
+          bill_amount: "",
+          bill_balance: "",
+          bill_created_by: "",
+          bill_date: "",
+          bill_due_date: "",
+          bill_id: "",
+          bill_number: "",
+          bill_proof: "",
+          bill_retention: "",
+          bill_status: "",
+        });
+        toast.success(paymentRes.message);
+      } else {
+        toast.error(paymentRes.message);
+      }
+    } catch (error: any) {
+      console.log(error);
+      toast.error("Error", error.response.data.messge);
+    }
+  };
+  const rejectWoBillStatus = async (e: React.FormEvent) => {
+    e.preventDefault();
+    try {
+      const payload = {
+        status: "rejected",
+        rejectionReason: paymentStatusData.rejectionReason,
+        approved_amount_paid: selectedPaymentData.approved_amount_paid,
+        wo_id: selectedPaymentData.bill_id,
+      };
+      const paymentRes: any = await woPaymentHistoryApi.updateWoPaymentStatus(
+        paymentStatusData.id,
+        payload,
+      );
+
+      console.log("bill res : ", paymentRes);
+      if (paymentRes.success) {
+        loadPOData();
+        setShowPaymentApprovalModal(false);
+        setShowPaymentRejectionModal(false);
+
+        setPaymentStatusData({
+          id: "",
+          status: "",
+          rejectionReason: "",
+          approved_amount_paid: "",
+        });
+
+        setSelectedPayemntData({
+          id: "",
+          transaction_type: "",
+          amount_paid: "",
+          retention_percent: "",
+          payment_method: "",
+          payment_date: "",
+          payment_due_date: "",
+          payment_proof: "",
+          payment_reference_no: "",
+          status: "",
+          remarks: "",
+          //bill details
+          approved_amount_paid: "",
+          bill_amount: "",
+          bill_balance: "",
+          bill_created_by: "",
+          bill_date: "",
+          bill_due_date: "",
+          bill_id: "",
+          bill_number: "",
+          bill_proof: "",
+          bill_retention: "",
+          bill_status: "",
+        });
+        toast.success(paymentRes.message);
+      } else {
+        toast.error(paymentRes.message);
+      }
+    } catch (error: any) {
+      console.log(error);
+      toast.error("Error", error.response.data.messge);
+    }
+  };
+
+  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      setPaymentData((prev: any) => ({ ...prev, payment_proof: file }));
+    }
+  };
+
+  const handleMakePayment = async (e: React.FormEvent) => {
+    e.preventDefault();
+    try {
+      console.log("payment data : ", paymentData);
+
+      const paymentRes: any = await woPaymentHistoryApi.updateWoPaymentHistory(
+        paymentData.id,
+        paymentData,
+      );
+      if (paymentRes.success) {
+        toast.success(paymentRes.message);
+        setShowPaymentRequestModal(false);
+        setPaymentData({
+          po_id: null,
+          po_payment_id: null,
+          adjust_with_advance: false,
+          advance_amount: "",
+          retention_percentage: "",
+          vendorId: "",
+          transaction_type: "payment",
+          amount_paid: "",
+          payment_method: "bank_transfer",
+          payment_reference_no: "",
+          payment_proof: null,
+          payment_date: new Date().toISOString().split("T")[0],
+          status: "success",
+          remarks: "",
+          created_by: user?.id,
+        });
+      } else {
+        toast.error(paymentRes.message);
+      }
+    } catch (error: any) {
+      console.log(error);
+      toast.error(error.response.data.message);
+    }
+  };
 
   if (loading) {
     return (
@@ -781,7 +1012,6 @@ export default function ServiceOrderPayments() {
             <tbody className="divide-y divide-gray-200">
               {paymentTransactionHistorys.map((po: any) => {
                 const isSelected = selectedItems.has(po.wo_id);
-                console.log("po data", po);
                 return (
                   <React.Fragment>
                     <tr
@@ -881,6 +1111,9 @@ export default function ServiceOrderPayments() {
                                       TRANSACTION TYPE
                                     </th>
                                     <th className="text-left px-2 py-1.5 text-[10px] md:text-xs font-medium text-gray-700">
+                                      BILL NUMBER
+                                    </th>
+                                    <th className="text-left px-2 py-1.5 text-[10px] md:text-xs font-medium text-gray-700">
                                       DATE
                                     </th>
                                     <th className="text-left px-2 py-1.5 text-[10px] md:text-xs font-medium text-gray-700">
@@ -923,11 +1156,14 @@ export default function ServiceOrderPayments() {
                                               {po.po_number || "Unknown"}
                                             </div>
                                             <div className="text-[10px] text-gray-500">
-                                              PO Date: {po.wo_date || "N/A"}
+                                              WO Date: {po.wo_date || "N/A"}
                                             </div>
                                           </td>
                                           <td className="px-2 py-1.5 font-medium  text-xs">
                                             {transaction.transaction_type}
+                                          </td>
+                                          <td className="px-2 py-1.5 font-medium  text-xs">
+                                            {transaction.bill_number}
                                           </td>
                                           <td className="px-2 py-1.5 text-gray-700 text-xs">
                                             {new Date(
@@ -935,7 +1171,7 @@ export default function ServiceOrderPayments() {
                                             ).toLocaleDateString() || "-"}
                                           </td>
                                           <td className="px-2 py-1.5 font-medium text-green-600 text-xs">
-                                            {transaction.amount_paid}
+                                            {transaction.approved_amount_paid}
                                           </td>
                                           <td className="px-2 py-1.5 font-medium text-red-600 text-xs">
                                             {transaction.retention_percent ||
@@ -964,9 +1200,6 @@ export default function ServiceOrderPayments() {
                                               transaction.payment_proof && (
                                                 <button
                                                   onClick={() => {
-                                                    console.log(
-                                                      transaction.payment_proof,
-                                                    );
                                                     setShowPaymentProofModal(
                                                       true,
                                                     );
@@ -980,6 +1213,74 @@ export default function ServiceOrderPayments() {
                                                   <Eye className="w-4 h-4" />
                                                 </button>
                                               )}
+
+                                            {can("verify_payments") &&
+                                              transaction.status ===
+                                                "PENDING" && (
+                                                <button
+                                                  onClick={() => {
+                                                    setShowPaymentRequestModal(
+                                                      true,
+                                                    );
+                                                    console.log(po);
+                                                    console.log(transaction);
+                                                    const retentionAmount =
+                                                      (Number(
+                                                        transaction.approved_amount_paid,
+                                                      ) *
+                                                        Number(
+                                                          transaction.bill_retention,
+                                                        )) /
+                                                      100;
+                                                    console.log(
+                                                      "retention Amount : ",
+                                                      retentionAmount,
+                                                    );
+                                                    setPaymentData({
+                                                      ...transaction,
+                                                      vendor: po.vendor,
+                                                      so_number: po.po_number,
+                                                      retention_amount:
+                                                        retentionAmount,
+                                                      payment_method:
+                                                        "bank_transfer",
+                                                      paid_on: new Date()
+                                                        .toISOString()
+                                                        .split("T")[0],
+                                                      wo_advance_amount:
+                                                        po.wo_advance_amount,
+                                                      advance_amount: "",
+                                                    });
+                                                  }}
+                                                  className={`px-2 py-1 rounded-full text-[10px] md:text-xs font-medium cursor-pointer text-green-600 hover:bg-green-50 transition`}
+                                                  title="View Payment Proof"
+                                                >
+                                                  <IndianRupee className="w-4 h-4" />
+                                                </button>
+                                              )}
+
+                                            {/* {transaction.status === "DRAFT" && (
+                                              <button
+                                                onClick={() => {
+                                                  setPaymentStatusData({
+                                                    id: transaction.id,
+                                                    status: "pending",
+                                                    rejectionReason: "",
+                                                    approved_amount_paid: "",
+                                                  });
+                                                  setSelectedPayemntData(
+                                                    transaction,
+                                                  );
+                                                  setShowPaymentApprovalModal(
+                                                    true,
+                                                  );
+                                                }}
+                                                className={`px-2 py-1 rounded-full text-[10px] md:text-xs font-medium cursor-pointer text-green-600 hover:bg-green-50 transition`}
+                                                title="View Payment Proof"
+                                              >
+                                                <FileCheck2 className="w-4 h-4" />
+                                              </button>
+                                            )} */}
                                           </td>
                                         </tr>
                                       );
@@ -999,6 +1300,401 @@ export default function ServiceOrderPayments() {
           </table>
         </div>
       </div>
+
+      {showPaymentRequestModal && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-md flex items-center justify-center z-50 p-4">
+          <div className="bg-gradient-to-br from-gray-50 to-white rounded-2xl shadow-2xl shadow-gray-900/20 w-full max-w-lg border border-gray-200 overflow-hidden">
+            {/* Modal Header */}
+            <div className="bg-gradient-to-r from-[#40423f] via-[#4a4c49] to-[#5a5d5a] px-5 py-3 flex justify-between items-center border-b border-gray-700/30">
+              <div className="flex items-center gap-2.5">
+                <div className="p-1.5 bg-white/20 rounded-xl backdrop-blur-sm">
+                  <IndianRupee className="w-4 h-4 text-white" />
+                </div>
+                <div>
+                  <h2 className="text-base font-bold text-white">
+                    Pay Payment Request
+                  </h2>
+                  <p className="text-xs text-white/90 font-medium mt-0.5">
+                    Pay payment request for the bill.
+                  </p>
+                </div>
+              </div>
+              <button
+                onClick={() => {
+                  setShowPaymentRequestModal(false);
+                  setPaymentData({
+                    po_id: null,
+                    po_payment_id: null,
+                    adjust_with_advance: false,
+                    advance_amount: "",
+                    retention_percentage: "",
+                    vendorId: "",
+                    transaction_type: "payment",
+                    amount_paid: "",
+                    payment_method: "bank_transfer",
+                    payment_reference_no: "",
+                    payment_proof: null,
+                    payment_date: new Date().toISOString().split("T")[0],
+                    status: "pending",
+                    remarks: "",
+                    created_by: user?.id,
+                  });
+                }}
+                className="text-white hover:bg-white/20 rounded-xl p-1.5 transition-all duration-200"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            <form
+              onSubmit={handleMakePayment}
+              className="pt-4 pl-4 pb-4 max-h-[calc(90vh-80px)] "
+            >
+              <div className="overflow-y-scroll max-h-[calc(80vh-80px)] grid grid-cols-1 md:grid-cols-2 gap-3 pr-4 scrollbar-thin">
+                <div className="space-y-1 col-span-1 md:col-span-2 hidden">
+                  <p className="text-xs font-semibold text-gray-800">
+                    Transaction Type
+                  </p>
+                  <div className="p-2 bg-orange-50 border border-orange-200 rounded-lg">
+                    <p className="text-base font-bold text-yellow-600">
+                      {paymentData?.transaction_type || "--"}
+                    </p>
+                  </div>
+                </div>
+
+                <div className="space-y-1">
+                  <p className="text-xs font-semibold text-gray-800">
+                    Bill Number
+                  </p>
+                  <div className="p-2 bg-orange-50 border border-orange-200 rounded-lg">
+                    <p className="text-base font-bold text-yellow-600">
+                      {paymentData?.bill_number || "--"}
+                    </p>
+                  </div>
+                </div>
+
+                <div className="space-y-1">
+                  <p className="text-xs font-semibold text-gray-800">Vendor</p>
+                  <div className="p-2 bg-orange-50 border border-orange-200 rounded-lg">
+                    <p className="text-base font-bold text-yellow-600">
+                      {paymentData?.vendor || "--"}
+                    </p>
+                  </div>
+                </div>
+
+                <div className="space-y-1">
+                  <p className="text-xs font-semibold text-gray-800">
+                    Work Order
+                  </p>
+                  <div className="p-2 bg-orange-50 border border-orange-200 rounded-lg">
+                    <p className="text-base font-bold text-yellow-600">
+                      {paymentData?.so_number || "--"}
+                    </p>
+                  </div>
+                </div>
+
+                <div className="space-y-1">
+                  <p className="text-xs font-semibold text-gray-800">
+                    Total Bill Amount
+                  </p>
+                  <div className="p-2 bg-orange-50 border border-orange-200 rounded-lg">
+                    <p className="text-base font-bold text-orange-600">
+                      {formatCurrency(paymentData?.bill_amount || 0)}
+                    </p>
+                  </div>
+                </div>
+
+                <div className="space-y-1">
+                  <p className="text-xs font-semibold text-gray-800">
+                    Bill Balance Amount
+                  </p>
+                  <div className="p-2 bg-red-50 border border-red-200 rounded-lg">
+                    <p className="text-base font-bold text-red-600">
+                      {formatCurrency(paymentData?.bill_balance || 0)}
+                    </p>
+                  </div>
+                </div>
+                <div className="space-y-1">
+                  <p className="text-xs font-semibold text-gray-800">
+                    Bill Paid Amount
+                  </p>
+                  <div className="p-2 bg-red-50 border border-red-200 rounded-lg">
+                    <p className="text-base font-bold text-red-600">
+                      {formatCurrency(paymentData?.bill_paid || 0)}
+                    </p>
+                  </div>
+                </div>
+                <div className="space-y-1">
+                  <p className="text-xs font-semibold text-gray-800">
+                    Retention Amount
+                  </p>
+                  <div className="p-2 bg-red-50 border border-red-200 rounded-lg">
+                    <p className="text-base font-bold text-red-600 flex items-center">
+                      <IndianRupee className="w-4 h-4" />
+                      {paymentData?.retention_amount || 0}
+                    </p>
+                  </div>
+                  <p className="text-slate-600 text-xs">
+                    Retention amount is {paymentData.bill_retention}% of{" "}
+                    {paymentData.approved_amount_paid}
+                  </p>
+                </div>
+
+                <div className="space-y-1">
+                  <p className="text-xs font-semibold text-gray-800">
+                    Work Order Total Advance Amount
+                  </p>
+                  <div className="p-2 bg-red-50 border border-red-200 rounded-lg">
+                    <p className="text-base font-bold text-red-600 flex items-center">
+                      <IndianRupee className="w-4 h-4" />
+                      {paymentData?.wo_advance_amount || 0}
+                    </p>
+                  </div>
+                </div>
+
+                <div className="space-y-1">
+                  <label className="block text-xs font-semibold text-gray-800">
+                    Created On <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    type="date"
+                    value={paymentData.payment_date.split("T")[0] || ""}
+                    readOnly
+                    className="w-full px-3 py-2 text-sm border-2 border-gray-200 rounded-xl focus:border-[#C62828] focus:ring-2 focus:ring-[#C62828]/20 outline-none"
+                    required
+                  />
+                </div>
+                <div className="space-y-1">
+                  <label className="block text-xs font-semibold text-gray-800">
+                    Payment Due Date <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    type="date"
+                    value={paymentData.payment_due_date || ""}
+                    readOnly
+                    className="w-full px-3 py-2 text-sm border-2 border-gray-200 rounded-xl focus:border-[#C62828] focus:ring-2 focus:ring-[#C62828]/20 outline-none"
+                    required
+                  />
+                </div>
+
+                <div className="space-y-1">
+                  <label className="block text-xs font-semibold text-gray-800">
+                    Payment Date <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    type="date"
+                    value={paymentData.paid_on || ""}
+                    onChange={(e) => {
+                      setPaymentData({
+                        ...paymentData,
+                        paid_on: e.target.value,
+                      });
+                    }}
+                    className="w-full px-3 py-2 text-sm border-2 border-gray-200 rounded-xl focus:border-[#C62828] focus:ring-2 focus:ring-[#C62828]/20 outline-none"
+                    required
+                  />
+                </div>
+
+                <div className="space-y-1">
+                  <label className="block text-xs font-semibold text-gray-800">
+                    Payment Amount <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    type="text"
+                    value={paymentData.approved_amount_paid || ""}
+                    onChange={(e) => {
+                      if (
+                        !/^\d*\.?\d*$/.test(e.target.value) ||
+                        Number(e.target.value) >
+                          Number(paymentData.amount_paid) ||
+                        (Number(e.target.value) >
+                          Number(paymentData.wo_advance_amount) &&
+                          Number(paymentData.wo_advance_amount) !== 0)
+                      ) {
+                        return;
+                      }
+                      const retentionAmount =
+                        (Number(e.target.value) *
+                          Number(paymentData.bill_retention)) /
+                        100;
+                      setPaymentData({
+                        ...paymentData,
+                        approved_amount_paid: e.target.value,
+                        retention_amount: retentionAmount,
+                      });
+                    }}
+                    className="w-full px-3 py-2 text-sm border-2 border-gray-200 rounded-xl focus:border-[#C62828] focus:ring-2 focus:ring-[#C62828]/20 outline-none"
+                    required
+                  />
+                </div>
+
+                {paymentData.wo_advance_amount && (
+                  <div className="space-y-1 flex items-center">
+                    <input
+                      type="checkbox"
+                      checked={adjustWithAdvance}
+                      onChange={(e) => {
+                        if (e.target.checked) {
+                          setPaymentData({
+                            ...paymentData,
+                            advance_amount: "",
+                          });
+                        }
+                        setAdjustWithAdvance(!adjustWithAdvance);
+                      }}
+                      className="w-4 h-4 accent-[#b52124] cursor-pointer mt-0.5 mr-2"
+                    />
+                    <label className="block text-xs font-semibold text-gray-800">
+                      Adjust with advance
+                    </label>
+                  </div>
+                )}
+
+                {adjustWithAdvance && (
+                  <div className="space-y-1">
+                    <label className="block text-xs font-semibold text-gray-800">
+                      Amount To Adjust in Advance{" "}
+                      <span className="text-red-500">*</span>
+                    </label>
+                    <input
+                      type="text"
+                      value={paymentData.advance_amount || ""}
+                      onChange={(e) => {
+                        if (
+                          !/^\d*\.?\d*$/.test(e.target.value) ||
+                          Number(e.target.value) >
+                            Number(paymentData.approved_amount_paid)
+                        ) {
+                          return;
+                        }
+                        setPaymentData({
+                          ...paymentData,
+                          advance_amount: e.target.value,
+                        });
+                      }}
+                      className="w-full px-3 py-2 text-sm border-2 border-gray-200 rounded-xl focus:border-[#C62828] focus:ring-2 focus:ring-[#C62828]/20 outline-none"
+                      required
+                    />
+                  </div>
+                )}
+
+                <div className="space-y-1">
+                  <label className="block text-xs font-semibold text-gray-800">
+                    Payment Method <span className="text-red-500">*</span>
+                  </label>
+                  <select
+                    value={paymentData.payment_method || "bank_transfer"}
+                    onChange={(e) =>
+                      setPaymentData({
+                        ...paymentData,
+                        payment_method: e.target.value,
+                      })
+                    }
+                    className="w-full px-3 py-2 text-sm border-2 border-gray-200 rounded-xl focus:border-[#C62828] focus:ring-2 focus:ring-[#C62828]/20 outline-none"
+                  >
+                    <option value="bank_transfer">Bank Transfer</option>
+                    <option value="cheque">Cheque</option>
+                    <option value="cash">Cash</option>
+                    <option value="online">Online Payment</option>
+                  </select>
+                </div>
+                <div className="space-y-1">
+                  <label className="block text-xs font-semibold text-gray-800">
+                    Reference Number <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    type="text"
+                    value={paymentData.payment_reference_no || ""}
+                    onChange={(e) =>
+                      setPaymentData({
+                        ...paymentData,
+                        payment_reference_no: e.target.value,
+                      })
+                    }
+                    className="w-full px-3 py-2 text-sm border-2 border-gray-200 rounded-xl focus:border-[#C62828] focus:ring-2 focus:ring-[#C62828]/20 outline-none"
+                    placeholder="Transaction reference"
+                    required
+                  />
+                </div>
+
+                <div className="space-y-1">
+                  <label className="block text-xs font-semibold text-gray-800">
+                    Upload Payment Proof <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    type="file"
+                    required
+                    id="payment_proof"
+                    onChange={handleFileUpload}
+                    className="w-full px-3 py-2 text-sm border-2 border-gray-200 rounded-xl focus:border-[#C62828] focus:ring-2 focus:ring-[#C62828]/20 outline-none file:border-none file:bg-gradient-to-r file:from-[#C62828] file:to-red-600 file:text-white file:font-medium file:px-3 file:py-1.5 file:rounded-lg file:cursor-pointer"
+                    accept=".pdf,.jpg,.jpeg,.png"
+                  />
+                </div>
+
+                <div className="space-y-1 col-span-1 md:col-span-2 mb-3">
+                  <label className="block text-xs font-semibold text-gray-800">
+                    Remarks
+                  </label>
+                  <textarea
+                    value={paymentData.remarks || ""}
+                    onChange={(e) =>
+                      setPaymentData({
+                        ...paymentData,
+                        remarks: e.target.value || "",
+                      })
+                    }
+                    className="w-full px-3 py-2 text-sm border-2 border-gray-200 rounded-xl focus:border-[#C62828] focus:ring-2 focus:ring-[#C62828]/20 outline-none"
+                    rows={2}
+                    placeholder="Add any remarks..."
+                  />
+                </div>
+              </div>
+              {/* Modal Footer */}
+              <div className="border-t  py-3 px-3 flex gap-2 col-span-2 sticky bottom-0 bg-white justify-end">
+                <button
+                  type="submit"
+                  disabled={submitting}
+                  className=" bg-gradient-to-r from-[#C62828] to-red-600 text-white py-2 px-4 rounded-xl hover:from-red-600 hover:to-red-700 transition-all duration-200 font-semibold flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed text-sm"
+                >
+                  {submitting ? (
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                  ) : (
+                    <IndianRupee className="w-4 h-4" />
+                  )}
+                  {submitting ? "Processing..." : "Pay"}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowPaymentRequestModal(false);
+                    setPaymentData({
+                      po_id: null,
+                      po_payment_id: null,
+                      adjust_with_advance: false,
+                      advance_amount: "",
+                      retention_percentage: "",
+                      vendorId: "",
+                      transaction_type: "payment",
+                      amount_paid: "",
+                      payment_method: "bank_transfer",
+                      payment_reference_no: "",
+                      payment_proof: null,
+                      payment_date: new Date().toISOString().split("T")[0],
+                      status: "pending",
+                      remarks: "",
+                      created_by: user?.id,
+                    });
+                  }}
+                  className="px-4 py-2 text-sm border border-gray-200 rounded-xl hover:bg-gray-50 transition-all duration-200 font-medium text-gray-700"
+                >
+                  Cancel
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
       {showPaymentProofModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-hidden">
@@ -1136,6 +1832,463 @@ export default function ServiceOrderPayments() {
                 Apply Filters
               </button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* {showPaymentApprovalModal && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-md flex items-center justify-center z-50 p-4">
+          <div className="bg-gradient-to-br from-gray-50 to-white rounded-2xl shadow-2xl shadow-gray-900/20 w-full max-w-3xl border border-gray-200 overflow-hidden">
+            <div className="bg-gradient-to-r from-[#40423f] via-[#4a4c49] to-[#5a5d5a] px-5 py-3 flex justify-between items-center border-b border-gray-700/30">
+              <div className="flex items-center gap-2.5">
+                <div className="p-1.5 bg-white/20 rounded-xl backdrop-blur-sm">
+                  <IndianRupee className="w-4 h-4 text-white" />
+                </div>
+                <div>
+                  <h2 className="text-base font-bold text-white">
+                    Approve WO Payment
+                  </h2>
+                  <p className="text-xs text-white/90 font-medium mt-0.5">
+                    Approve Work Order Payment
+                  </p>
+                </div>
+              </div>
+              <button
+                onClick={() => {
+                  setShowPaymentApprovalModal(false);
+                  setPaymentStatusData({
+                    id: "",
+                    status: "",
+                    rejectionReason: "",
+                    approved_amount_paid: "",
+                  });
+                  setSelectedPayemntData({
+                    id: "",
+                    transaction_type: "",
+                    amount_paid: "",
+                    retention_percent: "",
+                    payment_method: "",
+                    payment_date: "",
+                    payment_due_date: "",
+                    payment_proof: "",
+                    payment_reference_no: "",
+                    status: "",
+                    remarks: "",
+                    //bill details
+                    approved_amount_paid: "",
+                    bill_amount: "",
+                    bill_balance: "",
+                    bill_created_by: "",
+                    bill_date: "",
+                    bill_due_date: "",
+                    bill_id: "",
+                    bill_number: "",
+                    bill_proof: "",
+                    bill_retention: "",
+                    bill_status: "",
+                  });
+                }}
+                className="text-white hover:bg-white/20 rounded-xl p-1.5 transition-all duration-200"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            <form
+              onSubmit={approveWoBillStatus}
+              className="p-4 max-h-[calc(90vh-80px)] overflow-y-auto"
+            >
+              <div className="bg-white shadow-lg p-3 mb-3 border">
+                <div className="flex justify-between ">
+                  <h1 className="text-sm font-semibold text-slate-600 mb-3">
+                    Bill Details
+                  </h1>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setShowWoBillModal(true);
+                      setPaymentProofUrl(selectedPaymentData.bill_proof);
+                    }}
+                    className="bg-gradient-to-r from-[#C62828] to-red-600 text-white py-1 px-4 rounded-xl hover:from-red-600 hover:to-red-700 transition-all duration-200"
+                  >
+                    View Bill
+                  </button>
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                  <div className="space-y-1">
+                    <label className="block text-xs font-semibold text-gray-800">
+                      Bill Number
+                    </label>
+                    <input
+                      type=" text"
+                      readOnly
+                      value={selectedPaymentData.bill_number || ""}
+                      className="w-full px-3 py-2 text-sm border-2 border-gray-200 rounded-xl focus:border-[#C62828] focus:ring-2 focus:ring-[#C62828]/20 outline-none  bg-slate-100"
+                      placeholder="Add any remarks..."
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <label className="block text-xs font-semibold text-gray-800">
+                      Bill Total Amount
+                    </label>
+                    <input
+                      type=" text"
+                      readOnly
+                      value={selectedPaymentData.bill_amount || ""}
+                      className="w-full px-3 py-2 text-sm border-2 border-gray-200 rounded-xl focus:border-[#C62828] focus:ring-2 focus:ring-[#C62828]/20 outline-none bg-slate-100"
+                      placeholder="Add any remarks..."
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <label className="block text-xs font-semibold text-gray-800">
+                      Bill Total Balalnce
+                    </label>
+                    <input
+                      type=" text"
+                      readOnly
+                      value={selectedPaymentData.bill_balance || ""}
+                      className="w-full px-3 py-2 text-sm border-2 border-gray-200 rounded-xl focus:border-[#C62828] focus:ring-2 focus:ring-[#C62828]/20 outline-none bg-slate-100"
+                      placeholder="Add any remarks..."
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <label className="block text-xs font-semibold text-gray-800">
+                      Bill Total Paid Amount
+                    </label>
+                    <input
+                      type=" text"
+                      readOnly
+                      value={
+                        Number(selectedPaymentData.bill_amount) -
+                        Number(selectedPaymentData.bill_balance)
+                      }
+                      className="w-full px-3 py-2 text-sm border-2 border-gray-200 rounded-xl focus:border-[#C62828] focus:ring-2 focus:ring-[#C62828]/20 outline-none bg-slate-100"
+                      placeholder="Add any remarks..."
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <label className="block text-xs font-semibold text-gray-800">
+                      Bill Retention %
+                    </label>
+                    <input
+                      type=" text"
+                      readOnly
+                      value={selectedPaymentData.bill_retention}
+                      className="w-full px-3 py-2 text-sm border-2 border-gray-200 rounded-xl focus:border-[#C62828] focus:ring-2 focus:ring-[#C62828]/20 outline-none bg-slate-100"
+                      placeholder="Add any remarks..."
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <label className="block text-xs font-semibold text-gray-800">
+                      Date
+                    </label>
+                    <input
+                      type=" text"
+                      readOnly
+                      value={selectedPaymentData.bill_date}
+                      className="w-full px-3 py-2 text-sm border-2 border-gray-200 rounded-xl focus:border-[#C62828] focus:ring-2 focus:ring-[#C62828]/20 outline-none bg-slate-100"
+                      placeholder="Add any remarks..."
+                    />
+                  </div>
+                </div>
+              </div>
+
+              <div className="bg-white shadow-lg p-3 ">
+                <div className="flex justify-between">
+                  <h1 className="text-sm font-semibold text-slate-600 mb-3">
+                    Payment Details
+                  </h1>
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                  <div className="space-y-1">
+                    <label className="block text-xs font-semibold text-gray-800">
+                      Payment Date
+                    </label>
+                    <input
+                      type="text"
+                      readOnly
+                      value={
+                        selectedPaymentData.payment_date
+                          ? new Date(selectedPaymentData.payment_date)
+                              .toISOString()
+                              .split("T")[0]
+                          : ""
+                      }
+                      className="w-full px-3 py-2 text-sm border-2 border-gray-200 rounded-xl focus:border-[#C62828] focus:ring-2 focus:ring-[#C62828]/20 outline-none bg-slate-100"
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <label className="block text-xs font-semibold text-gray-800">
+                      Payment Due Date
+                    </label>
+                    <input
+                      type=" text"
+                      readOnly
+                      value={selectedPaymentData.payment_due_date || ""}
+                      className="w-full px-3 py-2 text-sm border-2 border-gray-200 rounded-xl focus:border-[#C62828] focus:ring-2 focus:ring-[#C62828]/20 outline-none bg-slate-100"
+                      placeholder="Add any remarks..."
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <label className="block text-xs font-semibold text-gray-800">
+                      Retention Amount
+                    </label>
+                    <input
+                      type=" text"
+                      readOnly
+                      value={
+                        (Number(selectedPaymentData.approved_amount_paid) *
+                          Number(selectedPaymentData.bill_retention)) /
+                        100
+                      }
+                      className="w-full px-3 py-2 text-sm border-2 border-gray-200 rounded-xl focus:border-[#C62828] focus:ring-2 focus:ring-[#C62828]/20 outline-none bg-slate-100"
+                      placeholder="Add any remarks..."
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <label className="block text-xs font-semibold text-gray-800">
+                      Amount To Pay
+                    </label>
+                    <input
+                      type=" text"
+                      readOnly
+                      value={selectedPaymentData.amount_paid || ""}
+                      className="w-full px-3 py-2 text-sm border-2 border-gray-200 rounded-xl focus:border-[#C62828] focus:ring-2 focus:ring-[#C62828]/20 outline-none bg-slate-100"
+                      placeholder="Add any remarks..."
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <label className="block text-xs font-semibold text-gray-800">
+                      Approve Amount To Pay
+                    </label>
+                    <input
+                      type=" text"
+                      onChange={(e) => {
+                        const value = e.target.value;
+
+                        // allow only numbers + decimal
+                        if (!/^\d*\.?\d*$/.test(value)) return;
+
+                        // allow empty
+                        if (
+                          value !== "" &&
+                          Number(value) >
+                            Number(selectedPaymentData.amount_paid)
+                        ) {
+                          return;
+                        }
+
+                        setSelectedPayemntData({
+                          ...selectedPaymentData,
+                          approved_amount_paid: e.target.value,
+                        });
+                      }}
+                      value={selectedPaymentData.approved_amount_paid || ""}
+                      className="w-full px-3 py-2 text-sm border-2 border-gray-200 rounded-xl focus:border-[#C62828] focus:ring-2 focus:ring-[#C62828]/20 outline-none"
+                      placeholder="Add any remarks..."
+                    />
+                  </div>
+                </div>
+              </div>
+
+              <div className="border-t p-3 flex gap-2">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowPaymentRejectionModal(true);
+                  }}
+                  className="flex-1 bg-gradient-to-r from-[#C62828] to-red-600 text-white py-2 px-4 rounded-xl hover:from-red-600 hover:to-red-700 transition-all duration-200 font-semibold flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed text-sm"
+                >
+                  <CircleX className="w-4 h-4" /> Reject Payment
+                </button>
+                <button
+                  type="submit"
+                  disabled={submitting}
+                  className="flex-1 bg-gradient-to-r from-[#28c640] to-green-600 text-white py-2 px-4 rounded-xl hover:from-green-600 hover:to-green-700 transition-all duration-200 font-semibold flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed text-sm"
+                >
+                  <CircleX className="w-4 h-4" /> Approve Payment
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowPaymentApprovalModal(false);
+                    setPaymentStatusData({
+                      id: "",
+                      status: "",
+                      rejectionReason: "",
+                      approved_amount_paid: "",
+                    });
+                    setSelectedPayemntData({
+                      id: "",
+                      transaction_type: "",
+                      amount_paid: "",
+                      retention_percent: "",
+                      payment_method: "",
+                      payment_date: "",
+                      payment_due_date: "",
+                      payment_proof: "",
+                      payment_reference_no: "",
+                      status: "",
+                      remarks: "",
+                      //bill details
+                      approved_amount_paid: "",
+                      bill_amount: "",
+                      bill_balance: "",
+                      bill_created_by: "",
+                      bill_date: "",
+                      bill_due_date: "",
+                      bill_id: "",
+                      bill_number: "",
+                      bill_proof: "",
+                      bill_retention: "",
+                      bill_status: "",
+                    });
+                  }}
+                  className="px-4 py-2 text-sm border border-gray-200 rounded-xl hover:bg-gray-50 transition-all duration-200 font-medium text-gray-700"
+                >
+                  Cancel
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )} */}
+
+      {showWoBillModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-hidden">
+            <div
+              className="bg-gradient-to-r from-[#4b4e4b] via-[#5a5d5a] to-[#6b6e6b]
+                              px-6 py-4 flex justify-between items-center
+                              rounded-t-2xl border-b border-white/10
+                              backdrop-blur-md"
+            >
+              <h2 className="text-2xl font-bold text-white">
+                Work Worder Bill
+              </h2>
+              <button
+                onClick={() => {
+                  setShowWoBillModal(false);
+                  setPaymentProofUrl("");
+                }}
+                className="text-white hover:bg-white hover:bg-opacity-20 rounded-lg p-2 transition"
+              >
+                <X className="w-6 h-6" />
+              </button>
+            </div>
+            <div className="overflow-y-scroll h-[500px]">
+              {paymentProofUrl.toLowerCase().endsWith(".pdf") ? (
+                <iframe
+                  src={`${import.meta.env.VITE_API_URL}${paymentProofUrl}`}
+                  title="Challan PDF"
+                  className="w-full h-full border rounded-lg"
+                />
+              ) : (
+                <img
+                  src={`${import.meta.env.VITE_API_URL}${paymentProofUrl}`}
+                  alt=""
+                  className="w-full h-full"
+                />
+              )}
+            </div>
+            <div className="flex justify-end gap-3 p-3 border-t">
+              <button
+                type="button"
+                onClick={() => {
+                  setShowWoBillModal(false);
+                  setPaymentProofUrl("");
+                }}
+                className="px-6 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition font-medium"
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {showPaymentRejectionModal && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-md flex items-center justify-center z-50 p-4">
+          <div className="bg-gradient-to-br from-gray-50 to-white rounded-2xl shadow-2xl shadow-gray-900/20 w-full max-w-2xl border border-gray-200 overflow-hidden">
+            {/* Modal Header */}
+            <div className="bg-gradient-to-r from-[#40423f] via-[#4a4c49] to-[#5a5d5a] px-5 py-3 flex justify-between items-center border-b border-gray-700/30">
+              <div className="flex items-center gap-2.5">
+                <div className="p-1.5 bg-white/20 rounded-xl backdrop-blur-sm">
+                  <IndianRupee className="w-4 h-4 text-white" />
+                </div>
+                <div>
+                  <h2 className="text-base font-bold text-white">
+                    Reject WO Payment
+                  </h2>
+                  <p className="text-xs text-white/90 font-medium mt-0.5">
+                    Reject Work Order Payment
+                  </p>
+                </div>
+              </div>
+              <button
+                onClick={() => {
+                  setShowPaymentRejectionModal(false);
+                  setPaymentStatusData({
+                    id: "",
+                    status: "",
+                    rejectionReason: "",
+                    approved_amount_paid: "",
+                  });
+                }}
+                className="text-white hover:bg-white/20 rounded-xl p-1.5 transition-all duration-200"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            <form
+              onSubmit={rejectWoBillStatus}
+              className="p-4 max-h-[calc(90vh-80px)] overflow-y-auto"
+            >
+              <div className="space-y-1">
+                <label className="block text-xs font-semibold text-gray-800">
+                  Work Order Payment Rejection Reason
+                </label>
+                <textarea
+                  value={paymentStatusData.rejectionReason || ""}
+                  onChange={(e) =>
+                    setPaymentStatusData({
+                      ...paymentStatusData,
+                      rejectionReason: e.target.value || "",
+                    })
+                  }
+                  className="w-full px-3 py-2 text-sm border-2 border-gray-200 rounded-xl focus:border-[#C62828] focus:ring-2 focus:ring-[#C62828]/20 outline-none"
+                  rows={2}
+                  placeholder="Add any remarks..."
+                />
+              </div>
+
+              {/* Modal Footer */}
+              <div className="border-t p-3 flex gap-2">
+                <button
+                  type="submit"
+                  disabled={submitting}
+                  className="flex-1 bg-gradient-to-r from-[#C62828] to-red-600 text-white py-2 px-4 rounded-xl hover:from-red-600 hover:to-red-700 transition-all duration-200 font-semibold flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed text-sm"
+                >
+                  <CircleX className="w-4 h-4" /> Reject Work Order Payment
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowPaymentRejectionModal(false);
+                    setPaymentStatusData({
+                      id: "",
+                      status: "",
+                      rejectionReason: "",
+                      approved_amount_paid: "",
+                    });
+                  }}
+                  className="px-4 py-2 text-sm border border-gray-200 rounded-xl hover:bg-gray-50 transition-all duration-200 font-medium text-gray-700"
+                >
+                  Cancel
+                </button>
+              </div>
+            </form>
           </div>
         </div>
       )}
