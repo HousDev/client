@@ -106,9 +106,14 @@ export default function ServiceOrders() {
   const [showChallans, setShowChallans] = useState(false);
   const [trackingData, setTrackingData] = useState<Tracking[]>([]);
   const [selectWorkOrder, setSelectWorkOrder] = useState<any>();
-  const [showPaymentRequestModal, setShowPaymentRequestModal] = useState(false);
+  const [showPaymentRequestModal, setShowPaymentRequestModal] =
+    useState<boolean>(false);
+  const [showRetentionPaymentModal, setShowPaymentRetentionModal] =
+    useState<boolean>(false);
   const [showPaymentProofModal, setShowPaymentProofModal] =
     useState<boolean>(false);
+  const [adjustWithAdvance, setAdjustWithAdvance] = useState<boolean>(false);
+
   const [showWoBillRejectionModal, setShowWoBillRejectionModal] =
     useState(false);
   const [paymentProofUrl, setPaymentProofUrl] = useState("");
@@ -581,7 +586,7 @@ export default function ServiceOrders() {
   const loadSOS = async () => {
     try {
       const response = await ServiceOrdersApi.getAll();
-      // console.log("Work Orders : ", response);
+      console.log("Work Orders : ", response);
       return response;
     } catch (error) {
       console.log(error);
@@ -1084,6 +1089,7 @@ export default function ServiceOrders() {
       draft: "bg-gray-100 text-gray-700",
       pending: "bg-yellow-100 text-yellow-700",
       approved: "bg-orange-100 text-orange-700",
+      partial: "bg-orange-100 text-orange-700",
       rejected: "bg-red-100 text-red-700",
       completed: "bg-blue-100 text-blue-700",
       cancelled: "bg-red-100 text-red-700",
@@ -1148,6 +1154,7 @@ export default function ServiceOrders() {
 
   const handleMakePayment = async (e: React.FormEvent) => {
     e.preventDefault();
+    // return;
     try {
       let res: any;
       const formData = new FormData();
@@ -1165,9 +1172,10 @@ export default function ServiceOrders() {
         toast.error("Enter a valid amount");
         return;
       }
-
+      console.log("payment data : ", paymentData);
       if (
-        paymentData.transaction_type === "ADVANCE" &&
+        (paymentData.transaction_type === "ADVANCE" ||
+          paymentData.transaction_type === "advance") &&
         paymentData.status === "SUCCESS"
       ) {
         if ((paymentData.payment_reference_no || "").length <= 0) {
@@ -1208,6 +1216,62 @@ export default function ServiceOrders() {
         formData.append("payment_proof", paymentData.payment_proof);
 
         setSubmitting(true);
+      } else if (
+        (paymentData.transaction_type === "RETENTION" ||
+          paymentData.transaction_type === "retention") &&
+        paymentData.status === "SUCCESS"
+      ) {
+        if ((paymentData.payment_reference_no || "").length <= 0) {
+          toast.error("Enter valid reference number");
+          return;
+        }
+        if (!paymentData.payment_proof) {
+          toast.error("Upload valid payment proof");
+          return;
+        }
+        // 🔥 IMPORTANT: Use FormData for file upload
+
+        console.log("paymentData", paymentData);
+
+        formData.append("wo_id", String(paymentData.wo_id)); // change if variable name different
+        formData.append("transaction_type", "RETENTION");
+        formData.append(
+          "amount_paid",
+          String(paymentData.retention_amount || "0"),
+        );
+        formData.append(
+          "retention_percentage",
+          String(paymentData.bill_retention || "0"),
+        );
+        formData.append(
+          "payment_method",
+          paymentData.payment_method?.toUpperCase() || "",
+        );
+        formData.append(
+          "payment_reference_no",
+          paymentData.payment_reference_no || "",
+        );
+        formData.append("payment_proof", paymentData.payment_proof);
+        formData.append("payment_date", paymentData.payment_date || "");
+        formData.append("paid_on", paymentData.paid_on || "");
+        formData.append("status", "SUCCESS");
+        formData.append("remarks", paymentData.remarks || "");
+        formData.append("created_by", String(user?.id || ""));
+        formData.append("payment_due_date", paymentData.payment_due_date || "");
+        formData.append("bill_id", paymentData.id || "");
+        formData.append(
+          "approved_amount_paid",
+          paymentData.approved_amount_paid || "",
+        );
+        formData.append(
+          "previous_advance",
+          paymentData.wo_advance_amount || "",
+        );
+        formData.append("adjusted_advance", paymentData.advance_amount || "");
+
+        // 👇 payment_proof must be actual File object
+
+        setSubmitting(true);
       } else {
         formData.append("wo_id", String(selectedPO.wo_id));
         formData.append("bill_id", String(selectedPO.id));
@@ -1237,6 +1301,7 @@ export default function ServiceOrders() {
 
         setShowPaymentModal(false);
         setShowPaymentRequestModal(false);
+        setShowPaymentRetentionModal(false);
         setSelectedPO(null);
 
         setPaymentData({
@@ -1684,10 +1749,16 @@ export default function ServiceOrders() {
                                         Bill Amount
                                       </th>
                                       <th className="text-left px-2 py-1.5 text-[10px] md:text-xs font-medium text-gray-700">
+                                        Bill Amount Paid
+                                      </th>
+                                      <th className="text-left px-2 py-1.5 text-[10px] md:text-xs font-medium text-gray-700">
                                         Bill Balance
                                       </th>
                                       <th className="text-left px-2 py-1.5 text-[10px] md:text-xs font-medium text-gray-700">
                                         Retention %
+                                      </th>
+                                      <th className="text-left px-2 py-1.5 text-[10px] md:text-xs font-medium text-gray-700">
+                                        Retention Amount
                                       </th>
                                       <th className="text-left px-2 py-1.5 text-[10px] md:text-xs font-medium text-gray-700">
                                         Bill Status
@@ -1734,14 +1805,21 @@ export default function ServiceOrders() {
                                             <td className="px-2 py-1.5 font-medium text-green-600 text-xs">
                                               {transaction.bill_amount}
                                             </td>
+                                            <td className="px-2 py-1.5 font-medium text-green-600 text-xs">
+                                              {transaction.bill_paid}
+                                            </td>
                                             <td className="px-2 py-1.5 font-medium text-red-600 text-xs">
                                               {transaction.bill_balance || "-"}
                                             </td>
+
                                             <td className="px-2 py-1.5 font-medium text-red-600 text-xs">
                                               {transaction.bill_retention ||
                                                 "-"}
                                             </td>
-
+                                            <td className="px-2 py-1.5 font-medium text-red-600 text-xs">
+                                              {transaction.bill_retention_amount ||
+                                                "-"}
+                                            </td>
                                             <td className="px-2 py-1.5">
                                               <span
                                                 className={`px-2 py-0.5 rounded-full text-[10px] font-medium ${getStatusColor(
@@ -1846,7 +1924,14 @@ export default function ServiceOrders() {
                                                 ) !==
                                                   Number(
                                                     transaction.bill_amount,
-                                                  ) &&
+                                                  ) -
+                                                    (Number(
+                                                      transaction.bill_amount,
+                                                    ) *
+                                                      Number(
+                                                        transaction.bill_retention,
+                                                      )) /
+                                                      100 &&
                                                 (transaction.status ===
                                                   "pending" ||
                                                   transaction.status ===
@@ -1859,11 +1944,95 @@ export default function ServiceOrders() {
                                                       setSelectedPO(
                                                         transaction,
                                                       );
+                                                      setPaymentData({
+                                                        ...paymentData,
+                                                        transaction_type:
+                                                          "SUCCESS",
+                                                        status: "PAYMENT",
+                                                      });
                                                     }}
                                                     className="p-1.5 md:p-2 text-green-600 hover:bg-green-50 rounded-lg transition"
                                                     title="Rise Payment Request"
                                                   >
                                                     <FilePlus className="w-3.5 h-3.5 md:w-4 md:h-4" />
+                                                  </button>
+                                                )}
+                                              {can("make_payment_wo") &&
+                                                Number(
+                                                  transaction.request_amount,
+                                                ) ===
+                                                  Number(
+                                                    transaction.bill_amount,
+                                                  ) -
+                                                    (Number(
+                                                      transaction.bill_amount,
+                                                    ) *
+                                                      Number(
+                                                        transaction.bill_retention,
+                                                      )) /
+                                                      100 &&
+                                                (transaction.status ===
+                                                  "pending" ||
+                                                  transaction.status ===
+                                                    "partial") && (
+                                                  <button
+                                                    onClick={() => {
+                                                      setShowPaymentRetentionModal(
+                                                        true,
+                                                      );
+                                                      setSelectedPO(
+                                                        transaction,
+                                                      );
+
+                                                      const retentionAmount =
+                                                        (Number(
+                                                          transaction.bill_amount,
+                                                        ) *
+                                                          Number(
+                                                            transaction.bill_retention,
+                                                          )) /
+                                                        100;
+
+                                                      console.log(
+                                                        "retention Amount : ",
+                                                        retentionAmount,
+                                                      );
+
+                                                      console.log(
+                                                        "retention Amount : ",
+                                                        transaction,
+                                                      );
+
+                                                      setPaymentData({
+                                                        ...transaction,
+                                                        approved_amount_paid:
+                                                          retentionAmount,
+                                                        vendor: po.vendor,
+                                                        so_number:
+                                                          transaction.so_number,
+                                                        payment_date:
+                                                          transaction.bill_date,
+                                                        payment_due_date:
+                                                          transaction.bill_due_date,
+                                                        retention_amount:
+                                                          retentionAmount,
+                                                        payment_method:
+                                                          "bank_transfer",
+                                                        paid_on: new Date()
+                                                          .toISOString()
+                                                          .split("T")[0],
+                                                        wo_advance_amount:
+                                                          transaction.advance_amount,
+                                                        transaction_type:
+                                                          "RETENTION",
+                                                        status: "SUCCESS",
+                                                        advance_amount: "0",
+                                                      });
+                                                    }}
+                                                    className="p-1.5 md:p-2 text-green-600 hover:bg-green-50 rounded-lg transition"
+                                                    title="Rise Payment Request"
+                                                  >
+                                                    <IndianRupee className="w-3.5 h-3.5 md:w-4 md:h-4" />
                                                   </button>
                                                 )}
                                             </td>
@@ -3555,36 +3724,22 @@ export default function ServiceOrders() {
                         (Number(selectedPO.bill_amount) *
                           Number(selectedPO.bill_retention)) /
                         100;
+                      console.log(selectedPO);
 
-                      if (
-                        value >
-                        Number(selectedPO.bill_amount) - retentionAmount
-                      ) {
+                      const allowed_amount =
+                        Number(selectedPO.bill_amount) -
+                        retentionAmount -
+                        Number(selectedPO.request_amount);
+
+                      console.log(value, allowed_amount);
+
+                      if (value > allowed_amount) {
                         setAmountError(
-                          `You can not enter value greater than ${Number(selectedPO.bill_amount) - retentionAmount}`,
+                          "You can not enter amount greater than " +
+                            allowed_amount,
                         );
                         return;
                       }
-
-                      if (value > Number(selectedPO.bill_balance)) {
-                        setAmountError(
-                          `You can not enter value greater than ${selectedPO.bill_balance}`,
-                        );
-                        return;
-                      }
-                      if (
-                        value >
-                          Number(selectedPO.bill_amount) -
-                            retentionAmount -
-                            Number(selectedPO.request_amount) &&
-                        Number(selectedPO.request_amount) !== 0
-                      ) {
-                        setAmountError(
-                          `You can not enter value greater than ${retentionAmount - Number(selectedPO.request_amount)}`,
-                        );
-                        return;
-                      }
-
                       setAmountError("");
                       setPaymentData({
                         ...paymentData,
@@ -3719,6 +3874,397 @@ export default function ServiceOrders() {
           setShowWoBill={setShowWoBill}
           selectedWO={selectedPO}
         />
+      )}
+
+      {showRetentionPaymentModal && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-md flex items-center justify-center z-50 p-4">
+          <div className="bg-gradient-to-br from-gray-50 to-white rounded-2xl shadow-2xl shadow-gray-900/20 w-full max-w-lg border border-gray-200 overflow-hidden">
+            {/* Modal Header */}
+            <div className="bg-gradient-to-r from-[#40423f] via-[#4a4c49] to-[#5a5d5a] px-5 py-3 flex justify-between items-center border-b border-gray-700/30">
+              <div className="flex items-center gap-2.5">
+                <div className="p-1.5 bg-white/20 rounded-xl backdrop-blur-sm">
+                  <IndianRupee className="w-4 h-4 text-white" />
+                </div>
+                <div>
+                  <h2 className="text-base font-bold text-white">
+                    Pay Retention Amount
+                  </h2>
+                  <p className="text-xs text-white/90 font-medium mt-0.5">
+                    Pay retention amount of bill.
+                  </p>
+                </div>
+              </div>
+              <button
+                onClick={() => {
+                  setShowPaymentRetentionModal(false);
+                  setAdjustWithAdvance(false);
+                  setSelectedPO(null);
+
+                  setPaymentData({
+                    po_id: null,
+                    po_payment_id: null,
+                    adjust_with_advance: false,
+                    advance_amount: "",
+                    retention_percentage: "",
+                    vendorId: "",
+                    transaction_type: "payment",
+                    amount_paid: "",
+                    payment_method: "bank_transfer",
+                    payment_reference_no: "",
+                    payment_proof: null,
+                    payment_date: new Date().toISOString().split("T")[0],
+                    status: "pending",
+                    remarks: "",
+                    created_by: user?.id,
+                  });
+                }}
+                className="text-white hover:bg-white/20 rounded-xl p-1.5 transition-all duration-200"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            <form
+              onSubmit={handleMakePayment}
+              className="pt-4 pl-4 pb-4 max-h-[calc(90vh-80px)] "
+            >
+              <div className="overflow-y-scroll max-h-[calc(80vh-80px)] grid grid-cols-1 md:grid-cols-2 gap-3 pr-4 scrollbar-thin">
+                <div className="space-y-1 col-span-1 md:col-span-2 hidden">
+                  <p className="text-xs font-semibold text-gray-800">
+                    Transaction Type
+                  </p>
+                  <div className="p-2 bg-orange-50 border border-orange-200 rounded-lg">
+                    <p className="text-base font-bold text-yellow-600">
+                      {paymentData?.transaction_type || "--"}
+                    </p>
+                  </div>
+                </div>
+
+                <div className="space-y-1">
+                  <p className="text-xs font-semibold text-gray-800">
+                    Bill Number
+                  </p>
+                  <div className="p-2 bg-orange-50 border border-orange-200 rounded-lg">
+                    <p className="text-base font-bold text-yellow-600">
+                      {paymentData?.bill_number || "--"}
+                    </p>
+                  </div>
+                </div>
+
+                <div className="space-y-1">
+                  <p className="text-xs font-semibold text-gray-800">Vendor</p>
+                  <div className="p-2 bg-orange-50 border border-orange-200 rounded-lg">
+                    <p className="text-base font-bold text-yellow-600">
+                      {paymentData?.vendor || "--"}
+                    </p>
+                  </div>
+                </div>
+
+                <div className="space-y-1">
+                  <p className="text-xs font-semibold text-gray-800">
+                    Work Order
+                  </p>
+                  <div className="p-2 bg-orange-50 border border-orange-200 rounded-lg">
+                    <p className="text-base font-bold text-yellow-600">
+                      {paymentData?.so_number || "--"}
+                    </p>
+                  </div>
+                </div>
+
+                <div className="space-y-1">
+                  <p className="text-xs font-semibold text-gray-800">
+                    Total Bill Amount
+                  </p>
+                  <div className="p-2 bg-orange-50 border border-orange-200 rounded-lg">
+                    <p className="text-base font-bold text-orange-600">
+                      {formatCurrency(paymentData?.bill_amount || 0)}
+                    </p>
+                  </div>
+                </div>
+
+                <div className="space-y-1">
+                  <p className="text-xs font-semibold text-gray-800">
+                    Bill Balance Amount
+                  </p>
+                  <div className="p-2 bg-red-50 border border-red-200 rounded-lg">
+                    <p className="text-base font-bold text-red-600">
+                      {formatCurrency(paymentData?.bill_balance || 0)}
+                    </p>
+                  </div>
+                </div>
+                <div className="space-y-1">
+                  <p className="text-xs font-semibold text-gray-800">
+                    Bill Paid Amount
+                  </p>
+                  <div className="p-2 bg-red-50 border border-red-200 rounded-lg">
+                    <p className="text-base font-bold text-red-600">
+                      {formatCurrency(paymentData?.bill_paid || 0)}
+                    </p>
+                  </div>
+                </div>
+                <div className="space-y-1">
+                  <p className="text-xs font-semibold text-gray-800">
+                    Retention Amount
+                  </p>
+                  <div className="p-2 bg-red-50 border border-red-200 rounded-lg">
+                    <p className="text-base font-bold text-red-600 flex items-center">
+                      <IndianRupee className="w-4 h-4" />
+                      {paymentData?.retention_amount || 0}
+                    </p>
+                  </div>
+                </div>
+
+                <div className="space-y-1">
+                  <p className="text-xs font-semibold text-gray-800">
+                    Work Order Total Advance Amount
+                  </p>
+                  <div className="p-2 bg-red-50 border border-red-200 rounded-lg">
+                    <p className="text-base font-bold text-red-600 flex items-center">
+                      <IndianRupee className="w-4 h-4" />
+                      {paymentData?.wo_advance_amount || 0}
+                    </p>
+                  </div>
+                </div>
+
+                <div className="space-y-1">
+                  <label className="block text-xs font-semibold text-gray-800">
+                    Created On <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    type="date"
+                    value={paymentData.payment_date.split("T")[0] || ""}
+                    readOnly
+                    className="w-full px-3 py-2 text-sm border-2 border-gray-200 rounded-xl focus:border-[#C62828] focus:ring-2 focus:ring-[#C62828]/20 outline-none"
+                    required
+                  />
+                </div>
+                <div className="space-y-1">
+                  <label className="block text-xs font-semibold text-gray-800">
+                    Payment Due Date <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    type="date"
+                    value={paymentData.payment_due_date || ""}
+                    readOnly
+                    className="w-full px-3 py-2 text-sm border-2 border-gray-200 rounded-xl focus:border-[#C62828] focus:ring-2 focus:ring-[#C62828]/20 outline-none"
+                    required
+                  />
+                </div>
+
+                <div className="space-y-1">
+                  <label className="block text-xs font-semibold text-gray-800">
+                    Payment Date <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    type="date"
+                    value={paymentData.paid_on || ""}
+                    onChange={(e) => {
+                      setPaymentData({
+                        ...paymentData,
+                        paid_on: e.target.value,
+                      });
+                    }}
+                    className="w-full px-3 py-2 text-sm border-2 border-gray-200 rounded-xl focus:border-[#C62828] focus:ring-2 focus:ring-[#C62828]/20 outline-none"
+                    required
+                  />
+                </div>
+
+                <div className="space-y-1">
+                  <label className="block text-xs font-semibold text-gray-800">
+                    Payment Amount <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    type="text"
+                    value={paymentData.approved_amount_paid || ""}
+                    onChange={(e) => {
+                      if (
+                        !/^\d*\.?\d*$/.test(e.target.value) ||
+                        Number(e.target.value) >
+                          Number(paymentData.amount_paid) ||
+                        (Number(e.target.value) >
+                          Number(paymentData.wo_advance_amount) &&
+                          Number(paymentData.wo_advance_amount) !== 0)
+                      ) {
+                        return;
+                      }
+                      setPaymentData({
+                        ...paymentData,
+                        approved_amount_paid: e.target.value,
+                      });
+                    }}
+                    className="w-full px-3 py-2 text-sm border-2 border-gray-200 rounded-xl focus:border-[#C62828] focus:ring-2 focus:ring-[#C62828]/20 outline-none"
+                    required
+                  />
+                </div>
+
+                {Number(paymentData.wo_advance_amount) !== 0 && (
+                  <div className="space-y-1 flex items-center">
+                    <input
+                      type="checkbox"
+                      checked={adjustWithAdvance}
+                      onChange={(e) => {
+                        if (e.target.checked) {
+                          setPaymentData({
+                            ...paymentData,
+                            advance_amount: "0",
+                          });
+                        }
+                        setAdjustWithAdvance(!adjustWithAdvance);
+                      }}
+                      className="w-4 h-4 accent-[#b52124] cursor-pointer mt-0.5 mr-2"
+                    />
+                    <label className="block text-xs font-semibold text-gray-800">
+                      Adjust with advance
+                    </label>
+                  </div>
+                )}
+
+                {adjustWithAdvance && (
+                  <div className="space-y-1">
+                    <label className="block text-xs font-semibold text-gray-800">
+                      Amount To Adjust in Advance{" "}
+                      <span className="text-red-500">*</span>
+                    </label>
+                    <input
+                      type="text"
+                      value={paymentData.advance_amount || ""}
+                      onChange={(e) => {
+                        if (
+                          !/^\d*\.?\d*$/.test(e.target.value) ||
+                          Number(e.target.value) >
+                            Number(paymentData.approved_amount_paid)
+                        ) {
+                          return;
+                        }
+                        setPaymentData({
+                          ...paymentData,
+                          advance_amount: e.target.value,
+                        });
+                      }}
+                      className="w-full px-3 py-2 text-sm border-2 border-gray-200 rounded-xl focus:border-[#C62828] focus:ring-2 focus:ring-[#C62828]/20 outline-none"
+                      required
+                    />
+                  </div>
+                )}
+
+                <div className="space-y-1">
+                  <label className="block text-xs font-semibold text-gray-800">
+                    Payment Method <span className="text-red-500">*</span>
+                  </label>
+                  <select
+                    value={paymentData.payment_method || "bank_transfer"}
+                    onChange={(e) =>
+                      setPaymentData({
+                        ...paymentData,
+                        payment_method: e.target.value,
+                      })
+                    }
+                    className="w-full px-3 py-2 text-sm border-2 border-gray-200 rounded-xl focus:border-[#C62828] focus:ring-2 focus:ring-[#C62828]/20 outline-none"
+                  >
+                    <option value="bank_transfer">Bank Transfer</option>
+                    <option value="cheque">Cheque</option>
+                    <option value="cash">Cash</option>
+                    <option value="online">Online Payment</option>
+                  </select>
+                </div>
+                <div className="space-y-1">
+                  <label className="block text-xs font-semibold text-gray-800">
+                    Reference Number <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    type="text"
+                    value={paymentData.payment_reference_no || ""}
+                    onChange={(e) =>
+                      setPaymentData({
+                        ...paymentData,
+                        payment_reference_no: e.target.value,
+                      })
+                    }
+                    className="w-full px-3 py-2 text-sm border-2 border-gray-200 rounded-xl focus:border-[#C62828] focus:ring-2 focus:ring-[#C62828]/20 outline-none"
+                    placeholder="Transaction reference"
+                    required
+                  />
+                </div>
+
+                <div className="space-y-1">
+                  <label className="block text-xs font-semibold text-gray-800">
+                    Upload Payment Proof <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    type="file"
+                    required
+                    id="payment_proof"
+                    onChange={handleFileUpload}
+                    className="w-full px-3 py-2 text-sm border-2 border-gray-200 rounded-xl focus:border-[#C62828] focus:ring-2 focus:ring-[#C62828]/20 outline-none file:border-none file:bg-gradient-to-r file:from-[#C62828] file:to-red-600 file:text-white file:font-medium file:px-3 file:py-1.5 file:rounded-lg file:cursor-pointer"
+                    accept=".pdf,.jpg,.jpeg,.png"
+                  />
+                </div>
+
+                <div className="space-y-1 col-span-1 md:col-span-2 mb-3">
+                  <label className="block text-xs font-semibold text-gray-800">
+                    Remarks
+                  </label>
+                  <textarea
+                    value={paymentData.remarks || ""}
+                    onChange={(e) =>
+                      setPaymentData({
+                        ...paymentData,
+                        remarks: e.target.value || "",
+                      })
+                    }
+                    className="w-full px-3 py-2 text-sm border-2 border-gray-200 rounded-xl focus:border-[#C62828] focus:ring-2 focus:ring-[#C62828]/20 outline-none"
+                    rows={2}
+                    placeholder="Add any remarks..."
+                  />
+                </div>
+              </div>
+              {/* Modal Footer */}
+              <div className="border-t  py-3 px-3 flex gap-2 col-span-2 sticky bottom-0 bg-white justify-end">
+                <button
+                  type="submit"
+                  disabled={submitting}
+                  className=" bg-gradient-to-r from-[#C62828] to-red-600 text-white py-2 px-4 rounded-xl hover:from-red-600 hover:to-red-700 transition-all duration-200 font-semibold flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed text-sm"
+                >
+                  {submitting ? (
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                  ) : (
+                    <IndianRupee className="w-4 h-4" />
+                  )}
+                  {submitting ? "Processing..." : "Pay"}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowPaymentRetentionModal(false);
+                    setAdjustWithAdvance(false);
+                    setSelectedPO(null);
+
+                    setPaymentData({
+                      po_id: null,
+                      po_payment_id: null,
+                      adjust_with_advance: false,
+                      advance_amount: "",
+                      retention_percentage: "",
+                      vendorId: "",
+                      transaction_type: "payment",
+                      amount_paid: "",
+                      payment_method: "bank_transfer",
+                      payment_reference_no: "",
+                      payment_proof: null,
+                      payment_date: new Date().toISOString().split("T")[0],
+                      status: "pending",
+                      remarks: "",
+                      created_by: user?.id,
+                    });
+                  }}
+                  className="px-4 py-2 text-sm border border-gray-200 rounded-xl hover:bg-gray-50 transition-all duration-200 font-medium text-gray-700"
+                >
+                  Cancel
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
       )}
     </div>
   );

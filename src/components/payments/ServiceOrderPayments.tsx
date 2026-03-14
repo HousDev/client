@@ -728,12 +728,18 @@ export default function ServiceOrderPayments() {
     e.preventDefault();
     try {
       console.log("payment data : ", paymentData);
+      const payload = {
+        ...paymentData,
+        advance_amount: paymentData.advance_amount ?? 0,
+        status: "success",
+      };
 
       const paymentRes: any = await woPaymentHistoryApi.updateWoPaymentHistory(
         paymentData.id,
-        paymentData,
+        payload,
       );
       if (paymentRes.success) {
+        loadPOData();
         toast.success(paymentRes.message);
         setShowPaymentRequestModal(false);
         setPaymentData({
@@ -1249,7 +1255,7 @@ export default function ServiceOrderPayments() {
                                                         .split("T")[0],
                                                       wo_advance_amount:
                                                         po.wo_advance_amount,
-                                                      advance_amount: "",
+                                                      advance_amount: "0",
                                                     });
                                                   }}
                                                   className={`px-2 py-1 rounded-full text-[10px] md:text-xs font-medium cursor-pointer text-green-600 hover:bg-green-50 transition`}
@@ -1528,7 +1534,7 @@ export default function ServiceOrderPayments() {
                   />
                 </div>
 
-                {paymentData.wo_advance_amount && (
+                {Number(paymentData.wo_advance_amount) !== 0 && (
                   <div className="space-y-1 flex items-center">
                     <input
                       type="checkbox"
@@ -1537,7 +1543,7 @@ export default function ServiceOrderPayments() {
                         if (e.target.checked) {
                           setPaymentData({
                             ...paymentData,
-                            advance_amount: "",
+                            advance_amount: "0",
                           });
                         }
                         setAdjustWithAdvance(!adjustWithAdvance);
