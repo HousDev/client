@@ -23,6 +23,7 @@ type WoBillForm = {
   bill_retention: string;
   bill_date: string;
   bill_due_date: string;
+  grand_total: string;
   bill_proof: string;
   created_by: string;
 };
@@ -44,6 +45,7 @@ export default function CreateWoBill({
     bill_number: "",
     bill_amount: "0",
     bill_balance: "0",
+    grand_total: "0",
     bill_retention: "0",
     bill_date: new Date().toISOString().split("T")[0],
     bill_due_date: "",
@@ -194,7 +196,9 @@ export default function CreateWoBill({
                     onChange={(e) => {
                       if (
                         !/^\d*\.?\d*$/.test(e.target.value) ||
-                        Number(e.target.value) < 0
+                        Number(e.target.value) < 0 ||
+                        Number(e.target.value) >
+                          Number(selectedWO.balance_amount)
                       )
                         return;
                       setFormData({

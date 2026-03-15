@@ -454,7 +454,7 @@ export default function Attendance() {
                 className="cursor-pointer text-xs sm:text-sm"
               >
                 <Clock className="h-4 w-4 mr-2" />
-                <span className="hidden sm:block">Mark</span>{" "}
+                <span className="hidden sm:block">Mark&nbsp;</span>
                 <span> Attendance</span>
               </Button>
             )}

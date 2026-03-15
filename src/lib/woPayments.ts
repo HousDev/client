@@ -41,6 +41,14 @@ async function updateWoPaymentHistory(id: number | string, payload: any) {
   return unwrap(res);
 }
 
+async function updateWoPaymentStatus(id: number | string, payload: any) {
+  const res: any = await api.put(
+    `/wo-payment-history/payment-status/${id}`,
+    payload,
+  );
+  return unwrap(res);
+}
+
 /**
  * Delete WO Payment History
  */
@@ -55,6 +63,7 @@ const woPaymentHistoryApi = {
   getWoPaymentHistoryById,
   updateWoPaymentHistory,
   deleteWoPaymentHistory,
+  updateWoPaymentStatus,
 };
 
 export default woPaymentHistoryApi;

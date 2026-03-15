@@ -73,10 +73,10 @@ const ViewTodayAttendanceModal = ({
             </div>
             <div>
               <h3 className="font-bold text-white text-sm md:text-base">
-                {dayData.user_name ?? user.full_name} Attendace
+                {dayData.user_name ?? user.full_name} Attendance
               </h3>
               <p className="text-xs text-gray-300/80 hidden md:block">
-                View Attendace
+                View Attendance
               </p>
             </div>
           </div>
