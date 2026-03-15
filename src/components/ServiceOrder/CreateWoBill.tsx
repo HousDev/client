@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 // src/components/ServiceOrdersPro.tsx
-import React, { useState, SetStateAction } from "react";
+import React, { useState, SetStateAction, useEffect } from "react";
 import {
   X,
   Package,
@@ -37,8 +37,9 @@ export default function CreateWoBill({
   loadAllData: () => void;
   selectedWO: any;
 }): JSX.Element {
-  console.log(selectedWO);
+  console.log("selected wo", selectedWO);
   const { user } = useAuth();
+  const [amountError, setAmountError] = useState("");
 
   const [formData, setFormData] = useState<WoBillForm>({
     wo_id: selectedWO.id,
@@ -115,6 +116,17 @@ export default function CreateWoBill({
       setFormData((prev: any) => ({ ...prev, bill_proof: file }));
     }
   };
+
+  useEffect(() => {
+    if (!amountError) return;
+
+    const timer = setTimeout(() => {
+      setAmountError("");
+    }, 3000);
+
+    return () => clearTimeout(timer);
+  }, [amountError]);
+
   return (
     <div className="p-6">
       {/* Create Modal (with SearchableSelects) */}
@@ -194,13 +206,21 @@ export default function CreateWoBill({
                     type="text"
                     value={formData.bill_amount}
                     onChange={(e) => {
+                      if (!/^\d*\.?\d*$/.test(e.target.value)) return;
+
+                      const validAmount =
+                        Number(selectedWO.grand_total) -
+                        Number(selectedWO.request_amount);
+                      console.log(validAmount);
                       if (
-                        !/^\d*\.?\d*$/.test(e.target.value) ||
                         Number(e.target.value) < 0 ||
-                        Number(e.target.value) >
-                          Number(selectedWO.balance_amount)
-                      )
+                        Number(e.target.value) > Number(validAmount)
+                      ) {
+                        setAmountError(
+                          `You can not enter amount greater than ${validAmount}`,
+                        );
                         return;
+                      }
                       setFormData({
                         ...formData,
                         bill_amount: e.target.value,
@@ -209,6 +229,7 @@ export default function CreateWoBill({
                     className="w-full pl-10 pr-4 py-2 text-sm border border-gray-300 rounded-xl focus:border-amber-600 focus:ring-2 focus:ring-amber-600/20 outline-none transition-all duration-200 hover:border-gray-400"
                     required
                   />
+                  <p className="text-xs text-red-600">{amountError}</p>
                 </div>
               </div>
               <div className="space-y-1.5">

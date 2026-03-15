@@ -727,6 +727,23 @@ export default function ServiceOrderPayments() {
   const handleMakePayment = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
+      if (
+        Number(paymentData.wo_balance_amount) -
+          Number(paymentData.approved_amount_paid) <=
+          Number(paymentData.wo_advance_amount) &&
+        Number(paymentData.wo_advance_amount) !== 0 &&
+        Number(paymentData.wo_advance_amount) -
+          Number(paymentData.advance_amount) >
+          Number(paymentData.wo_balance_amount) -
+            Number(paymentData.approved_amount_paid)
+      ) {
+        toast.error("Adjust payment with advance advance correctly.");
+        return;
+      }
+
+      // toast.success("success");
+
+      // return;
       console.log("payment data : ", paymentData);
       const payload = {
         ...paymentData,
@@ -1169,7 +1186,7 @@ export default function ServiceOrderPayments() {
                                             {transaction.transaction_type}
                                           </td>
                                           <td className="px-2 py-1.5 font-medium  text-xs">
-                                            {transaction.bill_number}
+                                            {transaction.bill_number || "--"}
                                           </td>
                                           <td className="px-2 py-1.5 text-gray-700 text-xs">
                                             {new Date(
@@ -1255,6 +1272,8 @@ export default function ServiceOrderPayments() {
                                                         .split("T")[0],
                                                       wo_advance_amount:
                                                         po.wo_advance_amount,
+                                                      wo_balance_amount:
+                                                        po.wo_balance_amount,
                                                       advance_amount: "0",
                                                     });
                                                   }}
@@ -1509,8 +1528,9 @@ export default function ServiceOrderPayments() {
                     type="text"
                     value={paymentData.approved_amount_paid || ""}
                     onChange={(e) => {
+                      if (!/^\d*\.?\d*$/.test(e.target.value)) return;
+
                       if (
-                        !/^\d*\.?\d*$/.test(e.target.value) ||
                         Number(e.target.value) >
                           Number(paymentData.amount_paid) ||
                         (Number(e.target.value) >
@@ -1519,6 +1539,10 @@ export default function ServiceOrderPayments() {
                       ) {
                         return;
                       }
+                      console.log(
+                        "payment data from input fields : ",
+                        paymentData,
+                      );
                       const retentionAmount =
                         (Number(e.target.value) *
                           Number(paymentData.bill_retention)) /
@@ -1569,7 +1593,7 @@ export default function ServiceOrderPayments() {
                         if (
                           !/^\d*\.?\d*$/.test(e.target.value) ||
                           Number(e.target.value) >
-                            Number(paymentData.approved_amount_paid)
+                            Number(paymentData.wo_advance_amount)
                         ) {
                           return;
                         }

@@ -252,6 +252,10 @@ export default function ServiceOrders() {
             project: crr.project_name,
             building: crr.building_name,
             wo_status: crr.so_status,
+            wo_advance_amount: crr.wo_advance_amount,
+            wo_balance_amount: crr.wo_balance_amount,
+            grand_total: crr.grand_total,
+            wo_request_amount: crr.wo_request_amount,
             wo_date: crr.so_date,
             bills: [],
             totalBills: 0,
@@ -1713,7 +1717,11 @@ export default function ServiceOrders() {
                                 onClick={() => {
                                   setShowWoBill(true);
                                   console.log("po details : ", po);
-                                  setSelectedPO({ ...po, id: po.wo_id });
+                                  setSelectedPO({
+                                    ...po,
+                                    id: po.wo_id,
+                                    request_amount: po.wo_request_amount,
+                                  });
                                 }}
                                 className="p-1.5 md:p-2 text-green-600 hover:bg-green-50 rounded-lg transition"
                                 title="Add Bill"
@@ -1959,18 +1967,11 @@ export default function ServiceOrders() {
                                                 )}
                                               {can("make_payment_wo") &&
                                                 Number(
-                                                  transaction.request_amount,
-                                                ) ===
+                                                  transaction.bill_calcu_retention_amount,
+                                                ) !==
                                                   Number(
-                                                    transaction.bill_amount,
-                                                  ) -
-                                                    (Number(
-                                                      transaction.bill_amount,
-                                                    ) *
-                                                      Number(
-                                                        transaction.bill_retention,
-                                                      )) /
-                                                      100 &&
+                                                    transaction.bill_retention_amount,
+                                                  ) &&
                                                 (transaction.status ===
                                                   "pending" ||
                                                   transaction.status ===
@@ -2002,11 +2003,20 @@ export default function ServiceOrders() {
                                                         "retention Amount : ",
                                                         transaction,
                                                       );
+                                                      const amountTOPay =
+                                                        Number(
+                                                          transaction.bill_retention_amount,
+                                                        ) -
+                                                        Number(
+                                                          transaction.bill_calcu_retention_amount,
+                                                        );
 
                                                       setPaymentData({
                                                         ...transaction,
+                                                        amount_paid:
+                                                          amountTOPay,
                                                         approved_amount_paid:
-                                                          retentionAmount,
+                                                          amountTOPay,
                                                         vendor: po.vendor,
                                                         so_number:
                                                           transaction.so_number,
@@ -2015,7 +2025,7 @@ export default function ServiceOrders() {
                                                         payment_due_date:
                                                           transaction.bill_due_date,
                                                         retention_amount:
-                                                          retentionAmount,
+                                                          amountTOPay,
                                                         payment_method:
                                                           "bank_transfer",
                                                         paid_on: new Date()
@@ -2703,6 +2713,8 @@ export default function ServiceOrders() {
                         )}
                         {can("make_payment_wo") &&
                           po.balance_amount! > 0 &&
+                          Number(po.request_amount) !==
+                            Number(po.grand_total) &&
                           po.status === "authorize" && (
                             <button
                               onClick={() => {
@@ -2715,10 +2727,12 @@ export default function ServiceOrders() {
                             </button>
                           )}
                         {can("make_payment_wo") &&
-                          po.balance_amount! > 0 &&
+                          Number(po.request_amount) !==
+                            Number(po.grand_total) &&
                           po.status === "authorize" && (
                             <button
                               onClick={() => {
+                                console.log(po, "for generating bill");
                                 setShowWoBill(true);
 
                                 setSelectedPO(po);
@@ -3774,7 +3788,7 @@ export default function ServiceOrders() {
               <div className="border-t  pb-3 flex gap-2 col-span-2 sticky bottom-0 bg-white">
                 <button
                   type="submit"
-                  disabled={submitting || amountError.length !== 0}
+                  disabled={submitting}
                   className="flex-1 bg-gradient-to-r from-[#C62828] to-red-600 text-white py-2 px-4 rounded-xl hover:from-red-600 hover:to-red-700 transition-all duration-200 font-semibold flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed text-sm"
                 >
                   {submitting ? (
