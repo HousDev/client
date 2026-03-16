@@ -116,7 +116,7 @@ const Dashboard: React.FC = () => {
   const fetchDashboardData = async () => {
     try {
       setLoading(true);
-      
+
       // Fetch data from all APIs
       const [pos, vendors, inventory, requests, items] = await Promise.all([
         poApi.getPOs(),
@@ -135,20 +135,20 @@ const Dashboard: React.FC = () => {
 
       // Calculate material requests statistics
       const totalRequests = Array.isArray(requests) ? requests.length : 0;
-      const approvedRequests = Array.isArray(requests) 
-        ? requests.filter((r: any) => r.status === 'approved').length 
+      const approvedRequests = Array.isArray(requests)
+        ? requests.filter((r: any) => r.status === 'approved').length
         : 0;
 
       // Calculate stock statistics from inventory
       let inStockCount = 0;
       let lowStockCount = 0;
       let outOfStockCount = 0;
-      
+
       if (Array.isArray(inventory)) {
         inventory.forEach((item: any) => {
           const quantity = item.quantity_available || 0;
           const minQuantity = item.minimum_quantity || 1;
-          
+
           // Check for out of stock first
           if (quantity === 0) {
             outOfStockCount++;
@@ -190,7 +190,7 @@ const Dashboard: React.FC = () => {
 
     } catch (error) {
       console.error("Error fetching dashboard data:", error);
-      
+
       // Fallback data
       setStats({
         totalVendors: 0,
@@ -200,7 +200,7 @@ const Dashboard: React.FC = () => {
         totalBudgets: 0,
         activeProjects: 12,
       });
-      
+
       // Set empty arrays for fallback
       setPoData([]);
       setVendorData([]);
@@ -310,7 +310,7 @@ const Dashboard: React.FC = () => {
       id: "r2",
       issue: "PO Approvals Pending",
       impact: "Medium",
-      description: poData.length > 0 
+      description: poData.length > 0
         ? `${poData.filter((po: any) => po.status === 'pending' || po.status === 'draft').length} POs pending approval`
         : "Monitor purchase order status",
     },
@@ -362,7 +362,7 @@ const Dashboard: React.FC = () => {
       </div>
 
       {/* 2. Main Analytics Row: Project Status Donut & Cost Variance */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      {/* <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <div className="bg-white p-4 md:p-6 rounded-2xl border border-gray-100 shadow-sm">
           <div className="flex items-center justify-between mb-2">
             <h3 className="text-xs md:text-sm font-bold text-gray-800 uppercase tracking-wide">
@@ -437,7 +437,7 @@ const Dashboard: React.FC = () => {
             </ResponsiveContainer>
           </div>
         </div>
-      </div>
+      </div> */}
       {/* 4. Material Request Drill-Down Section */}
       <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
         <div className="p-4 md:p-6 border-b border-gray-100 bg-gray-50/50 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
@@ -450,7 +450,7 @@ const Dashboard: React.FC = () => {
               {stats.totalMaterialRequests.total} total requests • {stats.totalMaterialRequests.approved} approved
             </p>
           </div>
-          <button 
+          <button
             onClick={fetchDashboardData}
             className="w-full sm:w-auto text-xs font-bold border border-gray-300 rounded-lg px-3 py-2 outline-none hover:bg-gray-50 transition-colors bg-white flex items-center justify-center gap-2"
           >
@@ -473,8 +473,8 @@ const Dashboard: React.FC = () => {
             </thead>
             <tbody className="divide-y divide-gray-100">
               {materialRequests.slice(0, 5).map((request: any) => (
-                <tr 
-                  key={request.id || request.request_no} 
+                <tr
+                  key={request.id || request.request_no}
                   className="hover:bg-gray-50/50 transition-colors cursor-pointer"
                   onClick={() => {
                     // You can add click handler here if needed
@@ -534,15 +534,14 @@ const Dashboard: React.FC = () => {
                   </td>
                   <td className="px-3 py-4">
                     <span
-                      className={`px-2 py-0.5 rounded text-[8px] md:text-[9px] font-bold uppercase whitespace-nowrap ${
-                        request.status === 'approved'
+                      className={`px-2 py-0.5 rounded text-[8px] md:text-[9px] font-bold uppercase whitespace-nowrap ${request.status === 'approved'
                           ? "bg-emerald-100 text-emerald-700"
                           : request.status === 'pending'
-                          ? "bg-blue-100 text-blue-700"
-                          : request.status === 'rejected'
-                          ? "bg-red-100 text-red-700"
-                          : "bg-gray-100 text-gray-700"
-                      }`}
+                            ? "bg-blue-100 text-blue-700"
+                            : request.status === 'rejected'
+                              ? "bg-red-100 text-red-700"
+                              : "bg-gray-100 text-gray-700"
+                        }`}
                     >
                       {request.status?.toUpperCase() || 'DRAFT'}
                     </span>
@@ -641,7 +640,7 @@ const Dashboard: React.FC = () => {
                       {po.payment_status?.toUpperCase() || 'PENDING'}
                     </span>
                   </td>
-                
+
                 </tr>
               ))}
             </tbody>

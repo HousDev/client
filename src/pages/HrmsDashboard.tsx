@@ -9,6 +9,8 @@ import {
   Ticket,
   TrendingUp,
   Filter,
+  Calendar1,
+  Clock1,
 } from "lucide-react";
 import Card from "../components/ui/Card";
 import Button from "../components/ui/Button";
@@ -17,6 +19,10 @@ import Badge from "../components/ui/Badge";
 // import { reportAPI } from '../api/report.api';
 import { formatters } from "../utils/formatters";
 import hrmsDashbordApi from "../lib/hrmsDashbordApi";
+import HrmsEmployeesApi from "../lib/employeeApi";
+import attendanceApi from "../lib/attendanceApi";
+import { LeaveApi } from "../lib/leaveApi";
+import expenseApi from "../lib/expenseApi";
 
 type Module =
   | "overview"
@@ -54,14 +60,34 @@ export default function Dashboard() {
 
   useEffect(() => {
     loadDashboardData();
-  }, [selectedModule, dateFilter]);
+  }, []);
 
   const loadDashboardData = async () => {
     setLoading(true);
     try {
       if (selectedModule === "overview") {
-        const stats = await hrmsDashbordApi.getItems();
-        setOverviewStats(stats);
+        const empData = await HrmsEmployeesApi.getEmployees();
+        const todaysAttendanceData: any = await attendanceApi.getAllToday();
+        const leaveData = await LeaveApi.getLeaves();
+        const expensesData = await expenseApi.getExpenses();
+
+        console.log(empData, "stats for hrms dashbord")
+        console.log(todaysAttendanceData.data, "attendance data")
+        console.log(leaveData, "leave data")
+        console.log(expensesData, "expensesss data")
+        setOverviewStats({
+          totalEmployees: Array.isArray(empData) ? empData.length : 0,
+          activeEmployees: Array.isArray(empData) ? empData.filter((e: any) => e.is_active).length : 0,
+          todayAttendance: Array.isArray(todaysAttendanceData.data) ? todaysAttendanceData.data.length : 0,
+          pendingLeaves: Array.isArray(leaveData.data) ? leaveData.data.filter((l: any) => l.status === "pending").length : 0,
+          openTickets: 0,
+          pendingExpenses: Array.isArray(expensesData.data) ? expensesData.data.filter((e: any) => e.status === "pending_approval").length : 0,
+          thisMonthPayroll: 0,
+          activeRecruitments: 0,
+        });
+        setEmployeesData(Array.isArray(empData) ? empData : [])
+        setAttendanceData(Array.isArray(todaysAttendanceData.data) ? todaysAttendanceData.data : []);
+        setLeavesData(Array.isArray(leaveData.data) ? leaveData.data : [])
       } else {
         setEmployeesData([]);
         setRecruitmentData([]);
@@ -81,17 +107,17 @@ export default function Dashboard() {
   const modules = [
     { value: "overview", label: "Overview", icon: TrendingUp, color: "red" },
     { value: "employees", label: "Employees", icon: Users, color: "blue" },
-    {
-      value: "recruitment",
-      label: "Recruitment",
-      icon: UserPlus,
-      color: "green",
-    },
+    // {
+    //   value: "recruitment",
+    //   label: "Recruitment",
+    //   icon: UserPlus,
+    //   color: "green",
+    // },
     { value: "attendance", label: "Attendance", icon: Clock, color: "purple" },
     { value: "leaves", label: "Leaves", icon: Calendar, color: "yellow" },
-    { value: "payroll", label: "Payroll", icon: Wallet, color: "orange" },
+    // { value: "payroll", label: "Payroll", icon: Wallet, color: "orange" },
     { value: "expenses", label: "Expenses", icon: Receipt, color: "pink" },
-    { value: "tickets", label: "Tickets", icon: Ticket, color: "indigo" },
+    // { value: "tickets", label: "Tickets", icon: Ticket, color: "indigo" },
   ];
 
   const dateFilterOptions = [
@@ -104,20 +130,20 @@ export default function Dashboard() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          <Select
-            value={dateFilter}
-            onChange={(e) => setDateFilter(e.target.value)}
-            options={dateFilterOptions}
-            className="w-40"
-          />
-          <Button variant="secondary">
-            <Filter className="h-4 w-4 mr-2" />
-            Filters
-          </Button>
-        </div>
-      </div>
+      {/* <div className="flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <Select
+              value={dateFilter}
+              onChange={(e) => setDateFilter(e.target.value)}
+              options={dateFilterOptions}
+              className="w-40"
+            />
+            <Button variant="secondary">
+              <Filter className="h-4 w-4 mr-2" />
+              Filters
+            </Button>
+          </div>
+        </div> */}
 
       <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-8 gap-3">
         {modules.map((module) => {
@@ -213,7 +239,7 @@ export default function Dashboard() {
                 </div>
               </Card>
 
-              <Card className="p-6">
+                {/* <Card className="p-6">
                 <div className="flex items-center justify-between">
                   <div>
                     <p className="text-sm text-slate-600">Open Tickets</p>
@@ -228,7 +254,7 @@ export default function Dashboard() {
                     <Ticket className="h-6 w-6 text-purple-600" />
                   </div>
                 </div>
-              </Card>
+              </Card> */}
 
               <Card className="p-6">
                 <div className="flex items-center justify-between">
@@ -245,7 +271,7 @@ export default function Dashboard() {
                 </div>
               </Card>
 
-              <Card className="p-6">
+                {/* <Card className="p-6">
                 <div className="flex items-center justify-between">
                   <div>
                     <p className="text-sm text-slate-600">
@@ -260,7 +286,7 @@ export default function Dashboard() {
                     <UserPlus className="h-6 w-6 text-blue-600" />
                   </div>
                 </div>
-              </Card>
+              </Card> */}
             </div>
           )}
 
@@ -308,10 +334,10 @@ export default function Dashboard() {
                           {emp.first_name} {emp.last_name}
                         </td>
                         <td className="px-6 py-4 text-sm text-slate-600">
-                          {emp.departments?.name || "N/A"}
+                          {emp.department_name || "N/A"}
                         </td>
                         <td className="px-6 py-4 text-sm text-slate-600">
-                          {emp.positions?.title || "N/A"}
+                          {emp.role_name || "N/A"}
                         </td>
                         <td className="px-6 py-4 text-sm text-slate-600">
                           {emp.email}
@@ -413,6 +439,7 @@ export default function Dashboard() {
                       <th className="text-left px-6 py-4 text-sm font-semibold text-slate-900">
                         Check In
                       </th>
+
                       <th className="text-left px-6 py-4 text-sm font-semibold text-slate-900">
                         Check Out
                       </th>
@@ -425,19 +452,22 @@ export default function Dashboard() {
                     {attendanceData.map((att) => (
                       <tr key={att.id} className="hover:bg-slate-50">
                         <td className="px-6 py-4 text-sm font-medium text-slate-900">
-                          {att.employees?.first_name} {att.employees?.last_name}
+                          {att.user_name}
                           <div className="text-xs text-slate-500">
-                            {att.employees?.employee_code}
+                            {att.employee_code}
                           </div>
                         </td>
                         <td className="px-6 py-4 text-sm text-slate-600">
-                          {formatters.date(att.date)}
+                          <p className="flex items-center"><Calendar1 className="w-4 h-4 mr-2" /> {(att.date || "")}</p>
+
                         </td>
                         <td className="px-6 py-4 text-sm text-slate-600">
-                          {att.check_in_time || "N/A"}
+                          <p className="flex items-center"><Calendar1 className="w-4 h-4 mr-2" /> {(att.punch_in_time || "").split("T")[0]}</p>
+                          <p className="flex items-center"><Clock1 className="w-4 h-4 mr-2" /> {((att.punch_in_time || "").split("T")[1].slice(0, 8))}</p>
                         </td>
                         <td className="px-6 py-4 text-sm text-slate-600">
-                          {att.check_out_time || "N/A"}
+                          <p className="flex items-center"><Calendar1 className="w-4 h-4 mr-2" /> {(att.punch_out_time || "").split("T")[0]}</p>
+                          <p className="flex items-center"><Clock1 className="w-4 h-4 mr-2" /> {((att.punch_out_time || "").split("T")[1].slice(0, 8))}</p>
                         </td>
                         <td className="px-6 py-4 text-sm">
                           <Badge
@@ -494,8 +524,7 @@ export default function Dashboard() {
                     {leavesData.map((leave) => (
                       <tr key={leave.id} className="hover:bg-slate-50">
                         <td className="px-6 py-4 text-sm font-medium text-slate-900">
-                          {leave.employees?.first_name}{" "}
-                          {leave.employees?.last_name}
+                          {leave.emp_name}
                           <div className="text-xs text-slate-500">
                             {leave.employees?.employee_code}
                           </div>
