@@ -175,12 +175,23 @@ export default function StoreManagement({
     }
   };
 
+  const groupInvenotry = (data: any) => {
+    try {
+      return data.reduce((inv: any, crr: any) => {
+        const existing = inv.find((i: any) => i.item_id === crr.item_id);
+      }, []);
+    } catch (error) {
+      console.log(error);
+    }
+  };
+
   // --- Load Inventory (Depends on Items) ---
   const loadInventory = async (items: Item[]) => {
     try {
       setInventoryLoading(true);
       const data: any = await inventoryApi.getInventory();
 
+      console.log(data);
       const inventoryData: InventoryItem[] = data.map((inventoryItem: any) => {
         const item: any = items.find((i) => i.id === inventoryItem.item_id);
         return {
@@ -191,6 +202,12 @@ export default function StoreManagement({
           rate: item?.standard_rate || 0,
         };
       });
+      const groupByMaterialCode: any = inventoryData.reduce(
+        (acc: any, item: any) => {},
+        {},
+      );
+
+      console.log("invenotry data : ", inventoryData);
 
       setInventory(inventoryData);
       return inventoryData;

@@ -24,20 +24,17 @@ import {
 import { toast } from "sonner";
 import RequestMaterialApi from "../../lib/requestMaterialApi";
 import { useAuth } from "../../contexts/AuthContext";
-import CreatePORequest from "./CreatePORequest";
 
 interface MaterialOutFormProps {
   setViewRequestMaterial: React.Dispatch<SetStateAction<boolean>>;
   requestData?: any;
   loadMaterialRequests: any;
-  poRequests: any;
 }
 
-export default function ViewRequestMaterial({
+export default function CreatePORequest({
   setViewRequestMaterial,
   requestData,
   loadMaterialRequests,
-  poRequests,
 }: MaterialOutFormProps) {
   console.log("req data for view", requestData);
   const { user, can } = useAuth();
@@ -52,8 +49,6 @@ export default function ViewRequestMaterial({
     status: "",
     rejectionReason: "",
   });
-  const [showCreatePurchaseOrderRequest, setShowCreatePurchaseOrderRequest] =
-    useState(false);
   const [
     showMaterialRequestRejectionModal,
     setShowMaterialRequestRejectionModal,
@@ -250,7 +245,7 @@ export default function ViewRequestMaterial({
   }, [quantityError]);
 
   return (
-    <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-2 sm:p-4">
+    <div className="fixed inset-0 backdrop-blur-sm flex items-center justify-center z-50 p-2 sm:p-4">
       <div
         ref={modalRef}
         className="bg-gradient-to-br from-gray-50 to-white rounded-lg sm:rounded-xl shadow-2xl w-full max-w-2xl lg:max-w-3xl my-2 sm:my-4 mx-2 border border-gray-300/50"
@@ -267,7 +262,7 @@ export default function ViewRequestMaterial({
             </div>
             <div className="">
               <h2 className="text-xs sm:text-sm lg:text-base font-bold text-white">
-                Material Request Details
+                Create Purchase Order Request.
               </h2>
               <div className="flex items-center gap-1">
                 <span className="text-gray-300/90 text-[10px] sm:text-xs truncate">
@@ -368,91 +363,9 @@ export default function ViewRequestMaterial({
                     {materialRequest.project_name}
                   </span>
                 </div>
-                {materialRequest.request_type === "material" && (
-                  <div className="flex flex-col xs:flex-row xs:items-center">
-                    <span className="text-gray-600 text-[10px] sm:text-xs w-16 xs:w-20 sm:w-24 mb-0.5 xs:mb-0">
-                      Work Type:
-                    </span>
-                    <span className="font-medium text-xs sm:text-sm flex items-center gap-1">
-                      <Pickaxe className="w-2.5 h-2.5 sm:w-3 sm:h-3 text-gray-500" />
-                      <span className="truncate">{materialRequest.work}</span>
-                    </span>
-                  </div>
-                )}
               </div>
             </div>
 
-            {/* Right Column - Location & Remarks */}
-            {/* Location Details Card */}
-            {materialRequest.request_type === "material" && (
-              <div className="bg-white border border-gray-300 rounded-lg p-2.5 sm:p-3 shadow-sm">
-                <div className="flex items-center gap-2 mb-1.5 sm:mb-2">
-                  <div className="bg-[#b52124]/10 p-1 rounded">
-                    <MapPin className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-[#b52124]" />
-                  </div>
-                  <h3 className="font-semibold text-[#40423f] text-xs sm:text-sm">
-                    Location Details
-                  </h3>
-                </div>
-                <div className="space-y-2">
-                  <div className="flex items-center gap-2">
-                    <div className="bg-gray-50 p-1 rounded">
-                      <Building className="w-2.5 h-2.5 sm:w-3 sm:h-3 text-gray-600" />
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <p className="text-[10px] sm:text-xs text-gray-500">
-                        Building
-                      </p>
-                      <p className="font-medium text-xs sm:text-sm truncate">
-                        {materialRequest.building_name}
-                      </p>
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <div className="bg-gray-50 p-1 rounded">
-                      <Layers className="w-2.5 h-2.5 sm:w-3 sm:h-3 text-gray-600" />
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <p className="text-[10px] sm:text-xs text-gray-500">
-                        Floor
-                      </p>
-                      <p className="font-medium text-xs sm:text-sm truncate">
-                        {materialRequest.floor_name}
-                      </p>
-                    </div>
-                  </div>
-                  {materialRequest.flat_name ? (
-                    <div className="flex items-center gap-2">
-                      <div className="bg-gray-50 p-1 rounded">
-                        <Home className="w-2.5 h-2.5 sm:w-3 sm:h-3 text-gray-600" />
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <p className="text-[10px] sm:text-xs text-gray-500">
-                          Flat
-                        </p>
-                        <p className="font-medium text-xs sm:text-sm truncate">
-                          {materialRequest.flat_name}
-                        </p>
-                      </div>
-                    </div>
-                  ) : materialRequest.common_area_name ? (
-                    <div className="flex items-center gap-2">
-                      <div className="bg-gray-50 p-1 rounded">
-                        <DoorOpen className="w-2.5 h-2.5 sm:w-3 sm:h-3 text-gray-600" />
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <p className="text-[10px] sm:text-xs text-gray-500">
-                          Common Area
-                        </p>
-                        <p className="font-medium text-xs sm:text-sm truncate">
-                          {materialRequest.common_area_name}
-                        </p>
-                      </div>
-                    </div>
-                  ) : null}
-                </div>
-              </div>
-            )}
             {materialRequest.remark && (
               <div className="bg-gradient-to-r from-amber-50 to-orange-50 border border-amber-200 rounded-lg p-2.5 sm:p-3">
                 <div className="flex items-center gap-2 mb-1">
@@ -648,21 +561,6 @@ export default function ViewRequestMaterial({
                         <th className="px-2 sm:px-3 py-1.5 text-left text-[10px] sm:text-xs font-medium text-[#40423f]">
                           Required
                         </th>
-                        {materialRequest.request_type === "material" && (
-                          <th className="px-2 sm:px-3 py-1.5 text-left text-[10px] sm:text-xs font-medium text-[#40423f]">
-                            Approved
-                          </th>
-                        )}
-                        {materialRequest.request_type === "material" && (
-                          <th className="px-2 sm:px-3 py-1.5 text-left text-[10px] sm:text-xs font-medium text-[#40423f]">
-                            Approve
-                          </th>
-                        )}
-                        {materialRequest.request_type === "material" && (
-                          <th className="px-2 sm:px-3 py-1.5 text-left text-[10px] sm:text-xs font-medium text-[#40423f]">
-                            Status
-                          </th>
-                        )}
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-gray-200">
@@ -692,67 +590,41 @@ export default function ViewRequestMaterial({
                               {item.stock_quantity}
                             </div>
                           </td>
-                          <td className="px-2 sm:px-3 py-1.5">
-                            <div className="font-bold text-[#b52124] text-xs sm:text-sm">
-                              {item.required_quantity}
-                            </div>
-                          </td>
-                          {materialRequest.request_type === "material" && (
-                            <td className="px-2 sm:px-3 py-1.5">
-                              <div className="font-bold text-green-600 text-xs sm:text-sm">
-                                {item.approved_quantity}
-                              </div>
-                            </td>
-                          )}
                           {materialRequest.request_type === "material" && (
                             <td className="px-2 sm:px-3 py-1.5">
                               <input
                                 type="text"
                                 inputMode="decimal"
-                                value={item.approveQuantity ?? ""}
+                                value={item.required_quantity ?? ""}
                                 disabled={
-                                  materialRequest.status !== "pending" ||
-                                  materialRequest.request_type === "po" ||
-                                  item.stock_quantity === 0
+                                  materialRequest.status === "pending" &&
+                                  item.stock_quantity !== 0
                                 }
                                 placeholder="Qty"
                                 onChange={(e) => {
                                   const value = e.target.value;
+
                                   if (value === "") {
                                     setMaterialRequest((prev: any) => ({
                                       ...prev,
                                       items: prev.items.map((i: any) =>
                                         i.request_material_item_id ===
                                         item.request_material_item_id
-                                          ? { ...i, approveQuantity: "" }
+                                          ? { ...i, required_quantity: "" }
                                           : i,
                                       ),
                                     }));
                                     return;
                                   }
+
                                   if (!/^\d*\.?\d*$/.test(value)) return;
-                                  const numericValue = Number(value);
-                                  if (!Number.isNaN(numericValue)) {
-                                    if (numericValue > item.required_quantity) {
-                                      setQuantityError(
-                                        "Entered value greater than required quantity.",
-                                      );
-                                      return;
-                                    } else if (
-                                      numericValue > Number(item.stock_quantity)
-                                    ) {
-                                      setQuantityError(
-                                        "Entered value greater than stock quantity.",
-                                      );
-                                      return;
-                                    }
-                                  }
+
                                   setMaterialRequest((prev: any) => ({
                                     ...prev,
                                     items: prev.items.map((i: any) =>
                                       i.request_material_item_id ===
                                       item.request_material_item_id
-                                        ? { ...i, approveQuantity: value }
+                                        ? { ...i, required_quantity: value }
                                         : i,
                                     ),
                                   }));
@@ -764,17 +636,6 @@ export default function ViewRequestMaterial({
                                   {quantityError}
                                 </p>
                               )}
-                            </td>
-                          )}
-                          {materialRequest.request_type === "material" && (
-                            <td className="px-2 sm:px-3 py-1.5">
-                              <div
-                                className={`text-[10px] sm:text-xs px-1.5 py-0.5 rounded font-medium ${getStatusColor(
-                                  item.stock_status,
-                                )}`}
-                              >
-                                {item.stock_status}
-                              </div>
                             </td>
                           )}
                         </tr>
@@ -807,52 +668,18 @@ export default function ViewRequestMaterial({
                 i.stock_status === "OUT OF STOCK" ||
                 i.stock_status === "LOW STOCK",
             ) &&
-              !poRequests.some(
-                (poRequest: any) =>
-                  Number(poRequest.previous_request_id) ===
-                  Number(requestData.request_material_id),
-              ) &&
-              requestData.request_type !== "po" && (
+              !requestData.previous_request_id && (
                 <div className="w-full">
                   {can("make_material_requests_for_po") && (
                     <button
-                      onClick={() => {
-                        setShowCreatePurchaseOrderRequest(true);
-                      }}
+                      onClick={handleSubmit}
                       className="w-full flex-1 bg-gradient-to-r from-[#b52124] to-[#d43538] text-white py-1.5 px-4 rounded-lg hover:from-[#d43538] hover:to-[#b52124] transition-all font-medium text-xs sm:text-sm shadow-sm active:scale-[0.98]"
                     >
-                      Request Material
+                      Create PO Request
                     </button>
                   )}
                 </div>
               )}
-            {requestData.request_type === "material" && (
-              <div className="flex gap-2">
-                {can("approve_material_request") && (
-                  <button
-                    onClick={approveQuantity}
-                    className="flex-1 bg-gradient-to-r from-green-600 to-emerald-600 text-white py-1.5 px-4 rounded-lg hover:from-green-700 hover:to-emerald-700 transition-all font-medium text-xs sm:text-sm shadow-sm active:scale-[0.98]"
-                  >
-                    Approve
-                  </button>
-                )}
-                {can("reject_material_request") && (
-                  <button
-                    onClick={() => {
-                      setShowMaterialRequestRejectionModal(true);
-                      setMaterialRequestStatusData({
-                        id: requestData.request_material_id,
-                        status: "rejected",
-                        rejectionReason: "",
-                      });
-                    }}
-                    className="flex-1 border border-red-300 text-red-600 py-1.5 px-4 rounded-lg hover:bg-red-50 transition-all font-medium text-xs sm:text-sm shadow-sm active:scale-[0.98]"
-                  >
-                    Reject
-                  </button>
-                )}
-              </div>
-            )}
           </div>
         )}
 
@@ -875,99 +702,6 @@ export default function ViewRequestMaterial({
           }
         `}</style>
       </div>
-      {showMaterialRequestRejectionModal && (
-        <div className="fixed inset-0 bg-black/60 backdrop-blur-md flex items-center justify-center z-50 p-4">
-          <div className="bg-gradient-to-br from-gray-50 to-white rounded-2xl shadow-2xl shadow-gray-900/20 w-full max-w-2xl border border-gray-200 overflow-hidden">
-            {/* Modal Header */}
-            <div className="bg-gradient-to-r from-[#40423f] via-[#4a4c49] to-[#5a5d5a] px-5 py-3 flex justify-between items-center border-b border-gray-700/30">
-              <div className="flex items-center gap-2.5">
-                <div className="p-1.5 bg-white/20 rounded-xl backdrop-blur-sm">
-                  <ReceiptIndianRupee className="w-4 h-4 text-white" />
-                </div>
-                <div>
-                  <h2 className="text-base font-bold text-white">
-                    Reject Material Request
-                  </h2>
-                  <p className="text-xs text-white/90 font-medium mt-0.5">
-                    Material Request Rejection Reason
-                  </p>
-                </div>
-              </div>
-              <button
-                type="button"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  setShowMaterialRequestRejectionModal(false);
-                  setMaterialRequestStatusData({
-                    id: "",
-                    status: "",
-                    rejectionReason: "",
-                  });
-                }}
-                className="text-white hover:bg-white/20 rounded-xl p-1.5 transition-all duration-200"
-              >
-                <X className="w-4 h-4" />
-              </button>
-            </div>
-
-            <form
-              onSubmit={rejectRequestMaterial}
-              className="p-4 max-h-[calc(90vh-80px)] overflow-y-auto"
-            >
-              <div className="space-y-1">
-                <label className="block text-xs font-semibold text-gray-800">
-                  Material Request Rejection Reason
-                </label>
-                <textarea
-                  value={materialRequestStatusData.rejectionReason || ""}
-                  onChange={(e) =>
-                    setMaterialRequestStatusData({
-                      ...materialRequestStatusData,
-                      rejectionReason: e.target.value || "",
-                    })
-                  }
-                  className="w-full px-3 py-2 text-sm border-2 border-gray-200 rounded-xl focus:border-[#C62828] focus:ring-2 focus:ring-[#C62828]/20 outline-none"
-                  rows={2}
-                  placeholder="Add any remarks..."
-                />
-              </div>
-
-              {/* Modal Footer */}
-              <div className="border-t p-3 flex gap-2">
-                <button
-                  type="submit"
-                  disabled={submitting}
-                  className="flex-1 bg-gradient-to-r from-[#C62828] to-red-600 text-white py-2 px-4 rounded-xl hover:from-red-600 hover:to-red-700 transition-all duration-200 font-semibold flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed text-sm"
-                >
-                  <CircleX className="w-4 h-4" /> Reject Work Order Bill
-                </button>
-                <button
-                  type="button"
-                  onClick={(e) => {
-                    setShowMaterialRequestRejectionModal(false);
-                    setMaterialRequestStatusData({
-                      id: "",
-                      status: "",
-                      rejectionReason: "",
-                    });
-                    e.stopPropagation();
-                  }}
-                  className="px-4 py-2 text-sm border border-gray-200 rounded-xl hover:bg-gray-50 transition-all duration-200 font-medium text-gray-700"
-                >
-                  Cancel
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
-      {showCreatePurchaseOrderRequest && (
-        <CreatePORequest
-          setViewRequestMaterial={setShowCreatePurchaseOrderRequest}
-          requestData={requestData}
-          loadMaterialRequests={loadMaterialRequests}
-        />
-      )}
     </div>
   );
 }
