@@ -138,7 +138,7 @@ export default function Leaves() {
     if (user.role === "admin") {
       try {
         const response = await LeaveApi.getLeaves();
-        console.log("fetch leaves : ", response);
+
         const leavesData: any = response.data;
         setAllLeaves(Array.isArray(leavesData) ? leavesData : []);
       } catch (error: any) {
@@ -152,9 +152,9 @@ export default function Leaves() {
     } else {
       try {
         const empData = await HrmsEmployeesApi.getEmployeeByEmail(user.email);
-        console.log("emp data : ", empData);
+
         const response = await LeaveApi.getLeaves({ employee_id: empData.id });
-        console.log("fetch leaves : ", response);
+
         const leavesData: any = response.data;
         setAllLeaves(Array.isArray(leavesData) ? leavesData : []);
       } catch (error: any) {
@@ -171,7 +171,12 @@ export default function Leaves() {
   // Load statistics
   const loadStats = async () => {
     try {
-      const response: any = await LeaveApi.getLeaveStats();
+      let response: any | null = null;
+      if (user.role === "admin") {
+        response = await LeaveApi.getLeaveStats();
+      } else {
+        response = await LeaveApi.getEmployeeLeaveStats(user.id);
+      }
       if (response) {
         setStats(response);
       }

@@ -1,4 +1,4 @@
-import { useState, useEffect, SetStateAction } from "react";
+import React, { useState, useEffect, SetStateAction } from "react";
 import {
   Edit2,
   FileText,
@@ -16,6 +16,11 @@ import {
   ChevronRight,
   ChevronsLeft,
   ChevronsRight,
+  Search,
+  ChevronUp,
+  ChevronDown,
+  ReceiptIndianRupee,
+  CircleX,
 } from "lucide-react";
 import { useAuth } from "../contexts/AuthContext";
 import InventoryTransaction from "../components/InventoryTransaction";
@@ -34,6 +39,7 @@ import MaterialInTransactions from "../components/materialTransactions/MaterialI
 import MaterialOutTransactions from "../components/materialTransactions/MaterialOutTransactions";
 import MaterialIssueTransactions from "../components/materialTransactions/MaterialIssueTransactions";
 import { toast } from "sonner";
+import { BiRupee } from "react-icons/bi";
 
 type InventoryItem = {
   id: number;
@@ -106,6 +112,9 @@ export default function StoreManagement({
 
   // REMOVE THIS LINE - it's now coming from props
   // const [activeFormTab, setActiveFormTab] = useState<string>("");
+  const [selectedInventoryItem, setSelectedInventoryItem] = useState<
+    string | number
+  >("");
 
   const [filteredInventory, setFilteredInventory] = useState<InventoryItem[]>(
     [],
@@ -141,9 +150,11 @@ export default function StoreManagement({
   const [searchLocation, setSearchLocation] = useState("");
   const [searchStatus, setSearchStatus] = useState("");
   const [searchCategory, setSearchCategory] = useState("");
+  const [searchSubCategory, setSearchSubCategory] = useState("");
   const [searchItemCode, setSearchItemCode] = useState("");
   const [searchUnit, setSearchUnit] = useState("");
   const [searchRate, setSearchRate] = useState("");
+  const [searchDescription, setSearchDescription] = useState("");
   const [searchStockValue, setSearchStockValue] = useState("");
 
   const [itemCategories, setItemCategories] = useState<string[]>([]);
@@ -153,6 +164,14 @@ export default function StoreManagement({
   const [filterSubCategory, setFilterSubCategory] = useState(""); // ✅ ADD THIS
   const [selectedItems, setSelectedItems] = useState<Set<number>>(new Set());
   const [selectAll, setSelectAll] = useState(false);
+  const [subTableSearch, setSubTableSearch] = useState({
+    itemNameOrCode: "",
+    stock: "",
+    rate: "",
+    totalValue: "",
+    location: "",
+    status: "",
+  });
 
   // Pagination states
   const [currentPage, setCurrentPage] = useState(1);
@@ -178,7 +197,23 @@ export default function StoreManagement({
   const groupInvenotry = (data: any) => {
     try {
       return data.reduce((inv: any, crr: any) => {
-        const existing = inv.find((i: any) => i.item_id === crr.item_id);
+        let existing = inv.find((i: any) => i.item_code === crr.item_code);
+        if (!existing) {
+          existing = {
+            item_name: crr.item_name,
+            description: crr.description,
+            item_code: crr.item_code,
+            item_standard_rate: crr.standard_rate,
+            item_unit: crr.unit,
+            item_category: crr.item_category,
+            item_sub_category: crr.item_sub_category,
+            items: [],
+          };
+          inv.push(existing);
+        }
+        existing.items.push(crr);
+
+        return inv;
       }, []);
     } catch (error) {
       console.log(error);
@@ -202,14 +237,9 @@ export default function StoreManagement({
           rate: item?.standard_rate || 0,
         };
       });
-      const groupByMaterialCode: any = inventoryData.reduce(
-        (acc: any, item: any) => {},
-        {},
-      );
-
-      console.log("invenotry data : ", inventoryData);
-
-      setInventory(inventoryData);
+      const groupByMaterialCode: any = groupInvenotry(inventoryData);
+      console.log(groupByMaterialCode);
+      setInventory(groupByMaterialCode);
       return inventoryData;
     } catch (error) {
       console.error("Error loading inventory:", error);
@@ -280,9 +310,12 @@ export default function StoreManagement({
       const inventoryData = await loadInventory(items);
       await loadTransactions();
       await loadCategories(); // ✅ ADD THIS LINE
+      console.log("from all", inventoryData);
 
       if (activeTab === "management") {
-        setFilteredInventory(inventoryData);
+        const groupByMaterialCode: any = groupInvenotry(inventoryData);
+        console.log("group material data :  ", groupByMaterialCode);
+        setFilteredInventory(groupByMaterialCode);
       } else {
         setFilteredTransactions(transactions);
       }
@@ -344,6 +377,7 @@ export default function StoreManagement({
       console.error(`Error loading sub-categories for ${category}:`, error);
     }
   };
+
   // Initial load
   useEffect(() => {
     loadAllData();
@@ -359,6 +393,14 @@ export default function StoreManagement({
         filtered = filtered.filter((item) =>
           (item.item_name?.toLowerCase() || "").includes(
             searchName.toLowerCase(),
+          ),
+        );
+      }
+
+      if (searchDescription) {
+        filtered = filtered.filter((item) =>
+          (item.description?.toLowerCase() || "").includes(
+            searchDescription.toLowerCase(),
           ),
         );
       }
@@ -385,29 +427,75 @@ export default function StoreManagement({
         );
       }
 
-      if (searchLocation) {
-        filtered = filtered.filter((item) =>
-          (item.location?.toLowerCase() || "").includes(
-            searchLocation.toLowerCase(),
+      if (searchSubCategory) {
+        filtered = filtered.filter((item: any) =>
+          (item.item_sub_category?.toLowerCase() || "").includes(
+            searchSubCategory.toLowerCase(),
           ),
         );
       }
 
+      // if (searchLocation) {
+      //   filtered = filtered.filter((item) =>
+      //     (item.location?.toLowerCase() || "").includes(
+      //       searchLocation.toLowerCase(),
+      //     ),
+      //   );
+      // }
+
+      if (searchLocation) {
+        filtered = filtered.map((item: any) => {
+          const filteredItems = item.items?.filter((sub: any) =>
+            (sub.location || "")
+              .toLowerCase()
+              .includes(searchLocation.toLowerCase()),
+          );
+
+          return {
+            ...item,
+            items: filteredItems,
+          };
+        });
+      }
+
+      // if (searchStatus) {
+      //   filtered = filtered.filter((item) =>
+      //     item.status.toLowerCase().includes(searchStatus.toLowerCase()),
+      //   );
+      // }
+
       if (searchStatus) {
-        filtered = filtered.filter((item) =>
-          item.status.toLowerCase().includes(searchStatus.toLowerCase()),
-        );
+        filtered = filtered.map((item: any) => {
+          const filteredItems = item.items?.filter((sub: any) =>
+            (sub.status || "")
+              .toLowerCase()
+              .includes(searchStatus.toLowerCase()),
+          );
+
+          return {
+            ...item,
+            items: filteredItems,
+          };
+        });
       }
 
       if (searchUnit) {
-        filtered = filtered.filter((item) =>
-          (item.unit?.toLowerCase() || "").includes(searchUnit.toLowerCase()),
+        filtered = filtered.filter(
+          (item: any) =>
+            (item.unit?.toLowerCase() || "").includes(
+              searchUnit.toLowerCase(),
+            ) ||
+            (item.item_unit?.toLowerCase() || "").includes(
+              searchUnit.toLowerCase(),
+            ),
         );
       }
 
       if (searchRate) {
-        filtered = filtered.filter((item) =>
-          (item.rate?.toString() || "").includes(searchRate),
+        filtered = filtered.filter(
+          (item: any) =>
+            (item.rate?.toString() || "").includes(searchRate) ||
+            (item.item_standard_rate?.toString() || "").includes(searchRate),
         );
       }
 
@@ -460,9 +548,11 @@ export default function StoreManagement({
     }
   }, [
     searchName,
+    searchDescription,
     searchItemCode,
     searchStock,
     searchCategory,
+    searchSubCategory,
     searchLocation,
     searchStatus,
     searchUnit,
@@ -476,6 +566,7 @@ export default function StoreManagement({
     inventory,
     transactions,
     activeTab,
+    subTableSearch,
   ]);
 
   // Calculate pagination data
@@ -606,7 +697,7 @@ export default function StoreManagement({
       };
       const result: any = await NotificationsApi.createNotification(payload);
       if (result.success) {
-        toast.error("Reminder sent successfully.");
+        toast.success("Reminder sent successfully.");
       } else {
         toast.error("Failed to send reminder.");
       }
@@ -617,11 +708,14 @@ export default function StoreManagement({
 
   const resetFilters = () => {
     setFilterStatus("");
+    setSearchDescription("");
+    setSearchItemCode("");
     setFilterCategory("");
     setFilterSubCategory(""); // ✅ ADD THIS
 
     setFilterLocation("");
     setSelectedCategory(""); // ✅ ADD THIS
+    setSearchSubCategory(""); // ✅ ADD THIS
 
     setSearchName("");
     setSearchItemCode("");
@@ -797,279 +891,537 @@ export default function StoreManagement({
         <div className="   sticky top-40 z-10 bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden mx-0 md:mx-0">
           {/* Change 1: Updated container with max height */}
           <div className="overflow-y-auto max-h-[calc(100vh-310px)] md:max-h-[calc(100vh-250px)] ">
-            <table className=" sticky top-48 z-10 w-full min-w-[1000px]">
-              {/* Change 2: Added sticky to thead */}
+            <table className="sticky top-0 z-10 w-full min-w-[820px] lg:min-w-full">
               <thead className="sticky top-0 z-10 bg-gray-200 border-b border-gray-200">
-                {/* Column Headers */}
                 <tr>
-                  <th className="px-2 md:px-4 py-2 text-left w-72">
+                  <th className="px-2 md:px-4 py-2 text-left"></th>
+                  <th className="px-2 md:px-4 py-2 text-left">
                     <div className="text-[10px] md:text-xs font-semibold text-gray-700 uppercase tracking-wider">
-                      Material Details
+                      Item Name
                     </div>
                   </th>
                   <th className="px-2 md:px-4 py-2 text-left">
                     <div className="text-[10px] md:text-xs font-semibold text-gray-700 uppercase tracking-wider">
-                      Current Stock
+                      Description
                     </div>
                   </th>
                   <th className="px-2 md:px-4 py-2 text-left">
                     <div className="text-[10px] md:text-xs font-semibold text-gray-700 uppercase tracking-wider">
-                      Unit Rate
+                      Item Code
                     </div>
                   </th>
                   <th className="px-2 md:px-4 py-2 text-left">
                     <div className="text-[10px] md:text-xs font-semibold text-gray-700 uppercase tracking-wider">
-                      Stock Value
+                      Standard Rate
                     </div>
                   </th>
                   <th className="px-2 md:px-4 py-2 text-left">
                     <div className="text-[10px] md:text-xs font-semibold text-gray-700 uppercase tracking-wider">
-                      Location
+                      Unit
                     </div>
                   </th>
                   <th className="px-2 md:px-4 py-2 text-left">
                     <div className="text-[10px] md:text-xs font-semibold text-gray-700 uppercase tracking-wider">
-                      Status
+                      Category
                     </div>
                   </th>
-                  <th className="px-2 md:px-4 py-2 text-center">
+                  <th className="px-2 md:px-4 py-2 text-left">
                     <div className="text-[10px] md:text-xs font-semibold text-gray-700 uppercase tracking-wider">
-                      Actions
+                      Sub Category
                     </div>
                   </th>
                 </tr>
 
                 {/* Search Row */}
                 <tr className="bg-gray-50 border-b border-gray-200">
-                  {/* Material Details Column */}
-                  <td className="px-2 md:px-4 py-0.5">
-                    <input
-                      type="text"
-                      placeholder="Search material name..."
-                      value={searchName}
-                      onChange={(e) => setSearchName(e.target.value)}
-                      className="w-full px-2 py-1 text-[10px] md:text-xs border border-gray-300 rounded focus:ring-1 focus:ring-[#C62828] focus:border-transparent"
-                    />
-                  </td>
-
-                  {/* Current Stock Column */}
-                  <td className="px-2 md:px-4 py-0.5">
-                    <input
-                      type="text"
-                      placeholder="Search stock quantity..."
-                      value={searchStock}
-                      onChange={(e) => setSearchStock(e.target.value)}
-                      className="w-full px-2 py-1 text-[10px] md:text-xs border border-gray-300 rounded focus:ring-1 focus:ring-[#C62828] focus:border-transparent"
-                    />
-                  </td>
-
-                  {/* Unit Rate Column */}
-                  <td className="px-2 md:px-4 py-0.5">
-                    <input
-                      type="text"
-                      placeholder="Search rate..."
-                      value={searchRate}
-                      onChange={(e) => setSearchRate(e.target.value)}
-                      className="w-full px-2 py-1 text-[10px] md:text-xs border border-gray-300 rounded focus:ring-1 focus:ring-[#C62828] focus:border-transparent"
-                    />
-                  </td>
-
-                  {/* Stock Value Column */}
-                  <td className="px-2 md:px-4 py-0.5">
-                    <input
-                      type="text"
-                      placeholder="Search value..."
-                      value={searchStockValue}
-                      onChange={(e) => setSearchStockValue(e.target.value)}
-                      className="w-full px-2 py-1 text-[10px] md:text-xs border border-gray-300 rounded focus:ring-1 focus:ring-[#C62828] focus:border-transparent"
-                    />
-                  </td>
-
-                  {/* Location Column */}
-                  <td className="px-2 md:px-4 py-0.5">
-                    <input
-                      type="text"
-                      placeholder="Location..."
-                      value={searchLocation}
-                      onChange={(e) => setSearchLocation(e.target.value)}
-                      className="w-full px-2 py-1 text-[10px] md:text-xs border border-gray-300 rounded focus:ring-1 focus:ring-[#C62828] focus:border-transparent"
-                    />
-                  </td>
-
-                  {/* Status Column */}
-                  <td className="px-2 md:px-4 py-0.5">
-                    <input
-                      type="text"
-                      placeholder="Status..."
-                      value={searchStatus}
-                      onChange={(e) => setSearchStatus(e.target.value)}
-                      className="w-full px-2 py-1 text-[10px] md:text-xs border border-gray-300 rounded focus:ring-1 focus:ring-[#C62828] focus:border-transparent"
-                    />
-                  </td>
-
-                  {/* Actions Column */}
-                  <td className="px-2 md:px-4 py-0.5 text-center">
+                  <td className="px-2 md:px-4 py-1">
                     <button
-                      onClick={() => setShowFilterSidebar(true)}
-                      className="inline-flex items-center px-2 py-1 border border-gray-300 rounded hover:bg-gray-50 transition text-[10px] md:text-xs font-medium text-gray-700"
-                      title="Advanced Filters"
+                      className="text-slate-500 text-xs flex justify-center items-center px-2 py-1 bg-white border border-gray-300 rounded hover:bg-gray-50"
+                      onClick={resetFilters}
                     >
-                      <Filter className="w-2.5 h-2.5 md:w-3 md:h-3 mr-0.5" />
-                      Filters
+                      <CircleX className="w-4 h-4 mr-1 " /> Clear
                     </button>
+                  </td>
+
+                  <td className="px-2 md:px-4 py-1">
+                    <div className="relative">
+                      <input
+                        type="text"
+                        placeholder="Search material name..."
+                        value={searchName}
+                        onChange={(e) => setSearchName(e.target.value)}
+                        className="w-full px-2 py-1 text-[10px] md:text-xs border border-gray-300 rounded focus:ring-1 focus:ring-[#C62828] focus:border-transparent"
+                      />
+                    </div>
+                  </td>
+                  <td className="px-2 md:px-4 py-1">
+                    <div className="relative">
+                      <input
+                        type="text"
+                        placeholder="Search material description..."
+                        value={searchDescription}
+                        onChange={(e) => setSearchDescription(e.target.value)}
+                        className="w-full px-2 py-1 text-[10px] md:text-xs border border-gray-300 rounded focus:ring-1 focus:ring-[#C62828] focus:border-transparent"
+                      />
+                    </div>
+                  </td>
+
+                  <td className="px-2 md:px-4 py-1">
+                    <div className="relative">
+                      <input
+                        type="text"
+                        placeholder="Search material code..."
+                        value={searchItemCode}
+                        onChange={(e) => setSearchItemCode(e.target.value)}
+                        className="w-full px-2 py-1 text-[10px] md:text-xs border border-gray-300 rounded focus:ring-1 focus:ring-[#C62828] focus:border-transparent"
+                      />
+                    </div>
+                  </td>
+                  <td className="px-2 md:px-4 py-1">
+                    <div className="relative">
+                      <input
+                        type="text"
+                        placeholder="Search standard rate..."
+                        value={searchRate}
+                        onChange={(e) => setSearchRate(e.target.value)}
+                        className="w-full px-2 py-1 text-[10px] md:text-xs border border-gray-300 rounded focus:ring-1 focus:ring-[#C62828] focus:border-transparent"
+                      />
+                    </div>
+                  </td>
+
+                  <td className="px-2 md:px-4 py-1">
+                    <div className="relative">
+                      <input
+                        type="text"
+                        placeholder="Search material unit..."
+                        value={searchUnit}
+                        onChange={(e) => setSearchUnit(e.target.value)}
+                        className="w-full px-2 py-1 text-[10px] md:text-xs border border-gray-300 rounded focus:ring-1 focus:ring-[#C62828] focus:border-transparent"
+                      />
+                    </div>
+                  </td>
+                  <td className="px-2 md:px-4 py-1">
+                    <div className="relative">
+                      <input
+                        type="text"
+                        placeholder="Search material category..."
+                        value={searchCategory}
+                        onChange={(e) => setSearchCategory(e.target.value)}
+                        className="w-full px-2 py-1 text-[10px] md:text-xs border border-gray-300 rounded focus:ring-1 focus:ring-[#C62828] focus:border-transparent"
+                      />
+                    </div>
+                  </td>
+                  <td className="px-2 md:px-4 py-1">
+                    <div className="relative">
+                      <input
+                        type="text"
+                        placeholder="Search material sub category..."
+                        value={searchSubCategory}
+                        onChange={(e) => setSearchSubCategory(e.target.value)}
+                        className="w-full px-2 py-1 text-[10px] md:text-xs border border-gray-300 rounded focus:ring-1 focus:ring-[#C62828] focus:border-transparent"
+                      />
+                    </div>
                   </td>
                 </tr>
               </thead>
-
-              {/* Table Body */}
               <tbody className="divide-y divide-gray-200">
-                {getCurrentPageItems().length === 0 ? (
-                  <tr>
-                    <td colSpan={7} className="px-4 py-8 text-center">
-                      <Package className="w-12 h-12 md:w-16 md:h-16 text-gray-300 mx-auto mb-3" />
-                      <p className="text-gray-600 text-sm md:text-lg font-medium">
-                        No inventory items found
-                      </p>
-                      <p className="text-gray-500 text-xs md:text-sm mt-1">
-                        Try adjusting your search or filters
-                      </p>
-                    </td>
-                  </tr>
-                ) : (
-                  getCurrentPageItems().map((item, index) => {
-                    const totalValue = calculateTotalValue(item);
-                    const isSelected = selectedItems.has(item.id);
-
-                    return (
+                {getCurrentPageItems().map((po: any, indx: number) => {
+                  return (
+                    <React.Fragment>
                       <tr
-                        key={item.id}
+                        key={po.id || indx}
+                        onClick={() => {
+                          setSelectedInventoryItem(
+                            selectedInventoryItem === ""
+                              ? po.item_code
+                              : selectedInventoryItem === po.item_code
+                                ? ""
+                                : po.item_code,
+                          );
+                          resetFilters();
+                        }}
                         className={`hover:bg-gray-50 transition ${
-                          index % 2 === 0 ? "bg-white" : "bg-gray-50/50"
-                        } ${isSelected ? "bg-blue-50" : ""}`}
+                          selectedInventoryItem === po.item_code
+                            ? "bg-blue-50"
+                            : ""
+                        }`}
                       >
-                        {/* Material Details Column */}
-                        <td className="px-2 md:px-4 py-2 w-72 text-wrap">
-                          <div className="flex items-start gap-1.5 md:gap-3 w-full">
-                            <div className="bg-[#C62828] w-6 h-6 md:w-8 md:h-8 rounded-full flex items-center justify-center text-white font-thin text-[10px] md:text-xs flex-shrink-0 mt-0.5">
-                              {(item.item_name || "U").charAt(0).toUpperCase()}
-                            </div>
-                            <div className="min-w-0 flex-1">
-                              <p
-                                className="font-semibold text-gray-900 text-xs md:text-sm leading-tight break-words"
-                                title={item.item_name || "Unknown"}
-                              >
-                                {item.item_name || "Unknown"}
-                              </p>
-                              <div className="mt-1 flex flex-wrap gap-1.5 items-center">
-                                <span className="inline-block px-1.5 py-0.5 bg-gray-100 text-gray-700 rounded text-[9px] md:text-xs font-medium">
-                                  {item.item_code || "N/A"}
-                                </span>
-                                {item.category && (
-                                  <span className="inline-block px-1.5 py-0.5 bg-blue-50 text-blue-700 rounded text-[9px] md:text-xs font-medium">
-                                    {item.category}
-                                  </span>
-                                )}
-                              </div>
-                            </div>
+                        <td className="px-2 md:px-4 py-2 text-center flex space-x-3">
+                          {selectedInventoryItem === po.item_code ? (
+                            <ChevronUp className="w-4 h-4" />
+                          ) : (
+                            <ChevronDown className="w-4 h-4" />
+                          )}
+                        </td>
+                        <td className="px-2 md:px-4 py-2">
+                          <div className="font-bold text-blue-600 text-xs md:text-sm">
+                            {po.item_name}
                           </div>
                         </td>
-
-                        {/* Current Stock */}
+                        <td className="px-2 md:px-4 py-2">
+                          <div className="text-gray-800 text-xs md:text-sm truncate max-w-[120px]">
+                            {po?.description || "N/A"}
+                          </div>
+                        </td>
                         <td className="px-2 md:px-4 py-2">
                           <div className="font-semibold text-gray-800 text-xs md:text-sm">
-                            {item.quantity} {item.unit}
-                          </div>
-                          <div className="text-[10px] md:text-xs text-gray-500">
-                            Reorder: {item.reorder_qty}
+                            {po.item_code}
                           </div>
                         </td>
-
-                        {/* Unit Rate */}
                         <td className="px-2 md:px-4 py-2">
-                          <div className="text-xs text-gray-700 flex items-center">
-                            <IndianRupee
-                              size={10}
-                              className="text-green-600 mr-0.5 flex-shrink-0"
-                            />
-                            <span className="truncate">
-                              {item.rate?.toLocaleString("en-IN") || "0"}
-                            </span>
+                          <div className="text-green-600 font-medium text-xs md:text-sm flex items-center ">
+                            <BiRupee className="w-4 h-4" />{" "}
+                            {po.item_standard_rate}
                           </div>
                         </td>
-
-                        {/* Stock Value */}
                         <td className="px-2 md:px-4 py-2">
-                          <span className="font-medium text-gray-700 text-xs md:text-sm flex items-center">
-                            <IndianRupee
-                              size={10}
-                              className="text-green-600 mr-0.5 flex-shrink-0"
-                            />
-                            <span className="truncate">
-                              {totalValue.toLocaleString("en-IN")}
-                            </span>
-                          </span>
+                          <div className="text-red-600 font-bold text-xs md:text-sm">
+                            {po.item_unit}
+                          </div>
                         </td>
-
-                        {/* Location */}
-                        <td className="px-2 md:px-4 py-2 text-gray-700 text-xs md:text-sm">
-                          <span
-                            className="truncate block"
-                            title={item.location || "N/A"}
-                          >
-                            {item.location || "N/A"}
-                          </span>
-                        </td>
-
-                        {/* Status */}
                         <td className="px-2 md:px-4 py-2">
-                          <span
-                            className={`px-1.5 py-0.5 rounded-full text-[10px] font-medium ${getStatusColor(
-                              item.status,
-                            )} truncate`}
-                          >
-                            {item.status}
-                          </span>
-                          {item.status === "LOW STOCK" && (
-                            <div className="mt-0.5 flex items-center gap-0.5 text-[10px] text-yellow-600">
-                              <AlertTriangle className="w-2.5 h-2.5 flex-shrink-0" />
-                              <span className="truncate">Reorder needed</span>
-                            </div>
-                          )}
-                          {item.status === "OUT OF STOCK" && (
-                            <div className="mt-0.5 flex items-center gap-0.5 text-[10px] text-red-600">
-                              <AlertTriangle className="w-2.5 h-2.5 flex-shrink-0" />
-                              <span className="truncate">Out of stock</span>
-                            </div>
-                          )}
+                          <div className="text-red-600 font-bold text-xs md:text-sm">
+                            {po.item_category || "--"}
+                          </div>
                         </td>
-
-                        {/* Actions */}
                         <td className="px-2 md:px-4 py-2">
-                          <div className="flex items-center justify-center gap-1 md:gap-2">
-                            {can("make_reminders") && (
-                              <button
-                                onClick={() => reminder(item)}
-                                className="p-1 text-blue-600 hover:bg-blue-50 rounded-lg transition"
-                                title="Send Reminder"
-                              >
-                                <Bell className="w-2.5 h-2.5 md:w-3 md:h-3" />
-                              </button>
-                            )}
-                            {(can("edit_inventory") || can("full_access")) && (
-                              <button
-                                onClick={() => handleEdit(item)}
-                                className="p-1 text-yellow-600 hover:bg-yellow-50 rounded-lg transition"
-                                title="Edit"
-                              >
-                                <Edit2 className="w-2.5 h-2.5 md:w-3 md:h-3" />
-                              </button>
-                            )}
+                          <div className="text-red-600 font-bold text-xs md:text-sm">
+                            {po.item_sub_category || "--"}
                           </div>
                         </td>
                       </tr>
-                    );
-                  })
-                )}
+                      {selectedInventoryItem === po.item_code && (
+                        <tr className="bg-gray-50">
+                          <td colSpan={10} className="p-0">
+                            <div className="px-3 py-2 border-t border-gray-200">
+                              <h4 className="text-xs font-semibold text-gray-700 mb-2 flex items-center gap-1">
+                                <FileText className="w-3 h-3" />
+                                Work Order Payment Transactions {po.item_name} (
+                                {po.item_code})
+                              </h4>
+                              <div className="overflow-x-auto">
+                                <table className="w-full bg-white rounded-lg border border-gray-200 min-w-[600px]">
+                                  <thead className="bg-gray-100">
+                                    <tr>
+                                      <th className="px-2 md:px-4 py-2 text-left w-72">
+                                        <div className="text-[10px] md:text-xs font-semibold text-gray-700 uppercase tracking-wider">
+                                          Material Details
+                                        </div>
+                                      </th>
+                                      <th className="px-2 md:px-4 py-2 text-left">
+                                        <div className="text-[10px] md:text-xs font-semibold text-gray-700 uppercase tracking-wider">
+                                          Current Stock
+                                        </div>
+                                      </th>
+                                      <th className="px-2 md:px-4 py-2 text-left">
+                                        <div className="text-[10px] md:text-xs font-semibold text-gray-700 uppercase tracking-wider">
+                                          Unit Rate
+                                        </div>
+                                      </th>
+                                      <th className="px-2 md:px-4 py-2 text-left">
+                                        <div className="text-[10px] md:text-xs font-semibold text-gray-700 uppercase tracking-wider">
+                                          Stock Value
+                                        </div>
+                                      </th>
+                                      <th className="px-2 md:px-4 py-2 text-left">
+                                        <div className="text-[10px] md:text-xs font-semibold text-gray-700 uppercase tracking-wider">
+                                          Location
+                                        </div>
+                                      </th>
+                                      <th className="px-2 md:px-4 py-2 text-left">
+                                        <div className="text-[10px] md:text-xs font-semibold text-gray-700 uppercase tracking-wider">
+                                          Status
+                                        </div>
+                                      </th>
+                                      <th className="px-2 md:px-4 py-2 text-center">
+                                        <div className="text-[10px] md:text-xs font-semibold text-gray-700 uppercase tracking-wider">
+                                          Actions
+                                        </div>
+                                      </th>
+                                    </tr>
+
+                                    {/* Search Row */}
+                                    <tr className="bg-gray-50 border-b border-gray-200">
+                                      {/* Material Details Column */}
+                                      <td className="px-2 md:px-4 py-0.5">
+                                        {/* <input
+                                          type="text"
+                                          placeholder="Search material name..."
+                                          value={searchName}
+                                          onChange={(e) =>
+                                            setSearchName(e.target.value)
+                                          }
+                                          className="w-full px-2 py-1 text-[10px] md:text-xs border border-gray-300 rounded focus:ring-1 focus:ring-[#C62828] focus:border-transparent"
+                                        /> */}
+                                      </td>
+
+                                      {/* Current Stock Column */}
+                                      <td className="px-2 md:px-4 py-0.5">
+                                        {/* <input
+                                          type="text"
+                                          placeholder="Search stock quantity..."
+                                          value={searchStock}
+                                          onChange={(e) =>
+                                            setSearchStock(e.target.value)
+                                          }
+                                          className="w-full px-2 py-1 text-[10px] md:text-xs border border-gray-300 rounded focus:ring-1 focus:ring-[#C62828] focus:border-transparent"
+                                        /> */}
+                                      </td>
+
+                                      {/* Unit Rate Column */}
+                                      <td className="px-2 md:px-4 py-0.5">
+                                        {/* <input
+                                          type="text"
+                                          placeholder="Search rate..."
+                                          value={searchRate}
+                                          onChange={(e) =>
+                                            setSearchRate(e.target.value)
+                                          }
+                                          className="w-full px-2 py-1 text-[10px] md:text-xs border border-gray-300 rounded focus:ring-1 focus:ring-[#C62828] focus:border-transparent"
+                                        /> */}
+                                      </td>
+
+                                      {/* Stock Value Column */}
+                                      <td className="px-2 md:px-4 py-0.5">
+                                        {/* <input
+                                          type="text"
+                                          placeholder="Search value..."
+                                          value={searchStockValue}
+                                          onChange={(e) =>
+                                            setSearchStockValue(e.target.value)
+                                          }
+                                          className="w-full px-2 py-1 text-[10px] md:text-xs border border-gray-300 rounded focus:ring-1 focus:ring-[#C62828] focus:border-transparent"
+                                        /> */}
+                                      </td>
+
+                                      {/* Location Column */}
+                                      <td className="px-2 md:px-4 py-0.5">
+                                        <input
+                                          type="text"
+                                          placeholder="Location..."
+                                          value={searchLocation}
+                                          onChange={(e) =>
+                                            setSearchLocation(e.target.value)
+                                          }
+                                          className="w-full px-2 py-1 text-[10px] md:text-xs border border-gray-300 rounded focus:ring-1 focus:ring-[#C62828] focus:border-transparent"
+                                        />
+                                      </td>
+
+                                      {/* Status Column */}
+                                      <td className="px-2 md:px-4 py-0.5">
+                                        <input
+                                          type="text"
+                                          placeholder="Status..."
+                                          value={searchStatus}
+                                          onChange={(e) =>
+                                            setSearchStatus(e.target.value)
+                                          }
+                                          className="w-full px-2 py-1 text-[10px] md:text-xs border border-gray-300 rounded focus:ring-1 focus:ring-[#C62828] focus:border-transparent"
+                                        />
+                                      </td>
+
+                                      {/* Actions Column */}
+                                      <td className="px-2 md:px-4 py-0.5 text-center">
+                                        <button
+                                          className="text-slate-500 text-xs flex justify-center items-center px-2 py-1 bg-white border border-gray-300 rounded hover:bg-gray-50"
+                                          onClick={resetFilters}
+                                        >
+                                          <CircleX className="w-4 h-4 mr-1 " />{" "}
+                                          Clear
+                                        </button>
+                                      </td>
+                                    </tr>
+                                  </thead>
+                                  <tbody className="divide-y divide-gray-200">
+                                    {po.items.length === 0 ? (
+                                      <tr>
+                                        <td
+                                          colSpan={7}
+                                          className="px-4 py-8 text-center"
+                                        >
+                                          <Package className="w-12 h-12 md:w-16 md:h-16 text-gray-300 mx-auto mb-3" />
+                                          <p className="text-gray-600 text-sm md:text-lg font-medium">
+                                            No inventory items found
+                                          </p>
+                                          <p className="text-gray-500 text-xs md:text-sm mt-1">
+                                            Try adjusting your search or filters
+                                          </p>
+                                        </td>
+                                      </tr>
+                                    ) : (
+                                      po.items.map(
+                                        (item: any, index: number) => {
+                                          const totalValue =
+                                            calculateTotalValue(item);
+                                          const isSelected = selectedItems.has(
+                                            item.id,
+                                          );
+
+                                          return (
+                                            <tr
+                                              key={item.id}
+                                              className={`hover:bg-gray-50 transition ${
+                                                index % 2 === 0
+                                                  ? "bg-white"
+                                                  : "bg-gray-50/50"
+                                              } ${isSelected ? "bg-blue-50" : ""}`}
+                                            >
+                                              {/* Material Details Column */}
+                                              <td className="px-2 md:px-4 py-2 w-72 text-wrap">
+                                                <div className="flex items-start gap-1.5 md:gap-3 w-full">
+                                                  <div className="bg-[#C62828] w-6 h-6 md:w-8 md:h-8 rounded-full flex items-center justify-center text-white font-thin text-[10px] md:text-xs flex-shrink-0 mt-0.5">
+                                                    {(item.item_name || "U")
+                                                      .charAt(0)
+                                                      .toUpperCase()}
+                                                  </div>
+                                                  <div className="min-w-0 flex-1">
+                                                    <p
+                                                      className="font-semibold text-gray-900 text-xs md:text-sm leading-tight break-words"
+                                                      title={
+                                                        item.item_name ||
+                                                        "Unknown"
+                                                      }
+                                                    >
+                                                      {item.item_name ||
+                                                        "Unknown"}
+                                                    </p>
+                                                    <div className="mt-1 flex flex-wrap gap-1.5 items-center">
+                                                      <span className="inline-block px-1.5 py-0.5 bg-gray-100 text-gray-700 rounded text-[9px] md:text-xs font-medium">
+                                                        {item.item_code ||
+                                                          "N/A"}
+                                                      </span>
+                                                      {item.category && (
+                                                        <span className="inline-block px-1.5 py-0.5 bg-blue-50 text-blue-700 rounded text-[9px] md:text-xs font-medium">
+                                                          {item.category}
+                                                        </span>
+                                                      )}
+                                                    </div>
+                                                  </div>
+                                                </div>
+                                              </td>
+
+                                              {/* Current Stock */}
+                                              <td className="px-2 md:px-4 py-2">
+                                                <div className="font-semibold text-gray-800 text-xs md:text-sm">
+                                                  {item.quantity} {item.unit}
+                                                </div>
+                                                <div className="text-[10px] md:text-xs text-gray-500">
+                                                  Reorder: {item.reorder_qty}
+                                                </div>
+                                              </td>
+
+                                              {/* Unit Rate */}
+                                              <td className="px-2 md:px-4 py-2">
+                                                <div className="text-xs text-gray-700 flex items-center">
+                                                  <IndianRupee
+                                                    size={10}
+                                                    className="text-green-600 mr-0.5 flex-shrink-0"
+                                                  />
+                                                  <span className="truncate">
+                                                    {item.rate?.toLocaleString(
+                                                      "en-IN",
+                                                    ) || "0"}
+                                                  </span>
+                                                </div>
+                                              </td>
+
+                                              {/* Stock Value */}
+                                              <td className="px-2 md:px-4 py-2">
+                                                <span className="font-medium text-gray-700 text-xs md:text-sm flex items-center">
+                                                  <IndianRupee
+                                                    size={10}
+                                                    className="text-green-600 mr-0.5 flex-shrink-0"
+                                                  />
+                                                  <span className="truncate">
+                                                    {totalValue.toLocaleString(
+                                                      "en-IN",
+                                                    )}
+                                                  </span>
+                                                </span>
+                                              </td>
+
+                                              {/* Location */}
+                                              <td className="px-2 md:px-4 py-2 text-gray-700 text-xs md:text-sm">
+                                                <span
+                                                  className="truncate block"
+                                                  title={item.location || "N/A"}
+                                                >
+                                                  {item.location || "N/A"}
+                                                </span>
+                                              </td>
+
+                                              {/* Status */}
+                                              <td className="px-2 md:px-4 py-2">
+                                                <span
+                                                  className={`px-1.5 py-0.5 rounded-full text-[10px] font-medium ${getStatusColor(
+                                                    item.status,
+                                                  )} truncate`}
+                                                >
+                                                  {item.status}
+                                                </span>
+                                                {item.status ===
+                                                  "LOW STOCK" && (
+                                                  <div className="mt-0.5 flex items-center gap-0.5 text-[10px] text-yellow-600">
+                                                    <AlertTriangle className="w-2.5 h-2.5 flex-shrink-0" />
+                                                    <span className="truncate">
+                                                      Reorder needed
+                                                    </span>
+                                                  </div>
+                                                )}
+                                                {item.status ===
+                                                  "OUT OF STOCK" && (
+                                                  <div className="mt-0.5 flex items-center gap-0.5 text-[10px] text-red-600">
+                                                    <AlertTriangle className="w-2.5 h-2.5 flex-shrink-0" />
+                                                    <span className="truncate">
+                                                      Out of stock
+                                                    </span>
+                                                  </div>
+                                                )}
+                                              </td>
+
+                                              {/* Actions */}
+                                              <td className="px-2 md:px-4 py-2">
+                                                <div className="flex items-center justify-center gap-1 md:gap-2">
+                                                  {can("make_reminders") && (
+                                                    <button
+                                                      onClick={() =>
+                                                        reminder(item)
+                                                      }
+                                                      className="p-1 text-blue-600 hover:bg-blue-50 rounded-lg transition"
+                                                      title="Send Reminder"
+                                                    >
+                                                      <Bell className="w-2.5 h-2.5 md:w-3 md:h-3" />
+                                                    </button>
+                                                  )}
+                                                  {(can("edit_inventory") ||
+                                                    can("full_access")) && (
+                                                    <button
+                                                      onClick={() =>
+                                                        handleEdit(item)
+                                                      }
+                                                      className="p-1 text-yellow-600 hover:bg-yellow-50 rounded-lg transition"
+                                                      title="Edit"
+                                                    >
+                                                      <Edit2 className="w-2.5 h-2.5 md:w-3 md:h-3" />
+                                                    </button>
+                                                  )}
+                                                </div>
+                                              </td>
+                                            </tr>
+                                          );
+                                        },
+                                      )
+                                    )}
+                                  </tbody>
+                                </table>
+                              </div>
+                            </div>
+                          </td>
+                        </tr>
+                      )}
+                    </React.Fragment>
+                  );
+                })}
               </tbody>
             </table>
           </div>

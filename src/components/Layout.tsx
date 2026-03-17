@@ -810,10 +810,7 @@ export default function Layout({
                                               userMenus.includes(d),
                                             ) ||
                                             userMenus.includes("full_access");
-                                          console.log(
-                                            payrollItem.id,
-                                            hasPermission,
-                                          );
+
                                           if (!hasPermission) return null;
                                           return (
                                             <button

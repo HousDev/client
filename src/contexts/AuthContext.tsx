@@ -53,7 +53,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
         const data = await UsersApi.me();
         setUser(data.user);
         setProfile(data.user);
-        console.log("user info : ", data.user);
 
         // ── NEW: Load system settings when user logs in ───────────────
         try {
@@ -165,8 +164,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
   // Add this function inside AuthProvider:
   // ✅ FIXED VERSION
   const updateAvatarLocally = (avatarUrl: string | null) => {
-    console.log("🔄 Updating avatar locally:", avatarUrl); // Debug log
-
     setUser((prev: any) =>
       prev
         ? {

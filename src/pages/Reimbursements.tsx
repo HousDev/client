@@ -28,6 +28,7 @@ import {
   Percent,
   ChevronLeft,
   UserCheck,
+  ReceiptIndianRupee,
 } from "lucide-react";
 import Card from "../components/ui/Card";
 import Button from "../components/ui/Button";
@@ -85,6 +86,7 @@ export default function Reimbursements() {
   // ✅ NEW: Employee states
   const [employees, setEmployees] = useState<HrmsEmployee[]>([]);
   const [loadingEmployees, setLoadingEmployees] = useState(false);
+  const { user } = useAuth();
 
   const { can } = useAuth();
 
@@ -119,41 +121,41 @@ export default function Reimbursements() {
     category: "Travel",
     amount: "",
     description: "",
-    receipt: null as File | null,
+    receipt: null as any,
   });
 
   const [filePreview, setFilePreview] = useState<string | null>(null);
   const formRef = useRef<HTMLDivElement>(null);
 
   // ✅ NEW: Load employees from API
-  const loadEmployees = async () => {
-    setLoadingEmployees(true);
-    try {
-      console.log("🔄 Fetching employees from API...");
-      const employeesData = await HrmsEmployeesApi.getEmployees();
-      console.log("✅ Employees fetched:", employeesData);
+  // const loadEmployees = async () => {
+  //   setLoadingEmployees(true);
+  //   try {
+  //     console.log("🔄 Fetching employees from API...");
+  //     const employeesData = await HrmsEmployeesApi.getEmployees();
+  //     console.log("✅ Employees fetched:", employeesData);
 
-      // Filter only active employees
-      const activeEmployees = employeesData.filter(
-        (emp: HrmsEmployee) => emp.employee_status === "active",
-      );
+  //     // Filter only active employees
+  //     const activeEmployees = employeesData.filter(
+  //       (emp: HrmsEmployee) => emp.employee_status === "active",
+  //     );
 
-      setEmployees(activeEmployees);
-      console.log(`✅ Loaded ${activeEmployees.length} active employees`);
+  //     setEmployees(activeEmployees);
+  //     console.log(`✅ Loaded ${activeEmployees.length} active employees`);
 
-      if (activeEmployees.length === 0) {
-        toast.info("No active employees found");
-      }
-    } catch (error: any) {
-      console.error("❌ Error loading employees:", error);
-      toast.error(
-        "Failed to load employees: " + (error.message || "Unknown error"),
-      );
-      setEmployees([]); // Set empty array on error
-    } finally {
-      setLoadingEmployees(false);
-    }
-  };
+  //     if (activeEmployees.length === 0) {
+  //       toast.info("No active employees found");
+  //     }
+  //   } catch (error: any) {
+  //     console.error("❌ Error loading employees:", error);
+  //     toast.error(
+  //       "Failed to load employees: " + (error.message || "Unknown error"),
+  //     );
+  //     setEmployees([]); // Set empty array on error
+  //   } finally {
+  //     setLoadingEmployees(false);
+  //   }
+  // };
 
   // Close menu when clicking outside
   useEffect(() => {
@@ -171,75 +173,107 @@ export default function Reimbursements() {
   }, [openMenuId]);
 
   // ✅ Load employees on mount
-  useEffect(() => {
-    loadEmployees();
-  }, []);
+  // useEffect(() => {
+  //   // loadEmployees();
+  // }, []);
 
   const loadReimbursements = async () => {
     setLoading(true);
     try {
-      await new Promise((resolve) => setTimeout(resolve, 500));
-      setReimbursements(mockReimbursements);
-    } catch (error) {
+      const reimbursementData: any =
+        await employeeReimbursementApi.getAllReimbursements();
+
+      console.log("admin res : ", reimbursementData);
+
+      if (Array.isArray(reimbursementData.data)) {
+        setReimbursements(reimbursementData.data);
+      } else {
+        toast.error(
+          "Error : ",
+          reimbursementData.message || "Failed to load reimbursements",
+        );
+      }
+    } catch (error: any) {
       console.error("Error loading reimbursements:", error);
+      toast.error(
+        "Error : ",
+        error.response.data.message || "Failed to load reimbursements",
+      );
     } finally {
       setLoading(false);
     }
   };
 
+  useEffect(() => {
+    loadReimbursements();
+  }, []);
+
   // ✅ UPDATED: Handle add reimbursement with API employees
   const handleAddReimbursement = async () => {
     console.log("formdata of renbursment : ", formData);
 
-    // try{
-    //   const formDataObj = new FormData()
-    //   formDataObj.append("employee_id",formData.employee_id)
-    //   formDataObj.append("category",formData.category)
-    //   formDataObj.append("amount",formData.amount)
-    //   formDataObj.append("description",formData.description)
-    //   formDataObj.append("doc",formData.receipt)
+    try {
+      const formDataObj = new FormData();
+      formDataObj.append("employee_id", user.id);
+      formDataObj.append("category", formData.category);
+      formDataObj.append("amount", formData.amount);
+      formDataObj.append("description", formData.description);
+      formDataObj.append("doc", formData.receipt);
 
-    //   const reimbursementRes:any =await employeeReimbursementApi.createReimbursement()
-    // }catch(error:any){
-    //   console.log(error)
+      const reimbursementRes: any =
+        await employeeReimbursementApi.createReimbursement(formDataObj);
 
-    // }
+      if (reimbursementRes.success) {
+        toast.success(
+          reimbursementRes.message ||
+            "Reimbursement request submitted successfully!",
+        );
+        loadReimbursements(); // Refresh the list after adding
+      } else {
+        toast.error(
+          "Error : ",
+          reimbursementRes.message || "Failed to create reimbursement",
+        );
+      }
+    } catch (error: any) {
+      console.log(error);
+      toast.error(
+        "Error : ",
+        error.response.data.message || "Failed to create reimbursement",
+      );
+    }
 
     // Find employee from API data instead of mockEmployees
     const selectedEmployee = employees.find(
       (e) => e.id.toString() === formData.employee_id,
     );
 
-    if (
-      !selectedEmployee ||
-      !formData.amount ||
-      parseFloat(formData.amount) <= 0
-    ) {
+    if (!formData.amount || parseFloat(formData.amount) <= 0) {
       toast.error("Please fill all required fields with valid values");
       return;
     }
 
     // Get employee full name and department
-    const employeeName =
-      `${selectedEmployee.first_name} ${selectedEmployee.last_name}`.trim();
+    // const employeeName =
+    //   `${selectedEmployee.first_name} ${selectedEmployee.last_name}`.trim();
 
-    const newReimbursement: Reimbursement = {
-      id: `REIMB${Date.now()}`,
-      employee_id: selectedEmployee.id.toString(),
-      employee_name: employeeName,
-      employee_code: selectedEmployee.employee_code,
-      employee_department: selectedEmployee.department_name || "N/A", // ✅ Use department_name from API
-      employee_email: selectedEmployee.email,
-      employee_phone: selectedEmployee.phone || "N/A",
-      category: formData.category,
-      amount: parseFloat(formData.amount),
-      description: formData.description,
-      receipt_url: formData.receipt ? formData.receipt.name : undefined,
-      request_date: new Date().toISOString().split("T")[0],
-      status: "pending",
-    };
+    // const newReimbursement: Reimbursement = {
+    //   id: `REIMB${Date.now()}`,
+    //   employee_id: selectedEmployee.id.toString(),
+    //   employee_name: employeeName,
+    //   employee_code: selectedEmployee.employee_code,
+    //   employee_department: selectedEmployee.department_name || "N/A", // ✅ Use department_name from API
+    //   employee_email: selectedEmployee.email,
+    //   employee_phone: selectedEmployee.phone || "N/A",
+    //   category: formData.category,
+    //   amount: parseFloat(formData.amount),
+    //   description: formData.description,
+    //   receipt_url: formData.receipt ? formData.receipt.name : undefined,
+    //   request_date: new Date().toISOString().split("T")[0],
+    //   status: "pending",
+    // };
 
-    setReimbursements([newReimbursement, ...reimbursements]);
+    // setReimbursements([newReimbursement, ...reimbursements]);
     setShowAddModal(false);
     toast.success("Reimbursement request submitted successfully!");
     resetForm();
@@ -432,7 +466,7 @@ export default function Reimbursements() {
     pending: reimbursements.filter((r) => r.status === "pending").length,
     approved: reimbursements.filter((r) => r.status === "approved").length,
     paid: reimbursements.filter((r) => r.status === "paid").length,
-    totalAmount: reimbursements.reduce((sum, r) => sum + r.amount, 0),
+    totalAmount: reimbursements.reduce((sum, r) => sum + Number(r.amount), 0),
   };
 
   const getStatusColor = (status: string) => {
@@ -511,7 +545,7 @@ export default function Reimbursements() {
 
   // Check if form is valid
   const isFormValid = () => {
-    if (!formData.employee_id || !formData.amount || !formData.description) {
+    if (!formData.amount || !formData.description) {
       return false;
     }
 
@@ -558,7 +592,7 @@ export default function Reimbursements() {
               {/* Mobile View */}
               <div className="flex items-center gap-2 sm:hidden">
                 <div className="bg-blue-100 p-1 rounded">
-                  <Receipt className="w-3 h-3 text-blue-600" />
+                  <ReceiptIndianRupee className="w-3 h-3 text-blue-600" />
                 </div>
                 <p className="font-medium text-xs text-gray-800">
                   {selectedItems.size}
@@ -592,7 +626,7 @@ export default function Reimbursements() {
           )}
 
           {/* New Reimbursement Button */}
-          {can("create_reimbursement_request") && (
+          {can("create_reimbursement_request") && user.role !== "admin" && (
             <Button
               onClick={() => setShowAddModal(true)}
               className="text-sm bg-gradient-to-r from-[#C62828] to-red-600 hover:from-red-600 hover:to-red-700"
@@ -650,7 +684,7 @@ export default function Reimbursements() {
               </p>
             </div>
             <div className="w-8 h-8 sm:w-10 sm:h-10 md:w-12 md:h-12 bg-blue-100 rounded-lg flex items-center justify-center">
-              <Receipt className="h-4 w-4 sm:h-5 sm:w-5 md:h-6 md:w-6 text-blue-600" />
+              <ReceiptIndianRupee className="h-4 w-4 sm:h-5 sm:w-5 md:h-6 md:w-6 text-blue-600" />
             </div>
           </div>
         </Card>
@@ -666,7 +700,7 @@ export default function Reimbursements() {
               </p>
             </div>
             <div className="w-8 h-8 sm:w-10 sm:h-10 md:w-12 md:h-12 bg-slate-100 rounded-lg flex items-center justify-center">
-              <Receipt className="h-4 w-4 sm:h-5 sm:w-5 md:h-6 md:w-6 text-slate-600" />
+              <ReceiptIndianRupee className="h-4 w-4 sm:h-5 sm:w-5 md:h-6 md:w-6 text-slate-600" />
             </div>
           </div>
         </Card>
@@ -846,7 +880,7 @@ export default function Reimbursements() {
               ) : filteredReimbursements.length === 0 ? (
                 <tr>
                   <td colSpan={8} className="px-3 md:px-4 py-8 text-center">
-                    <Receipt className="w-12 h-12 md:w-16 md:h-16 text-gray-300 mx-auto mb-3" />
+                    <ReceiptIndianRupee className="w-12 h-12 md:w-16 md:h-16 text-gray-300 mx-auto mb-3" />
                     <p className="text-gray-600 text-sm md:text-lg font-medium">
                       No Reimbursements Found
                     </p>
@@ -1090,80 +1124,17 @@ export default function Reimbursements() {
                 }}
                 className="space-y-6"
               >
-                {/* ✅ UPDATED: Employee Selection - Now from API */}
-                <div className="space-y-1.5">
-                  <label className="block text-sm font-semibold text-gray-800 mb-1 flex items-center gap-2">
-                    <Users className="w-4 h-4 text-[#C62828]" />
-                    Select Employee <span className="text-red-500">*</span>
-                  </label>
-
-                  <div className="relative group">
-                    <div className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 group-focus-within:text-[#C62828] transition-colors">
-                      <Users className="w-4 h-4" />
-                    </div>
-                    <select
-                      value={formData.employee_id}
-                      onChange={(e) =>
-                        setFormData({
-                          ...formData,
-                          employee_id: e.target.value,
-                        })
-                      }
-                      className="w-full pl-10 pr-10 py-2.5 text-sm border-2 border-gray-200 rounded-xl focus:border-[#C62828] focus:ring-2 focus:ring-[#C62828]/20 bg-white outline-none transition-all duration-200 appearance-none hover:border-gray-300"
-                      required
-                      disabled={loadingEmployees}
-                    >
-                      <option value="" className="text-gray-400">
-                        {loadingEmployees
-                          ? "Loading employees..."
-                          : "Select Employee"}
-                      </option>
-                      {employees.map((emp) => {
-                        const fullName =
-                          `${emp.first_name} ${emp.last_name}`.trim();
-                        return (
-                          <option
-                            key={emp.id}
-                            value={emp.id.toString()}
-                            className="py-2"
-                          >
-                            {fullName} ({emp.employee_code}) -{" "}
-                            {emp.department_name || "N/A"}
-                          </option>
-                        );
-                      })}
-                    </select>
-                    <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none">
-                      <ChevronDown className="w-4 h-4 text-gray-400" />
-                    </div>
-                  </div>
-
-                  {/* ✅ Show loading or empty state */}
-                  {loadingEmployees && (
-                    <p className="text-xs text-blue-600 mt-1 flex items-center gap-1">
-                      <div className="animate-spin h-3 w-3 border-2 border-blue-600 border-t-transparent rounded-full"></div>
-                      Loading employees from database...
-                    </p>
-                  )}
-                  {!loadingEmployees && employees.length === 0 && (
-                    <p className="text-xs text-red-600 mt-1 flex items-center gap-1">
-                      <AlertCircle className="w-3 h-3" />
-                      No active employees found. Please add employees first.
-                    </p>
-                  )}
-                </div>
-
                 {/* Category & Amount Grid */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   {/* Category */}
                   <div className="space-y-1.5">
                     <label className="block text-sm font-semibold text-gray-800 mb-1 flex items-center gap-2">
-                      <Receipt className="w-4 h-4 text-[#C62828]" />
+                      <ReceiptIndianRupee className="w-4 h-4 text-[#C62828]" />
                       Category <span className="text-red-500">*</span>
                     </label>
                     <div className="relative group">
                       <div className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 group-focus-within:text-[#C62828] transition-colors">
-                        <Receipt className="w-4 h-4" />
+                        <ReceiptIndianRupee className="w-4 h-4" />
                       </div>
                       <select
                         value={formData.category}
@@ -1266,57 +1237,6 @@ export default function Reimbursements() {
                         accept=".pdf,.jpg,.jpeg,.png"
                       />
                     </div>
-
-                    {/* Preview Section */}
-                    {formData.receipt && (
-                      <div className="border-2 border-blue-200 rounded-xl overflow-hidden bg-gradient-to-b from-blue-50 to-white">
-                        <div className="bg-gradient-to-r from-blue-100 to-blue-50 px-4 py-3 border-b border-blue-200">
-                          <h3 className="font-bold text-sm text-gray-800 flex items-center gap-2">
-                            <div className="p-1.5 bg-blue-500/10 rounded-lg">
-                              <FileText className="w-4 h-4 text-blue-600" />
-                            </div>
-                            Receipt Preview
-                          </h3>
-                        </div>
-
-                        <div className="p-4">
-                          {/* File Details */}
-                          <div className="border-t border-gray-200 pt-4">
-                            <div className="grid grid-cols-2 gap-4">
-                              <div>
-                                <p className="text-xs font-medium text-gray-500">
-                                  File Name
-                                </p>
-                                <p className="text-sm font-medium text-gray-800 truncate">
-                                  {formData.receipt.name}
-                                </p>
-                              </div>
-
-                              <div>
-                                <p className="text-xs font-medium text-gray-500">
-                                  File Size
-                                </p>
-                                <p className="text-sm text-gray-700">
-                                  {(formData.receipt.size / 1024).toFixed(1)} KB
-                                </p>
-                              </div>
-                            </div>
-
-                            {/* Remove Button */}
-                            <div className="mt-4 flex justify-end">
-                              <button
-                                type="button"
-                                onClick={clearFile}
-                                className="px-3 py-1.5 text-xs border border-red-300 text-red-600 rounded-lg hover:bg-red-50 transition-all duration-200 flex items-center gap-1"
-                              >
-                                <X className="w-3 h-3" />
-                                Remove File
-                              </button>
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-                    )}
                   </div>
 
                   <p className="text-xs text-gray-500 mt-1">
@@ -1324,49 +1244,6 @@ export default function Reimbursements() {
                     Maximum file size: 5MB. Allowed formats: PDF, JPG, JPEG,
                     PNG.
                   </p>
-                </div>
-
-                {/* Important Notes */}
-                <div className="border-2 border-yellow-200 rounded-xl overflow-hidden bg-gradient-to-b from-yellow-50 to-white">
-                  <div className="bg-gradient-to-r from-yellow-100 to-yellow-50 px-5 py-3 border-b border-yellow-200">
-                    <h3 className="font-bold text-sm text-gray-800 flex items-center gap-2">
-                      <div className="p-1.5 bg-yellow-500/10 rounded-lg">
-                        <AlertCircle className="w-4 h-4 text-yellow-600" />
-                      </div>
-                      Important Information & Guidelines
-                    </h3>
-                  </div>
-                  <div className="p-5">
-                    <ul className="space-y-2 text-sm">
-                      <li className="flex items-start gap-2">
-                        <ChevronRight className="w-3 h-3 text-yellow-600 mt-0.5 flex-shrink-0" />
-                        <span className="text-gray-700">
-                          Reimbursement requests require manager approval before
-                          processing
-                        </span>
-                      </li>
-                      <li className="flex items-start gap-2">
-                        <ChevronRight className="w-3 h-3 text-yellow-600 mt-0.5 flex-shrink-0" />
-                        <span className="text-gray-700">
-                          Please ensure all receipts are clear and legible
-                        </span>
-                      </li>
-                      <li className="flex items-start gap-2">
-                        <ChevronRight className="w-3 h-3 text-yellow-600 mt-0.5 flex-shrink-0" />
-                        <span className="text-gray-700">
-                          Reimbursements are typically processed within 5-7
-                          working days after approval
-                        </span>
-                      </li>
-                      <li className="flex items-start gap-2">
-                        <ChevronRight className="w-3 h-3 text-yellow-600 mt-0.5 flex-shrink-0" />
-                        <span className="text-gray-700">
-                          Travel expenses require prior approval for amounts
-                          above ₹10,000
-                        </span>
-                      </li>
-                    </ul>
-                  </div>
                 </div>
 
                 {/* Submit Buttons */}
@@ -1434,7 +1311,7 @@ export default function Reimbursements() {
             <div className="bg-gradient-to-r from-[#40423f] via-[#4a4c49] to-[#5a5d5a] px-6 py-4 flex justify-between items-center border-b border-gray-700/30 relative overflow-hidden">
               <div className="flex items-center gap-3">
                 <div className="p-2 bg-white/20 rounded-xl backdrop-blur-sm">
-                  <Receipt className="w-5 h-5 text-white" />
+                  <ReceiptIndianRupee className="w-5 h-5 text-white" />
                 </div>
                 <div>
                   <h2 className="text-lg font-bold text-white flex items-center gap-2">
@@ -1515,7 +1392,7 @@ export default function Reimbursements() {
                 <div className="grid grid-cols-2 gap-4">
                   <div>
                     <p className="text-sm font-semibold text-gray-800 mb-1 flex items-center gap-2">
-                      <Receipt className="w-4 h-4 text-[#C62828]" />
+                      <ReceiptIndianRupee className="w-4 h-4 text-[#C62828]" />
                       Category
                     </p>
                     <Badge variant="info">
