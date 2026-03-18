@@ -3,14 +3,12 @@ import { api, unwrap } from "./Api";
 /* =====================================================
    Create Reimbursement
 ===================================================== */
-async function createReimbursement(payload: {
-  employee_id: number | string;
-  category: string;
-  amount: number | string;
-  description?: string;
-  doc?: string;
-}) {
-  const res: any = await api.post("/employee-reimbursement", payload);
+async function createReimbursement(payload: any) {
+  const res: any = await api.post("/employee-reimbursement", payload, {
+    headers: {
+      "Content-Type": "multipart/form-data",
+    },
+  });
   return unwrap(res);
 }
 
@@ -46,20 +44,18 @@ async function approveReimbursement(
 /* =====================================================
    Reject Reimbursement
 ===================================================== */
-async function rejectReimbursement(
-  id: number | string,
-  rejected_by: number | string,
-) {
-  const res: any = await api.put(`/employee-reimbursement/${id}/reject`, {
-    rejected_by,
-  });
+async function rejectReimbursement(id: any, payload: any) {
+  const res: any = await api.put(
+    `/employee-reimbursement/${id}/reject`,
+    payload,
+  );
   return unwrap(res);
 }
 
 /* =====================================================
    Mark as Paid
 ===================================================== */
-async function markReimbursementAsPaid(id: number | string) {
+async function markReimbursementAsPaid(id: any) {
   const res: any = await api.put(`/employee-reimbursement/${id}/paid`);
   return unwrap(res);
 }
@@ -74,6 +70,14 @@ async function getReimbursementById(id: number | string) {
 
 /* =====================================================
    Get Employee Reimbursements
+===================================================== */
+async function getAllReimbursements() {
+  const res: any = await api.get(`/employee-reimbursement`);
+  return unwrap(res);
+}
+
+/* =====================================================
+   Get All Reimbursements
 ===================================================== */
 async function getEmployeeReimbursements(employeeId: number | string) {
   const res: any = await api.get(
@@ -105,6 +109,7 @@ const employeeReimbursementApi = {
   rejectReimbursement,
   markReimbursementAsPaid,
   getReimbursementById,
+  getAllReimbursements,
   getEmployeeReimbursements,
   getApprovedReimbursements,
   deleteReimbursement,

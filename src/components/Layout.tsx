@@ -41,13 +41,13 @@ import {
   BarChart,
   UserPlus,
   Wallet,
-  Receipt,
   Ticket,
   Building2,
   Settings,
   Mail,
   Zap,
   Package,
+  ReceiptIndianRupee,
 } from "lucide-react";
 import NotificationsApi from "../lib/notificationApi";
 import { toast } from "sonner";
@@ -113,7 +113,7 @@ const hrmsSubmenuItems = [
   {
     id: "expenses",
     label: "Expenses",
-    icon: Receipt,
+    icon: ReceiptIndianRupee,
     value: ["view_expenses"],
   },
   {
@@ -172,7 +172,7 @@ const payrollSubmenuItems = [
   {
     id: "reimbursements",
     label: "Reimbursements",
-    icon: Receipt,
+    icon: ReceiptIndianRupee,
     value: ["view_reimbursements"],
   },
   { id: "tds", label: "TDS", icon: Calculator, value: ["view_tds"] },
@@ -810,10 +810,7 @@ export default function Layout({
                                               userMenus.includes(d),
                                             ) ||
                                             userMenus.includes("full_access");
-                                          console.log(
-                                            payrollItem.id,
-                                            hasPermission,
-                                          );
+
                                           if (!hasPermission) return null;
                                           return (
                                             <button

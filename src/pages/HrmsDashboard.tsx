@@ -11,6 +11,7 @@ import {
   Filter,
   Calendar1,
   Clock1,
+  ReceiptIndianRupee,
 } from "lucide-react";
 import Card from "../components/ui/Card";
 import Button from "../components/ui/Button";
@@ -71,23 +72,40 @@ export default function Dashboard() {
         const leaveData = await LeaveApi.getLeaves();
         const expensesData = await expenseApi.getExpenses();
 
-        console.log(empData, "stats for hrms dashbord")
-        console.log(todaysAttendanceData.data, "attendance data")
-        console.log(leaveData, "leave data")
-        console.log(expensesData, "expensesss data")
+        console.log(empData, "stats for hrms dashbord");
+        console.log(todaysAttendanceData.data, "attendance data");
+        console.log(leaveData, "leave data");
+        console.log(expensesData, "expensesss data");
         setOverviewStats({
           totalEmployees: Array.isArray(empData) ? empData.length : 0,
-          activeEmployees: Array.isArray(empData) ? empData.filter((e: any) => e.is_active).length : 0,
-          todayAttendance: Array.isArray(todaysAttendanceData.data) ? todaysAttendanceData.data.length : 0,
-          pendingLeaves: Array.isArray(leaveData.data) ? leaveData.data.filter((l: any) => l.status === "pending").length : 0,
+          activeEmployees: Array.isArray(empData)
+            ? empData.filter((e: any) => e.is_active).length
+            : 0,
+          todayAttendance: Array.isArray(todaysAttendanceData.data)
+            ? todaysAttendanceData.data.length
+            : 0,
+          pendingLeaves: Array.isArray(leaveData.data)
+            ? leaveData.data.filter((l: any) => l.status === "pending").length
+            : 0,
           openTickets: 0,
-          pendingExpenses: Array.isArray(expensesData.data) ? expensesData.data.filter((e: any) => e.status === "pending_approval").length : 0,
+          pendingExpenses: Array.isArray(expensesData.data)
+            ? expensesData.data.filter(
+                (e: any) => e.status === "pending_approval",
+              ).length
+            : 0,
           thisMonthPayroll: 0,
           activeRecruitments: 0,
         });
-        setEmployeesData(Array.isArray(empData) ? empData : [])
-        setAttendanceData(Array.isArray(todaysAttendanceData.data) ? todaysAttendanceData.data : []);
-        setLeavesData(Array.isArray(leaveData.data) ? leaveData.data : [])
+        setEmployeesData(Array.isArray(empData) ? empData : []);
+        setAttendanceData(
+          Array.isArray(todaysAttendanceData.data)
+            ? todaysAttendanceData.data
+            : [],
+        );
+        setLeavesData(Array.isArray(leaveData.data) ? leaveData.data : []);
+        setExpensesData(
+          Array.isArray(expensesData.data) ? expensesData.data : [],
+        );
       } else {
         setEmployeesData([]);
         setRecruitmentData([]);
@@ -116,7 +134,12 @@ export default function Dashboard() {
     { value: "attendance", label: "Attendance", icon: Clock, color: "purple" },
     { value: "leaves", label: "Leaves", icon: Calendar, color: "yellow" },
     // { value: "payroll", label: "Payroll", icon: Wallet, color: "orange" },
-    { value: "expenses", label: "Expenses", icon: Receipt, color: "pink" },
+    {
+      value: "expenses",
+      label: "Expenses",
+      icon: ReceiptIndianRupee,
+      color: "pink",
+    },
     // { value: "tickets", label: "Tickets", icon: Ticket, color: "indigo" },
   ];
 
@@ -239,7 +262,7 @@ export default function Dashboard() {
                 </div>
               </Card>
 
-                {/* <Card className="p-6">
+              {/* <Card className="p-6">
                 <div className="flex items-center justify-between">
                   <div>
                     <p className="text-sm text-slate-600">Open Tickets</p>
@@ -266,12 +289,12 @@ export default function Dashboard() {
                     <p className="text-xs text-slate-500 mt-1">For approval</p>
                   </div>
                   <div className="w-12 h-12 bg-orange-100 rounded-lg flex items-center justify-center">
-                    <Receipt className="h-6 w-6 text-orange-600" />
+                    <ReceiptIndianRupee className="h-6 w-6 text-orange-600" />
                   </div>
                 </div>
               </Card>
 
-                {/* <Card className="p-6">
+              {/* <Card className="p-6">
                 <div className="flex items-center justify-between">
                   <div>
                     <p className="text-sm text-slate-600">
@@ -458,16 +481,34 @@ export default function Dashboard() {
                           </div>
                         </td>
                         <td className="px-6 py-4 text-sm text-slate-600">
-                          <p className="flex items-center"><Calendar1 className="w-4 h-4 mr-2" /> {(att.date || "")}</p>
-
+                          <p className="flex items-center">
+                            <Calendar1 className="w-4 h-4 mr-2" />{" "}
+                            {att.date || ""}
+                          </p>
                         </td>
                         <td className="px-6 py-4 text-sm text-slate-600">
-                          <p className="flex items-center"><Calendar1 className="w-4 h-4 mr-2" /> {(att.punch_in_time || "").split("T")[0]}</p>
-                          <p className="flex items-center"><Clock1 className="w-4 h-4 mr-2" /> {((att.punch_in_time || "").split("T")[1].slice(0, 8))}</p>
+                          <p className="flex items-center">
+                            <Calendar1 className="w-4 h-4 mr-2" />{" "}
+                            {(att.punch_in_time || "").split("T")[0]}
+                          </p>
+                          <p className="flex items-center">
+                            <Clock1 className="w-4 h-4 mr-2" />{" "}
+                            {(
+                              (att.punch_in_time || "").split("T")[1] || ""
+                            ).slice(0, 8)}
+                          </p>
                         </td>
                         <td className="px-6 py-4 text-sm text-slate-600">
-                          <p className="flex items-center"><Calendar1 className="w-4 h-4 mr-2" /> {(att.punch_out_time || "").split("T")[0]}</p>
-                          <p className="flex items-center"><Clock1 className="w-4 h-4 mr-2" /> {((att.punch_out_time || "").split("T")[1].slice(0, 8))}</p>
+                          <p className="flex items-center">
+                            <Calendar1 className="w-4 h-4 mr-2" />{" "}
+                            {(att.punch_out_time || "").split("T")[0]}
+                          </p>
+                          <p className="flex items-center">
+                            <Clock1 className="w-4 h-4 mr-2" />{" "}
+                            {(
+                              (att.punch_out_time || "").split("T")[1] || ""
+                            ).slice(0, 8)}
+                          </p>
                         </td>
                         <td className="px-6 py-4 text-sm">
                           <Badge
@@ -674,8 +715,7 @@ export default function Dashboard() {
                     {expensesData.map((expense) => (
                       <tr key={expense.id} className="hover:bg-slate-50">
                         <td className="px-6 py-4 text-sm font-medium text-slate-900">
-                          {expense.employees?.first_name}{" "}
-                          {expense.employees?.last_name}
+                          {expense.employee_name}
                           <div className="text-xs text-slate-500">
                             {expense.employees?.employee_code}
                           </div>

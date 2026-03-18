@@ -32,18 +32,25 @@ export const RequestMaterialApi = {
   // 2️⃣ Create a new request material
   create: async (payload: Partial<RequestMaterial>): Promise<RequestMaterial> =>
     unwrap(api.post("/requestMaterial", payload)),
-  
-  createPOMaterialRequest: async (payload: Partial<RequestMaterial>): Promise<RequestMaterial> =>
+
+  createPOMaterialRequest: async (
+    payload: Partial<RequestMaterial>,
+  ): Promise<RequestMaterial> =>
     unwrap(api.post("/requestMaterial/po-request", payload)),
 
   // 3️⃣ Update status
   updateStatus: async (
     id: string | number,
     status: string,
-    userId: string
+    rejectionReason: string,
+    userId: string,
   ): Promise<any> =>
     unwrap(
-      api.put(`/requestMaterial/status/${id}`, { status, user_id: userId })
+      api.put(`/requestMaterial/status/${id}`, {
+        status,
+        rejection_reason: rejectionReason,
+        user_id: userId,
+      }),
     ),
 
   //update request material items

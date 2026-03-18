@@ -1,7 +1,6 @@
-import { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import {
   Plus,
-  Search,
   Filter,
   Download,
   Receipt,
@@ -14,30 +13,28 @@ import {
   MoreVertical,
   Eye,
   Trash2,
-  Calendar,
   ChevronDown,
-  AlertCircle,
-  ChevronRight,
-  Users,
   IndianRupee,
-  Building,
   Save,
-  Mail,
-  Phone,
   CreditCard,
-  Percent,
-  ChevronLeft,
   UserCheck,
+  ReceiptIndianRupee,
+  User,
+  IdCard,
+  Calendar,
 } from "lucide-react";
 import Card from "../components/ui/Card";
 import Button from "../components/ui/Button";
-import Input from "../components/ui/Input";
 import Badge from "../components/ui/Badge";
 import Swal from "sweetalert2";
 import { toast } from "sonner";
-import HrmsEmployeesApi, { HrmsEmployee } from "../lib/employeeApi"; // ✅ Import Employee API
+import { HrmsEmployee } from "../lib/employeeApi"; // ✅ Import Employee API
 import employeeReimbursementApi from "../lib/employeeReimbursementApi";
 import { useAuth } from "../contexts/AuthContext";
+import MySwal from "../utils/swal";
+import * as XLSX from "xlsx";
+import { saveAs } from "file-saver";
+import { FaSpinner } from "react-icons/fa";
 
 interface Reimbursement {
   id: string;
@@ -54,9 +51,11 @@ interface Reimbursement {
   request_date: string;
   status: "pending" | "approved" | "rejected" | "paid";
   approved_by?: string;
-  approved_date?: string;
+  approved_by_name?: string; // For displaying approver's name
+  approved_at?: string;
   payment_date?: string;
   rejection_reason?: string;
+  created_at?: string;
 }
 
 const mockReimbursements: Reimbursement[] = [
@@ -81,10 +80,12 @@ export default function Reimbursements() {
   const [reimbursements, setReimbursements] =
     useState<Reimbursement[]>(mockReimbursements);
   const [loading, setLoading] = useState(false);
+  const [exportLoading, setExportLoading] = useState(false);
 
   // ✅ NEW: Employee states
   const [employees, setEmployees] = useState<HrmsEmployee[]>([]);
   const [loadingEmployees, setLoadingEmployees] = useState(false);
+  const { user } = useAuth();
 
   const { can } = useAuth();
 
@@ -119,41 +120,41 @@ export default function Reimbursements() {
     category: "Travel",
     amount: "",
     description: "",
-    receipt: null as File | null,
+    receipt: null as any,
   });
 
   const [filePreview, setFilePreview] = useState<string | null>(null);
   const formRef = useRef<HTMLDivElement>(null);
 
   // ✅ NEW: Load employees from API
-  const loadEmployees = async () => {
-    setLoadingEmployees(true);
-    try {
-      console.log("🔄 Fetching employees from API...");
-      const employeesData = await HrmsEmployeesApi.getEmployees();
-      console.log("✅ Employees fetched:", employeesData);
+  // const loadEmployees = async () => {
+  //   setLoadingEmployees(true);
+  //   try {
+  //     console.log("🔄 Fetching employees from API...");
+  //     const employeesData = await HrmsEmployeesApi.getEmployees();
+  //     console.log("✅ Employees fetched:", employeesData);
 
-      // Filter only active employees
-      const activeEmployees = employeesData.filter(
-        (emp: HrmsEmployee) => emp.employee_status === "active",
-      );
+  //     // Filter only active employees
+  //     const activeEmployees = employeesData.filter(
+  //       (emp: HrmsEmployee) => emp.employee_status === "active",
+  //     );
 
-      setEmployees(activeEmployees);
-      console.log(`✅ Loaded ${activeEmployees.length} active employees`);
+  //     setEmployees(activeEmployees);
+  //     console.log(`✅ Loaded ${activeEmployees.length} active employees`);
 
-      if (activeEmployees.length === 0) {
-        toast.info("No active employees found");
-      }
-    } catch (error: any) {
-      console.error("❌ Error loading employees:", error);
-      toast.error(
-        "Failed to load employees: " + (error.message || "Unknown error"),
-      );
-      setEmployees([]); // Set empty array on error
-    } finally {
-      setLoadingEmployees(false);
-    }
-  };
+  //     if (activeEmployees.length === 0) {
+  //       toast.info("No active employees found");
+  //     }
+  //   } catch (error: any) {
+  //     console.error("❌ Error loading employees:", error);
+  //     toast.error(
+  //       "Failed to load employees: " + (error.message || "Unknown error"),
+  //     );
+  //     setEmployees([]); // Set empty array on error
+  //   } finally {
+  //     setLoadingEmployees(false);
+  //   }
+  // };
 
   // Close menu when clicking outside
   useEffect(() => {
@@ -171,127 +172,189 @@ export default function Reimbursements() {
   }, [openMenuId]);
 
   // ✅ Load employees on mount
-  useEffect(() => {
-    loadEmployees();
-  }, []);
+  // useEffect(() => {
+  //   // loadEmployees();
+  // }, []);
 
   const loadReimbursements = async () => {
     setLoading(true);
+
     try {
-      await new Promise((resolve) => setTimeout(resolve, 500));
-      setReimbursements(mockReimbursements);
-    } catch (error) {
+      let reimbursementData: any;
+      if (user.role === "admin") {
+        reimbursementData =
+          await employeeReimbursementApi.getAllReimbursements();
+      } else {
+        reimbursementData =
+          await employeeReimbursementApi.getEmployeeReimbursements(user.id);
+      }
+      console.log("admin res : ", reimbursementData);
+
+      if (Array.isArray(reimbursementData.data)) {
+        setReimbursements(reimbursementData.data);
+      } else {
+        toast.error(
+          "Error : ",
+          reimbursementData.message || "Failed to load reimbursements",
+        );
+      }
+    } catch (error: any) {
       console.error("Error loading reimbursements:", error);
+      toast.error(
+        "Error : ",
+        error.response.data.message || "Failed to load reimbursements",
+      );
     } finally {
       setLoading(false);
     }
   };
 
+  useEffect(() => {
+    loadReimbursements();
+  }, []);
+
   // ✅ UPDATED: Handle add reimbursement with API employees
   const handleAddReimbursement = async () => {
     console.log("formdata of renbursment : ", formData);
 
-    // try{
-    //   const formDataObj = new FormData()
-    //   formDataObj.append("employee_id",formData.employee_id)
-    //   formDataObj.append("category",formData.category)
-    //   formDataObj.append("amount",formData.amount)
-    //   formDataObj.append("description",formData.description)
-    //   formDataObj.append("doc",formData.receipt)
+    try {
+      const formDataObj = new FormData();
+      formDataObj.append("employee_id", user.id);
+      formDataObj.append("category", formData.category);
+      formDataObj.append("amount", formData.amount);
+      formDataObj.append("description", formData.description);
+      formDataObj.append("doc", formData.receipt);
 
-    //   const reimbursementRes:any =await employeeReimbursementApi.createReimbursement()
-    // }catch(error:any){
-    //   console.log(error)
+      const reimbursementRes: any =
+        await employeeReimbursementApi.createReimbursement(formDataObj);
 
-    // }
+      if (reimbursementRes.success) {
+        toast.success(
+          reimbursementRes.message ||
+            "Reimbursement request submitted successfully!",
+        );
+        loadReimbursements(); // Refresh the list after adding
+      } else {
+        toast.error(
+          "Error : ",
+          reimbursementRes.message || "Failed to create reimbursement",
+        );
+      }
+    } catch (error: any) {
+      console.log(error);
+      toast.error(
+        "Error : ",
+        error.response.data.message || "Failed to create reimbursement",
+      );
+    }
 
     // Find employee from API data instead of mockEmployees
     const selectedEmployee = employees.find(
       (e) => e.id.toString() === formData.employee_id,
     );
 
-    if (
-      !selectedEmployee ||
-      !formData.amount ||
-      parseFloat(formData.amount) <= 0
-    ) {
+    if (!formData.amount || parseFloat(formData.amount) <= 0) {
       toast.error("Please fill all required fields with valid values");
       return;
     }
 
     // Get employee full name and department
-    const employeeName =
-      `${selectedEmployee.first_name} ${selectedEmployee.last_name}`.trim();
+    // const employeeName =
+    //   `${selectedEmployee.first_name} ${selectedEmployee.last_name}`.trim();
 
-    const newReimbursement: Reimbursement = {
-      id: `REIMB${Date.now()}`,
-      employee_id: selectedEmployee.id.toString(),
-      employee_name: employeeName,
-      employee_code: selectedEmployee.employee_code,
-      employee_department: selectedEmployee.department_name || "N/A", // ✅ Use department_name from API
-      employee_email: selectedEmployee.email,
-      employee_phone: selectedEmployee.phone || "N/A",
-      category: formData.category,
-      amount: parseFloat(formData.amount),
-      description: formData.description,
-      receipt_url: formData.receipt ? formData.receipt.name : undefined,
-      request_date: new Date().toISOString().split("T")[0],
-      status: "pending",
-    };
+    // const newReimbursement: Reimbursement = {
+    //   id: `REIMB${Date.now()}`,
+    //   employee_id: selectedEmployee.id.toString(),
+    //   employee_name: employeeName,
+    //   employee_code: selectedEmployee.employee_code,
+    //   employee_department: selectedEmployee.department_name || "N/A", // ✅ Use department_name from API
+    //   employee_email: selectedEmployee.email,
+    //   employee_phone: selectedEmployee.phone || "N/A",
+    //   category: formData.category,
+    //   amount: parseFloat(formData.amount),
+    //   description: formData.description,
+    //   receipt_url: formData.receipt ? formData.receipt.name : undefined,
+    //   request_date: new Date().toISOString().split("T")[0],
+    //   status: "pending",
+    // };
 
-    setReimbursements([newReimbursement, ...reimbursements]);
+    // setReimbursements([newReimbursement, ...reimbursements]);
     setShowAddModal(false);
     toast.success("Reimbursement request submitted successfully!");
     resetForm();
   };
 
-  const handleApprove = (id: string) => {
-    setReimbursements(
-      reimbursements.map((reimb) =>
-        reimb.id === id
-          ? {
-              ...reimb,
-              status: "approved",
-              approved_by: "Manager",
-              approved_date: new Date().toISOString().split("T")[0],
-            }
-          : reimb,
-      ),
-    );
-    toast.success("Reimbursement approved successfully!");
-  };
+  const handleApprove = async (id: string) => {
+    try {
+      const approvalRes: any =
+        await employeeReimbursementApi.approveReimbursement(id, user.id);
 
-  const handleRejectSubmit = () => {
-    if (!selectedReimbursement || !rejectionReason.trim()) {
-      toast.error("Please provide a reason for rejection");
-      return;
+      if (approvalRes.success) {
+        toast.success("Reimbursement approved successfully!");
+        loadReimbursements(); // Refresh the list after approval
+      } else {
+        toast.error(
+          "Error : ",
+          approvalRes.message || "Failed to approve reimbursement",
+        );
+      }
+    } catch (error: any) {
+      console.log("Error : ", error.response.data.message);
+      toast.error(
+        "Error : ",
+        error.response.data.message || "Failed to approve reimbursement",
+      );
     }
-    setReimbursements(
-      reimbursements.map((reimb) =>
-        reimb.id === selectedReimbursement.id
-          ? { ...reimb, status: "rejected", rejection_reason: rejectionReason }
-          : reimb,
-      ),
-    );
-    setShowRejectModal(false);
-    setRejectionReason("");
-    setSelectedReimbursement(null);
-    toast.success("Reimbursement rejected");
   };
 
-  const handlePay = (id: string) => {
-    setReimbursements(
-      reimbursements.map((reimb) =>
-        reimb.id === id
-          ? {
-              ...reimb,
-              status: "paid",
-              payment_date: new Date().toISOString().split("T")[0],
-            }
-          : reimb,
-      ),
-    );
-    toast.success("Payment processed successfully!");
+  const handleRejectSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    try {
+      const rejectionRes: any =
+        await employeeReimbursementApi.rejectReimbursement(
+          selectedReimbursement?.id,
+          {
+            rejected_by: user.id,
+            reason: rejectionReason,
+          },
+        );
+
+      if (rejectionRes.success) {
+        setShowRejectModal(false);
+        setRejectionReason("");
+        setSelectedReimbursement(null);
+        loadReimbursements();
+        toast.success("Reimbursement rejected");
+      } else {
+        toast.error("Failed to reject reimbursement");
+      }
+    } catch (error: any) {
+      console.log("Error : ", error);
+      toast.error(
+        "Error : ",
+        error.response.data.message || "Failed to reject reimbursement",
+      );
+    }
+  };
+
+  const handlePay = async (id: string) => {
+    try {
+      const paidRes: any =
+        await employeeReimbursementApi.markReimbursementAsPaid(id);
+
+      if (paidRes.success) {
+        loadReimbursements();
+        toast.success("Reimbursement marked as paid successfully!");
+      } else {
+        toast.error("Failed to mark reimbursement as paid ");
+      }
+    } catch (error: any) {
+      console.log("Error : ", error);
+      toast.error(
+        "Error : ",
+        error.response.data.message || "Failed to mark reimbursement as paid",
+      );
+    }
   };
 
   const handleViewDetails = (reimbursement: Reimbursement) => {
@@ -305,20 +368,36 @@ export default function Reimbursements() {
   };
 
   const handleDeleteReimbursement = async (id: string) => {
-    const result = await Swal.fire({
-      title: "Are you sure?",
-      text: "Are you sure you want to delete this reimbursement?",
-      icon: "warning",
+    const result: any = await MySwal.fire({
+      title: "Permanently Delete Reimbursement?",
+      icon: "error",
       showCancelButton: true,
-      confirmButtonColor: "#d33",
-      cancelButtonColor: "#3085d6",
-      confirmButtonText: "Yes, delete!",
+      confirmButtonColor: "#C62828",
+      cancelButtonColor: "#6b7280",
+      confirmButtonText: "Delete",
       cancelButtonText: "Cancel",
+      reverseButtons: true,
     });
 
-    if (result.isConfirmed) {
-      setReimbursements(reimbursements.filter((reimb) => reimb.id !== id));
-      toast.success("Reimbursement deleted successfully!");
+    if (!result.isConfirmed) return;
+    try {
+      const deleteRes: any =
+        await employeeReimbursementApi.deleteReimbursement(id);
+
+      if (deleteRes.success) {
+        loadReimbursements();
+        toast.success(
+          deleteRes.message || "Reimbursement deleted successfully!",
+        );
+      } else {
+        toast.error(deleteRes.message || "Failed to delete reimbursement");
+      }
+    } catch (error: any) {
+      console.log("Error : ", error);
+      toast.error(
+        "Error : ",
+        error.response.data.message || "Failed to delete reimbursement",
+      );
     }
   };
 
@@ -432,7 +511,7 @@ export default function Reimbursements() {
     pending: reimbursements.filter((r) => r.status === "pending").length,
     approved: reimbursements.filter((r) => r.status === "approved").length,
     paid: reimbursements.filter((r) => r.status === "paid").length,
-    totalAmount: reimbursements.reduce((sum, r) => sum + r.amount, 0),
+    totalAmount: reimbursements.reduce((sum, r) => sum + Number(r.amount), 0),
   };
 
   const getStatusColor = (status: string) => {
@@ -444,7 +523,7 @@ export default function Reimbursements() {
       case "rejected":
         return "danger";
       case "paid":
-        return "info";
+        return "paid";
       default:
         return "secondary";
     }
@@ -511,7 +590,7 @@ export default function Reimbursements() {
 
   // Check if form is valid
   const isFormValid = () => {
-    if (!formData.employee_id || !formData.amount || !formData.description) {
+    if (!formData.amount || !formData.description) {
       return false;
     }
 
@@ -525,6 +604,56 @@ export default function Reimbursements() {
     }
 
     return true;
+  };
+  const formatAmount = (amount: number) => {
+    if (amount >= 100000) {
+      return `₹${(amount / 100000).toFixed(2)}L`;
+    } else if (amount >= 1000) {
+      return `₹${(amount / 1000).toFixed(1)}K`;
+    } else {
+      return `₹${amount}`;
+    }
+  };
+
+  const exportToExcel = (data: any) => {
+    if (!data || data.length === 0) return;
+    setExportLoading(true);
+    // Format data for Excel
+    const formattedData = data.map((item: any) => ({
+      ID: item.id,
+      Employee: item.employee_name,
+      Employee_Code: item.employee_code,
+
+      Category: item.category,
+      Amount: Number(item.amount),
+      Description: item.description,
+      Status: item.status,
+      Approved_By: item.approved_by_name || item.approved_by || "-",
+      Approved_At: item.approved_at
+        ? new Date(item.approved_at).toLocaleString()
+        : "-",
+      Created_At: new Date(item.created_at).toLocaleString(),
+    }));
+
+    // Convert JSON to sheet
+    const worksheet = XLSX.utils.json_to_sheet(formattedData);
+
+    // Create workbook
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, "Reimbursements");
+
+    // Generate Excel file
+    const excelBuffer = XLSX.write(workbook, {
+      bookType: "xlsx",
+      type: "array",
+    });
+
+    const fileData = new Blob([excelBuffer], {
+      type: "application/octet-stream",
+    });
+
+    saveAs(fileData, "Reimbursements.xlsx");
+    setExportLoading(false);
   };
 
   return (
@@ -543,22 +672,31 @@ export default function Reimbursements() {
             <Button
               variant="secondary"
               onClick={() => {
-                /* Export functionality */
+                exportToExcel(reimbursements);
               }}
               className="text-sm"
             >
-              <Download className="h-4 w-4 mr-1.5" />
-              <span className="hidden sm:inline">Export</span>
+              {exportLoading ? (
+                <FaSpinner className="w-4 h-4 text-white spin" />
+              ) : (
+                <Download className="h-4 w-4 mr-1.5" />
+              )}
+              <span className="hidden sm:inline ">
+                {exportLoading && (
+                  <FaSpinner className="w-4 h-4 text-white spin" />
+                )}
+                {exportLoading ? "Exporting..." : "Export"}
+              </span>
             </Button>
           )}
 
           {/* Bulk Actions - Only shown when items are selected */}
-          {selectedItems.size > 0 && can("reimbursement_bulk_actions") && (
+          {/* {selectedItems.size > 0 && can("reimbursement_bulk_actions") && (
             <div className="flex items-center gap-2 bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 rounded-md px-3 py-2">
-              {/* Mobile View */}
+             
               <div className="flex items-center gap-2 sm:hidden">
                 <div className="bg-blue-100 p-1 rounded">
-                  <Receipt className="w-3 h-3 text-blue-600" />
+                  <ReceiptIndianRupee className="w-3 h-3 text-blue-600" />
                 </div>
                 <p className="font-medium text-xs text-gray-800">
                   {selectedItems.size}
@@ -572,7 +710,7 @@ export default function Reimbursements() {
                 </button>
               </div>
 
-              {/* Desktop View */}
+              
               <div className="hidden sm:flex items-center gap-2">
                 <div className="bg-blue-100 p-1 rounded">
                   <Receipt className="w-3 h-3 text-blue-600" />
@@ -589,10 +727,10 @@ export default function Reimbursements() {
                 </button>
               </div>
             </div>
-          )}
+          )} */}
 
           {/* New Reimbursement Button */}
-          {can("create_reimbursement_request") && (
+          {can("create_reimbursement_request") && user.role !== "admin" && (
             <Button
               onClick={() => setShowAddModal(true)}
               className="text-sm bg-gradient-to-r from-[#C62828] to-red-600 hover:from-red-600 hover:to-red-700"
@@ -650,7 +788,7 @@ export default function Reimbursements() {
               </p>
             </div>
             <div className="w-8 h-8 sm:w-10 sm:h-10 md:w-12 md:h-12 bg-blue-100 rounded-lg flex items-center justify-center">
-              <Receipt className="h-4 w-4 sm:h-5 sm:w-5 md:h-6 md:w-6 text-blue-600" />
+              <ReceiptIndianRupee className="h-4 w-4 sm:h-5 sm:w-5 md:h-6 md:w-6 text-blue-600" />
             </div>
           </div>
         </Card>
@@ -662,11 +800,11 @@ export default function Reimbursements() {
                 Total Amount
               </p>
               <p className="text-lg sm:text-xl md:text-2xl font-bold text-slate-900 mt-0.5">
-                ₹{(stats.totalAmount / 100000).toFixed(1)}L
+                {formatAmount(Number(stats.totalAmount || "0"))}
               </p>
             </div>
             <div className="w-8 h-8 sm:w-10 sm:h-10 md:w-12 md:h-12 bg-slate-100 rounded-lg flex items-center justify-center">
-              <Receipt className="h-4 w-4 sm:h-5 sm:w-5 md:h-6 md:w-6 text-slate-600" />
+              <ReceiptIndianRupee className="h-4 w-4 sm:h-5 sm:w-5 md:h-6 md:w-6 text-slate-600" />
             </div>
           </div>
         </Card>
@@ -679,11 +817,11 @@ export default function Reimbursements() {
             <thead className="sticky top-0 z-10 bg-gray-200 border-b border-gray-200">
               {/* Header Row */}
               <tr>
-                <th className="px-3 md:px-4 py-2 text-center w-16">
+                {/* <th className="px-3 md:px-4 py-2 text-center w-16">
                   <div className="text-[10px] md:text-xs font-semibold text-gray-700 uppercase tracking-wider">
                     Select
                   </div>
-                </th>
+                </th> */}
                 <th className="px-3 md:px-4 py-2 text-left">
                   <div className="text-[10px] md:text-xs font-semibold text-gray-700 uppercase tracking-wider">
                     Employee
@@ -724,14 +862,14 @@ export default function Reimbursements() {
               {/* Search Row */}
               <tr className="bg-gray-50 border-b border-gray-200">
                 {/* Select Column */}
-                <td className="px-3 md:px-4 py-1 text-center">
+                {/* <td className="px-3 md:px-4 py-1 text-center">
                   <input
                     type="checkbox"
                     checked={selectAll}
                     onChange={handleSelectAll}
                     className="w-3.5 h-3.5 md:w-4 md:h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
                   />
-                </td>
+                </td> */}
 
                 {/* Employee Search */}
                 <td className="px-3 md:px-4 py-1">
@@ -846,7 +984,7 @@ export default function Reimbursements() {
               ) : filteredReimbursements.length === 0 ? (
                 <tr>
                   <td colSpan={8} className="px-3 md:px-4 py-8 text-center">
-                    <Receipt className="w-12 h-12 md:w-16 md:h-16 text-gray-300 mx-auto mb-3" />
+                    <ReceiptIndianRupee className="w-12 h-12 md:w-16 md:h-16 text-gray-300 mx-auto mb-3" />
                     <p className="text-gray-600 text-sm md:text-lg font-medium">
                       No Reimbursements Found
                     </p>
@@ -858,36 +996,32 @@ export default function Reimbursements() {
                   </td>
                 </tr>
               ) : (
-                filteredReimbursements.map((reimbursement) => {
+                filteredReimbursements.map((reimbursement, indx) => {
                   const isSelected = selectedItems.has(reimbursement.id);
                   return (
                     <tr
                       key={reimbursement.id}
                       className={`hover:bg-gray-50 transition-colors ${isSelected ? "bg-blue-50" : ""}`}
                     >
-                      <td className="px-3 md:px-4 py-3 text-center">
+                      {/* <td className="px-3 md:px-4 py-3 text-center">
                         <input
                           type="checkbox"
                           checked={isSelected}
                           onChange={() => handleSelectItem(reimbursement.id)}
                           className="w-3.5 h-3.5 md:w-4 md:h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
                         />
-                      </td>
+                      </td> */}
 
                       <td className="px-3 md:px-4 py-3">
                         <div>
-                          <p className="text-xs md:text-sm font-medium text-gray-800">
+                          <p className="text-xs md:text-sm font-medium text-gray-800 flex items-center gap-1">
+                            <User className="w-4 h-4  text-gray-400" />
                             {reimbursement.employee_name}
                           </p>
-                          <p className="text-[10px] md:text-xs text-gray-600">
+                          <p className="text-[10px] md:text-xs text-gray-600 flex items-center gap-1">
+                            <IdCard className="w-4 h-4  text-blue-400" />
                             {reimbursement.employee_code}
                           </p>
-                          <div className="flex items-center gap-1 mt-1">
-                            <Building className="w-3 h-3 text-gray-400" />
-                            <span className="text-[10px] md:text-xs text-gray-500">
-                              {reimbursement.employee_department}
-                            </span>
-                          </div>
                         </div>
                       </td>
 
@@ -908,9 +1042,10 @@ export default function Reimbursements() {
                       </td>
 
                       <td className="px-3 md:px-4 py-3">
-                        <p className="text-xs md:text-sm text-gray-700">
+                        <p className="text-xs md:text-sm text-gray-700 flex items-center gap-1">
+                          <Calendar className="w-4 h-4  text-blue-400" />
                           {new Date(
-                            reimbursement.request_date,
+                            (reimbursement.created_at || "").split("T")[0],
                           ).toLocaleDateString()}
                         </p>
                       </td>
@@ -942,7 +1077,9 @@ export default function Reimbursements() {
                           )}
 
                         {openMenuId === reimbursement.id && (
-                          <div className="absolute right-4 top-10 z-50 w-44 bg-white border border-gray-200 rounded-lg shadow-lg">
+                          <div
+                            className={`absolute right-4 ${indx >= 3 ? "bottom-10" : "top-10"} z-50 w-44 bg-white border border-gray-200 rounded-lg shadow-lg`}
+                          >
                             <ul className="py-1 text-sm text-gray-700">
                               <li>
                                 <button
@@ -1010,22 +1147,23 @@ export default function Reimbursements() {
 
                               <hr className="my-1" />
 
-                              {can("delete_reimbursement_request") && (
-                                <li>
-                                  <button
-                                    onClick={() => {
-                                      handleDeleteReimbursement(
-                                        reimbursement.id,
-                                      );
-                                      setOpenMenuId(null);
-                                    }}
-                                    className="w-full flex items-center gap-2 px-4 py-2 hover:bg-red-50 text-red-600 text-left"
-                                  >
-                                    <Trash2 className="w-4 h-4" />
-                                    Delete
-                                  </button>
-                                </li>
-                              )}
+                              {can("delete_reimbursement_request") &&
+                                reimbursement.status === "pending" && (
+                                  <li>
+                                    <button
+                                      onClick={() => {
+                                        handleDeleteReimbursement(
+                                          reimbursement.id,
+                                        );
+                                        setOpenMenuId(null);
+                                      }}
+                                      className="w-full flex items-center gap-2 px-4 py-2 hover:bg-red-50 text-red-600 text-left"
+                                    >
+                                      <Trash2 className="w-4 h-4" />
+                                      Delete
+                                    </button>
+                                  </li>
+                                )}
                             </ul>
                           </div>
                         )}
@@ -1090,80 +1228,17 @@ export default function Reimbursements() {
                 }}
                 className="space-y-6"
               >
-                {/* ✅ UPDATED: Employee Selection - Now from API */}
-                <div className="space-y-1.5">
-                  <label className="block text-sm font-semibold text-gray-800 mb-1 flex items-center gap-2">
-                    <Users className="w-4 h-4 text-[#C62828]" />
-                    Select Employee <span className="text-red-500">*</span>
-                  </label>
-
-                  <div className="relative group">
-                    <div className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 group-focus-within:text-[#C62828] transition-colors">
-                      <Users className="w-4 h-4" />
-                    </div>
-                    <select
-                      value={formData.employee_id}
-                      onChange={(e) =>
-                        setFormData({
-                          ...formData,
-                          employee_id: e.target.value,
-                        })
-                      }
-                      className="w-full pl-10 pr-10 py-2.5 text-sm border-2 border-gray-200 rounded-xl focus:border-[#C62828] focus:ring-2 focus:ring-[#C62828]/20 bg-white outline-none transition-all duration-200 appearance-none hover:border-gray-300"
-                      required
-                      disabled={loadingEmployees}
-                    >
-                      <option value="" className="text-gray-400">
-                        {loadingEmployees
-                          ? "Loading employees..."
-                          : "Select Employee"}
-                      </option>
-                      {employees.map((emp) => {
-                        const fullName =
-                          `${emp.first_name} ${emp.last_name}`.trim();
-                        return (
-                          <option
-                            key={emp.id}
-                            value={emp.id.toString()}
-                            className="py-2"
-                          >
-                            {fullName} ({emp.employee_code}) -{" "}
-                            {emp.department_name || "N/A"}
-                          </option>
-                        );
-                      })}
-                    </select>
-                    <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none">
-                      <ChevronDown className="w-4 h-4 text-gray-400" />
-                    </div>
-                  </div>
-
-                  {/* ✅ Show loading or empty state */}
-                  {loadingEmployees && (
-                    <p className="text-xs text-blue-600 mt-1 flex items-center gap-1">
-                      <div className="animate-spin h-3 w-3 border-2 border-blue-600 border-t-transparent rounded-full"></div>
-                      Loading employees from database...
-                    </p>
-                  )}
-                  {!loadingEmployees && employees.length === 0 && (
-                    <p className="text-xs text-red-600 mt-1 flex items-center gap-1">
-                      <AlertCircle className="w-3 h-3" />
-                      No active employees found. Please add employees first.
-                    </p>
-                  )}
-                </div>
-
                 {/* Category & Amount Grid */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   {/* Category */}
                   <div className="space-y-1.5">
                     <label className="block text-sm font-semibold text-gray-800 mb-1 flex items-center gap-2">
-                      <Receipt className="w-4 h-4 text-[#C62828]" />
+                      <ReceiptIndianRupee className="w-4 h-4 text-[#C62828]" />
                       Category <span className="text-red-500">*</span>
                     </label>
                     <div className="relative group">
                       <div className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 group-focus-within:text-[#C62828] transition-colors">
-                        <Receipt className="w-4 h-4" />
+                        <ReceiptIndianRupee className="w-4 h-4" />
                       </div>
                       <select
                         value={formData.category}
@@ -1266,57 +1341,6 @@ export default function Reimbursements() {
                         accept=".pdf,.jpg,.jpeg,.png"
                       />
                     </div>
-
-                    {/* Preview Section */}
-                    {formData.receipt && (
-                      <div className="border-2 border-blue-200 rounded-xl overflow-hidden bg-gradient-to-b from-blue-50 to-white">
-                        <div className="bg-gradient-to-r from-blue-100 to-blue-50 px-4 py-3 border-b border-blue-200">
-                          <h3 className="font-bold text-sm text-gray-800 flex items-center gap-2">
-                            <div className="p-1.5 bg-blue-500/10 rounded-lg">
-                              <FileText className="w-4 h-4 text-blue-600" />
-                            </div>
-                            Receipt Preview
-                          </h3>
-                        </div>
-
-                        <div className="p-4">
-                          {/* File Details */}
-                          <div className="border-t border-gray-200 pt-4">
-                            <div className="grid grid-cols-2 gap-4">
-                              <div>
-                                <p className="text-xs font-medium text-gray-500">
-                                  File Name
-                                </p>
-                                <p className="text-sm font-medium text-gray-800 truncate">
-                                  {formData.receipt.name}
-                                </p>
-                              </div>
-
-                              <div>
-                                <p className="text-xs font-medium text-gray-500">
-                                  File Size
-                                </p>
-                                <p className="text-sm text-gray-700">
-                                  {(formData.receipt.size / 1024).toFixed(1)} KB
-                                </p>
-                              </div>
-                            </div>
-
-                            {/* Remove Button */}
-                            <div className="mt-4 flex justify-end">
-                              <button
-                                type="button"
-                                onClick={clearFile}
-                                className="px-3 py-1.5 text-xs border border-red-300 text-red-600 rounded-lg hover:bg-red-50 transition-all duration-200 flex items-center gap-1"
-                              >
-                                <X className="w-3 h-3" />
-                                Remove File
-                              </button>
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-                    )}
                   </div>
 
                   <p className="text-xs text-gray-500 mt-1">
@@ -1324,49 +1348,6 @@ export default function Reimbursements() {
                     Maximum file size: 5MB. Allowed formats: PDF, JPG, JPEG,
                     PNG.
                   </p>
-                </div>
-
-                {/* Important Notes */}
-                <div className="border-2 border-yellow-200 rounded-xl overflow-hidden bg-gradient-to-b from-yellow-50 to-white">
-                  <div className="bg-gradient-to-r from-yellow-100 to-yellow-50 px-5 py-3 border-b border-yellow-200">
-                    <h3 className="font-bold text-sm text-gray-800 flex items-center gap-2">
-                      <div className="p-1.5 bg-yellow-500/10 rounded-lg">
-                        <AlertCircle className="w-4 h-4 text-yellow-600" />
-                      </div>
-                      Important Information & Guidelines
-                    </h3>
-                  </div>
-                  <div className="p-5">
-                    <ul className="space-y-2 text-sm">
-                      <li className="flex items-start gap-2">
-                        <ChevronRight className="w-3 h-3 text-yellow-600 mt-0.5 flex-shrink-0" />
-                        <span className="text-gray-700">
-                          Reimbursement requests require manager approval before
-                          processing
-                        </span>
-                      </li>
-                      <li className="flex items-start gap-2">
-                        <ChevronRight className="w-3 h-3 text-yellow-600 mt-0.5 flex-shrink-0" />
-                        <span className="text-gray-700">
-                          Please ensure all receipts are clear and legible
-                        </span>
-                      </li>
-                      <li className="flex items-start gap-2">
-                        <ChevronRight className="w-3 h-3 text-yellow-600 mt-0.5 flex-shrink-0" />
-                        <span className="text-gray-700">
-                          Reimbursements are typically processed within 5-7
-                          working days after approval
-                        </span>
-                      </li>
-                      <li className="flex items-start gap-2">
-                        <ChevronRight className="w-3 h-3 text-yellow-600 mt-0.5 flex-shrink-0" />
-                        <span className="text-gray-700">
-                          Travel expenses require prior approval for amounts
-                          above ₹10,000
-                        </span>
-                      </li>
-                    </ul>
-                  </div>
                 </div>
 
                 {/* Submit Buttons */}
@@ -1434,7 +1415,7 @@ export default function Reimbursements() {
             <div className="bg-gradient-to-r from-[#40423f] via-[#4a4c49] to-[#5a5d5a] px-6 py-4 flex justify-between items-center border-b border-gray-700/30 relative overflow-hidden">
               <div className="flex items-center gap-3">
                 <div className="p-2 bg-white/20 rounded-xl backdrop-blur-sm">
-                  <Receipt className="w-5 h-5 text-white" />
+                  <ReceiptIndianRupee className="w-5 h-5 text-white" />
                 </div>
                 <div>
                   <h2 className="text-lg font-bold text-white flex items-center gap-2">
@@ -1515,7 +1496,7 @@ export default function Reimbursements() {
                 <div className="grid grid-cols-2 gap-4">
                   <div>
                     <p className="text-sm font-semibold text-gray-800 mb-1 flex items-center gap-2">
-                      <Receipt className="w-4 h-4 text-[#C62828]" />
+                      <ReceiptIndianRupee className="w-4 h-4 text-[#C62828]" />
                       Category
                     </p>
                     <Badge variant="info">
@@ -1563,9 +1544,7 @@ export default function Reimbursements() {
                       Request Date
                     </p>
                     <p className="text-gray-900">
-                      {new Date(
-                        selectedReimbursement.request_date,
-                      ).toLocaleDateString()}
+                      {(selectedReimbursement.created_at || "").split("T")[0]}
                     </p>
                   </div>
                 </div>
@@ -1590,21 +1569,26 @@ export default function Reimbursements() {
                     <div className="grid grid-cols-2 gap-4">
                       <div>
                         <p className="text-sm font-semibold text-gray-800 mb-1">
-                          Approved By
+                          {selectedReimbursement.status === "rejected"
+                            ? "Rejected By"
+                            : "Approved By"}
                         </p>
                         <p className="font-medium text-gray-900">
-                          {selectedReimbursement.approved_by}
+                          {selectedReimbursement.approved_by_name}
                         </p>
                       </div>
                       <div>
                         <p className="text-sm font-semibold text-gray-800 mb-1">
-                          Approved Date
+                          {selectedReimbursement.status === "rejected"
+                            ? "Rejected On"
+                            : "Approved On"}
                         </p>
                         <p className="text-gray-900">
-                          {selectedReimbursement.approved_date &&
-                            new Date(
-                              selectedReimbursement.approved_date,
-                            ).toLocaleDateString()}
+                          {
+                            (selectedReimbursement.approved_at || "").split(
+                              "T",
+                            )[0]
+                          }
                         </p>
                       </div>
                     </div>
@@ -1689,16 +1673,6 @@ export default function Reimbursements() {
             {/* Content */}
             <div className="p-6">
               <div className="space-y-4">
-                <div className="bg-red-50 border border-red-200 rounded-lg p-4">
-                  <p className="text-sm font-semibold text-red-800 mb-1">
-                    Please note:
-                  </p>
-                  <p className="text-xs text-red-700">
-                    Providing a clear reason helps the employee understand why
-                    their reimbursement was rejected.
-                  </p>
-                </div>
-
                 <div>
                   <label className="block text-sm font-semibold text-gray-800 mb-2">
                     Rejection Reason <span className="text-red-500">*</span>
@@ -1737,7 +1711,7 @@ export default function Reimbursements() {
 
       {/* Filter Sidebar */}
       {showFilterSidebar && (
-        <div className="fixed inset-0 z-[9999] overflow-hidden">
+        <div className="fixed inset-0 overflow-hidden">
           {/* Overlay */}
           <div
             className="fixed inset-0 bg-black bg-opacity-50 transition-opacity duration-300"

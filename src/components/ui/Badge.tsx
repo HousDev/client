@@ -9,6 +9,7 @@ interface BadgeProps extends HTMLAttributes<HTMLSpanElement> {
     | "info"
     | "error"
     | "approve"
+    | "paid"
     | "processing"
     | "secondary";
 }
@@ -27,6 +28,7 @@ export default function Badge({
     danger: "bg-red-100 text-red-700",
     error: "bg-red-100 text-red-700",
     info: "bg-red-100 text-red-700",
+    paid: "bg-blue-100 text-blue-700",
     processing: "bg-orange-100 text-orange-700",
     secondary: "bg-yellow-100 text-yellow-700",
   };

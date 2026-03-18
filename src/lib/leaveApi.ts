@@ -72,6 +72,10 @@ export const LeaveApi = {
     const response = await api.get("/leaves/stats");
     return response.data.data;
   },
+  getEmployeeLeaveStats: async (id: string | number): Promise<LeaveStats> => {
+    const response = await api.get(`/leaves/stats/employee/${id}`);
+    return response.data.data;
+  },
 
   // Approve leave - FIXED: Send string user_id
   approveLeave: async (

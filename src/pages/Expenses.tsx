@@ -24,6 +24,9 @@ import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
 import Swal from "sweetalert2";
 import { useAuth } from "../contexts/AuthContext";
+import MySwal from "../utils/swal";
+import * as XLSX from "xlsx";
+import { saveAs } from "file-saver";
 
 export default function Expenses() {
   const [expenses, setExpenses] = useState<Expense[]>([]);
@@ -43,7 +46,7 @@ export default function Expenses() {
     rejected: 0,
     total_amount: 0,
   });
-  const { user } = useAuth();
+  const { user, can } = useAuth();
   const [employees, setEmployees] = useState<any[]>([]);
   const [employeeMap, setEmployeeMap] = useState<Map<number, any>>(new Map());
 
@@ -210,10 +213,16 @@ export default function Expenses() {
   const loadExpenses = async () => {
     try {
       setLoading(true);
-      const result = await expenseApi.getExpenses();
-
+      let result: any;
+      if (user.role === "admin") {
+        result = await expenseApi.getExpenses();
+        console.log(result);
+      } else {
+        const emp = await HrmsEmployeesApi.getEmployeeByEmail(user.email);
+        result = await expenseApi.getExpenses({ employee_id: emp.id });
+      }
       // Merge employee data with expenses
-      const expensesWithEmployees = result.data.map((expense) => ({
+      const expensesWithEmployees = result.data.map((expense: any) => ({
         ...expense,
         employee: employeeMap.get(expense.employee_id),
       }));
@@ -229,7 +238,13 @@ export default function Expenses() {
 
   const loadStats = async () => {
     try {
-      const data = await expenseApi.getExpenseStats();
+      let data;
+      if (user.role === "admin") {
+        data = await expenseApi.getExpenseStats();
+      } else {
+        const emp: any = await HrmsEmployeesApi.getEmployeeByEmail(user.email);
+        data = await expenseApi.getEmployeeExpenseStats(emp.id);
+      }
       setStats(data);
     } catch (error) {
       console.error("Error loading stats:", error);
@@ -237,49 +252,47 @@ export default function Expenses() {
   };
 
   const handleApprove = async (id: number) => {
-    const result = await Swal.fire({
+    const result: any = await MySwal.fire({
       title: "Approve Expense",
       text: "Are you sure you want to approve this expense?",
       icon: "question",
       showCancelButton: true,
-      confirmButtonColor: "#10B981",
-      cancelButtonColor: "#6B7280",
+      confirmButtonColor: "#C62828",
+      cancelButtonColor: "#6b7280",
       confirmButtonText: "Yes, approve it!",
       cancelButtonText: "Cancel",
       reverseButtons: true,
-      customClass: {
-        confirmButton: "mr-2",
-        cancelButton: "ml-2",
-      },
     });
 
-    if (result.isConfirmed) {
-      try {
-        const userData = getCurrentUser();
-        await expenseApi.approveExpense(id, {
-          ...userData,
-          notes: "Expense approved",
-        });
+    if (!result.isConfirmed) return;
 
-        await Swal.fire({
-          title: "Approved!",
-          text: "The expense has been approved successfully.",
-          icon: "success",
-          timer: 2000,
-          showConfirmButton: false,
-        });
+    try {
+      const userData = {
+        user_id: user.id,
+        username: user.email,
+        name: user.full_name,
+        notes: "Expense approved",
+      };
+      await expenseApi.approveExpense(id, userData);
 
-        loadExpenses();
-        loadStats();
-      } catch (error) {
-        console.error("Error approving expense:", error);
-        await Swal.fire({
-          title: "Error!",
-          text: "Failed to approve expense",
-          icon: "error",
-          confirmButtonColor: "#EF4444",
-        });
-      }
+      await Swal.fire({
+        title: "Approved!",
+        text: "The expense has been approved successfully.",
+        icon: "success",
+        timer: 2000,
+        showConfirmButton: false,
+      });
+
+      loadExpenses();
+      loadStats();
+    } catch (error) {
+      console.error("Error approving expense:", error);
+      await Swal.fire({
+        title: "Error!",
+        text: "Failed to approve expense",
+        icon: "error",
+        confirmButtonColor: "#EF4444",
+      });
     }
   };
 
@@ -302,48 +315,50 @@ export default function Expenses() {
       return;
     }
 
-    const confirmResult = await Swal.fire({
+    const result: any = await MySwal.fire({
       title: "Confirm Rejection",
       text: "Are you sure you want to reject this expense? This action cannot be undone.",
       icon: "warning",
       showCancelButton: true,
-      confirmButtonColor: "#EF4444",
-      cancelButtonColor: "#6B7280",
+      confirmButtonColor: "#C62828",
+      cancelButtonColor: "#6b7280",
       confirmButtonText: "Yes, reject it!",
       cancelButtonText: "Cancel",
       reverseButtons: true,
     });
 
-    if (confirmResult.isConfirmed) {
-      try {
-        const userData = getCurrentUser();
-        await expenseApi.rejectExpense(selectedExpenseId, {
-          ...userData,
-          notes: rejectReason,
-        });
+    if (!result.isConfirmed) return;
 
-        await Swal.fire({
-          title: "Rejected!",
-          text: "The expense has been rejected successfully.",
-          icon: "success",
-          timer: 2000,
-          showConfirmButton: false,
-        });
+    try {
+      const userData = {
+        user_id: user.id,
+        username: user.email,
+        name: user.full_name,
+        notes: rejectReason,
+      };
+      await expenseApi.rejectExpense(selectedExpenseId, userData);
 
-        loadExpenses();
-        loadStats();
-        setShowRejectModal(false);
-        setRejectReason("");
-        setSelectedExpenseId(null);
-      } catch (error) {
-        console.error("Error rejecting expense:", error);
-        await Swal.fire({
-          title: "Error!",
-          text: "Failed to reject expense",
-          icon: "error",
-          confirmButtonColor: "#EF4444",
-        });
-      }
+      await Swal.fire({
+        title: "Rejected!",
+        text: "The expense has been rejected successfully.",
+        icon: "success",
+        timer: 2000,
+        showConfirmButton: false,
+      });
+
+      loadExpenses();
+      loadStats();
+      setShowRejectModal(false);
+      setRejectReason("");
+      setSelectedExpenseId(null);
+    } catch (error) {
+      console.error("Error rejecting expense:", error);
+      await Swal.fire({
+        title: "Error!",
+        text: "Failed to reject expense",
+        icon: "error",
+        confirmButtonColor: "#EF4444",
+      });
     }
   };
 
@@ -536,6 +551,51 @@ export default function Expenses() {
     setShowFilterSidebar(false);
   };
 
+  const exportToExcel = (fileName = "expenses") => {
+    const data: any = expenses;
+    if (!data || data.length === 0) return;
+
+    // 🔹 Format data (clean + readable)
+    const formattedData = data.map((item: any) => ({
+      "Claim Number": item.claim_number,
+      "Employee Name": item.employee_name,
+      Category: item.category,
+      Amount: item.amount,
+      Currency: item.currency,
+      "Expense Date": formatDate(item.expense_date),
+      Status: item.status,
+      Approver: item.approver_name,
+      "Approval Date": formatDate(item.approval_date),
+      Description: item.description,
+      Vendor: item.merchant_vendor_name,
+    }));
+
+    // 🔹 Convert to worksheet
+    const worksheet = XLSX.utils.json_to_sheet(formattedData);
+
+    // 🔹 Create workbook
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, "Expenses");
+
+    // 🔹 Generate Excel file
+    const excelBuffer = XLSX.write(workbook, {
+      bookType: "xlsx",
+      type: "array",
+    });
+
+    const fileData = new Blob([excelBuffer], {
+      type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+    });
+
+    saveAs(fileData, `${fileName}.xlsx`);
+  };
+
+  // 🔹 Helper function for date formatting
+  const formatDate = (date: string) => {
+    if (!date) return "";
+    return new Date(date).toLocaleDateString("en-IN");
+  };
+
   if (loading) {
     return (
       <div className="flex items-center justify-center h-64">
@@ -548,37 +608,24 @@ export default function Expenses() {
     <div className="space-y-5">
       {/* Header */}
       <div className="flex items-center justify-end py-0 px-2 -mt-2 -mb-2">
-        <div className="sticky top-44 z-10 flex flex-col md:flex-row gap-3 items-center justify-end">
-          {selectedItems.size > 0 && (
-            <div className="flex items-center gap-2 bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 rounded-md px-3 py-2">
-              <div className="flex items-center gap-2">
-                <div className="bg-blue-100 p-1 rounded">
-                  <Receipt className="w-3 h-3 text-blue-600" />
-                </div>
-                <p className="font-medium text-xs text-gray-800">
-                  {selectedItems.size} selected
-                </p>
-              </div>
-
-              <div className="flex items-center gap-1">
-                <button
-                  onClick={handleBulkDelete}
-                  className="bg-red-600 hover:bg-red-700 text-white px-2 py-1 rounded text-xs font-medium transition"
-                >
-                  <Trash2 className="w-3 h-3 inline mr-1" />
-                  Delete
-                </button>
-              </div>
-            </div>
-          )}
-        </div>
-        {user.role !== "admin" && (
+        {can("export_expenses") && (
+          <Button
+            onClick={() => {
+              exportToExcel();
+            }}
+            className="text-sm ml-2"
+          >
+            <Plus className="h-4 w-4 mr-1.5" />
+            Export
+          </Button>
+        )}
+        {user.role !== "admin" && can("submit_expenses") && (
           <Button
             onClick={() => setShowSubmitModal(true)}
             className="text-sm ml-2"
           >
             <Plus className="h-4 w-4 mr-1.5" />
-            Submit Expense
+            Expense
           </Button>
         )}
       </div>
@@ -621,22 +668,6 @@ export default function Expenses() {
           <div className="flex items-center justify-between">
             <div>
               <p className="text-[10px] sm:text-xs text-slate-600 font-medium">
-                Total Amount
-              </p>
-              <p className="text-lg sm:text-xl md:text-xl font-bold text-blue-600 mt-0.5">
-                {formatters.currency(stats.total_amount)}
-              </p>
-            </div>
-            <div className="w-8 h-8 sm:w-9 sm:h-9 md:w-9 md:h-9 bg-blue-100 rounded-md flex items-center justify-center">
-              <Receipt className="h-4 w-4 text-blue-600" />
-            </div>
-          </div>
-        </Card>
-
-        <Card className="p-2 sm:p-3 md:p-3.5">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-[10px] sm:text-xs text-slate-600 font-medium">
                 Rejected
               </p>
               <p className="text-lg sm:text-xl md:text-xl font-bold text-red-600 mt-0.5">
@@ -648,6 +679,22 @@ export default function Expenses() {
             </div>
           </div>
         </Card>
+
+        <Card className="p-2 sm:p-3 md:p-3.5">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-[10px] sm:text-xs text-slate-600 font-medium">
+                Total Amount
+              </p>
+              <p className="text-lg sm:text-xl md:text-xl font-bold text-blue-600 mt-0.5">
+                {formatters.currency(stats.total_amount)}
+              </p>
+            </div>
+            <div className="w-8 h-8 sm:w-9 sm:h-9 md:w-9 md:h-9 bg-blue-100 rounded-md flex items-center justify-center">
+              <Receipt className="h-4 w-4 text-blue-600" />
+            </div>
+          </div>
+        </Card>
       </div>
 
       {/* Main Table */}
@@ -656,11 +703,6 @@ export default function Expenses() {
           <table className="w-full min-w-[1000px]">
             <thead className="sticky top-0 z-10 bg-gray-200 border-b border-gray-200">
               <tr>
-                <th className="px-3 md:px-4 py-2 text-center w-16">
-                  <div className="text-[10px] md:text-xs font-semibold text-gray-700 uppercase tracking-wider">
-                    Select
-                  </div>
-                </th>
                 <th className="px-3 md:px-4 py-2 text-left">
                   <div className="text-[10px] md:text-xs font-semibold text-gray-700 uppercase tracking-wider">
                     Claim No.
@@ -710,15 +752,6 @@ export default function Expenses() {
 
               {/* Search Row */}
               <tr className="bg-gray-50 border-b border-gray-200">
-                <td className="px-3 md:px-4 py-1 text-center">
-                  <input
-                    type="checkbox"
-                    checked={selectAll}
-                    onChange={handleSelectAll}
-                    className="w-3.5 h-3.5 md:w-4 md:h-4 text-[#C62828] border-gray-300 rounded focus:ring-[#C62828]"
-                  />
-                </td>
-
                 {/* Claim Number Column */}
                 <td className="px-3 md:px-4 py-1">
                   <input
@@ -833,14 +866,6 @@ export default function Expenses() {
                       isSelected ? "bg-blue-50" : ""
                     }`}
                   >
-                    <td className="px-3 md:px-4 py-3 text-center">
-                      <input
-                        type="checkbox"
-                        checked={isSelected}
-                        onChange={() => handleSelectItem(expense.id)}
-                        className="w-3.5 h-3.5 md:w-4 md:h-4 text-[#C62828] border-gray-300 rounded focus:ring-[#C62828]"
-                      />
-                    </td>
                     <td className="px-3 md:px-4 py-3">
                       <div className="font-medium text-gray-800 text-xs md:text-sm">
                         {expense.claim_number}
@@ -919,7 +944,7 @@ export default function Expenses() {
                                 </button>
                               </li>
                             )}
-                            {expense.status === "pending_approval" && (
+                            {expense.status === "pending" && (
                               <>
                                 <li>
                                   <button
@@ -950,18 +975,20 @@ export default function Expenses() {
 
                             <hr className="my-1" />
 
-                            <li>
-                              <button
-                                onClick={() => {
-                                  handleDelete(expense.id);
-                                  setOpenMenuId(null);
-                                }}
-                                className="w-full flex items-center gap-2 px-4 py-2 hover:bg-red-50 text-red-600 text-left"
-                              >
-                                <Trash2 className="w-4 h-4" />
-                                Delete
-                              </button>
-                            </li>
+                            {expense.status === "pending" && (
+                              <li>
+                                <button
+                                  onClick={() => {
+                                    handleDelete(expense.id);
+                                    setOpenMenuId(null);
+                                  }}
+                                  className="w-full flex items-center gap-2 px-4 py-2 hover:bg-red-50 text-red-600 text-left"
+                                >
+                                  <Trash2 className="w-4 h-4" />
+                                  Delete
+                                </button>
+                              </li>
+                            )}
                           </ul>
                         </div>
                       )}
