@@ -44,20 +44,18 @@ async function approveReimbursement(
 /* =====================================================
    Reject Reimbursement
 ===================================================== */
-async function rejectReimbursement(
-  id: number | string,
-  rejected_by: number | string,
-) {
-  const res: any = await api.put(`/employee-reimbursement/${id}/reject`, {
-    rejected_by,
-  });
+async function rejectReimbursement(id: any, payload: any) {
+  const res: any = await api.put(
+    `/employee-reimbursement/${id}/reject`,
+    payload,
+  );
   return unwrap(res);
 }
 
 /* =====================================================
    Mark as Paid
 ===================================================== */
-async function markReimbursementAsPaid(id: number | string) {
+async function markReimbursementAsPaid(id: any) {
   const res: any = await api.put(`/employee-reimbursement/${id}/paid`);
   return unwrap(res);
 }
