@@ -207,7 +207,7 @@ export default function CreateWoBill({
                     value={formData.bill_amount}
                     onChange={(e) => {
                       if (!/^\d*\.?\d*$/.test(e.target.value)) return;
-
+                      console.log(selectedWO, "wo payemtnsdsalfkjasd")
                       const validAmount =
                         Number(selectedWO.grand_total) -
                         Number(selectedWO.request_amount);
