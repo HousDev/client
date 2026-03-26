@@ -727,14 +727,17 @@ export default function ServiceOrderPayments() {
   const handleMakePayment = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
+      console.log("PD : ", paymentData);
       if (
-        Number(paymentData.wo_balance_amount) -
+        Number(paymentData.wo_balance_amount) +
+          Number(paymentData.wo_advance_amount) -
           Number(paymentData.approved_amount_paid) <=
           Number(paymentData.wo_advance_amount) &&
-        Number(paymentData.wo_advance_amount) !== 0 &&
-        Number(paymentData.advance_amount) !== Number(paymentData.approved_amount_paid)
+        Number(paymentData.wo_advance_amount) -
+          Number(paymentData.advance_amount) !==
+          0
       ) {
-        toast.error("Adjust payment with advance advance correctly.");  
+        toast.error("Adjust payment with advance correctly.");
         return;
       }
 
@@ -1590,7 +1593,7 @@ export default function ServiceOrderPayments() {
                         if (
                           !/^\d*\.?\d*$/.test(e.target.value) ||
                           Number(e.target.value) >
-                          Number(paymentData.wo_advance_amount) 
+                            Number(paymentData.wo_advance_amount)
                         ) {
                           return;
                         }

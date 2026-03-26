@@ -420,7 +420,7 @@ export default function LocationMaster() {
   };
 
   return (
-    <div className="sticky top-24 z-10 bg-white rounded-xl shadow-sm border border-gray-200 mt-4">
+    <div className="px-0 bg-gray-50 ">
       {/* Header Section - Sticky */}
       <div className="p-4 md:p-6 border-b border-gray-200">
         {/* Header */}

@@ -373,6 +373,8 @@ export default function ConstructionProjectWizardForm({
   }, [formData, isDraftLoaded]);
 
   const handleSubmit = async () => {
+    console.log(formData, "formdata for test");
+    console.log(validateStep(5));
     if (validateStep(5)) {
       let hasError = false;
       let errMsg = "";
@@ -439,9 +441,6 @@ export default function ConstructionProjectWizardForm({
         toast.warning("Please fill required fields.");
         return;
       }
-
-      console.log(finalData);
-      return;
 
       const projectRes: any = await projectApi.createProject(finalData);
 

@@ -10,6 +10,9 @@ import {
   UserCheck,
   X,
   User,
+  Clock1,
+  IndianRupee,
+  CalendarX,
 } from "lucide-react";
 import Card from "../components/ui/Card";
 import Button from "../components/ui/Button";
@@ -24,6 +27,7 @@ import { BiLeftArrow, BiLeftArrowAlt } from "react-icons/bi";
 import ViewTodayAttendanceModal from "../components/attendence/ViewTodayAttendanceModal";
 import { toast } from "sonner";
 import SearchableSelect from "../components/SearchableSelect";
+import { LeaveApi } from "../lib/leaveApi";
 
 interface AttendanceRecord {
   id: number;
@@ -49,6 +53,8 @@ interface AttendanceStats {
   present: number;
   absent: number;
   late: number;
+  paid_leaves: number;
+  week_off: number;
   half_day: number;
   leave: number;
   total: number;
@@ -69,6 +75,8 @@ export default function Attendance() {
     new Date().toISOString().slice(0, 7),
   );
 
+  const [employeeLeaves, setEmployeeLeaves] = useState<any[]>([]);
+
   const [selectedUser, setSelectedUser] = useState<any>("");
   const [allEmployees, setAllEmployees] = useState<any>([]);
 
@@ -87,6 +95,8 @@ export default function Attendance() {
   const [loading, setLoading] = useState(true);
   const [stats, setStats] = useState<AttendanceStats>({
     present: 0,
+    paid_leaves: 0,
+    week_off: 0,
     absent: 0,
     late: 0,
     half_day: 0,
@@ -197,6 +207,66 @@ export default function Attendance() {
     return punchIn > tenAM;
   };
 
+  function getSundayStats(attendanceData: any[]) {
+    let month: number;
+    let year: number;
+
+    // 👉 If attendance exists → take from data
+    if (attendanceData && attendanceData.length > 0) {
+      const firstValidRecord = attendanceData.find((r) => r?.date);
+
+      if (firstValidRecord) {
+        const dateObj = new Date(firstValidRecord.date);
+        month = dateObj.getMonth(); // 0-based
+        year = dateObj.getFullYear();
+      } else {
+        const now = new Date();
+        month = now.getMonth();
+        year = now.getFullYear();
+      }
+    } else {
+      // 👉 If no attendance → use current month/year
+      const now = new Date();
+      month = now.getMonth();
+      year = now.getFullYear();
+    }
+
+    let totalSundays = 0;
+    let workedSundays = 0;
+
+    const daysInMonth = new Date(year, month + 1, 0).getDate();
+
+    // ✅ Count total Sundays
+    for (let day = 1; day <= daysInMonth; day++) {
+      const date = new Date(year, month, day);
+
+      if (date.getDay() === 0) {
+        totalSundays++;
+      }
+    }
+
+    // ✅ Count worked Sundays (only if data exists)
+    if (attendanceData && attendanceData.length > 0) {
+      attendanceData.forEach((record) => {
+        if (!record?.date) return;
+
+        const date = new Date(record.date);
+        const isSunday = date.getDay() === 0;
+
+        const worked = record.punch_in_time && record.status === "present";
+
+        if (isSunday && worked) {
+          workedSundays++;
+        }
+      });
+    }
+
+    return {
+      totalSundays,
+      workedSundays,
+    };
+  }
+
   const loadAttendance = async () => {
     setLoading(true);
     const empRes: any = await HrmsEmployeesApi.getEmployees();
@@ -209,6 +279,14 @@ export default function Attendance() {
           selectedUser.user_id ?? empRes[0].user_id,
           selecteDate || new Date().toISOString().slice(0, 7),
         );
+
+        const getLeavesResponse: any = await LeaveApi.getCurrentMonthLeaves(
+          selectedUser.user_id ?? empRes[0].user_id,
+          selecteDate || new Date().toISOString().slice(0, 7),
+        );
+
+        console.log("leaves data for months : ", getLeavesResponse);
+
         const finalData = formatAttendance(response.data.data);
         let totalWorkingHours = 0;
         let presentDays = 0;
@@ -228,6 +306,13 @@ export default function Attendance() {
               lateUsers += 1;
             }
           }
+          let sundayStats = {
+            totalSundays: 0,
+            workedSundays: 0,
+          };
+
+          if (Array.isArray(finalData)) sundayStats = getSundayStats(finalData);
+          console.log("sunday stats", sundayStats);
 
           const [year, month] = selecteDate.split("-").map(Number);
           const totalDaysInMonth = new Date(year, month, 0).getDate();
@@ -239,14 +324,37 @@ export default function Attendance() {
             ? today.getDate()
             : totalDaysInMonth;
 
+          const totalHalfDayLeaves = Array.isArray(getLeavesResponse)
+            ? getLeavesResponse.reduce(
+                (sum, crr) => (Boolean(crr.is_half_day) ? sum + 1 : sum + 0),
+                0,
+              )
+            : 0;
+
+          const totalPaidLeaves = Array.isArray(getLeavesResponse)
+            ? getLeavesResponse.reduce(
+                (sum, crr) =>
+                  crr.leave_type === "Paid Leave" ? sum + 1 : sum + 0,
+                0,
+              )
+            : 0;
+
           setStats({
             ...stats,
             average_hours: Number(totalWorkingHours) / Number(presentDays),
             present: Number(presentDays),
             absent: Number(daysToConsider) - Number(presentDays),
             late: lateUsers,
+            half_day: totalHalfDayLeaves ?? 0,
+            paid_leaves: totalPaidLeaves ?? 0,
+            week_off:
+              Number(sundayStats.totalSundays) -
+              Number(sundayStats.workedSundays),
           });
 
+          setEmployeeLeaves(
+            Array.isArray(getLeavesResponse) ? getLeavesResponse : [],
+          );
           setAttendanceData(Array.isArray(finalData) ? finalData : []);
           const loginEmployee = Array.isArray(empRes) ? empRes[0] : [];
           setEmployeeDetails(loginEmployee ?? { joining_date: "", id: "" });
@@ -260,6 +368,11 @@ export default function Attendance() {
     } else {
       try {
         const response: any = await attendanceApi.getCurrentMonthAttendance(
+          user.id,
+          selecteDate || new Date().toISOString().slice(0, 7),
+        );
+
+        const getLeavesResponse: any = await LeaveApi.getCurrentMonthLeaves(
           user.id,
           selecteDate || new Date().toISOString().slice(0, 7),
         );
@@ -284,6 +397,15 @@ export default function Attendance() {
           }
         }
 
+        let sundayStats = {
+          totalSundays: 0,
+          workedSundays: 0,
+        };
+
+        if (Array.isArray(finalData)) sundayStats = getSundayStats(finalData);
+
+        console.log("sunday stats", sundayStats);
+
         const [year, month] = selecteDate.split("-").map(Number);
         const totalDaysInMonth = new Date(year, month, 0).getDate();
 
@@ -294,16 +416,39 @@ export default function Attendance() {
           ? today.getDate()
           : totalDaysInMonth;
 
+        const totalHalfDayLeaves = Array.isArray(getLeavesResponse)
+          ? getLeavesResponse.reduce(
+              (sum, crr) => (Boolean(crr.is_half_day) ? sum + 1 : sum + 0),
+              0,
+            )
+          : 0;
+
+        const totalPaidLeaves = Array.isArray(getLeavesResponse)
+          ? getLeavesResponse.reduce(
+              (sum, crr) =>
+                crr.leave_type === "Paid Leave" ? sum + 1 : sum + 0,
+              0,
+            )
+          : 0;
+
         setStats({
           ...stats,
           average_hours: Number(totalWorkingHours) / Number(presentDays),
           present: Number(presentDays),
           absent: Number(daysToConsider) - Number(presentDays),
           late: lateUsers,
+          half_day: totalHalfDayLeaves ?? 0,
+          paid_leaves: totalPaidLeaves ?? 0,
+          week_off:
+            Number(sundayStats.totalSundays) -
+            Number(sundayStats.workedSundays),
         });
 
         console.log(finalData);
         if (response.data.success) {
+          setEmployeeLeaves(
+            Array.isArray(getLeavesResponse) ? getLeavesResponse : [],
+          );
           setAttendanceData(Array.isArray(finalData) ? finalData : []);
           const loginEmployee = empRes.find((e: any) => e.user_id === user.id);
           setEmployeeDetails(loginEmployee);
@@ -321,31 +466,8 @@ export default function Attendance() {
     loadAttendance();
   }, [selecteDate, selectedUser]);
 
-  const loadStatistics = async () => {
-    try {
-      const response: any = await attendanceApi.getTodayStatistics();
-
-      console.log("stats of attendance : ", response);
-
-      if (response.success && response.data) {
-        setStats({
-          present: response.data.present_today || 0,
-          absent: response.data.absent_today || 0,
-          late: response.data.late_today || 0,
-          half_day: response.data.half_day_today || 0,
-          leave: response.data.leave_today || 0,
-          total: response.data.total_employees || 0,
-          average_hours: response.data.avg_working_hours || 0,
-        });
-      }
-    } catch (error) {
-      console.error("Error loading statistics:", error);
-    }
-  };
-
   useEffect(() => {
     loadAttendance();
-    loadStatistics();
   }, []);
   const filteredData = attendanceData.filter((record) => {
     const name = record.user_name?.toLowerCase() || "";
@@ -463,15 +585,18 @@ export default function Attendance() {
       </div>
 
       {
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-2 sm:gap-6">
-          <Card className="p-3 sm:p-6 flex justify-center items-center h-fit sm:h-auto sm:block">
+        <div className="grid grid-cols-2 lg:grid-cols-7 gap-2 sm:gap-3">
+          <Card className="px-6 py-3 sm:p-4 flex  items-center h-fit sm:h-fit sm:block">
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-xs sm:text-sm text-slate-600">
                   Present Days
                 </p>
-                <p className="text-xl sm:text-3xl font-bold text-green-600 mt-2">
-                  {stats.present}
+                <p className="text-xl sm:text-3xl font-bold text-green-600 mt-2 flex items-center">
+                  <span className="mr-3">{stats.present}</span>
+                  <div className=" w-8 h-8 bg-green-100 rounded-lg flex items-center justify-center">
+                    <UserCheck className=" h-4  w-4 text-green-600" />
+                  </div>
                 </p>
                 <p className="text-xs text-slate-500 mt-1">
                   {stats.total > 0
@@ -480,18 +605,18 @@ export default function Attendance() {
                   % present
                 </p>
               </div>
-              <div className="w-8 sm:w-12 h-8 sm:h-12 bg-green-100 rounded-lg flex items-center justify-center">
-                <UserCheck className="h-4 sm:h-6  w-4 sm:w-6 text-green-600" />
-              </div>
             </div>
           </Card>
 
-          <Card className="p-3 sm:p-6 flex justify-center items-center h-fit sm:h-auto sm:block">
+          <Card className="px-6 py-3 sm:p-4 flex  items-center h-fit sm:h-fit sm:block">
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-xs sm:text-sm text-slate-600">Absent Days</p>
-                <p className="text-xl sm:text-3xl font-bold text-red-600 mt-2">
-                  {stats.absent}
+                <p className="text-xl sm:text-3xl font-bold text-red-600 mt-2 flex items-center">
+                  <span className="mr-3">{stats.absent}</span>
+                  <div className="w-8  h-8  bg-red-100 rounded-lg flex items-center justify-center">
+                    <XCircle className="h-4   w-4  text-red-600" />
+                  </div>
                 </p>
                 <p className="text-xs text-slate-500 mt-1">
                   {stats.total > 0
@@ -500,47 +625,110 @@ export default function Attendance() {
                   % absent
                 </p>
               </div>
-              <div className="w-8 sm:w-12 h-8 sm:h-12 bg-red-100 rounded-lg flex items-center justify-center">
-                <XCircle className="h-4 sm:h-6  w-4 sm:w-6 text-red-600" />
+            </div>
+          </Card>
+
+          <Card className="px-6 py-3 sm:p-4 flex  items-center h-fit sm:h-fit sm:block">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-xs sm:text-sm text-slate-600">Half Days</p>
+                <p className="text-xl sm:text-3xl font-bold text-yellow-600 mt-2 flex items-center">
+                  <span className="mr-3">{stats.half_day}</span>
+                  <div className="w-8  h-8  bg-yellow-100 rounded-lg flex items-center justify-center">
+                    <Clock1 className="h-4   w-4  text-yellow-600" />
+                  </div>
+                </p>
+                <p className="text-xs text-slate-500 mt-1">
+                  {stats.total > 0
+                    ? Math.round((stats.half_day / stats.total) * 100)
+                    : 0}
+                  % Half Days
+                </p>
               </div>
             </div>
           </Card>
 
-          <Card className="p-3 sm:p-6 flex justify-center items-center h-fit sm:h-auto sm:block">
+          <Card className="px-6 py-3 sm:p-4 flex  items-center h-fit sm:h-fit sm:block">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-xs sm:text-sm text-slate-600">
+                  Paid Leaves Days
+                </p>
+                <p className="text-xl sm:text-3xl font-bold text-violet-600 mt-2 flex items-center">
+                  <span className="mr-3">{stats.paid_leaves}</span>
+                  <div className="w-8 h-8 bg-violet-100 rounded-lg flex items-center justify-center">
+                    <IndianRupee className="h-4   w-4  text-violet-600" />
+                  </div>
+                </p>
+                <p className="text-xs text-slate-500 mt-1">
+                  {stats.total > 0
+                    ? Math.round((stats.paid_leaves / stats.total) * 100)
+                    : 0}
+                  % Paid Leaves Days
+                </p>
+              </div>
+            </div>
+          </Card>
+
+          <Card className="px-6 py-3 sm:p-4 flex  items-center h-fit sm:h-fit sm:block">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-xs sm:text-sm text-slate-600">
+                  Week Off Days
+                </p>
+                <p className="text-xl sm:text-3xl font-bold text-gray-600 mt-2 flex items-center">
+                  <span className="mr-3">{stats.week_off}</span>
+                  <div className="w-8  h-8  bg-gray-100 rounded-lg flex items-center justify-center">
+                    <CalendarX className="h-4 sm:h-6  w-4 sm:w-6 text-gray-600" />
+                  </div>
+                </p>
+                <p className="text-xs text-slate-500 mt-1">
+                  {stats.total > 0
+                    ? Math.round((stats.week_off / stats.total) * 100)
+                    : 0}
+                  % Week Off Days
+                </p>
+              </div>
+            </div>
+          </Card>
+
+          <Card className="px-6 py-3 sm:p-4 flex  items-center h-fit sm:h-fit sm:block">
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-xs sm:text-sm text-slate-600">
                   Late Arrivals Days
                 </p>
-                <p className="text-xl sm:text-3xl font-bold text-yellow-600 mt-2">
-                  {stats.late}
+                <p className="text-xl sm:text-3xl font-bold text-orange-600 mt-2 flex items-center">
+                  <span className="mr-3">{stats.late}</span>
+                  <div className="w-8  h-8  bg-orange-100 rounded-lg flex items-center justify-center">
+                    <AlertTriangle className="h-4 sm:h-6  w-4 sm:w-6 text-orange-600" />
+                  </div>
                 </p>
-                <p className="text-xs text-slate-500 mt-1">
+                <p className="text-xs text-gray-500 mt-1">
                   {stats.total > 0
                     ? Math.round((stats.late / stats.total) * 100)
                     : 0}
                   % late
                 </p>
               </div>
-              <div className="w-8 sm:w-12 h-8 sm:h-12 bg-yellow-100 rounded-lg flex items-center justify-center">
-                <AlertTriangle className="h-4 sm:h-6  w-4 sm:w-6 text-yellow-600" />
-              </div>
             </div>
           </Card>
 
-          <Card className="p-3 sm:p-6 flex justify-center items-center h-fit sm:h-auto sm:block">
+          <Card className="px-6 py-3 sm:p-4 flex  items-center h-fit sm:h-fit sm:block">
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-xs sm:text-sm text-slate-600">Avg. Hours</p>
-                <p className="text-xl sm:text-3xl font-bold text-blue-600 mt-2">
-                  {formatDecimalToHourMinute(
-                    Number(stats.average_hours).toFixed(2),
-                  )}
+                <p className="text-xl sm:text-3xl font-bold text-blue-600 mt-2 flex items-center">
+                  <span className="mr-3">
+                    {formatDecimalToHourMinute(
+                      Number(stats.average_hours).toFixed(2),
+                    )}
+                  </span>
+                  <div className="w-8  h-8  bg-blue-100 rounded-lg flex items-center justify-center">
+                    <TrendingUp className="h-4   w-4  text-blue-600" />
+                  </div>
                 </p>
                 <p className="text-xs text-slate-500 mt-1">per employee</p>
-              </div>
-              <div className="w-8 sm:w-12 h-8 sm:h-12 bg-blue-100 rounded-lg flex items-center justify-center">
-                <TrendingUp className="h-4 sm:h-6  w-4 sm:w-6 text-blue-600" />
               </div>
             </div>
           </Card>
@@ -1101,6 +1289,7 @@ export default function Attendance() {
                 year={Number(selecteDate.slice(0, 4))}
                 attendanceData={attendanceData}
                 loadAttendance={loadAttendance}
+                leavesData={employeeLeaves}
               />
             )}
           </div>
@@ -1161,7 +1350,6 @@ export default function Attendance() {
         onClose={() => setShowMarkModal(false)}
         onSuccess={() => {
           loadAttendance();
-          loadStatistics();
           setShowMarkModal(false);
         }}
         userId={user.id}
