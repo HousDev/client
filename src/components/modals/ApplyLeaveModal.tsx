@@ -53,6 +53,7 @@ export default function ApplyLeaveForm({
   const formRef = useRef<HTMLDivElement>(null);
 
   const leaveTypes = [
+    "Paid Leave",
     "Casual Leave",
     "Sick Leave",
     "Annual Leave",

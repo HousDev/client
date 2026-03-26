@@ -23,14 +23,16 @@ const AttendanceCalender = ({
   month,
   year,
   attendanceData,
+  leavesData,
   loadAttendance,
 }: {
   month: number; // 0-based (0 = Jan)
   year: number;
   attendanceData: any;
+  leavesData: any;
   loadAttendance: any;
 }) => {
-  console.log("atd", attendanceData);
+  console.log("atd", leavesData);
   const [daysInMonth, setDaysInMonth] = useState<number>(0);
   const today = new Date();
   const [dayAttendanceData, setDayAttendanceData] =
@@ -47,6 +49,30 @@ const AttendanceCalender = ({
   );
 
   const weekDays = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+
+  function isPaidLeave(checkDate: string) {
+    if (!leavesData || leavesData.length === 0) return false;
+
+    const targetDate = new Date(checkDate);
+    targetDate.setHours(0, 0, 0, 0);
+
+    return leavesData.some((leave: any) => {
+      if (leave.status !== "approved") return false;
+
+      const fromDate = new Date(leave.from_date);
+      const toDate = new Date(leave.to_date);
+
+      // Normalize dates
+      fromDate.setHours(0, 0, 0, 0);
+      toDate.setHours(0, 0, 0, 0);
+
+      return (
+        targetDate >= fromDate &&
+        targetDate <= toDate &&
+        leave.leave_type === "Paid Leave"
+      );
+    });
+  }
 
   return (
     <div className="w-full max-w-5xl mx-auto mb-6">
@@ -88,6 +114,24 @@ const AttendanceCalender = ({
               day === today.getDate() &&
               month === today.getMonth() &&
               year === today.getFullYear();
+            const formattedMonth = String(month + 1).padStart(2, "0");
+            const formattedDay = String(day).padStart(2, "0");
+
+            const checkDate = `${year}-${formattedMonth}-${formattedDay}`;
+
+            const isPL = isPaidLeave(checkDate);
+            console.log("isPL", isPL);
+            let isLate = false;
+            const record = attendanceData.find(
+              (d: any) =>
+                d.date.slice(8, 10) ===
+                (String(day).length === 1 ? "0" + String(day) : String(day)),
+            );
+            if (record) {
+              isLate =
+                new Date(record.punch_in_time) >
+                new Date(`${record.date}T10:00:00`);
+            }
 
             return (
               <div
@@ -118,16 +162,33 @@ const AttendanceCalender = ({
                     setDayAttendanceData(data);
                   }
                 }}
-                className={`${attendanceData.find((d: any) => d.date.slice(8, 10) === (String(day).length === 1 ? "0" + String(day) : String(day))) ? "text-green-600 bg-green-100" : "text-red-600 bg-red-100"} relative h-8 sm:h-16 flex items-center justify-center rounded-2xl
+                className={` relative h-8 sm:h-16 flex items-center justify-center rounded-2xl
                   text-sm font-medium
                   transition-all duration-200 ease-in-out
                   cursor-pointer
                   
-                  ${isSunday && !isToday ? "text-red-500" : "text-gray-700"}
+                   
+                  
+                  ${
+                    isSunday
+                      ? "text-gray-600 bg-gray-100"
+                      : attendanceData.find(
+                            (d: any) =>
+                              d.date.slice(8, 10) ===
+                              (String(day).length === 1
+                                ? "0" + String(day)
+                                : String(day)),
+                          )
+                        ? "text-green-600 bg-green-100"
+                        : isPL
+                          ? "text-violet-600 bg-violet-100"
+                          : "text-red-600 bg-red-100"
+                  }
+                  flex-col leading-3
                 `}
               >
-                {day}
-
+                <p>{day}</p>
+                <p className="text-[0.6rem] sm:text-xs">{isLate && "Late"}</p>
                 {/* Subtle Hover Glow */}
                 {!isToday && (
                   <span className="absolute inset-0 rounded-2xl ring-0 hover:ring-2 hover:ring-blue-200 transition"></span>

@@ -1338,7 +1338,6 @@ export default function PurchaseOrders() {
             <div className="overflow-y-auto max-h-[calc(100vh-200px)] md:max-h-[calc(100vh-170px)] ">
               <table className="w-full min-w-[800px]">
                 <thead className="sticky top-0 z-10 bg-gray-200 border-b border-gray-200">
-                  {" "}
                   {/* Header Row */}
                   <tr>
                     <th className="px-3 md:px-4 py-2 text-left">
@@ -1578,7 +1577,6 @@ export default function PurchaseOrders() {
           <div className="overflow-y-auto max-h-[calc(100vh-190px)] md:max-h-[calc(100vh-170px)] ">
             <table className="w-full min-w-[800px]">
               <thead className="sticky top-0 z-10 bg-gray-200 border-b border-gray-200">
-                {" "}
                 {/* Header Row */}
                 <tr>
                   <th className="px-3 md:px-4 py-2 text-left">

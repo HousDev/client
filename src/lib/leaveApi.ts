@@ -61,6 +61,18 @@ export const LeaveApi = {
     return response.data;
   },
 
+  async getCurrentMonthLeaves(user_id: number, date: string) {
+    try {
+      const response = await api.get(
+        `/leaves/currentMonthLeaves/${user_id}/${date}`,
+      );
+      return response.data?.data ?? [];
+    } catch (error: any) {
+      console.error("Get Current Month Leaves API error:", error);
+      throw error;
+    }
+  },
+
   // Get leave by ID
   getLeaveById: async (id: number): Promise<LeaveApplication> => {
     const response = await api.get(`/leaves/${id}`);
