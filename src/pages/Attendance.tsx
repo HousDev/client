@@ -143,7 +143,6 @@ export default function Attendance() {
             new Date(b.punch_out_time).getTime() -
             new Date(a.punch_out_time).getTime(),
         )[0];
-      console.log("last check out : ", lastCheckOut);
 
       return {
         ...firstCheckIn,
@@ -158,7 +157,6 @@ export default function Attendance() {
 
     // 1️⃣ Group by user_id (changed from date)
     data.forEach((record) => {
-      console.log("clg records : ", record);
       const userKey = record.user_id; // 👈 changed here
 
       if (!grouped[userKey]) {
@@ -187,8 +185,6 @@ export default function Attendance() {
             new Date(a.punch_out_time).getTime(),
         )[0];
 
-      console.log("last check out : ", lastCheckOut);
-
       return {
         ...firstCheckIn, // same as before
         last_punch_out_time: lastCheckOut?.punch_out_time ?? null,
@@ -197,14 +193,20 @@ export default function Attendance() {
     });
   };
 
-  const isUserLate = (punchInISO: string) => {
+  const isUserLate = (punchInISO: string, punch_in_time: string) => {
     const punchIn = new Date(punchInISO);
 
-    // Create 10:00 AM of same day (local time)
-    const tenAM = new Date(punchIn);
-    tenAM.setHours(10, 0, 0, 0);
+    // Extract hours, minutes, seconds from DB time
+    const [hours, minutes, seconds] = punch_in_time.split(":").map(Number);
 
-    return punchIn > tenAM;
+    // Create expected punch-in time (same day as punchIn)
+    const expectedTime = new Date(punchIn);
+    expectedTime.setHours(hours, minutes, seconds || 0, 0);
+
+    console.log("PunchIn:", punchIn);
+    console.log("Expected:", expectedTime);
+
+    return punchIn > expectedTime;
   };
 
   function getSundayStats(attendanceData: any[]) {
@@ -270,7 +272,7 @@ export default function Attendance() {
   const loadAttendance = async () => {
     setLoading(true);
     const empRes: any = await HrmsEmployeesApi.getEmployees();
-
+    console.log("empRes : ", empRes, selectedUser);
     setAllEmployees(Array.isArray(empRes) ? empRes : []);
 
     if (user.role === "admin") {
@@ -284,8 +286,6 @@ export default function Attendance() {
           selectedUser.user_id ?? empRes[0].user_id,
           selecteDate || new Date().toISOString().slice(0, 7),
         );
-
-        console.log("leaves data for months : ", getLeavesResponse);
 
         const finalData = formatAttendance(response.data.data);
         let totalWorkingHours = 0;
@@ -302,7 +302,11 @@ export default function Attendance() {
             }
             finalData[i].total_hours = totalHours.toFixed(2);
             totalWorkingHours += Number(totalHours.toFixed(2));
-            if (isUserLate(finalData[i].punch_in_time)) {
+            const emp = empRes.find(
+              (e: any) => Number(e.id) === Number(finalData[i].user_id),
+            );
+            console.log("from load late : ", emp);
+            if (isUserLate(finalData[i].punch_in_time, emp.emp_punch_in_time)) {
               lateUsers += 1;
             }
           }
@@ -312,7 +316,6 @@ export default function Attendance() {
           };
 
           if (Array.isArray(finalData)) sundayStats = getSundayStats(finalData);
-          console.log("sunday stats", sundayStats);
 
           const [year, month] = selecteDate.split("-").map(Number);
           const totalDaysInMonth = new Date(year, month, 0).getDate();
@@ -377,8 +380,6 @@ export default function Attendance() {
           selecteDate || new Date().toISOString().slice(0, 7),
         );
 
-        console.log("from load attendence dafsdfsadf", response);
-
         const finalData = formatAttendance(response.data.data);
         let totalWorkingHours = 0;
         let presentDays = 0;
@@ -392,7 +393,10 @@ export default function Attendance() {
           }
           finalData[i].total_hours = totalHours.toFixed(2);
           totalWorkingHours += Number(totalHours.toFixed(2));
-          if (isUserLate(finalData[i].punch_in_time)) {
+          const emp = empRes.find(
+            (e: any) => Number(e.id) === Number(finalData[i].user_id),
+          );
+          if (isUserLate(finalData[i].punch_in_time, emp.emp_punch_in_time)) {
             lateUsers += 1;
           }
         }
@@ -403,8 +407,6 @@ export default function Attendance() {
         };
 
         if (Array.isArray(finalData)) sundayStats = getSundayStats(finalData);
-
-        console.log("sunday stats", sundayStats);
 
         const [year, month] = selecteDate.split("-").map(Number);
         const totalDaysInMonth = new Date(year, month, 0).getDate();
@@ -444,7 +446,6 @@ export default function Attendance() {
             Number(sundayStats.workedSundays),
         });
 
-        console.log(finalData);
         if (response.data.success) {
           setEmployeeLeaves(
             Array.isArray(getLeavesResponse) ? getLeavesResponse : [],
@@ -592,12 +593,12 @@ export default function Attendance() {
                 <p className="text-xs sm:text-sm text-slate-600">
                   Present Days
                 </p>
-                <p className="text-xl sm:text-3xl font-bold text-green-600 mt-2 flex items-center">
+                <div className="text-xl sm:text-3xl font-bold text-green-600 mt-2 flex items-center">
                   <span className="mr-3">{stats.present}</span>
                   <div className=" w-8 h-8 bg-green-100 rounded-lg flex items-center justify-center">
                     <UserCheck className=" h-4  w-4 text-green-600" />
                   </div>
-                </p>
+                </div>
                 <p className="text-xs text-slate-500 mt-1">
                   {stats.total > 0
                     ? Math.round((stats.present / stats.total) * 100)
@@ -1283,13 +1284,18 @@ export default function Attendance() {
           </table>
         ) : (
           <div>
-            {attendanceData && (
+            {attendanceData && allEmployees && (
               <AttendanceCalender
                 month={Number(selecteDate.slice(5)) - 1}
                 year={Number(selecteDate.slice(0, 4))}
                 attendanceData={attendanceData}
                 loadAttendance={loadAttendance}
                 leavesData={employeeLeaves}
+                selectedEmployee={
+                  typeof selectedUser === "string"
+                    ? allEmployees[0]
+                    : selectedUser
+                }
               />
             )}
           </div>

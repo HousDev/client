@@ -25,14 +25,16 @@ const AttendanceCalender = ({
   attendanceData,
   leavesData,
   loadAttendance,
+  selectedEmployee,
 }: {
   month: number; // 0-based (0 = Jan)
   year: number;
   attendanceData: any;
   leavesData: any;
   loadAttendance: any;
+  selectedEmployee: any;
 }) => {
-  console.log("atd", leavesData);
+  console.log("atd", attendanceData, leavesData, selectedEmployee);
   const [daysInMonth, setDaysInMonth] = useState<number>(0);
   const today = new Date();
   const [dayAttendanceData, setDayAttendanceData] =
@@ -108,7 +110,12 @@ const AttendanceCalender = ({
           {Array.from({ length: daysInMonth }, (_, index) => {
             const day = index + 1;
             const currentDate = new Date(year, month, day);
-            const isSunday = currentDate.getDay() === 0;
+
+            const isSunday = selectedEmployee
+              ? JSON.parse(selectedEmployee.week_off_days).includes(
+                  currentDate.getDay(),
+                )
+              : false;
 
             const isToday =
               day === today.getDate() &&
@@ -130,7 +137,9 @@ const AttendanceCalender = ({
             if (record) {
               isLate =
                 new Date(record.punch_in_time) >
-                new Date(`${record.date}T10:00:00`);
+                new Date(
+                  `${record.date}T${selectedEmployee.emp_punch_in_time}`,
+                );
             }
 
             return (
@@ -171,7 +180,15 @@ const AttendanceCalender = ({
                   
                   ${
                     isSunday
-                      ? "text-gray-600 bg-gray-100"
+                      ? attendanceData.find(
+                          (d: any) =>
+                            d.date.slice(8, 10) ===
+                            (String(day).length === 1
+                              ? "0" + String(day)
+                              : String(day)),
+                        )
+                        ? "text-green-600 bg-green-100"
+                        : "text-gray-600 bg-gray-100"
                       : attendanceData.find(
                             (d: any) =>
                               d.date.slice(8, 10) ===
@@ -184,11 +201,11 @@ const AttendanceCalender = ({
                           ? "text-violet-600 bg-violet-100"
                           : "text-red-600 bg-red-100"
                   }
-                  flex-col leading-3
+                  flex-col leading-[0.6rem] items-center justify-center
                 `}
               >
-                <p>{day}</p>
-                <p className="text-[0.6rem] sm:text-xs">{isLate && "Late"}</p>
+                <p className="text-[0.6rem] sm:text-sm">{day}</p>
+                <p className="text-[0.6rem] sm:text-sm">{isLate && "Late"}</p>
                 {/* Subtle Hover Glow */}
                 {!isToday && (
                   <span className="absolute inset-0 rounded-2xl ring-0 hover:ring-2 hover:ring-blue-200 transition"></span>
