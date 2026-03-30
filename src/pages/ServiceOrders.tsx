@@ -2733,7 +2733,7 @@ export default function ServiceOrders() {
                           </button>
                         )}
                         {can("make_payment_wo") &&
-                          (po.balance_amount! > 0 || po.retention_amount > 0) &&
+                          po.balance_amount! > 0 &&
                           po.status === "authorize" && (
                             <button
                               onClick={() => {
@@ -3726,12 +3726,8 @@ export default function ServiceOrders() {
                     value={paymentData.amount_paid || ""}
                     onChange={(e) => {
                       const value = Number(e.target.value);
-
-                      const allowed_amount =
-                        Number(selectedPO.bill_amount) -
-                        Number(selectedPO.request_amount);
-
-                      console.log(value, allowed_amount);
+                      console.log(selectedPO);
+                      const allowed_amount = Number(selectedPO.bill_amount);
 
                       if (value > allowed_amount) {
                         setAmountError(

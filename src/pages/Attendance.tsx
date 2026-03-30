@@ -203,9 +203,6 @@ export default function Attendance() {
     const expectedTime = new Date(punchIn);
     expectedTime.setHours(hours, minutes, seconds || 0, 0);
 
-    console.log("PunchIn:", punchIn);
-    console.log("Expected:", expectedTime);
-
     return punchIn > expectedTime;
   };
 
@@ -272,7 +269,6 @@ export default function Attendance() {
   const loadAttendance = async () => {
     setLoading(true);
     const empRes: any = await HrmsEmployeesApi.getEmployees();
-    console.log("empRes : ", empRes, selectedUser);
     setAllEmployees(Array.isArray(empRes) ? empRes : []);
 
     if (user.role === "admin") {
@@ -305,7 +301,6 @@ export default function Attendance() {
             const emp = empRes.find(
               (e: any) => Number(e.id) === Number(finalData[i].user_id),
             );
-            console.log("from load late : ", emp);
             if (isUserLate(finalData[i].punch_in_time, emp.emp_punch_in_time)) {
               lateUsers += 1;
             }

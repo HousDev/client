@@ -23,7 +23,6 @@ const ViewTodayAttendanceModal = ({
   loadAttendance: any;
   setDayData: any;
 }) => {
-  console.log(dayData);
   const { user } = useAuth();
   const [showViewSelfieModal, setShowViewSelfieModal] =
     useState<boolean>(false);
@@ -50,8 +49,6 @@ const ViewTodayAttendanceModal = ({
         dayData.id,
         attendanceNote,
       );
-
-      console.log("this is nte :", attendanceRes);
 
       if (attendanceRes.success) {
         await loadAttendance();

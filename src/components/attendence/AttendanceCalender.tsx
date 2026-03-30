@@ -34,7 +34,6 @@ const AttendanceCalender = ({
   loadAttendance: any;
   selectedEmployee: any;
 }) => {
-  console.log("atd", attendanceData, leavesData, selectedEmployee);
   const [daysInMonth, setDaysInMonth] = useState<number>(0);
   const today = new Date();
   const [dayAttendanceData, setDayAttendanceData] =
@@ -127,7 +126,6 @@ const AttendanceCalender = ({
             const checkDate = `${year}-${formattedMonth}-${formattedDay}`;
 
             const isPL = isPaidLeave(checkDate);
-            console.log("isPL", isPL);
             let isLate = false;
             const record = attendanceData.find(
               (d: any) =>
