@@ -82,6 +82,7 @@ export type PO = {
   igst_amount?: number;
   created_at?: string;
 };
+
 type Tracking = {
   id: string;
   po_id: string;
@@ -145,6 +146,8 @@ export default function ServiceOrders() {
     adjust_with_advance: false,
     advance_amount: "",
     retention_percentage: "",
+    retention_amount: "",
+    amount_payable: "",
     vendorId: "",
     transaction_type: "advance",
     amount_paid: "",
@@ -1159,6 +1162,9 @@ export default function ServiceOrders() {
   const handleMakePayment = async (e: React.FormEvent) => {
     e.preventDefault();
     // return;
+
+    // console.log("payment details : ", paymentData);
+    // return;
     try {
       let res: any;
       const formData = new FormData();
@@ -1330,6 +1336,8 @@ export default function ServiceOrders() {
           vendorId: "",
           transaction_type: "advance",
           amount_paid: "",
+          retention_amount: "",
+          amount_payable: "",
           payment_method: "bank_transfer",
           payment_reference_no: "",
           payment_proof: null,
@@ -1945,14 +1953,7 @@ export default function ServiceOrders() {
                                                 ) !==
                                                   Number(
                                                     transaction.bill_amount,
-                                                  ) -
-                                                    (Number(
-                                                      transaction.bill_amount,
-                                                    ) *
-                                                      Number(
-                                                        transaction.bill_retention,
-                                                      )) /
-                                                      100 &&
+                                                  ) &&
                                                 (transaction.status ===
                                                   "pending" ||
                                                   transaction.status ===
@@ -2028,6 +2029,7 @@ export default function ServiceOrders() {
                                                         ...transaction,
                                                         amount_paid:
                                                           amountTOPay,
+                                                        amount_payable: "",
                                                         approved_amount_paid:
                                                           amountTOPay,
                                                         vendor: po.vendor,
@@ -2053,7 +2055,7 @@ export default function ServiceOrders() {
                                                       });
                                                     }}
                                                     className="p-1.5 md:p-2 text-green-600 hover:bg-green-50 rounded-lg transition"
-                                                    title="Rise Payment Request"
+                                                    title="Pay Retention"
                                                   >
                                                     <IndianRupee className="w-3.5 h-3.5 md:w-4 md:h-4" />
                                                   </button>
@@ -2342,9 +2344,14 @@ export default function ServiceOrders() {
                         >
                           {po.payment_status?.toUpperCase() || "PENDING"}
                         </span>
-                        {po.balance_amount! > 0 && (
+                        {(po.balance_amount! > 0 ||
+                          Number(po.retention_amount) > 0) && (
                           <p className="text-[10px] md:text-xs text-gray-600 mt-0.5">
-                            Bal: {formatCurrency(po.balance_amount)}
+                            Bal:{" "}
+                            {formatCurrency(
+                              Number(po.balance_amount) +
+                                Number(po.retention_amount),
+                            )}
                           </p>
                         )}
                       </td>
@@ -2723,9 +2730,7 @@ export default function ServiceOrders() {
                           </button>
                         )}
                         {can("make_payment_wo") &&
-                          po.balance_amount! > 0 &&
-                          Number(po.request_amount) !==
-                            Number(po.grand_total) &&
+                          (po.balance_amount! > 0 || po.retention_amount > 0) &&
                           po.status === "authorize" && (
                             <button
                               onClick={() => {
@@ -3244,6 +3249,8 @@ export default function ServiceOrders() {
                     advance_amount: "",
                     retention_percentage: "",
                     amount_paid: "",
+                    retention_amount: "",
+                    amount_payable: "",
                     vendorId: "",
                     payment_method: "bank_transfer",
                     payment_reference_no: "",
@@ -3366,7 +3373,8 @@ export default function ServiceOrders() {
                     onChange={(e) => {
                       if (
                         Number(e.target.value) >
-                          Number(selectedPO?.balance_amount) ||
+                          Number(selectedPO?.balance_amount) +
+                            Number(selectedPO?.retention_amount) ||
                         !/^\d*\.?\d*$/.test(e.target.value)
                       ) {
                         return;
@@ -3537,6 +3545,8 @@ export default function ServiceOrders() {
                       advance_amount: "",
                       retention_percentage: "",
                       amount_paid: "",
+                      retention_amount: "",
+                      amount_payable: "",
                       vendorId: "",
                       payment_method: "bank_transfer",
                       payment_reference_no: "",
@@ -3587,6 +3597,8 @@ export default function ServiceOrders() {
                     advance_amount: "",
                     retention_percentage: "",
                     amount_paid: "",
+                    retention_amount: "",
+                    amount_payable: "",
                     vendorId: "",
                     payment_method: "bank_transfer",
                     payment_reference_no: "",
@@ -3704,6 +3716,77 @@ export default function ServiceOrders() {
 
                 <div className="space-y-1">
                   <label className="block text-xs font-semibold text-gray-800">
+                    Payment Amount <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    type="text"
+                    value={paymentData.amount_paid || ""}
+                    onChange={(e) => {
+                      const value = Number(e.target.value);
+
+                      const allowed_amount =
+                        Number(selectedPO.bill_amount) -
+                        Number(selectedPO.request_amount);
+
+                      console.log(value, allowed_amount);
+
+                      if (value > allowed_amount) {
+                        setAmountError(
+                          "You can not enter amount greater than " +
+                            allowed_amount,
+                        );
+                        return;
+                      }
+
+                      setAmountError("");
+
+                      const ra =
+                        (Number(e.target.value) *
+                          Number(selectedPO.bill_retention)) /
+                        100;
+
+                      setPaymentData({
+                        ...paymentData,
+                        amount_paid: Number(e.target.value) || "",
+                        retention_amount: Number(ra),
+                        amount_payable: Number(e.target.value) - Number(ra),
+                      });
+                      console.log("payment data : ", paymentData);
+                    }}
+                    className="w-full px-3 py-2 text-sm border-2 border-gray-200 rounded-xl focus:border-[#C62828] focus:ring-2 focus:ring-[#C62828]/20 outline-none"
+                    required
+                  />
+                  <p className="text-xs text-red-600">{amountError}</p>
+                </div>
+
+                <div className="space-y-1">
+                  <label className="block text-xs font-semibold text-gray-800">
+                    Retention Amount <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    type="text"
+                    value={paymentData.retention_amount || ""}
+                    className="w-full px-3 py-2 text-sm border-2 border-gray-200 read-only:bg-gray-100 rounded-xl focus:border-[#C62828] focus:ring-2 focus:ring-[#C62828]/20 outline-none"
+                    required
+                    readOnly
+                  />
+                </div>
+
+                <div className="space-y-1">
+                  <label className="block text-xs font-semibold text-gray-800">
+                    Amount Payable <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    type="text"
+                    value={paymentData.amount_payable || ""}
+                    className="w-full px-3 py-2 text-sm border-2 border-gray-200 rounded-xl focus:border-[#C62828] focus:ring-2 focus:ring-[#C62828]/20 outline-none read-only:bg-gray-100"
+                    required
+                    readOnly
+                  />
+                </div>
+
+                <div className="space-y-1">
+                  <label className="block text-xs font-semibold text-gray-800">
                     Payment Date <span className="text-red-500">*</span>
                   </label>
                   <input
@@ -3735,46 +3818,6 @@ export default function ServiceOrders() {
                     className="w-full px-3 py-2 text-sm border-2 border-gray-200 rounded-xl focus:border-[#C62828] focus:ring-2 focus:ring-[#C62828]/20 outline-none"
                     required
                   />
-                </div>
-                <div className="space-y-1">
-                  <label className="block text-xs font-semibold text-gray-800">
-                    Payment Amount <span className="text-red-500">*</span>
-                  </label>
-                  <input
-                    type="text"
-                    value={paymentData.amount_paid || ""}
-                    onChange={(e) => {
-                      const value = Number(e.target.value);
-                      const retentionAmount =
-                        (Number(selectedPO.bill_amount) *
-                          Number(selectedPO.bill_retention)) /
-                        100;
-                      console.log(selectedPO);
-
-                      const allowed_amount =
-                        Number(selectedPO.bill_amount) -
-                        retentionAmount -
-                        Number(selectedPO.request_amount);
-
-                      console.log(value, allowed_amount);
-
-                      if (value > allowed_amount) {
-                        setAmountError(
-                          "You can not enter amount greater than " +
-                            allowed_amount,
-                        );
-                        return;
-                      }
-                      setAmountError("");
-                      setPaymentData({
-                        ...paymentData,
-                        amount_paid: Number(e.target.value) || "",
-                      });
-                    }}
-                    className="w-full px-3 py-2 text-sm border-2 border-gray-200 rounded-xl focus:border-[#C62828] focus:ring-2 focus:ring-[#C62828]/20 outline-none"
-                    required
-                  />
-                  <p className="text-xs text-red-600">{amountError}</p>
                 </div>
 
                 <div className="space-y-1 col-span-1 md:col-span-2">
@@ -3821,6 +3864,8 @@ export default function ServiceOrders() {
                       advance_amount: "",
                       retention_percentage: "",
                       amount_paid: "",
+                      retention_amount: "",
+                      amount_payable: "",
                       vendorId: "",
                       payment_method: "bank_transfer",
                       payment_reference_no: "",
@@ -3934,6 +3979,8 @@ export default function ServiceOrders() {
                     vendorId: "",
                     transaction_type: "payment",
                     amount_paid: "",
+                    retention_amount: "",
+                    amount_payable: "",
                     payment_method: "bank_transfer",
                     payment_reference_no: "",
                     payment_proof: null,
@@ -4273,6 +4320,8 @@ export default function ServiceOrders() {
                       vendorId: "",
                       transaction_type: "payment",
                       amount_paid: "",
+                      retention_amount: "",
+                      amount_payable: "",
                       payment_method: "bank_transfer",
                       payment_reference_no: "",
                       payment_proof: null,

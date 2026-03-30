@@ -55,6 +55,7 @@ export default function EditEmployeeModal({
   const [companies, setCompanies] = useState<any[]>([]);
   const [officeLocations, setOfficeLocations] = useState<any[]>([]);
   const [showAttendanceDropdown, setShowAttendanceDropdown] = useState(false);
+  const [showWeekOffDropdown, setShowWeekOffDropdown] = useState(false);
 
   // Auto-close sections
   const [activeSection, setActiveSection] = useState<string | null>(null);
@@ -133,6 +134,8 @@ export default function EditEmployeeModal({
     notice_period: "30",
     salary: "",
     salary_type: "monthly",
+    punch_in_time: "10:00:00",
+    week_off_days: [0],
 
     // System Details
     laptop_assigned: "no",
@@ -331,6 +334,8 @@ export default function EditEmployeeModal({
         notice_period: data.notice_period || "30",
         salary: data.salary || "",
         salary_type: data.salary_type || "monthly",
+        punch_in_time: data.emp_punch_in_time || "10:00:00",
+        week_off_days: JSON.parse(data.week_off_days) || [0],
 
         // System Details
         laptop_assigned: data.laptop_assigned || "no",
@@ -854,6 +859,22 @@ export default function EditEmployeeModal({
     });
   };
 
+  const handleWeekOffToggle = (indx: number) => {
+    setFormData((prev: any) => {
+      const currentWeekOffs = [...prev.week_off_days];
+
+      const index = currentWeekOffs.indexOf(indx);
+
+      if (index > -1) {
+        currentWeekOffs.splice(index, 1);
+      } else {
+        currentWeekOffs.push(indx);
+      }
+
+      return { ...prev, week_off_days: currentWeekOffs };
+    });
+  };
+
   // Auto-close sections when opening another
   const toggleSection = (section: string) => {
     setActiveSection(activeSection === section ? null : section);
@@ -867,8 +888,10 @@ export default function EditEmployeeModal({
       console.log("this is my : ", formData);
       // Append all form data
       Object.entries(formData).forEach(([key, value]) => {
+        console.log(value);
         if (value || value === false || Number(value) === 0) {
           if (Array.isArray(value)) {
+            console.log(value);
             // For arrays like allotted_project and attendence_location
             formDataObj.append(key, JSON.stringify(value));
           } else {
@@ -1004,6 +1027,8 @@ export default function EditEmployeeModal({
 
   // Get active departments
   const activeDepartments = departments.filter((dept) => dept.is_active);
+
+  const weekDays = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
@@ -2415,6 +2440,99 @@ export default function EditEmployeeModal({
                         <option value="monthly">Monthly</option>
                         <option value="yearly">Yearly</option>
                       </select>
+                    </div>
+
+                    {/* Date of Leaving */}
+                    <div className="space-y-1">
+                      <label className="block text-xs font-semibold text-gray-700">
+                        Punch In Time
+                      </label>
+                      <input
+                        type="time"
+                        step={1}
+                        value={formData.punch_in_time}
+                        disabled={user.role !== "admin"}
+                        onChange={(e) =>
+                          setFormData({
+                            ...formData,
+                            punch_in_time: e.target.value,
+                          })
+                        }
+                        className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:border-[#C62828] focus:ring-1 focus:ring-[#C62828] outline-none"
+                      />
+                    </div>
+
+                    {/* Week off days*/}
+                    <div className="space-y-1 attendance-dropdown">
+                      <label className="block text-xs font-semibold text-gray-700">
+                        Week Off Days <span className="text-red-500">*</span>
+                      </label>
+                      <div className="relative">
+                        <button
+                          type="button"
+                          onClick={() =>
+                            setShowWeekOffDropdown(!showWeekOffDropdown)
+                          }
+                          disabled={user.role !== "admin"}
+                          className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:border-[#C62828] focus:ring-1 focus:ring-[#C62828] outline-none bg-white text-left flex justify-between items-center hover:bg-gray-50"
+                        >
+                          <span className="truncate">
+                            {formData.week_off_days.length > 0
+                              ? `${formData.week_off_days.length} Week Off Day(s) selected`
+                              : "Select Week Off Day(s)"}
+                          </span>
+                          <ChevronDown
+                            className={`w-4 h-4 text-gray-400 transition-transform ${showWeekOffDropdown ? "rotate-180" : ""}`}
+                          />
+                        </button>
+
+                        {showWeekOffDropdown && (
+                          <div className="absolute z-10 mt-1 w-full bg-white border border-gray-300 rounded-lg shadow-lg max-h-60 overflow-y-auto">
+                            {weekDays.map((day, indx) => (
+                              <label
+                                key={day}
+                                className="flex items-center px-3 py-2 hover:bg-gray-50 cursor-pointer"
+                              >
+                                <input
+                                  type="checkbox"
+                                  checked={formData.week_off_days.includes(
+                                    indx,
+                                  )}
+                                  onChange={() => handleWeekOffToggle(indx)}
+                                  className="w-4 h-4 text-[#C62828] border-gray-300 rounded focus:ring-[#C62828]"
+                                />
+                                <span className="ml-2 text-sm text-gray-700">
+                                  {day}
+                                </span>
+                              </label>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+
+                      {formData.week_off_days.length > 0 && (
+                        <div className="mt-2 flex flex-wrap gap-1">
+                          {formData.week_off_days.map((day) => (
+                            <div
+                              key={weekDays[day]}
+                              className="inline-flex items-center gap-1 bg-blue-600 text-white px-2 py-1 rounded text-xs font-medium"
+                            >
+                              <span className="truncate max-w-[120px]">
+                                {weekDays[day]}
+                              </span>
+                              {user.role === "admin" && (
+                                <button
+                                  type="button"
+                                  onClick={() => handleWeekOffToggle(day)}
+                                  className="hover:bg-blue-700 rounded-full p-0.5 flex-shrink-0"
+                                >
+                                  <X className="w-3 h-3" />
+                                </button>
+                              )}
+                            </div>
+                          ))}
+                        </div>
+                      )}
                     </div>
                   </div>
                 </div>

@@ -726,25 +726,23 @@ export default function ServiceOrderPayments() {
 
   const handleMakePayment = async (e: React.FormEvent) => {
     e.preventDefault();
+
     try {
-      console.log("PD : ", paymentData);
       if (
-        Number(paymentData.wo_balance_amount) +
-          Number(paymentData.wo_advance_amount) -
-          Number(paymentData.approved_amount_paid) <=
-          Number(paymentData.wo_advance_amount) &&
-        Number(paymentData.wo_advance_amount) -
-          Number(paymentData.advance_amount) !==
-          0
+        Number(paymentData.approved_amount_paid) -
+          Number(paymentData.advance_amount) >
+        Number(paymentData.wo_balance_amount)
       ) {
-        toast.error("Adjust payment with advance correctly.");
+        toast.warning(
+          `Adjust payment with advance at least ${Number(paymentData.approved_amount_paid) - Number(paymentData.advance_amount) - Number(paymentData.wo_balance_amount)}`,
+        );
         return;
       }
-
-      // toast.success("success");
-
-      // return;
-      console.log("payment data : ", paymentData);
+      console.log(
+        Number(paymentData.approved_amount_paid) -
+          Number(paymentData.retention_amount),
+        Number(paymentData.wo_balance_amount),
+      );
       const payload = {
         ...paymentData,
         advance_amount: paymentData.advance_amount ?? 0,
@@ -1194,7 +1192,7 @@ export default function ServiceOrderPayments() {
                                             ).toLocaleDateString() || "-"}
                                           </td>
                                           <td className="px-2 py-1.5 font-medium text-green-600 text-xs">
-                                            {transaction.approved_amount_paid}
+                                            {transaction.amount_paid}
                                           </td>
                                           <td className="px-2 py-1.5 font-medium text-red-600 text-xs">
                                             {transaction.retention_percent ||
@@ -1245,8 +1243,7 @@ export default function ServiceOrderPayments() {
                                                     setShowPaymentRequestModal(
                                                       true,
                                                     );
-                                                    console.log(po);
-                                                    console.log(transaction);
+
                                                     const retentionAmount =
                                                       (Number(
                                                         transaction.approved_amount_paid,
@@ -1255,16 +1252,15 @@ export default function ServiceOrderPayments() {
                                                           transaction.bill_retention,
                                                         )) /
                                                       100;
-                                                    console.log(
-                                                      "retention Amount : ",
-                                                      retentionAmount,
-                                                    );
                                                     setPaymentData({
                                                       ...transaction,
                                                       vendor: po.vendor,
                                                       so_number: po.po_number,
                                                       retention_amount:
                                                         retentionAmount,
+
+                                                      original_amount_paid:
+                                                        transaction.amount_paid,
                                                       payment_method:
                                                         "bank_transfer",
                                                       paid_on: new Date()
@@ -1275,6 +1271,13 @@ export default function ServiceOrderPayments() {
                                                       wo_balance_amount:
                                                         po.wo_balance_amount,
                                                       advance_amount: "0",
+                                                      wo_retention_amount:
+                                                        po.wo_retention_amount ||
+                                                        0,
+                                                      wo_grand_total:
+                                                        po.wo_grand_total || 0,
+                                                      wo_total_paid:
+                                                        po.wo_total_paid || 0,
                                                     });
                                                   }}
                                                   className={`px-2 py-1 rounded-full text-[10px] md:text-xs font-medium cursor-pointer text-green-600 hover:bg-green-50 transition`}
@@ -1449,21 +1452,6 @@ export default function ServiceOrderPayments() {
                     </p>
                   </div>
                 </div>
-                <div className="space-y-1">
-                  <p className="text-xs font-semibold text-gray-800">
-                    Retention Amount
-                  </p>
-                  <div className="p-2 bg-red-50 border border-red-200 rounded-lg">
-                    <p className="text-base font-bold text-red-600 flex items-center">
-                      <IndianRupee className="w-4 h-4" />
-                      {paymentData?.retention_amount || 0}
-                    </p>
-                  </div>
-                  <p className="text-slate-600 text-xs">
-                    Retention amount is {paymentData.bill_retention}% of{" "}
-                    {paymentData.approved_amount_paid}
-                  </p>
-                </div>
 
                 <div className="space-y-1">
                   <p className="text-xs font-semibold text-gray-800">
@@ -1485,7 +1473,7 @@ export default function ServiceOrderPayments() {
                     type="date"
                     value={paymentData.payment_date.split("T")[0] || ""}
                     readOnly
-                    className="w-full px-3 py-2 text-sm border-2 border-gray-200 rounded-xl focus:border-[#C62828] focus:ring-2 focus:ring-[#C62828]/20 outline-none"
+                    className="w-full px-3 py-2 text-sm border-2 border-gray-200 rounded-xl focus:border-[#C62828] focus:ring-2 focus:ring-[#C62828]/20 outline-none read-only:bg-gray-100"
                     required
                   />
                 </div>
@@ -1497,7 +1485,7 @@ export default function ServiceOrderPayments() {
                     type="date"
                     value={paymentData.payment_due_date || ""}
                     readOnly
-                    className="w-full px-3 py-2 text-sm border-2 border-gray-200 rounded-xl focus:border-[#C62828] focus:ring-2 focus:ring-[#C62828]/20 outline-none"
+                    className="w-full px-3 py-2 text-sm border-2 border-gray-200 rounded-xl focus:border-[#C62828] focus:ring-2 focus:ring-[#C62828]/20 outline-none read-only:bg-gray-100"
                     required
                   />
                 </div>
@@ -1529,31 +1517,53 @@ export default function ServiceOrderPayments() {
                     value={paymentData.approved_amount_paid || ""}
                     onChange={(e) => {
                       if (!/^\d*\.?\d*$/.test(e.target.value)) return;
-
+                      console.log(paymentData);
                       if (
-                        Number(e.target.value) >
-                          Number(paymentData.amount_paid) ||
-                        (Number(e.target.value) >
-                          Number(paymentData.wo_advance_amount) &&
-                          Number(paymentData.wo_advance_amount) !== 0)
+                        Number(e.target.value) > Number(paymentData.amount_paid)
                       ) {
                         return;
                       }
-                      console.log(
-                        "payment data from input fields : ",
-                        paymentData,
-                      );
+
                       const retentionAmount =
                         (Number(e.target.value) *
                           Number(paymentData.bill_retention)) /
                         100;
                       setPaymentData({
                         ...paymentData,
-                        approved_amount_paid: e.target.value,
+                        approved_amount_paid: Number(e.target.value),
                         retention_amount: retentionAmount,
                       });
                     }}
                     className="w-full px-3 py-2 text-sm border-2 border-gray-200 rounded-xl focus:border-[#C62828] focus:ring-2 focus:ring-[#C62828]/20 outline-none"
+                    required
+                  />
+                </div>
+
+                <div className="space-y-1">
+                  <label className="block text-xs font-semibold text-gray-800">
+                    Retention Amount <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    type="text"
+                    value={paymentData.retention_amount || ""}
+                    className="w-full px-3 py-2 text-sm border-2 border-gray-200 rounded-xl focus:border-[#C62828] focus:ring-2 focus:ring-[#C62828]/20 outline-none read-only:bg-gray-100"
+                    readOnly
+                    required
+                  />
+                </div>
+
+                <div className="space-y-1">
+                  <label className="block text-xs font-semibold text-gray-800">
+                    Amount Payable <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    type="text"
+                    value={
+                      Number(paymentData.approved_amount_paid) -
+                        Number(paymentData.retention_amount) || ""
+                    }
+                    className="w-full px-3 py-2 text-sm border-2 border-gray-200 rounded-xl focus:border-[#C62828] focus:ring-2 focus:ring-[#C62828]/20 outline-none read-only:bg-gray-100"
+                    readOnly
                     required
                   />
                 </div>
