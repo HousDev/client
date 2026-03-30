@@ -1232,15 +1232,14 @@ export default function ServiceOrders() {
         paymentData.status === "SUCCESS"
       ) {
         if (
-          Number(selectedPO.wo_balance_amount) +
-            Number(paymentData.wo_advance_amount) -
-            Number(paymentData.amount_paid) <=
-            Number(selectedPO.wo_advance_amount) &&
-          Number(selectedPO.wo_advance_amount) -
-            Number(paymentData.advance_amount) !==
-            0
+          Number(paymentData.approved_amount_paid) -
+            Number(paymentData.advance_amount) >
+          Number(paymentData.wo_balance_amount) +
+            Number(paymentData.retention_amount)
         ) {
-          toast.error("Adjust payment with advance correctly.");
+          toast.warning(
+            `Adjust payment with advance at least ${Number(paymentData.approved_amount_paid) - Number(paymentData.advance_amount) - Number(paymentData.wo_balance_amount)}`,
+          );
           return;
         }
 
@@ -1733,23 +1732,25 @@ export default function ServiceOrders() {
                         </td>
                         <td className="px-3 md:px-4 py-3">
                           <div className="flex items-center justify-center gap-1.5 md:gap-2">
-                            {can("make_payment_wo") && (
-                              <button
-                                onClick={() => {
-                                  setShowWoBill(true);
-                                  console.log("po details : ", po);
-                                  setSelectedPO({
-                                    ...po,
-                                    id: po.wo_id,
-                                    request_amount: po.wo_request_amount,
-                                  });
-                                }}
-                                className="p-1.5 md:p-2 text-green-600 hover:bg-green-50 rounded-lg transition"
-                                title="Add Bill"
-                              >
-                                <ReceiptIndianRupee className="w-3.5 h-3.5 md:w-4 md:h-4" />
-                              </button>
-                            )}
+                            {can("make_payment_wo") &&
+                              Number(po.wo_request_amount) !==
+                                Number(po.grand_total) && (
+                                <button
+                                  onClick={() => {
+                                    setShowWoBill(true);
+                                    console.log("po details : ", po);
+                                    setSelectedPO({
+                                      ...po,
+                                      id: po.wo_id,
+                                      request_amount: po.wo_request_amount,
+                                    });
+                                  }}
+                                  className="p-1.5 md:p-2 text-green-600 hover:bg-green-50 rounded-lg transition"
+                                  title="Add Bill"
+                                >
+                                  <ReceiptIndianRupee className="w-3.5 h-3.5 md:w-4 md:h-4" />
+                                </button>
+                              )}
                           </div>
                         </td>
                       </tr>
@@ -2344,13 +2345,15 @@ export default function ServiceOrders() {
                         >
                           {po.payment_status?.toUpperCase() || "PENDING"}
                         </span>
-                        {(po.balance_amount! > 0 ||
-                          Number(po.retention_amount) > 0) && (
+                        {(Number(po.balance_amount) > 0 ||
+                          Number(po.retention_amount) > 0 ||
+                          Number(po.advance_amount) > 0) && (
                           <p className="text-[10px] md:text-xs text-gray-600 mt-0.5">
                             Bal:{" "}
                             {formatCurrency(
                               Number(po.balance_amount) +
-                                Number(po.retention_amount),
+                                Number(po.retention_amount) +
+                                Number(po.advance_amount),
                             )}
                           </p>
                         )}
@@ -4267,7 +4270,7 @@ export default function ServiceOrders() {
                     required
                     id="payment_proof"
                     onChange={handleFileUpload}
-                    className="w-full px-3 py-2 text-sm border-2 border-gray-200 rounded-xl focus:border-[#C62828] focus:ring-2 focus:ring-[#C62828]/20 outline-none file:border-none file:bg-gradient-to-r file:from-[#C62828] file:to-red-600 file:text-white file:font-medium file:px-3 file:py-1.5 file:rounded-lg file:cursor-pointer"
+                    className="w-full px-3 py-1 text-sm border-2 border-gray-200 rounded-xl focus:border-[#C62828] focus:ring-2 focus:ring-[#C62828]/20 outline-none file:border-none file:bg-gradient-to-r file:from-[#C62828] file:to-red-600 file:text-white file:font-medium file:px-3 file:py-1.5 file:rounded-lg file:cursor-pointer"
                     accept=".pdf,.jpg,.jpeg,.png"
                   />
                 </div>
