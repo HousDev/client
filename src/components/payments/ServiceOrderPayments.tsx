@@ -730,11 +730,12 @@ export default function ServiceOrderPayments() {
     try {
       if (
         Number(paymentData.approved_amount_paid) -
-          Number(paymentData.advance_amount) >
+          Number(paymentData.advance_amount) -
+          Number(paymentData.retention_amount) >
         Number(paymentData.wo_balance_amount)
       ) {
         toast.warning(
-          `Adjust payment with advance at least ${Number(paymentData.approved_amount_paid) - Number(paymentData.advance_amount) - Number(paymentData.wo_balance_amount)}`,
+          `Adjust payment with advance at least ${Number(paymentData.approved_amount_paid) - Number(paymentData.advance_amount) - Number(paymentData.wo_balance_amount) - Number(paymentData.retention_amount)}`,
         );
         return;
       }
@@ -1603,7 +1604,10 @@ export default function ServiceOrderPayments() {
                         if (
                           !/^\d*\.?\d*$/.test(e.target.value) ||
                           Number(e.target.value) >
-                            Number(paymentData.wo_advance_amount)
+                            Number(paymentData.wo_advance_amount) ||
+                          Number(e.target.value) >
+                            Number(paymentData.approved_amount_paid) -
+                              Number(paymentData.retention_amount)
                         ) {
                           return;
                         }
@@ -1666,7 +1670,7 @@ export default function ServiceOrderPayments() {
                     required
                     id="payment_proof"
                     onChange={handleFileUpload}
-                    className="w-full px-3 py-2 text-sm border-2 border-gray-200 rounded-xl focus:border-[#C62828] focus:ring-2 focus:ring-[#C62828]/20 outline-none file:border-none file:bg-gradient-to-r file:from-[#C62828] file:to-red-600 file:text-white file:font-medium file:px-3 file:py-1.5 file:rounded-lg file:cursor-pointer"
+                    className="w-full px-3 py-1 text-sm border-2 border-gray-200 rounded-xl focus:border-[#C62828] focus:ring-2 focus:ring-[#C62828]/20 outline-none file:border-none file:bg-gradient-to-r file:from-[#C62828] file:to-red-600 file:text-white file:font-medium file:px-3 file:py-1.5 file:rounded-lg file:cursor-pointer"
                     accept=".pdf,.jpg,.jpeg,.png"
                   />
                 </div>
