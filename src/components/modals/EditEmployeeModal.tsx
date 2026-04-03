@@ -1910,10 +1910,8 @@ export default function EditEmployeeModal({
                         }
                         disabled={
                           user.role !== "admin" &&
-                          (
-                            validationFormData.emergency_contact_relationship ||
-                            ""
-                          ).length !== 0
+                          (validationFormData.emergency_contact_name || "")
+                            .length !== 0
                         }
                         className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:border-[#C62828] focus:ring-1 focus:ring-[#C62828] outline-none"
                         placeholder="Full name"

@@ -29,6 +29,7 @@ import {
   CheckCircle,
   EyeIcon,
   Download,
+  Copy,
 } from "lucide-react";
 import { toast } from "sonner";
 import MySwal from "../utils/swal";
@@ -162,6 +163,7 @@ export default function UsersMaster() {
   // Bulk selection
   const [selectedUsers, setSelectedUsers] = useState<Set<string>>(new Set());
   const [selectAll, setSelectAll] = useState(false);
+  const [isEmailHover, setIsEmailHover] = useState("");
 
   // Form data state
   const [formData, setFormData] = useState<UserFormData>({
@@ -1793,6 +1795,15 @@ export default function UsersMaster() {
     }
   };
 
+  const copyToClipboard = async (text: string) => {
+    try {
+      await navigator.clipboard.writeText(text);
+      toast.success("Copied to clipboard ✅");
+    } catch (err) {
+      toast.error("Failed to copy ❌" + err);
+    }
+  };
+
   // Loading state
   if (loading) {
     return (
@@ -2089,7 +2100,23 @@ export default function UsersMaster() {
                         </div>
                       </td>
                       <td className="px-3 md:px-4 py-3 text-gray-700 text-xs md:text-sm">
-                        {user.email}
+                        <button
+                          onClick={() => {
+                            copyToClipboard(user.email);
+                          }}
+                          onMouseOver={() => {
+                            setIsEmailHover(user.email);
+                          }}
+                          onMouseOut={() => {
+                            setIsEmailHover("");
+                          }}
+                          className="text-xs md:text-sm text-blue-800 cursor-pointer flex items-center"
+                        >
+                          {user.email}
+                          <Copy
+                            className={`w-3 h-3 ml-2 ${isEmailHover === user.email ? "block" : "hidden"}`}
+                          />
+                        </button>
                       </td>
                       <td className="px-3 md:px-4 py-3">
                         <span

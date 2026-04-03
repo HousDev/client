@@ -735,7 +735,7 @@ export default function ServiceOrderPayments() {
         Number(paymentData.wo_balance_amount)
       ) {
         toast.warning(
-          `Adjust payment with advance at least ${Number(paymentData.approved_amount_paid) - Number(paymentData.advance_amount) - Number(paymentData.wo_balance_amount) - Number(paymentData.retention_amount)}`,
+          `Adjust payment with advance at least ${Number(paymentData.approved_amount_paid) - Number(paymentData.advance_amount) - Number(paymentData.wo_balance_amount)}`,
         );
         return;
       }
@@ -758,6 +758,7 @@ export default function ServiceOrderPayments() {
         loadPOData();
         toast.success(paymentRes.message);
         setShowPaymentRequestModal(false);
+        setAdjustWithAdvance(false);
         setPaymentData({
           po_id: null,
           po_payment_id: null,
@@ -1351,6 +1352,7 @@ export default function ServiceOrderPayments() {
               <button
                 onClick={() => {
                   setShowPaymentRequestModal(false);
+                  setAdjustWithAdvance(false);
                   setPaymentData({
                     po_id: null,
                     po_payment_id: null,
@@ -1606,8 +1608,7 @@ export default function ServiceOrderPayments() {
                           Number(e.target.value) >
                             Number(paymentData.wo_advance_amount) ||
                           Number(e.target.value) >
-                            Number(paymentData.approved_amount_paid) -
-                              Number(paymentData.retention_amount)
+                            Number(paymentData.approved_amount_paid)
                         ) {
                           return;
                         }
@@ -1711,6 +1712,7 @@ export default function ServiceOrderPayments() {
                   type="button"
                   onClick={() => {
                     setShowPaymentRequestModal(false);
+                    setAdjustWithAdvance(false);
                     setPaymentData({
                       po_id: null,
                       po_payment_id: null,

@@ -292,15 +292,6 @@ const AttendanceTracker: React.FC<AttendanceTrackerProps> = ({
             Number(empBranch.latitude),
             Number(empBranch.longitude),
           );
-          console.log(
-            Number(coords.latitude),
-            Number(coords.longitude),
-            Number(empBranch.latitude),
-            Number(empBranch.longitude),
-            d,
-          );
-
-          console.log(d <= MAX_DISTANCE_METERS, d < minDistance);
 
           if (d <= MAX_DISTANCE_METERS && d < minDistance) {
             minDistance = d;
@@ -309,7 +300,6 @@ const AttendanceTracker: React.FC<AttendanceTrackerProps> = ({
         }
 
         if (nearestBranch) {
-          console.log("branch", nearestBranch);
           setAttendanceBranch(nearestBranch);
           setDistance(Math.round(minDistance));
           setIsWithinRange(true);
@@ -398,10 +388,7 @@ const AttendanceTracker: React.FC<AttendanceTrackerProps> = ({
         punch_out_address:
           currentStatus === PunchStatus.OUT ? attendanceBranch.address : null,
       };
-      console.log("address : ", attendanceBranch.address);
-      console.log("in address : ", payload.punch_in_address);
-      console.log("out address : ", payload.punch_out_address);
-      console.log("this is my payload : ", payload);
+
       let result: any;
       if (type === "in") {
         result = await attendanceApi.punchIn(payload);
@@ -572,7 +559,6 @@ const MarkAttendanceModal: React.FC<MarkAttendanceModalProps> = ({
     try {
       const lastAttendance: any =
         await attendanceApi.getUserLastAttendance(userId);
-      console.log("last attendance data : ", lastAttendance);
 
       if (lastAttendance.data.data) {
         setCurrentStatus(

@@ -1,5 +1,14 @@
 import { useState, useEffect } from "react";
-import { Users, Filter, Download, Edit, Trash2, Eye, X } from "lucide-react";
+import {
+  Users,
+  Filter,
+  Download,
+  Edit,
+  Trash2,
+  Eye,
+  X,
+  Copy,
+} from "lucide-react";
 import Card from "../components/ui/Card";
 import Button from "../components/ui/Button";
 import Badge from "../components/ui/Badge";
@@ -94,6 +103,7 @@ export default function Employees({ onViewProfile }: EmployeesProps) {
   const [selectedEmployee, setSelectedEmployee] = useState<Employee | null>(
     null,
   );
+  const [isEmailHover, setIsEmailHover] = useState("");
 
   const { can } = useAuth();
 
@@ -572,6 +582,15 @@ export default function Employees({ onViewProfile }: EmployeesProps) {
     );
   }
 
+  const copyToClipboard = async (text: string) => {
+    try {
+      await navigator.clipboard.writeText(text);
+      toast.success("Copied to clipboard ✅");
+    } catch (err) {
+      toast.error("Failed to copy ❌" + err);
+    }
+  };
+
   return (
     <div className="space-y-5">
       <div className="flex items-center justify-end py-0 -mt-2 -mb-2">
@@ -938,9 +957,23 @@ export default function Employees({ onViewProfile }: EmployeesProps) {
                       </span>
                     </td>
                     <td className="px-3 md:px-4 py-3">
-                      <span className="text-xs md:text-sm text-gray-800">
+                      <button
+                        onClick={() => {
+                          copyToClipboard(employee.email);
+                        }}
+                        onMouseOver={() => {
+                          setIsEmailHover(employee.email);
+                        }}
+                        onMouseOut={() => {
+                          setIsEmailHover("");
+                        }}
+                        className="text-xs md:text-sm text-blue-800 cursor-pointer flex items-center"
+                      >
                         {employee.email}
-                      </span>
+                        <Copy
+                          className={`w-3 h-3 ml-2 ${isEmailHover === employee.email ? "block" : "hidden"}`}
+                        />
+                      </button>
                     </td>
                     <td className="px-3 md:px-4 py-3">
                       <span className="text-xs md:text-sm text-gray-800">
@@ -993,20 +1026,6 @@ export default function Employees({ onViewProfile }: EmployeesProps) {
                             title="View Profile"
                           >
                             <Eye className="w-3.5 h-3.5 md:w-4 md:h-4" />
-                          </button>
-                        )}
-
-                        {/* Edit Basic Info Button */}
-                        {can("edit_employee") && (
-                          <button
-                            onClick={() => {
-                              setSelectedEmployee(employee);
-                              setShowEditModal(true);
-                            }}
-                            className="p-1.5 md:p-2 text-green-600 hover:bg-green-50 rounded-lg transition"
-                            title="Edit Basic Info"
-                          >
-                            <Edit className="w-3.5 h-3.5 md:w-4 md:h-4" />
                           </button>
                         )}
 
@@ -1180,22 +1199,6 @@ export default function Employees({ onViewProfile }: EmployeesProps) {
           onSuccess={() => {
             loadEmployees();
             loadStats();
-          }}
-        />
-      )}
-
-      {/* Add More Details Modal */}
-      {showAddMoreDetailsModal && selectedEmployee && (
-        <AddMoreDetailsModal
-          isOpen={showAddMoreDetailsModal}
-          onClose={() => {
-            setShowAddMoreDetailsModal(false);
-            setSelectedEmployee(null);
-          }}
-          employeeId={selectedEmployee.id}
-          onSuccess={() => {
-            loadEmployees();
-            toast.success("Additional details updated successfully!");
           }}
         />
       )}

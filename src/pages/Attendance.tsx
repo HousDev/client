@@ -203,9 +203,6 @@ export default function Attendance() {
     const expectedTime = new Date(punchIn);
     expectedTime.setHours(hours, minutes, seconds || 0, 0);
 
-    console.log("PunchIn:", punchIn);
-    console.log("Expected:", expectedTime);
-
     return punchIn > expectedTime;
   };
 
@@ -272,7 +269,6 @@ export default function Attendance() {
   const loadAttendance = async () => {
     setLoading(true);
     const empRes: any = await HrmsEmployeesApi.getEmployees();
-    console.log("empRes : ", empRes, selectedUser);
     setAllEmployees(Array.isArray(empRes) ? empRes : []);
 
     if (user.role === "admin") {
@@ -305,7 +301,6 @@ export default function Attendance() {
             const emp = empRes.find(
               (e: any) => Number(e.id) === Number(finalData[i].user_id),
             );
-            console.log("from load late : ", emp);
             if (isUserLate(finalData[i].punch_in_time, emp.emp_punch_in_time)) {
               lateUsers += 1;
             }
@@ -615,9 +610,9 @@ export default function Attendance() {
                 <p className="text-xs sm:text-sm text-slate-600">Absent Days</p>
                 <p className="text-xl sm:text-3xl font-bold text-red-600 mt-2 flex items-center">
                   <span className="mr-3">{stats.absent}</span>
-                  <div className="w-8  h-8  bg-red-100 rounded-lg flex items-center justify-center">
+                  <span className="w-8  h-8  bg-red-100 rounded-lg flex items-center justify-center">
                     <XCircle className="h-4   w-4  text-red-600" />
-                  </div>
+                  </span>
                 </p>
                 <p className="text-xs text-slate-500 mt-1">
                   {stats.total > 0
@@ -635,9 +630,9 @@ export default function Attendance() {
                 <p className="text-xs sm:text-sm text-slate-600">Half Days</p>
                 <p className="text-xl sm:text-3xl font-bold text-yellow-600 mt-2 flex items-center">
                   <span className="mr-3">{stats.half_day}</span>
-                  <div className="w-8  h-8  bg-yellow-100 rounded-lg flex items-center justify-center">
+                  <span className="w-8  h-8  bg-yellow-100 rounded-lg flex items-center justify-center">
                     <Clock1 className="h-4   w-4  text-yellow-600" />
-                  </div>
+                  </span>
                 </p>
                 <p className="text-xs text-slate-500 mt-1">
                   {stats.total > 0
@@ -657,9 +652,9 @@ export default function Attendance() {
                 </p>
                 <p className="text-xl sm:text-3xl font-bold text-violet-600 mt-2 flex items-center">
                   <span className="mr-3">{stats.paid_leaves}</span>
-                  <div className="w-8 h-8 bg-violet-100 rounded-lg flex items-center justify-center">
+                  <span className="w-8 h-8 bg-violet-100 rounded-lg flex items-center justify-center">
                     <IndianRupee className="h-4   w-4  text-violet-600" />
-                  </div>
+                  </span>
                 </p>
                 <p className="text-xs text-slate-500 mt-1">
                   {stats.total > 0
@@ -679,9 +674,9 @@ export default function Attendance() {
                 </p>
                 <p className="text-xl sm:text-3xl font-bold text-gray-600 mt-2 flex items-center">
                   <span className="mr-3">{stats.week_off}</span>
-                  <div className="w-8  h-8  bg-gray-100 rounded-lg flex items-center justify-center">
+                  <span className="w-8  h-8  bg-gray-100 rounded-lg flex items-center justify-center">
                     <CalendarX className="h-4 sm:h-6  w-4 sm:w-6 text-gray-600" />
-                  </div>
+                  </span>
                 </p>
                 <p className="text-xs text-slate-500 mt-1">
                   {stats.total > 0
@@ -701,9 +696,9 @@ export default function Attendance() {
                 </p>
                 <p className="text-xl sm:text-3xl font-bold text-orange-600 mt-2 flex items-center">
                   <span className="mr-3">{stats.late}</span>
-                  <div className="w-8  h-8  bg-orange-100 rounded-lg flex items-center justify-center">
+                  <span className="w-8  h-8  bg-orange-100 rounded-lg flex items-center justify-center">
                     <AlertTriangle className="h-4 sm:h-6  w-4 sm:w-6 text-orange-600" />
-                  </div>
+                  </span>
                 </p>
                 <p className="text-xs text-gray-500 mt-1">
                   {stats.total > 0
@@ -725,9 +720,9 @@ export default function Attendance() {
                       Number(stats.average_hours).toFixed(2),
                     )}
                   </span>
-                  <div className="w-8  h-8  bg-blue-100 rounded-lg flex items-center justify-center">
+                  <span className="w-8  h-8  bg-blue-100 rounded-lg flex items-center justify-center">
                     <TrendingUp className="h-4   w-4  text-blue-600" />
-                  </div>
+                  </span>
                 </p>
                 <p className="text-xs text-slate-500 mt-1">per employee</p>
               </div>

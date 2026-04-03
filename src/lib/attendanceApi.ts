@@ -61,6 +61,17 @@ const attendanceApi = {
     }
   },
 
+  async adminMarkPunchIn(data: any) {
+    try {
+      const response = await api.post("/attendance/adminMarkPunchIn", data);
+
+      return response;
+    } catch (error: any) {
+      console.error("Punch In API error:", error);
+      throw error;
+    }
+  },
+
   async addNote(id: any, note: string) {
     try {
       const response = await api.put("/attendance/add-note/" + id, { note });
