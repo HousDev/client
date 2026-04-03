@@ -38,6 +38,7 @@ const AttendanceCalender = ({
   const today = new Date();
   const [dayAttendanceData, setDayAttendanceData] =
     useState<AttendanceRecord>();
+  const [showAttendanceDetails, setShowAttendanceDetails] = useState(false);
 
   const calculateDays = () => new Date(year, month + 1, 0).getDate();
   useEffect(() => {
@@ -74,7 +75,21 @@ const AttendanceCalender = ({
       );
     });
   }
+  const getCurrentDateTime = () => {
+    const now = new Date();
 
+    const pad = (n: any) => n.toString().padStart(2, "0");
+
+    const year = now.getFullYear();
+    const month = pad(now.getMonth() + 1);
+    const day = pad(now.getDate());
+
+    const hours = pad(now.getHours());
+    const minutes = pad(now.getMinutes());
+    const seconds = pad(now.getSeconds());
+
+    return `${hours}:${minutes}:${seconds}`;
+  };
   return (
     <div className="w-full max-w-5xl mx-auto mb-6">
       {/* Calendar Card */}
@@ -132,6 +147,7 @@ const AttendanceCalender = ({
                 d.date.slice(8, 10) ===
                 (String(day).length === 1 ? "0" + String(day) : String(day)),
             );
+
             if (record) {
               isLate =
                 new Date(record.punch_in_time) >
@@ -148,12 +164,26 @@ const AttendanceCalender = ({
                     2,
                     "0",
                   );
+
                   const formattedDay = String(day).padStart(2, "0");
 
                   const date = `${year}-${formattedMonth}-${formattedDay}`;
 
-                  const data = attendanceData.find((a: any) => a.date === date);
+                  const today = new Date();
+                  const todayFormatted =
+                    today.getFullYear() +
+                    "-" +
+                    String(today.getMonth() + 1).padStart(2, "0") +
+                    "-" +
+                    String(today.getDate()).padStart(2, "0");
 
+                  // ❌ Block future dates
+                  if (date > todayFormatted) {
+                    return;
+                  }
+
+                  const data = attendanceData.find((a: any) => a.date === date);
+                  console.log("data from date : ", data, selectedEmployee);
                   if (data && Array.isArray(data.trackingHistory)) {
                     const sortedTracking = [...data.trackingHistory].sort(
                       (a: any, b: any) =>
@@ -165,17 +195,27 @@ const AttendanceCalender = ({
                       ...data,
                       trackingHistory: sortedTracking,
                     });
+                    setShowAttendanceDetails(true);
                   } else {
-                    setDayAttendanceData(data);
+                    const punchInTime = date + " " + getCurrentDateTime();
+                    setDayAttendanceData({
+                      ...data,
+                      user_name:
+                        selectedEmployee.first_name +
+                        " " +
+                        selectedEmployee.last_name,
+                      date: date,
+                      total_hours: 0,
+                      user_id: selectedEmployee.id,
+                      punch_in_time: punchInTime,
+                    });
+                    setShowAttendanceDetails(true);
                   }
                 }}
                 className={` relative h-8 sm:h-16 flex items-center justify-center rounded-2xl
                   text-sm font-medium
                   transition-all duration-200 ease-in-out
                   cursor-pointer
-                  
-                   
-                  
                   ${
                     isSunday
                       ? attendanceData.find(
@@ -213,11 +253,12 @@ const AttendanceCalender = ({
           })}
         </div>
       </div>
-      {dayAttendanceData && (
+      {showAttendanceDetails && (
         <ViewTodayAttendanceModal
           loadAttendance={loadAttendance}
           dayData={dayAttendanceData}
           setDayData={setDayAttendanceData}
+          setShowAttendanceDetails={setShowAttendanceDetails}
         />
       )}
     </div>

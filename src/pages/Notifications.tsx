@@ -71,7 +71,11 @@ export default function Notifications() {
       setLoading(false);
     }
   };
-
+  useEffect(() => {
+    loadNotifications();
+    const intervalId = setInterval(loadNotifications, 60 * 1000);
+    return () => clearInterval(intervalId);
+  }, []);
   const filterNotifications = () => {
     let filtered = [...notifications];
 
@@ -320,7 +324,7 @@ export default function Notifications() {
                       selectsEnd
                       startDate={startDate}
                       endDate={endDate}
-                      minDate={startDate}
+                      minDate={startDate || undefined}
                       placeholderText="Select end date"
                       className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent"
                     />
@@ -408,14 +412,15 @@ export default function Notifications() {
                 )}
               </div>
             ) : (
-              <div className="space-y-2">
+              <div className="space-y-2 grid grid-cols-1 sm:grid-cols-2 gap-3">
                 {filteredNotifications.map((notif) => (
                   <div
                     key={notif.id}
-                    className={`relative border border-gray-200 rounded-lg p-3 transition-all duration-200 ${getTypeColor(
-                      notif.type,
-                    )} ${notif.seen ? "opacity-80" : "shadow-sm"}`}
-                    style={{ borderLeftWidth: "4px" }}
+                    className={`relative border-4 border-gray-200 rounded-lg p-3 transition-all duration-200 ${
+                      notif.seen
+                        ? getTypeColor(notif.type)
+                        : "border-l-red-500 bg-gradient-to-r from-red-50/50 to-white"
+                    } ${notif.seen ? "opacity-80" : "shadow-sm"}`}
                   >
                     <div className="flex items-start gap-3">
                       {/* Icon */}

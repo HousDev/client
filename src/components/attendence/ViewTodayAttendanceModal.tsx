@@ -1,16 +1,16 @@
 import {
   Calendar,
+  CalendarOff,
   ClipboardCheck,
   Clock,
   FileCheck,
   History,
-  LocateIcon,
-  MapPin,
+  ScanFace,
   User,
   X,
 } from "lucide-react";
 import { useAuth } from "../../contexts/AuthContext";
-import { useState } from "react";
+import { SetStateAction, useState } from "react";
 import attendanceApi from "../../lib/attendanceApi";
 import { toast } from "sonner";
 
@@ -18,15 +18,21 @@ const ViewTodayAttendanceModal = ({
   dayData,
   loadAttendance,
   setDayData,
+  setShowAttendanceDetails,
 }: {
   dayData: any;
   loadAttendance: any;
   setDayData: any;
+  setShowAttendanceDetails: React.Dispatch<SetStateAction<boolean>>;
 }) => {
+  console.log("selected options", dayData);
   const { user } = useAuth();
   const [showViewSelfieModal, setShowViewSelfieModal] =
     useState<boolean>(false);
-  const [attendanceNote, setAttendanceNote] = useState(dayData.note || "");
+  const [status, setStatus] = useState(dayData.status || "");
+  const [attendanceNote, setAttendanceNote] = useState(
+    dayData ? dayData.note : "",
+  );
   const [selectedAttendance, setSelectedAttendance] = useState<any>();
   const [selectedAttendanceImage, setSelectedAttendanceImage] =
     useState<string>("");
@@ -60,6 +66,25 @@ const ViewTodayAttendanceModal = ({
       console.log("Error : ", error);
     }
   };
+
+  const markAttendanceByAdmin = async (status: string) => {
+    try {
+      const attendanceRes: any = await attendanceApi.adminMarkPunchIn({
+        status: status,
+        user_id: dayData.user_id,
+        punch_in_time: dayData.punch_in_time,
+      });
+
+      if (attendanceRes.data.success) {
+        toast.success(attendanceRes.data.message);
+      } else {
+        toast.error(attendanceRes.data.message);
+      }
+    } catch (error: any) {
+      console.log(error.response.data.message);
+    }
+  };
+
   return (
     <div className="fixed inset-0 bg-gray-900/70 backdrop-blur-md flex items-center justify-center z-[70] p-2 md:p-4">
       <div className="bg-gradient-to-br from-gray-50 to-white rounded-2xl shadow-2xl shadow-gray-900/30 w-full max-w-lg border border-gray-300/50 overflow-hidden max-h-[90vh] flex flex-col">
@@ -69,9 +94,11 @@ const ViewTodayAttendanceModal = ({
               <ClipboardCheck className="w-4 h-4 md:w-5 md:h-5 text-gray-100" />
             </div>
             <div>
-              <h3 className="font-bold text-white text-sm md:text-base">
-                {dayData.user_name ?? user.full_name} Attendance
-              </h3>
+              {dayData && (
+                <h3 className="font-bold text-white text-sm md:text-base">
+                  {dayData.user_name ?? user.full_name} Attendance
+                </h3>
+              )}
               <p className="text-xs text-gray-300/80 hidden md:block">
                 View Attendance
               </p>
@@ -81,6 +108,7 @@ const ViewTodayAttendanceModal = ({
             <button
               onClick={() => {
                 setDayData();
+                setShowAttendanceDetails(false);
               }}
               className="text-gray-200 hover:bg-gray-700/40 rounded-xl p-2 transition-all duration-200"
             >
@@ -91,62 +119,156 @@ const ViewTodayAttendanceModal = ({
 
         <div className="p-4 overflow-y-scroll flex-grow min-h-32 max-h-[70vh]">
           <h1 className="pl-3 font-semibold mb-3">Employee Details : </h1>
-          <div className="grid grid-col-1 sm:grid-cols-2 text-xs">
+          <div className="grid grid-col-1 sm:grid-cols-2 gap-2 text-xs">
             <div className="flex items-center mb-2">
               <User className="w-4 h-4 bg-green-100 mx-2 text-green-600" />
               <span className="font-semibold">Name :</span>
-              <span className="text-slate-700 mx-3">
-                {" "}
-                {dayData.user_name ?? user.full_name}
-              </span>
+              {dayData && (
+                <span className="text-slate-700 mx-3">
+                  {" "}
+                  {dayData.user_name ?? user.full_name}
+                </span>
+              )}
             </div>
             <div className="flex items-center mb-2">
               <Calendar className="w-4 h-4 bg-orange-100 mx-2 text-orange-600" />
               <span className="font-semibold">Date :</span>
-              <span className="text-slate-700 mx-3">
-                {" "}
-                {dayData.date ?? new Date().toLocaleDateString()}
-              </span>
+              {dayData && (
+                <span className="text-slate-700 mx-3">
+                  {" "}
+                  {dayData.date ?? new Date().toLocaleDateString()}
+                </span>
+              )}
             </div>
-            <div className="flex items-center mb-2">
-              <FileCheck className="w-4 h-4 bg-yellow-100 mx-2 text-yellow-600" />
-              <span className={`font-semibold`}>Status :</span>
-              <span
-                className={` mx-3 px-3 py-1 rounded-full text-xs ${dayData ? "bg-green-100 text-green-700" : "bg-red-100 text-red-700"}`}
-              >
-                {" "}
-                {dayData ? "PRESENT" : "ABSENT"}
-              </span>
-            </div>
+
             <div className="flex items-center mb-2">
               <Clock className="w-4 h-4 bg-violet-100 mx-2 text-violet-600" />
               <span className={`font-semibold`}>Working Hours :</span>
-              <span className="text-slate-700 mx-3">
-                {formatDecimalToHourMinute(Number(dayData.total_hours)) ??
-                  "0:00h"}
-              </span>
+              {dayData && (
+                <span className="text-slate-700 mx-3">
+                  {formatDecimalToHourMinute(Number(dayData.total_hours)) ??
+                    "0:00h"}
+                </span>
+              )}
+            </div>
+
+            <div className="flex items-center gap-2">
+              <ScanFace className="w-4 h-4 bg-yellow-100 ml-2 text-yellow-600" />{" "}
+              <span className={`font-semibold`}>Status</span>
+              <div className="relative group">
+                <select
+                  value={status}
+                  required
+                  onChange={async (e: any) => {
+                    const atStatus = e.target.value;
+                    setStatus;
+                    atStatus;
+                    await markAttendanceByAdmin(atStatus);
+                  }}
+                  disabled={user.role !== "admin"}
+                  className="w-full pl-6 pr-10 py-1 text-sm border-2 border-gray-200 rounded-xl focus:border-[#C62828] focus:ring-2 focus:ring-[#C62828]/20 bg-white outline-none transition-all duration-200 appearance-none hover:border-gray-300"
+                >
+                  <option value="" className="text-gray-400 text-xs">
+                    Select
+                  </option>
+                  {["present", "absent", "half_day", "week_off", "holiday"].map(
+                    (work: any) => (
+                      <option key={work} value={work} className="text-xs">
+                        {work.replaceAll("_", " ").toUpperCase()}
+                      </option>
+                    ),
+                  )}
+                </select>
+              </div>
+            </div>
+            <div className="flex items-center gap-2">
+              <CalendarOff className="ml-2 w-4 h-4 bg-red-100  text-red-600" />{" "}
+              <span className={`font-semibold`}>Leave</span>
+              <div className="relative group">
+                <select
+                  value={""}
+                  required
+                  onChange={(e: any) => {}}
+                  disabled={user.role !== "admin"}
+                  className="w-full pl-6 pr-10 py-1 text-sm border-2 border-gray-200 rounded-xl focus:border-[#C62828] focus:ring-2 focus:ring-[#C62828]/20 bg-white outline-none transition-all duration-200 appearance-none hover:border-gray-300"
+                >
+                  <option value="" className="text-gray-400 text-xs">
+                    Select
+                  </option>
+                  {["Paid Leave", "Unpaid Leave", "Half Day Leave"].map(
+                    (work: any) => (
+                      <option key={work} value={work} className="text-xs">
+                        {work.replaceAll("_", " ").toUpperCase()}
+                      </option>
+                    ),
+                  )}
+                </select>
+              </div>
             </div>
           </div>
-          {dayData && (
-            <div className="mt-10 border-t  border-slate-300 py-3">
-              <div className="flex items-center mb-2">
-                <History className="w-4 h-4 bg-yellow-100 mx-2 text-yellow-600" />
-                <span className={`font-semibold`}>Track :</span>
-              </div>
-              <div>
-                {dayData.trackingHistory.map((track: any) => (
-                  <div>
-                    {track.punch_out_time && (
+          {dayData.trackingHistory &&
+            dayData.trackingHistory[0].punch_in_selfie && (
+              <div className="mt-10 border-t  border-slate-300 py-3">
+                <div className="flex items-center mb-2">
+                  <History className="w-4 h-4 bg-yellow-100 mx-2 text-yellow-600" />
+                  <span className={`font-semibold`}>Track :</span>
+                </div>
+                <div>
+                  {dayData.trackingHistory.map((track: any) => (
+                    <div>
+                      {track.punch_out_time && (
+                        <div className="px-2 py-3 border-t border-b border-gray-300 flex">
+                          <button
+                            onClick={() => {
+                              setSelectedAttendance({
+                                ...track,
+                                type: "out",
+                              });
+                              setSelectedAttendanceImage(
+                                `${import.meta.env.VITE_API_URL}/uploads/${
+                                  track.punch_out_selfie
+                                }`,
+                              );
+                              setShowViewSelfieModal(true);
+                            }}
+                            className="mr-3 sm:mr-6 flex-shrink-0"
+                          >
+                            <img
+                              src={`${import.meta.env.VITE_API_URL}/uploads/${
+                                track.punch_out_selfie
+                              }`}
+                              alt="view selfie"
+                              className="w-12 h-12 sm:w-14 sm:h-14 rounded-full object-cover"
+                            />
+                          </button>
+                          <div className="text-xs sm:text-sm">
+                            <h1 className="font-medium flex items-center text-xs sm:text-sm">
+                              {new Date(
+                                track.punch_out_time,
+                              ).toLocaleTimeString("en-US", {
+                                hour: "2-digit",
+                                minute: "2-digit",
+                                hour12: true,
+                              })}{" "}
+                              <div className="w-2 h-2 rounded-full bg-red-400 ml-3 mr-1"></div>
+                              Out
+                            </h1>
+                            <p className="flex items-center text-xs">
+                              {track.punch_out_location}
+                            </p>
+                          </div>
+                        </div>
+                      )}
                       <div className="px-2 py-3 border-t border-b border-gray-300 flex">
                         <button
                           onClick={() => {
                             setSelectedAttendance({
                               ...track,
-                              type: "out",
+                              type: "in",
                             });
                             setSelectedAttendanceImage(
                               `${import.meta.env.VITE_API_URL}/uploads/${
-                                track.punch_out_selfie
+                                track.punch_in_selfie
                               }`,
                             );
                             setShowViewSelfieModal(true);
@@ -155,15 +277,15 @@ const ViewTodayAttendanceModal = ({
                         >
                           <img
                             src={`${import.meta.env.VITE_API_URL}/uploads/${
-                              track.punch_out_selfie
+                              track.punch_in_selfie
                             }`}
                             alt="view selfie"
                             className="w-12 h-12 sm:w-14 sm:h-14 rounded-full object-cover"
                           />
                         </button>
-                        <div className="text-xs sm:text-sm">
-                          <h1 className="font-medium flex items-center text-xs sm:text-sm">
-                            {new Date(track.punch_out_time).toLocaleTimeString(
+                        <div className="">
+                          <h1 className="font-semibold flex items-center text-xs sm:text-sm">
+                            {new Date(track.punch_in_time).toLocaleTimeString(
                               "en-US",
                               {
                                 hour: "2-digit",
@@ -171,83 +293,40 @@ const ViewTodayAttendanceModal = ({
                                 hour12: true,
                               },
                             )}{" "}
-                            <div className="w-2 h-2 rounded-full bg-red-400 ml-3 mr-1"></div>
-                            Out
+                            <div className="w-2 h-2 rounded-full bg-green-400 ml-3 mr-1"></div>
+                            In
                           </h1>
                           <p className="flex items-center text-xs">
-                            {track.punch_out_location}
+                            {track.punch_in_location}
                           </p>
                         </div>
                       </div>
-                    )}
-                    <div className="px-2 py-3 border-t border-b border-gray-300 flex">
-                      <button
-                        onClick={() => {
-                          setSelectedAttendance({
-                            ...track,
-                            type: "in",
-                          });
-                          setSelectedAttendanceImage(
-                            `${import.meta.env.VITE_API_URL}/uploads/${
-                              track.punch_in_selfie
-                            }`,
-                          );
-                          setShowViewSelfieModal(true);
-                        }}
-                        className="mr-3 sm:mr-6 flex-shrink-0"
-                      >
-                        <img
-                          src={`${import.meta.env.VITE_API_URL}/uploads/${
-                            track.punch_in_selfie
-                          }`}
-                          alt="view selfie"
-                          className="w-12 h-12 sm:w-14 sm:h-14 rounded-full object-cover"
-                        />
-                      </button>
-                      <div className="">
-                        <h1 className="font-semibold flex items-center text-xs sm:text-sm">
-                          {new Date(track.punch_in_time).toLocaleTimeString(
-                            "en-US",
-                            {
-                              hour: "2-digit",
-                              minute: "2-digit",
-                              hour12: true,
-                            },
-                          )}{" "}
-                          <div className="w-2 h-2 rounded-full bg-green-400 ml-3 mr-1"></div>
-                          In
-                        </h1>
-                        <p className="flex items-center text-xs">
-                          {track.punch_in_location}
-                        </p>
-                      </div>
                     </div>
-                  </div>
-                ))}
-                <form onSubmit={handleAttendanceNote}>
-                  <div className="w-full mt-3">
-                    <textarea
-                      value={attendanceNote}
-                      onChange={(e) => {
-                        setAttendanceNote(e.target.value);
-                      }}
-                      rows={3}
-                      placeholder="Enter your message..."
-                      className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition mb-3"
-                    ></textarea>
-                    {attendanceNote && (
-                      <button
-                        type="submit"
-                        className="bg-gradient-to-r from-[#C62828] to-red-600 text-white px-4 py-2.5 md:px-8 md:py-2.5 rounded-lg hover:from-red-600 hover:to-red-700 transition-all duration-200 font-medium shadow-sm hover:shadow text-sm md:text-base order-1 sm:order-2 w-full"
-                      >
-                        Save Note
-                      </button>
-                    )}
-                  </div>
-                </form>
+                  ))}
+                  <form onSubmit={handleAttendanceNote}>
+                    <div className="w-full mt-3">
+                      <textarea
+                        value={attendanceNote}
+                        onChange={(e) => {
+                          setAttendanceNote(e.target.value);
+                        }}
+                        rows={3}
+                        placeholder="Enter your message..."
+                        className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition mb-3"
+                      ></textarea>
+                      {attendanceNote && (
+                        <button
+                          type="submit"
+                          className="bg-gradient-to-r from-[#C62828] to-red-600 text-white px-4 py-2.5 md:px-8 md:py-2.5 rounded-lg hover:from-red-600 hover:to-red-700 transition-all duration-200 font-medium shadow-sm hover:shadow text-sm md:text-base order-1 sm:order-2 w-full"
+                        >
+                          Save Note
+                        </button>
+                      )}
+                    </div>
+                  </form>
+                </div>
               </div>
-            </div>
-          )}
+            )}
           {showViewSelfieModal && (
             <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
               <div className="bg-white rounded-2xl shadow-2xl w-2xl h-[40rem] overflow-hidden">

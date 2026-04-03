@@ -1,5 +1,12 @@
 // src/components/Layout.tsx
-import { ReactNode, useState, useMemo, useEffect, useRef } from "react";
+import {
+  ReactNode,
+  useState,
+  useMemo,
+  useEffect,
+  useRef,
+  SetStateAction,
+} from "react";
 import { useAuth } from "../contexts/AuthContext";
 import DefaultLogo from "../assets/images/Nayash Logo.png";
 import {
@@ -48,19 +55,23 @@ import {
   Zap,
   Package,
   ReceiptIndianRupee,
+  User,
 } from "lucide-react";
 import NotificationsApi from "../lib/notificationApi";
 import { toast } from "sonner";
 import RequestMaterial from "./materialRequest/RequestMaterial";
 import { BsPerson } from "react-icons/bs";
+import HrmsEmployeesApi from "../lib/employeeApi";
 
 // ─── TYPES ────────────────────────────────────────────────────────────────
 interface LayoutProps {
   children: ReactNode;
   activeTab: string;
+  setActiveTab: React.Dispatch<SetStateAction<string>>;
   onTabChange: (tab: string) => void;
   activeFormTab?: string;
   setActiveFormTab?: (tab: string) => void;
+  setSelectedEmployeeId: any;
 }
 
 interface NotificationType {
@@ -193,9 +204,11 @@ const settingsSubmenuItems = [
 export default function Layout({
   children,
   activeTab,
+  setActiveTab,
   onTabChange,
   activeFormTab = "",
   setActiveFormTab = () => {},
+  setSelectedEmployeeId,
 }: LayoutProps) {
   // ── Auth context ──────────────────────────────────────────────────────────
   const {
@@ -228,6 +241,7 @@ export default function Layout({
   const [openNestedSubmenu, setOpenNestedSubmenu] = useState<string | null>(
     null,
   );
+
   const [localActiveFormTab, setLocalActiveFormTab] = useState<string>("");
 
   const profileRef = useRef<HTMLDivElement>(null);
@@ -634,6 +648,17 @@ export default function Layout({
     });
   }, [isAdmin]);
 
+  const markAsRead = async (id: number) => {
+    try {
+      const marked = await NotificationsApi.markAsSeen(id);
+      if (marked.success) {
+        fetchNotifications();
+      }
+    } catch (err) {
+      console.error("Error marking notification as read:", err);
+    }
+  };
+
   // ═══════════════════════════════════════════════════════════════════════════
   // RENDER
   // ═══════════════════════════════════════════════════════════════════════════
@@ -1038,6 +1063,11 @@ export default function Layout({
                           ) : (
                             notifications.map((n) => (
                               <div
+                                onClick={() => {
+                                  setActiveTab("notifications");
+                                  setNotifOpen(false);
+                                  markAsRead(n.id);
+                                }}
                                 key={n.id}
                                 className={`p-4 border-b border-gray-100 hover:bg-gray-50 transition cursor-pointer ${!n.seen ? "bg-red-50/40" : ""}`}
                               >
@@ -1117,6 +1147,11 @@ export default function Layout({
                             notifications.map((n) => (
                               <div
                                 key={n.id}
+                                onClick={() => {
+                                  setActiveTab("notifications");
+                                  setNotifOpen(false);
+                                  markAsRead(n.id);
+                                }}
                                 className={`px-3 py-3 hover:bg-gray-50 ${!n.seen ? "bg-red-50/40" : ""}`}
                               >
                                 <div className="flex gap-2">
@@ -1226,16 +1261,35 @@ export default function Layout({
 
                       {/* Actions */}
                       <div className="p-2">
-                        <button
-                          onClick={() => {
-                            setProfileOpen(false);
-                            onTabChange("general-settings");
-                          }}
-                          className="w-full text-left px-3 py-2.5 rounded-lg hover:bg-gray-100 text-sm text-gray-700 flex items-center gap-3 transition"
-                        >
-                          <FaCog className="w-4 h-4 text-gray-500" />
-                          Settings
-                        </button>
+                        {user.role === "admin" ? (
+                          <button
+                            onClick={() => {
+                              setProfileOpen(false);
+                              onTabChange("general-settings");
+                            }}
+                            className="w-full text-left px-3 py-2.5 rounded-lg hover:bg-gray-100 text-sm text-gray-700 flex items-center gap-3 transition"
+                          >
+                            <FaCog className="w-4 h-4 text-gray-500" />
+                            Settings
+                          </button>
+                        ) : (
+                          <button
+                            onClick={async () => {
+                              setProfileOpen(false);
+                              onTabChange("employee-profile");
+                              let emp: any;
+                              if (user)
+                                emp = await HrmsEmployeesApi.getEmployeeByEmail(
+                                  user.email,
+                                );
+                              setSelectedEmployeeId(emp.id || null);
+                            }}
+                            className="w-full text-left px-3 py-2.5 rounded-lg hover:bg-gray-100 text-sm text-gray-700 flex items-center gap-3 transition"
+                          >
+                            <User className="w-4 h-4 text-gray-500" />
+                            Profile
+                          </button>
+                        )}
                         <button
                           onClick={handleSignOut}
                           className="w-full text-left px-3 py-2.5 rounded-lg hover:bg-red-50 hover:text-[#C62828] text-sm text-gray-700 flex items-center gap-3 transition"
@@ -1303,7 +1357,7 @@ export default function Layout({
         </header>
 
         {/* ── Page Content ── */}
-        <main className="p-6">{children}</main>
+        <main className="px-2 py-6 sm:p-6">{children}</main>
       </div>
 
       {/* Request Material Modal */}
