@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import ViewTodayAttendanceModal from "./ViewTodayAttendanceModal";
+
 interface AttendanceRecord {
   id: number;
   user_id: number;
@@ -19,6 +20,7 @@ interface AttendanceRecord {
   employee_code?: string;
   trackingHistory?: any;
 }
+
 const AttendanceCalender = ({
   month,
   year,
@@ -34,6 +36,7 @@ const AttendanceCalender = ({
   loadAttendance: any;
   selectedEmployee: any;
 }) => {
+  console.log(attendanceData);
   const [daysInMonth, setDaysInMonth] = useState<number>(0);
   const today = new Date();
   const [dayAttendanceData, setDayAttendanceData] =
@@ -75,21 +78,55 @@ const AttendanceCalender = ({
       );
     });
   }
+
+  // Helper function to get color based on attendance status
+  const getAttendanceColor = (
+    record: any,
+    isSunday: boolean,
+    isPL: boolean,
+  ) => {
+    // Priority: Sunday > Paid Leave > Attendance Status
+    if (isSunday) {
+      return "bg-gray-200 text-gray-500"; // Gray for Sunday
+    }
+
+    if (isPL) {
+      return "bg-violet-100 text-violet-700"; // Violet for Paid Leave
+    }
+
+    if (!record) {
+      return "bg-red-100 text-red-600"; // Red for Absent (no record)
+    }
+
+    // Check attendance status
+    const status = record.status?.toLowerCase();
+    switch (status) {
+      case "present":
+        return "bg-green-100 text-green-700"; // Green for Present
+      case "half_day":
+        return "bg-yellow-100 text-yellow-700"; // Yellow for Half Day
+      case "week_off":
+      case "holiday":
+        return "bg-gray-200 text-gray-500";
+      case "absent":
+        return "bg-red-100 text-red-600"; // Red for Absent
+      default:
+        return "bg-red-100 text-red-600"; // Default to Absent
+    }
+  };
+
   const getCurrentDateTime = () => {
     const now = new Date();
-
     const pad = (n: any) => n.toString().padStart(2, "0");
-
     const year = now.getFullYear();
     const month = pad(now.getMonth() + 1);
     const day = pad(now.getDate());
-
     const hours = pad(now.getHours());
     const minutes = pad(now.getMinutes());
     const seconds = pad(now.getSeconds());
-
     return `${hours}:${minutes}:${seconds}`;
   };
+
   return (
     <div className="w-full max-w-5xl mx-auto mb-6">
       {/* Calendar Card */}
@@ -142,10 +179,9 @@ const AttendanceCalender = ({
 
             const isPL = isPaidLeave(checkDate);
             let isLate = false;
+
             const record = attendanceData.find(
-              (d: any) =>
-                d.date.slice(8, 10) ===
-                (String(day).length === 1 ? "0" + String(day) : String(day)),
+              (d: any) => d.date === checkDate,
             );
 
             if (record) {
@@ -155,6 +191,9 @@ const AttendanceCalender = ({
                   `${record.date}T${selectedEmployee.emp_punch_in_time}`,
                 );
             }
+
+            // Get color based on attendance status
+            const colorClass = getAttendanceColor(record, isSunday, isPL);
 
             return (
               <div
@@ -212,42 +251,19 @@ const AttendanceCalender = ({
                     setShowAttendanceDetails(true);
                   }
                 }}
-                className={` relative h-8 sm:h-16 flex items-center justify-center rounded-2xl
+                className={`relative h-8 sm:h-16 flex items-center justify-center rounded-2xl
                   text-sm font-medium
                   transition-all duration-200 ease-in-out
                   cursor-pointer
-                  ${
-                    isSunday
-                      ? attendanceData.find(
-                          (d: any) =>
-                            d.date.slice(8, 10) ===
-                            (String(day).length === 1
-                              ? "0" + String(day)
-                              : String(day)),
-                        )
-                        ? "text-green-600 bg-green-100"
-                        : "text-gray-600 bg-gray-100"
-                      : attendanceData.find(
-                            (d: any) =>
-                              d.date.slice(8, 10) ===
-                              (String(day).length === 1
-                                ? "0" + String(day)
-                                : String(day)),
-                          )
-                        ? "text-green-600 bg-green-100"
-                        : isPL
-                          ? "text-violet-600 bg-violet-100"
-                          : "text-red-600 bg-red-100"
-                  }
+                  ${colorClass}
                   flex-col leading-[0.6rem] items-center justify-center
+                  ${isToday ? "ring-2 ring-blue-500 ring-offset-2" : ""}
                 `}
               >
                 <p className="text-[0.6rem] sm:text-sm">{day}</p>
                 <p className="text-[0.6rem] sm:text-sm">{isLate && "Late"}</p>
                 {/* Subtle Hover Glow */}
-                {!isToday && (
-                  <span className="absolute inset-0 rounded-2xl ring-0 hover:ring-2 hover:ring-blue-200 transition"></span>
-                )}
+                <span className="absolute inset-0 rounded-2xl ring-0 hover:ring-2 hover:ring-blue-200 transition"></span>
               </div>
             );
           })}

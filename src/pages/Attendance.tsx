@@ -64,6 +64,7 @@ interface AttendanceStats {
 export default function Attendance() {
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("");
+  const [activeTab, setActiveTab] = useState<string>("todays");
   const [selectedDateForAttendance, setSelectedDateAttendance] =
     useState<string>("");
   const [employeeDetails, setEmployeeDetails] = useState({
@@ -273,22 +274,19 @@ export default function Attendance() {
 
     if (user.role === "admin") {
       try {
-        const response: any = await attendanceApi.getCurrentMonthAttendance(
-          selectedUser.user_id ?? empRes[0].user_id,
-          selecteDate || new Date().toISOString().slice(0, 7),
-        );
-
+        const response: any = await attendanceApi.getAllToday();
+        console.log("attendance : ", response);
         const getLeavesResponse: any = await LeaveApi.getCurrentMonthLeaves(
           selectedUser.user_id ?? empRes[0].user_id,
           selecteDate || new Date().toISOString().slice(0, 7),
         );
 
-        const finalData = formatAttendance(response.data.data);
+        const finalData = formatAttendanceForAdmin(response.data);
         let totalWorkingHours = 0;
         let presentDays = 0;
         let lateUsers = 0;
 
-        if (response.data.success) {
+        if (response.success) {
           for (let i = 0; i < finalData.length; i++) {
             ++presentDays;
             let totalHours = 0;
@@ -478,12 +476,10 @@ export default function Attendance() {
   });
 
   const formatTime = (timeString: string | null) => {
+    console.log(timeString);
     if (!timeString) return "-";
-    const date = new Date(timeString);
-    return date.toLocaleTimeString("en-US", {
-      hour: "2-digit",
-      minute: "2-digit",
-    });
+    const time = timeString.split("T")[1];
+    return time;
   };
 
   const getStatusBadgeVariant = (status: string) => {
@@ -735,6 +731,21 @@ export default function Attendance() {
         <h2 className="text-lg sm:text-xl font-semibold text-slate-900 mb-2">
           {selectedDateForAttendance ? "Attendance" : "Attendance Calendar"}
         </h2>
+
+        <div className="space-x-3 my-2">
+          <button
+            onClick={() => setActiveTab("todays")}
+            className={`bg-slate-200 px-3 py-1 text-sm rounded-full font-medium ${activeTab === "todays" ? "bg-blue-200 border border-blue-600" : ""}`}
+          >
+            Today's Attendance
+          </button>
+          <button
+            onClick={() => setActiveTab("employee")}
+            className={`bg-slate-200 px-3 py-1 text-sm rounded-full font-medium ${activeTab === "employee" ? "bg-blue-300 border border-blue-600" : ""}`}
+          >
+            Employee Attendance
+          </button>
+        </div>
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 flex-wrap">
           <div className="flex flex-col sm:flex-row">
             <div className="flex ">
@@ -852,7 +863,7 @@ export default function Attendance() {
       </div>
 
       <div className="overflow-x-auto">
-        {selectedDateForAttendance ? (
+        {activeTab === "todays" ? (
           <table className="w-full">
             <thead className="bg-slate-50 border-b border-slate-200">
               <tr>
@@ -1225,20 +1236,22 @@ export default function Attendance() {
                                               </p>
                                             )}
                                           </td>
-                                          <td className="px-4 py-3">
+                                          <td className="px-4 py-3 w-[30vw]">
                                             <div>
                                               <p className="text-sm text-slate-900">
                                                 <span className="font-semibold">
                                                   Punch In :
                                                 </span>{" "}
-                                                {recordHistory.punch_in_address ||
-                                                  "-"}
+                                                <span className="text-xs">
+                                                  {recordHistory.punch_in_location ||
+                                                    "-"}
+                                                </span>
                                               </p>
                                               <p className="text-sm text-slate-900">
                                                 <span className="font-semibold">
                                                   Punch Out :
                                                 </span>{" "}
-                                                {recordHistory.punch_out_address ||
+                                                {recordHistory.punch_out_location ||
                                                   "-"}
                                               </p>
                                             </div>
@@ -1279,7 +1292,7 @@ export default function Attendance() {
           </table>
         ) : (
           <div>
-            {attendanceData && allEmployees && (
+            {attendanceData && allEmployees && activeTab === "employee" && (
               <AttendanceCalender
                 month={Number(selecteDate.slice(5)) - 1}
                 year={Number(selecteDate.slice(0, 4))}

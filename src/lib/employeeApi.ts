@@ -229,12 +229,14 @@ export type HrmsEmployee = {
   office_location?: string | null;
   attendence_location: string;
   employee_status: string;
-
+  company_name: string;
   // Personal Details
   blood_group?: string;
   date_of_birth?: string;
   marital_status?: string;
   emergency_contact?: string;
+  emergency_contact_name?: string;
+  week_off_days: string;
   nationality?: string;
 
   // Address Details
