@@ -5,10 +5,9 @@ import {
   Calendar,
   Users,
   Clock,
-  Wallet,
   Receipt,
-  UserPlus,
   Ticket,
+  MapPin,
 } from "lucide-react";
 import Card from "../components/ui/Card";
 import Button from "../components/ui/Button";
@@ -52,6 +51,12 @@ export default function Reports() {
   });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const getCurrentMonth = () => {
+    const now = new Date();
+    return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
+  };
+  const [fromAttendance, setFromAttendance] = useState(getCurrentMonth());
+  const [toAttendance, setToAttendance] = useState(getCurrentMonth());
 
   useEffect(() => {
     fetchReportData();
@@ -118,14 +123,15 @@ export default function Reports() {
 
         case "attendance":
           const attendanceResponse =
-            await attendanceApi.getEmployeeAttendanceReport(
-              "2026-01-01",
-              "2026-03-31",
+            await attendanceApi.getAttendanceByMonthRange(
+              fromAttendance,
+              toAttendance,
             );
+
           console.log("res of attendance : ", attendanceResponse);
           setReportData((prev) => ({
             ...prev,
-            attendance: attendanceResponse?.data?.data || [],
+            attendance: attendanceResponse?.data || [],
           }));
           break;
 
@@ -142,7 +148,6 @@ export default function Reports() {
           break;
 
         case "payroll":
-          // Mock payroll data - replace with actual API when available
           const mockPayroll: any = [];
           setReportData((prev) => ({ ...prev, payroll: mockPayroll }));
           break;
@@ -183,6 +188,20 @@ export default function Reports() {
     }
   };
 
+  useEffect(() => {
+    fetchReportData();
+  }, [fromAttendance, toAttendance]);
+  const formatHours = (decimalHours: number | string) => {
+    const value = parseFloat(decimalHours as string);
+
+    if (isNaN(value)) return "0:00 hr";
+
+    const hours = Math.floor(value);
+    const minutes = Math.round((value - hours) * 60);
+
+    return `${hours}:${minutes.toString().padStart(2, "0")} hr`;
+  };
+
   const exportToExcel = () => {
     let worksheetData: any[][] = [];
     let sheetName = "";
@@ -215,23 +234,28 @@ export default function Reports() {
         worksheetData = [
           [
             "Employee",
+            "Employee Code",
             "Date",
             "Check In",
+            "Check In Location",
             "Check Out",
+            "Check Out Location",
             "Status",
             "Working Hours",
           ],
           ...reportData.attendance.map((att) => [
-            `${att.employees?.first_name || ""} ${att.employees?.last_name || ""}`,
+            att.user_name,
+            att.employee_code,
             formatters.date(att.date),
-            att.check_in_time || "N/A",
-            att.check_out_time || "N/A",
+            att.punch_in_time || "N/A",
+            att.punch_in_location || "N/A",
+            att.punch_out_time || "N/A",
+            att.punch_out_location || "N/A",
             att.status,
-            `${att.working_hours || 0} hrs`,
+            formatHours(att.total_hours),
           ]),
         ];
         break;
-
       case "leaves":
         sheetName = "Leaves Report";
         worksheetData = [
@@ -326,24 +350,20 @@ export default function Reports() {
         return;
     }
 
-    // Create worksheet and workbook
     const worksheet = XLSX.utils.aoa_to_sheet(worksheetData);
-
-    // Auto-size columns (optional - sets approximate widths)
     const colWidths = worksheetData[0].map((_, colIndex) => {
       let maxLength = 0;
       worksheetData.forEach((row) => {
         const cellValue = row[colIndex]?.toString() || "";
         maxLength = Math.max(maxLength, cellValue.length);
       });
-      return { wch: Math.min(maxLength + 2, 50) }; // Max width 50 characters
+      return { wch: Math.min(maxLength + 2, 50) };
     });
     worksheet["!cols"] = colWidths;
 
     const workbook = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(workbook, worksheet, sheetName);
 
-    // Generate Excel file
     const fileName = `${selectedReport}_report_${new Date().toISOString().split("T")[0]}.xlsx`;
     XLSX.writeFile(workbook, fileName);
   };
@@ -367,24 +387,12 @@ export default function Reports() {
       icon: Calendar,
       color: "yellow",
     },
-    // {
-    //   value: "payroll",
-    //   label: "Payroll Report",
-    //   icon: Wallet,
-    //   color: "purple",
-    // },
     {
       value: "expenses",
       label: "Expenses Report",
       icon: Receipt,
       color: "orange",
     },
-    // {
-    //   value: "recruitment",
-    //   label: "Recruitment Report",
-    //   icon: UserPlus,
-    //   color: "blue",
-    // },
     { value: "tickets", label: "Tickets Report", icon: Ticket, color: "pink" },
   ];
 
@@ -397,34 +405,51 @@ export default function Reports() {
     { value: "this-year", label: "This Year" },
   ];
 
+  // Improved table component with sticky header and scrollable body
+  const TableWrapper = ({
+    children,
+    minHeight = "400px",
+  }: {
+    children: React.ReactNode;
+    minHeight?: string;
+  }) => (
+    <div className="relative overflow-hidden">
+      <div className="overflow-x-auto">
+        <div className="max-h-[400px] overflow-y-auto" style={{ minHeight }}>
+          {children}
+        </div>
+      </div>
+    </div>
+  );
+
   const renderEmployeesReport = () => (
-    <div className="overflow-x-auto">
+    <TableWrapper>
       <table className="w-full">
-        <thead className="bg-slate-50 border-b border-slate-200">
+        <thead className="bg-slate-50 sticky top-0 z-10 shadow-sm">
           <tr>
-            <th className="text-left px-6 py-4 text-sm font-semibold text-slate-900">
+            <th className="text-left px-6 py-4 text-sm font-semibold text-slate-900 border-b border-slate-200">
               Employee Code
             </th>
-            <th className="text-left px-6 py-4 text-sm font-semibold text-slate-900">
+            <th className="text-left px-6 py-4 text-sm font-semibold text-slate-900 border-b border-slate-200">
               Name
             </th>
-            <th className="text-left px-6 py-4 text-sm font-semibold text-slate-900">
+            <th className="text-left px-6 py-4 text-sm font-semibold text-slate-900 border-b border-slate-200">
               Department
             </th>
-            <th className="text-left px-6 py-4 text-sm font-semibold text-slate-900">
+            <th className="text-left px-6 py-4 text-sm font-semibold text-slate-900 border-b border-slate-200">
               Position
             </th>
-            <th className="text-left px-6 py-4 text-sm font-semibold text-slate-900">
+            <th className="text-left px-6 py-4 text-sm font-semibold text-slate-900 border-b border-slate-200">
               Email
             </th>
-            <th className="text-left px-6 py-4 text-sm font-semibold text-slate-900">
+            <th className="text-left px-6 py-4 text-sm font-semibold text-slate-900 border-b border-slate-200">
               Join Date
             </th>
           </tr>
         </thead>
         <tbody className="divide-y divide-slate-200">
           {reportData.employees.map((emp) => (
-            <tr key={emp.id} className="hover:bg-slate-50">
+            <tr key={emp.id} className="hover:bg-slate-50 transition-colors">
               <td className="px-6 py-4 text-sm text-slate-900">
                 {emp.employee_code}
               </td>
@@ -445,55 +470,71 @@ export default function Reports() {
           ))}
         </tbody>
       </table>
-    </div>
+    </TableWrapper>
   );
 
   const renderAttendanceReport = () => (
-    <div className="overflow-x-auto">
+    <TableWrapper>
       <table className="w-full">
-        <thead className="bg-slate-50 border-b border-slate-200">
+        <thead className="bg-slate-50 sticky top-0 z-10 shadow-sm">
           <tr>
-            <th className="text-left px-6 py-4 text-sm font-semibold text-slate-900">
+            <th className="text-left px-6 py-4 text-sm font-semibold text-slate-900 border-b border-slate-200">
               Employee
             </th>
-            <th className="text-left px-6 py-4 text-sm font-semibold text-slate-900">
+            <th className="text-left px-6 py-4 text-sm font-semibold text-slate-900 border-b border-slate-200">
               Date
             </th>
-            <th className="text-left px-6 py-4 text-sm font-semibold text-slate-900">
+            <th className="text-left px-6 py-4 text-sm font-semibold text-slate-900 border-b border-slate-200">
               Check In
             </th>
-            <th className="text-left px-6 py-4 text-sm font-semibold text-slate-900">
+            <th className="text-left px-6 py-4 text-sm font-semibold text-slate-900 border-b border-slate-200">
               Check Out
             </th>
-            <th className="text-left px-6 py-4 text-sm font-semibold text-slate-900">
+            <th className="text-left px-6 py-4 text-sm font-semibold text-slate-900 border-b border-slate-200">
               Status
             </th>
-            <th className="text-left px-6 py-4 text-sm font-semibold text-slate-900">
+            <th className="text-left px-6 py-4 text-sm font-semibold text-slate-900 border-b border-slate-200">
               Working Hours
             </th>
           </tr>
         </thead>
         <tbody className="divide-y divide-slate-200">
           {reportData.attendance.map((att) => (
-            <tr key={att.id} className="hover:bg-slate-50">
+            <tr key={att.id} className="hover:bg-slate-50 transition-colors">
               <td className="px-6 py-4 text-sm font-medium text-slate-900">
-                {att.employees?.first_name} {att.employees?.last_name}
+                {att?.user_name}
                 <div className="text-xs text-slate-500">
-                  {att.employees?.employee_code}
+                  {att.employee_code}
                 </div>
               </td>
               <td className="px-6 py-4 text-sm text-slate-600">
                 {formatters.date(att.date)}
               </td>
               <td className="px-6 py-4 text-sm text-slate-600">
-                {att.check_in_time || "N/A"}
+                <div className="text-sm">{att.punch_in_time || "N/A"}</div>
+                {att.punch_in_location && (
+                  <div className="flex items-center text-xs text-slate-500 mt-1">
+                    <MapPin className="w-3 h-3 mr-1" />
+                    <span className="truncate max-w-[200px]">
+                      {att.punch_in_location}
+                    </span>
+                  </div>
+                )}
               </td>
-              <td className="px-6 py-4 text-sm text-slate-600">
-                {att.check_out_time || "N/A"}
+              <td className="px-6 py-4 text-slate-600">
+                <div className="text-sm">{att.punch_out_time || "N/A"}</div>
+                {att.punch_out_location && (
+                  <div className="flex items-center text-xs text-slate-500 mt-1">
+                    <MapPin className="w-3 h-3 mr-1" />
+                    <span className="truncate max-w-[200px]">
+                      {att.punch_out_location}
+                    </span>
+                  </div>
+                )}
               </td>
               <td className="px-6 py-4 text-sm">
                 <span
-                  className={`px-2 py-1 rounded-full text-xs font-medium ${
+                  className={`inline-flex px-2 py-1 rounded-full text-xs font-medium ${
                     att.status === "present"
                       ? "bg-green-100 text-green-700"
                       : att.status === "absent"
@@ -505,46 +546,46 @@ export default function Reports() {
                 </span>
               </td>
               <td className="px-6 py-4 text-sm text-slate-600">
-                {att.working_hours || 0} hrs
+                {att.total_hours || 0} hrs
               </td>
             </tr>
           ))}
         </tbody>
       </table>
-    </div>
+    </TableWrapper>
   );
 
   const renderLeavesReport = () => (
-    <div className="overflow-x-auto">
+    <TableWrapper>
       <table className="w-full">
-        <thead className="bg-slate-50 border-b border-slate-200">
+        <thead className="bg-slate-50 sticky top-0 z-10 shadow-sm">
           <tr>
-            <th className="text-left px-6 py-4 text-sm font-semibold text-slate-900">
+            <th className="text-left px-6 py-4 text-sm font-semibold text-slate-900 border-b border-slate-200">
               Employee
             </th>
-            <th className="text-left px-6 py-4 text-sm font-semibold text-slate-900">
+            <th className="text-left px-6 py-4 text-sm font-semibold text-slate-900 border-b border-slate-200">
               Leave Type
             </th>
-            <th className="text-left px-6 py-4 text-sm font-semibold text-slate-900">
+            <th className="text-left px-6 py-4 text-sm font-semibold text-slate-900 border-b border-slate-200">
               From Date
             </th>
-            <th className="text-left px-6 py-4 text-sm font-semibold text-slate-900">
+            <th className="text-left px-6 py-4 text-sm font-semibold text-slate-900 border-b border-slate-200">
               To Date
             </th>
-            <th className="text-left px-6 py-4 text-sm font-semibold text-slate-900">
+            <th className="text-left px-6 py-4 text-sm font-semibold text-slate-900 border-b border-slate-200">
               Days
             </th>
-            <th className="text-left px-6 py-4 text-sm font-semibold text-slate-900">
+            <th className="text-left px-6 py-4 text-sm font-semibold text-slate-900 border-b border-slate-200">
               Status
             </th>
-            <th className="text-left px-6 py-4 text-sm font-semibold text-slate-900">
+            <th className="text-left px-6 py-4 text-sm font-semibold text-slate-900 border-b border-slate-200">
               Reason
             </th>
           </tr>
         </thead>
         <tbody className="divide-y divide-slate-200">
           {reportData.leaves.map((leave) => (
-            <tr key={leave.id} className="hover:bg-slate-50">
+            <tr key={leave.id} className="hover:bg-slate-50 transition-colors">
               <td className="px-6 py-4 text-sm font-medium text-slate-900">
                 {leave.emp_name}
                 <div className="text-xs text-slate-500">
@@ -565,7 +606,7 @@ export default function Reports() {
               </td>
               <td className="px-6 py-4 text-sm">
                 <span
-                  className={`px-2 py-1 rounded-full text-xs font-medium ${
+                  className={`inline-flex px-2 py-1 rounded-full text-xs font-medium ${
                     leave.status === "approved"
                       ? "bg-green-100 text-green-700"
                       : leave.status === "rejected"
@@ -576,44 +617,47 @@ export default function Reports() {
                   {leave.status}
                 </span>
               </td>
-              <td className="px-6 py-4 text-sm text-slate-600 max-w-xs truncate">
-                {leave.reason}
+              <td className="px-6 py-4 text-sm text-slate-600 max-w-xs">
+                <div className="truncate">{leave.reason}</div>
               </td>
             </tr>
           ))}
         </tbody>
       </table>
-    </div>
+    </TableWrapper>
   );
 
   const renderPayrollReport = () => (
-    <div className="overflow-x-auto">
+    <TableWrapper>
       <table className="w-full">
-        <thead className="bg-slate-50 border-b border-slate-200">
+        <thead className="bg-slate-50 sticky top-0 z-10 shadow-sm">
           <tr>
-            <th className="text-left px-6 py-4 text-sm font-semibold text-slate-900">
+            <th className="text-left px-6 py-4 text-sm font-semibold text-slate-900 border-b border-slate-200">
               Employee
             </th>
-            <th className="text-left px-6 py-4 text-sm font-semibold text-slate-900">
+            <th className="text-left px-6 py-4 text-sm font-semibold text-slate-900 border-b border-slate-200">
               Period
             </th>
-            <th className="text-right px-6 py-4 text-sm font-semibold text-slate-900">
+            <th className="text-right px-6 py-4 text-sm font-semibold text-slate-900 border-b border-slate-200">
               Gross Salary
             </th>
-            <th className="text-right px-6 py-4 text-sm font-semibold text-slate-900">
+            <th className="text-right px-6 py-4 text-sm font-semibold text-slate-900 border-b border-slate-200">
               Deductions
             </th>
-            <th className="text-right px-6 py-4 text-sm font-semibold text-slate-900">
+            <th className="text-right px-6 py-4 text-sm font-semibold text-slate-900 border-b border-slate-200">
               Net Salary
             </th>
-            <th className="text-left px-6 py-4 text-sm font-semibold text-slate-900">
+            <th className="text-left px-6 py-4 text-sm font-semibold text-slate-900 border-b border-slate-200">
               Status
             </th>
           </tr>
         </thead>
         <tbody className="divide-y divide-slate-200">
           {reportData.payroll.map((payslip) => (
-            <tr key={payslip.id} className="hover:bg-slate-50">
+            <tr
+              key={payslip.id}
+              className="hover:bg-slate-50 transition-colors"
+            >
               <td className="px-6 py-4 text-sm font-medium text-slate-900">
                 {payslip.employees?.first_name} {payslip.employees?.last_name}
                 <div className="text-xs text-slate-500">
@@ -637,7 +681,7 @@ export default function Reports() {
               </td>
               <td className="px-6 py-4 text-sm">
                 <span
-                  className={`px-2 py-1 rounded-full text-xs font-medium ${
+                  className={`inline-flex px-2 py-1 rounded-full text-xs font-medium ${
                     payslip.payment_status === "paid"
                       ? "bg-green-100 text-green-700"
                       : "bg-yellow-100 text-yellow-700"
@@ -650,37 +694,40 @@ export default function Reports() {
           ))}
         </tbody>
       </table>
-    </div>
+    </TableWrapper>
   );
 
   const renderExpensesReport = () => (
-    <div className="overflow-x-auto">
+    <TableWrapper>
       <table className="w-full">
-        <thead className="bg-slate-50 border-b border-slate-200">
+        <thead className="bg-slate-50 sticky top-0 z-10 shadow-sm">
           <tr>
-            <th className="text-left px-6 py-4 text-sm font-semibold text-slate-900">
+            <th className="text-left px-6 py-4 text-sm font-semibold text-slate-900 border-b border-slate-200">
               Employee
             </th>
-            <th className="text-left px-6 py-4 text-sm font-semibold text-slate-900">
+            <th className="text-left px-6 py-4 text-sm font-semibold text-slate-900 border-b border-slate-200">
               Category
             </th>
-            <th className="text-left px-6 py-4 text-sm font-semibold text-slate-900">
+            <th className="text-left px-6 py-4 text-sm font-semibold text-slate-900 border-b border-slate-200">
               Description
             </th>
-            <th className="text-right px-6 py-4 text-sm font-semibold text-slate-900">
+            <th className="text-right px-6 py-4 text-sm font-semibold text-slate-900 border-b border-slate-200">
               Amount
             </th>
-            <th className="text-left px-6 py-4 text-sm font-semibold text-slate-900">
+            <th className="text-left px-6 py-4 text-sm font-semibold text-slate-900 border-b border-slate-200">
               Date
             </th>
-            <th className="text-left px-6 py-4 text-sm font-semibold text-slate-900">
+            <th className="text-left px-6 py-4 text-sm font-semibold text-slate-900 border-b border-slate-200">
               Status
             </th>
           </tr>
         </thead>
         <tbody className="divide-y divide-slate-200">
           {reportData.expenses.map((expense) => (
-            <tr key={expense.id} className="hover:bg-slate-50">
+            <tr
+              key={expense.id}
+              className="hover:bg-slate-50 transition-colors"
+            >
               <td className="px-6 py-4 text-sm font-medium text-slate-900">
                 {expense.employee_name}
                 <div className="text-xs text-slate-500">
@@ -690,8 +737,8 @@ export default function Reports() {
               <td className="px-6 py-4 text-sm text-slate-600">
                 {expense.category}
               </td>
-              <td className="px-6 py-4 text-sm text-slate-600 max-w-xs truncate">
-                {expense.description}
+              <td className="px-6 py-4 text-sm text-slate-600 max-w-xs">
+                <div className="truncate">{expense.description}</div>
               </td>
               <td className="px-6 py-4 text-sm text-right text-slate-900">
                 {formatters.currency(expense.amount)}
@@ -703,7 +750,7 @@ export default function Reports() {
               </td>
               <td className="px-6 py-4 text-sm">
                 <span
-                  className={`px-2 py-1 rounded-full text-xs font-medium ${
+                  className={`inline-flex px-2 py-1 rounded-full text-xs font-medium ${
                     expense.status === "approved"
                       ? "bg-green-100 text-green-700"
                       : expense.status === "rejected"
@@ -718,72 +765,62 @@ export default function Reports() {
           ))}
         </tbody>
       </table>
-    </div>
+    </TableWrapper>
   );
 
   const renderTicketReport = () => (
-    <div className="overflow-x-auto">
+    <TableWrapper>
       <table className="w-full">
-        <thead className="bg-slate-50 border-b border-slate-200">
+        <thead className="bg-slate-50 sticky top-0 z-10 shadow-sm">
           <tr>
-            <th className="text-left px-6 py-4 text-sm font-semibold text-slate-900">
+            <th className="text-left px-6 py-4 text-sm font-semibold text-slate-900 border-b border-slate-200">
               Ticket
             </th>
-            <th className="text-left px-6 py-4 text-sm font-semibold text-slate-900">
+            <th className="text-left px-6 py-4 text-sm font-semibold text-slate-900 border-b border-slate-200">
               Employee
             </th>
-            <th className="text-left px-6 py-4 text-sm font-semibold text-slate-900">
+            <th className="text-left px-6 py-4 text-sm font-semibold text-slate-900 border-b border-slate-200">
               Subject
             </th>
-            <th className="text-left px-6 py-4 text-sm font-semibold text-slate-900">
+            <th className="text-left px-6 py-4 text-sm font-semibold text-slate-900 border-b border-slate-200">
               Category
             </th>
-            <th className="text-left px-6 py-4 text-sm font-semibold text-slate-900">
+            <th className="text-left px-6 py-4 text-sm font-semibold text-slate-900 border-b border-slate-200">
               Priority
             </th>
-            <th className="text-left px-6 py-4 text-sm font-semibold text-slate-900">
+            <th className="text-left px-6 py-4 text-sm font-semibold text-slate-900 border-b border-slate-200">
               Assigned To
             </th>
-            <th className="text-left px-6 py-4 text-sm font-semibold text-slate-900">
+            <th className="text-left px-6 py-4 text-sm font-semibold text-slate-900 border-b border-slate-200">
               Date
             </th>
-            <th className="text-left px-6 py-4 text-sm font-semibold text-slate-900">
+            <th className="text-left px-6 py-4 text-sm font-semibold text-slate-900 border-b border-slate-200">
               Status
             </th>
           </tr>
         </thead>
-
         <tbody className="divide-y divide-slate-200">
           {reportData.tickets.map((ticket) => (
-            <tr key={ticket.id} className="hover:bg-slate-50">
-              {/* Ticket Number */}
+            <tr key={ticket.id} className="hover:bg-slate-50 transition-colors">
               <td className="px-6 py-4 text-sm font-medium text-slate-900">
                 {ticket.ticket_number}
                 <div className="text-xs text-slate-500">ID: {ticket.id}</div>
               </td>
-
-              {/* Employee */}
               <td className="px-6 py-4 text-sm text-slate-900">
                 {ticket.employee_name}
                 <div className="text-xs text-slate-500">
                   {ticket.employee_department} • {ticket.employee_designation}
                 </div>
               </td>
-
-              {/* Subject */}
-              <td className="px-6 py-4 text-sm text-slate-600 max-w-xs truncate">
-                {ticket.subject}
+              <td className="px-6 py-4 text-sm text-slate-600 max-w-xs">
+                <div className="truncate">{ticket.subject}</div>
               </td>
-
-              {/* Category */}
               <td className="px-6 py-4 text-sm text-slate-600">
                 {ticket.category}
               </td>
-
-              {/* Priority */}
               <td className="px-6 py-4 text-sm">
                 <span
-                  className={`px-2 py-1 rounded-full text-xs font-medium ${
+                  className={`inline-flex px-2 py-1 rounded-full text-xs font-medium ${
                     ticket.priority === "high"
                       ? "bg-red-100 text-red-700"
                       : ticket.priority === "medium"
@@ -794,21 +831,15 @@ export default function Reports() {
                   {ticket.priority}
                 </span>
               </td>
-
-              {/* Assigned To */}
               <td className="px-6 py-4 text-sm text-slate-600">
                 {ticket.assigned_to_name || "-"}
               </td>
-
-              {/* Date */}
               <td className="px-6 py-4 text-sm text-slate-600">
                 {formatters.date(ticket.created_at)}
               </td>
-
-              {/* Status */}
               <td className="px-6 py-4 text-sm">
                 <span
-                  className={`px-2 py-1 rounded-full text-xs font-medium ${
+                  className={`inline-flex px-2 py-1 rounded-full text-xs font-medium ${
                     ticket.status === "resolved"
                       ? "bg-green-100 text-green-700"
                       : ticket.status === "closed"
@@ -825,59 +856,52 @@ export default function Reports() {
           ))}
         </tbody>
       </table>
-    </div>
+    </TableWrapper>
   );
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold text-slate-900">Reports</h1>
-          <p className="text-slate-600 mt-1">
-            Generate comprehensive reports for all modules
-          </p>
+    <div className="space-y-6 h-full flex flex-col">
+      <div className=" flex justify-between">
+        <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-3">
+          {reportTypes.map((type) => {
+            const Icon = type.icon;
+            const isSelected = selectedReport === type.value;
+            return (
+              <button
+                key={type.value}
+                onClick={() => setSelectedReport(type.value as ReportType)}
+                className={`px-2 rounded-lg border-2 transition-all ${
+                  isSelected
+                    ? "border-red-500 bg-red-50"
+                    : "border-slate-200 hover:border-slate-300 bg-white"
+                } flex justify-center items-center`}
+              >
+                <div
+                  className={` p-1 rounded-lg flex items-center justify-center mr-2 ${
+                    isSelected ? "bg-red-100" : "bg-slate-100"
+                  }`}
+                >
+                  <Icon
+                    className={`h-4 w-4  ${isSelected ? "text-red-600" : "text-slate-600"}`}
+                  />
+                </div>
+                <p
+                  className={`text-xs font-medium ${isSelected ? "text-red-900" : "text-slate-900"}`}
+                >
+                  {type.label.replace(" Report", "")}
+                </p>
+              </button>
+            );
+          })}
         </div>
-        <Button onClick={exportToExcel} disabled={loading}>
-          <Download className="h-4 w-4 mr-2" />
+        <Button onClick={exportToExcel} disabled={loading} className="text-sm">
+          <Download className="h-3 w-4 mr-2" />
           Export to Excel
         </Button>
       </div>
 
-      <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-3">
-        {reportTypes.map((type) => {
-          const Icon = type.icon;
-          const isSelected = selectedReport === type.value;
-          return (
-            <button
-              key={type.value}
-              onClick={() => setSelectedReport(type.value as ReportType)}
-              className={`p-4 rounded-lg border-2 transition-all ${
-                isSelected
-                  ? "border-red-500 bg-red-50"
-                  : "border-slate-200 hover:border-slate-300 bg-white"
-              }`}
-            >
-              <div
-                className={`w-10 h-10 rounded-lg flex items-center justify-center mb-2 ${
-                  isSelected ? "bg-red-100" : "bg-slate-100"
-                }`}
-              >
-                <Icon
-                  className={`h-5 w-5 ${isSelected ? "text-red-600" : "text-slate-600"}`}
-                />
-              </div>
-              <p
-                className={`text-xs font-medium ${isSelected ? "text-red-900" : "text-slate-900"}`}
-              >
-                {type.label.replace(" Report", "")}
-              </p>
-            </button>
-          );
-        })}
-      </div>
-
-      <Card>
-        <div className="px-6 py-3 border-b border-slate-200">
+      <Card className="flex-1 flex flex-col min-h-0">
+        <div className="px-6 py-3 border-b border-slate-200 flex-shrink-0">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
               <FileText className="h-6 w-6 text-red-600" />
@@ -890,40 +914,67 @@ export default function Reports() {
                 </p>
               </div>
             </div>
-            {selectedReport !== "employees" && (
+            {selectedReport === "attendance" ? (
+              <div className="flex items-center gap-3">
+                <div className="flex items-center gap-2">
+                  <div className="relative">
+                    <input
+                      type="month"
+                      value={fromAttendance}
+                      onChange={(e) => setFromAttendance(e.target.value)}
+                      className="px-3 py-1.5 text-sm border border-slate-300 rounded-md focus:ring-2 focus:ring-red-500 focus:border-red-500"
+                      placeholder="From Date"
+                    />
+                  </div>
+                  <span className="text-slate-500">to</span>
+                  <div className="relative">
+                    <input
+                      type="month"
+                      value={toAttendance}
+                      min={fromAttendance}
+                      onChange={(e) => setToAttendance(e.target.value)}
+                      className="px-3 py-1.5 text-sm border border-slate-300 rounded-md focus:ring-2 focus:ring-red-500 focus:border-red-500"
+                      placeholder="To Date"
+                    />
+                  </div>
+                </div>
+              </div>
+            ) : selectedReport !== "employees" ? (
               <Select
                 value={dateRange}
                 onChange={(e) => setDateRange(e.target.value)}
                 options={dateRangeOptions}
-                className="w-48"
+                className="w-20"
               />
-            )}
+            ) : null}
           </div>
         </div>
 
-        {loading ? (
-          <div className="flex items-center justify-center py-12">
-            <div className="text-slate-500">Loading report data...</div>
-          </div>
-        ) : error ? (
-          <div className="flex items-center justify-center py-12">
-            <div className="text-red-500">Error: {error}</div>
-          </div>
-        ) : (
-          <div>
-            {selectedReport === "employees" && renderEmployeesReport()}
-            {selectedReport === "attendance" && renderAttendanceReport()}
-            {selectedReport === "leaves" && renderLeavesReport()}
-            {selectedReport === "payroll" && renderPayrollReport()}
-            {selectedReport === "expenses" && renderExpensesReport()}
-            {selectedReport === "tickets" && renderTicketReport()}
-            {selectedReport === "recruitment" && (
-              <div className="flex items-center justify-center py-12">
-                <div className="text-slate-500">Report coming soon...</div>
-              </div>
-            )}
-          </div>
-        )}
+        <div className="flex-1 overflow-hidden min-h-0">
+          {loading ? (
+            <div className="flex items-center justify-center py-12 h-full">
+              <div className="text-slate-500">Loading report data...</div>
+            </div>
+          ) : error ? (
+            <div className="flex items-center justify-center py-12 h-full">
+              <div className="text-red-500">Error: {error}</div>
+            </div>
+          ) : (
+            <div className="h-full overflow-auto">
+              {selectedReport === "employees" && renderEmployeesReport()}
+              {selectedReport === "attendance" && renderAttendanceReport()}
+              {selectedReport === "leaves" && renderLeavesReport()}
+              {selectedReport === "payroll" && renderPayrollReport()}
+              {selectedReport === "expenses" && renderExpensesReport()}
+              {selectedReport === "tickets" && renderTicketReport()}
+              {selectedReport === "recruitment" && (
+                <div className="flex items-center justify-center py-12">
+                  <div className="text-slate-500">Report coming soon...</div>
+                </div>
+              )}
+            </div>
+          )}
+        </div>
       </Card>
     </div>
   );

@@ -31,6 +31,8 @@ import {
   FileText,
 } from "lucide-react";
 import defaultLogo from "../../assets/images/Nayash Logo.png";
+import { SettingsApi } from "../../lib/settingsApi";
+import { toast } from "sonner";
 
 // ###################################################################################
 // SECTION: TYPE DEFINITIONS
@@ -749,7 +751,7 @@ const CreateTemplate = ({
   const [fullscreen, setFullscreen] = useState(false);
   const [selectedTemplateId, setSelectedTemplateId] =
     useState<string>("blank-a4");
-  const [headerLogo, setHeaderLogo] = useState<string>("");
+  const [headerLogo, setHeaderLogo] = useState<any>("");
 
   // REFS
   const descriptionRef = useRef<HTMLTextAreaElement>(null);
@@ -775,26 +777,21 @@ const CreateTemplate = ({
   }, [headerLogo, template?.logo_url]);
 
   // Generate preview content
-  // const generatePreviewContent = useCallback(
-  //   (rawContent: string) => {
-  //     if (!rawContent) return "";
-  //     let result = rawContent;
-  //     const currentLogo = getCurrentLogoUrl();
-  //     result = result.replace(/\{\{company_logo\}\}/g, currentLogo);
-  //     const defaultValuesMap: Record<string, string> = {};
-  //     availableVariables.forEach((variable) => {
-  //       if (variable.defaultValue && variable.name !== "company_logo") {
-  //         defaultValuesMap[variable.name] = variable.defaultValue;
-  //       }
-  //     });
-  //     Object.entries(defaultValuesMap).forEach(([key, value]) => {
-  //       const regex = new RegExp(`\\{\\{${key}\\}\\}`, "g");
-  //       result = result.replace(regex, value);
-  //     });
-  //     return result;
-  //   },
-  //   [availableVariables, getCurrentLogoUrl],
-  // );
+  const generatePreviewContent = (rawContent: string) => {
+    if (!rawContent) return "";
+
+    const currentLogo = getCurrentLogoUrl();
+
+    let result = rawContent;
+
+    // ✅ Replace ONLY inside src attribute
+    result = result.replace(
+      /src=["']\{\{company_logo\}\}["']/g,
+      `src="${currentLogo}"`,
+    );
+
+    return result;
+  };
 
   // Load template by category
   const loadTemplateByCategory = useCallback(
@@ -949,7 +946,7 @@ const CreateTemplate = ({
           if (editorRef.current) {
             const newPreviewHtml = editorRef.current.innerHTML;
             setPreviewContent(newPreviewHtml);
-            setContent(convertPreviewToContent(newPreviewHtml, content));
+            // setContent(convertPreviewToContent(newPreviewHtml, content));
           }
         }, 100);
         return;
@@ -959,7 +956,7 @@ const CreateTemplate = ({
       if (editorRef.current) {
         const newPreviewHtml = editorRef.current.innerHTML;
         setPreviewContent(newPreviewHtml);
-        setContent(convertPreviewToContent(newPreviewHtml, content));
+        // setContent(convertPreviewToContent(newPreviewHtml, content));
       }
     },
     [mode, content, convertPreviewToContent],
@@ -993,7 +990,7 @@ const CreateTemplate = ({
     document.execCommand("foreColor", false, "#000000");
     const newPreviewHtml = editorRef.current.innerHTML;
     setPreviewContent(newPreviewHtml);
-    setContent(convertPreviewToContent(newPreviewHtml, content));
+    // setContent(convertPreviewToContent(newPreviewHtml, content));
   };
 
   const handleCategoryChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
@@ -1207,6 +1204,33 @@ const CreateTemplate = ({
     if (selectedCategory === "all") return availableVariables;
     return availableVariables.filter((v) => v.category === selectedCategory);
   }, [availableVariables, selectedCategory]);
+
+  const fetchLogo = async () => {
+    try {
+      const response = await SettingsApi.getSystemSettings();
+      setHeaderLogo(response.logo);
+      console.log("res logo : ", response);
+    } catch (error: any) {
+      toast.error(error.response.data.message);
+    }
+  };
+
+  useEffect(() => {
+    fetchLogo();
+  }, []);
+
+  useEffect(() => {
+    const preview = generatePreviewContent(content);
+    setPreviewContent(preview);
+
+    if (mode === "visual" && editorRef.current) {
+      isProgrammaticUpdateRef.current = true;
+      editorRef.current.innerHTML = preview;
+      setTimeout(() => {
+        isProgrammaticUpdateRef.current = false;
+      }, 0);
+    }
+  }, [content, headerLogo, mode]);
 
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
@@ -1643,11 +1667,11 @@ const CreateTemplate = ({
                     suppressContentEditableWarning
                     onInput={(e) => {
                       if (isProgrammaticUpdateRef.current) return;
-                      const newPreviewHtml = e.currentTarget.innerHTML;
-                      setPreviewContent(newPreviewHtml);
-                      setContent(
-                        convertPreviewToContent(newPreviewHtml, content),
-                      );
+
+                      const rawHtml = e.currentTarget.innerHTML;
+
+                      // ✅ Save RAW (with variables)
+                      setContent(rawHtml);
                     }}
                     className="min-h-[400px] p-4 text-gray-900 focus:outline-none prose max-w-none"
                     style={{ whiteSpace: "normal" }}

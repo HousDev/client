@@ -1778,32 +1778,32 @@ export default function CreatePurchaseOrderForm({
                       options={allPayments
                         .filter((term: any) => {
                           return !poPaymentTerms.find(
-                            (d: any) => Number(d.id) === Number(term.id)
+                            (d: any) => Number(d.id) === Number(term.id),
                           );
-                        }).map((term: any) => {
-                        const concatinatedTerm = [
-                          term.percentPayment != null
-                            ? `${Number(term.percentPayment).toFixed(2)}`
-                            : "",
+                        })
+                        .map((term: any) => {
+                          const concatinatedTerm = [
+                            term.percentPayment != null
+                              ? `${Number(term.percentPayment).toFixed(2)}`
+                              : "",
 
-                          term.firstText ?? "",
-                          term.gracePeriod != null
-                            ? `${Number(term.gracePeriod).toFixed(2)}`
-                            : "",
+                            term.firstText ?? "",
+                            term.gracePeriod != null
+                              ? `${Number(term.gracePeriod).toFixed(2)}`
+                              : "",
 
-                          term.gracePeriod != null
-                            ? (term.secondText ?? "")
-                            : "",
-                        ]
-                          .filter(Boolean)
-                          .join(" ");
+                            term.gracePeriod != null
+                              ? (term.secondText ?? "")
+                              : "",
+                          ]
+                            .filter(Boolean)
+                            .join(" ");
 
-
-                        return {
-                          id: term.id,
-                          name: concatinatedTerm || "",
-                        };
-                      })}
+                          return {
+                            id: term.id,
+                            name: concatinatedTerm || "",
+                          };
+                        })}
                       value={selectedPaymentTermData.id}
                       onChange={(id) => {
                         const findedData = allPayments.find(

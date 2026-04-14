@@ -181,6 +181,22 @@ const attendanceApi = {
     }
   },
 
+  async getAttendanceByMonthRange(startMonth: string, endMonth: string) {
+    try {
+      const response = await api.get("/attendance/month-range", {
+        params: {
+          startMonth, // format: "YYYY-MM"
+          endMonth, // format: "YYYY-MM"
+        },
+      });
+
+      return response.data;
+    } catch (error: any) {
+      console.error("Get Attendance By Month Range API error:", error);
+      throw error;
+    }
+  },
+
   async getAllTodayAttendence() {
     try {
       // Using statistics as a fallback

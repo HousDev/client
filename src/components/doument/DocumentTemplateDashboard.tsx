@@ -7,6 +7,7 @@ import {
   DocumentTemplatesApi,
   DocumentTemplate,
 } from "../../lib/DocumentTemplatesApi";
+import { SettingsApi } from "../../lib/settingsApi";
 
 type Template = {
   id?: string | number;
@@ -116,9 +117,7 @@ const DocumentTemplateDashboard = () => {
       status: template.is_active === 1 ? "active" : "inactive",
       created_at: template.created_at,
       updated_at: template.updated_at,
-      logo_url: template.logo_url
-        ? import.meta.env.VITE_API_URL + "/uploads/" + template?.logo_url
-        : undefined, // Include logo_url
+      logo_url: template.logo_url ? template?.logo_url : undefined, // Include logo_url
     };
     setEditingTemplate(templateToEdit);
     setShowCreateTemplate(true);
@@ -148,6 +147,18 @@ const DocumentTemplateDashboard = () => {
     setEditingTemplate(null);
     setShowCreateTemplate(true);
   };
+
+  const fetchLogo = async () => {
+    try {
+      await SettingsApi.getSystemSettings();
+    } catch (error: any) {
+      toast.error(error.response.data.message);
+    }
+  };
+
+  useEffect(() => {
+    fetchLogo();
+  }, []);
 
   return (
     <div className="p-6">
