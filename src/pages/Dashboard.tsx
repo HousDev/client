@@ -17,6 +17,7 @@ import {
   Truck,
   PieChart as PieChartIcon,
   BarChart3,
+  IndianRupee,
 } from "lucide-react";
 import {
   BarChart,
@@ -396,9 +397,13 @@ const QuickActionButton: React.FC<QuickActionProps> = ({
   </button>
 );
 
+type DashboardProps = {
+  setActiveTab: React.Dispatch<React.SetStateAction<string>>;
+};
+
 // ==================== MAIN DASHBOARD COMPONENT ====================
-const Dashboard: React.FC = () => {
-  const { user, can } = useAuth();
+const Dashboard = ({ setActiveTab }: DashboardProps) => {
+  const { can } = useAuth();
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [stats, setStats] = useState<DashboardStats>({
@@ -427,7 +432,6 @@ const Dashboard: React.FC = () => {
   const [payments, setPayments] = useState<any[]>([]);
   const [materialRequests, setMaterialRequests] = useState<any[]>([]);
   const [workOrders, setWorkOrders] = useState<any[]>([]);
-  const [recentActivities, setRecentActivities] = useState<any[]>([]);
   const [lastUpdated, setLastUpdated] = useState<Date>(new Date());
 
   // Chart Data States
@@ -447,7 +451,7 @@ const Dashboard: React.FC = () => {
       setPurchaseOrders(pos.slice(0, 5));
 
       const totalPOValue = pos.reduce(
-        (sum: number, po: any) => sum + (po.grand_total || 0),
+        (sum: number, po: any) => sum + (Number(po.grand_total) || 0),
         0,
       );
       const totalPaidAmount = pos.reduce(
@@ -502,6 +506,8 @@ const Dashboard: React.FC = () => {
       const activeWorkOrders = wos.filter(
         (wo: any) => wo.status === "in_progress" || wo.status === "active",
       ).length;
+
+      console.log(wos);
 
       // Update Stats
       setStats({
@@ -595,6 +601,8 @@ const Dashboard: React.FC = () => {
       in_progress: "#3b82f6",
       active: "#3b82f6",
       pending: "#f59e0b",
+      authorize: "#3cb371",
+      approved: "#ffa500",
       pending_approval: "#f59e0b",
       completed: "#10b981",
       on_hold: "#ef4444",
@@ -660,13 +668,6 @@ const Dashboard: React.FC = () => {
     <div className="space-y-6 pb-12">
       {/* Header */}
       <div className="flex flex-wrap justify-between items-center gap-4">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-800">Dashboard</h1>
-          <p className="text-sm text-gray-500 mt-1">
-            Welcome back, {user?.full_name || user?.name || "Admin"}! Here's
-            your business overview.
-          </p>
-        </div>
         <div className="flex items-center gap-3">
           <button
             onClick={handleRefresh}
@@ -682,389 +683,420 @@ const Dashboard: React.FC = () => {
       </div>
 
       {/* Summary Cards Row */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-7 gap-4">
-        <SummaryCard
-          label="Total POs"
-          value={stats.totalPOs}
-          icon={FileText}
-          color="text-blue-600"
-          bgColor="bg-blue-50"
-          subtext={`${stats.approvedPOs} approved • ${stats.pendingPOs} pending`}
-          onClick={() => navigateTo("/purchase-orders")}
-        />
-        <SummaryCard
-          label="PO Value"
-          value={formatCurrency(stats.totalPOValue)}
-          icon={DollarSign}
-          color="text-green-600"
-          bgColor="bg-green-50"
-          subtext={`Paid: ${formatCurrency(stats.totalPaidAmount)}`}
-        />
-        <SummaryCard
-          label="Vendors"
-          value={stats.totalVendors}
-          icon={Building2}
-          color="text-emerald-600"
-          bgColor="bg-emerald-50"
-          subtext={`${stats.activeVendors} active`}
-          onClick={() => navigateTo("/vendors")}
-        />
-        <SummaryCard
-          label="Work Orders"
-          value={stats.totalWorkOrders}
-          icon={Briefcase}
-          color="text-purple-600"
-          bgColor="bg-purple-50"
-          subtext={`${stats.activeWorkOrders} in progress`}
-          onClick={() => navigateTo("/work-orders")}
-        />
-        <SummaryCard
-          label="Employees"
-          value={stats.totalEmployees}
-          icon={Users}
-          color="text-cyan-600"
-          bgColor="bg-cyan-50"
-          subtext={`${stats.activeEmployees} active`}
-          onClick={() => navigateTo("/hrms")}
-        />
-        <SummaryCard
-          label="Projects"
-          value={stats.totalProjects}
-          icon={Truck}
-          color="text-orange-600"
-          bgColor="bg-orange-50"
-          subtext={`${stats.ongoingProjects} ongoing`}
-          onClick={() => navigateTo("/projects")}
-        />
-        <SummaryCard
-          label="Material Requests"
-          value={`${stats.approvedRequests}/${stats.totalMaterialRequests}`}
-          icon={Package}
-          color="text-amber-600"
-          bgColor="bg-amber-50"
-          subtext={`${stats.lowStockItems} low stock items`}
-          onClick={() => navigateTo("/material-requests")}
-        />
+      <div className="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-7 gap-4">
+        {can("view_pos") && (
+          <SummaryCard
+            label="Total POs"
+            value={stats.totalPOs}
+            icon={FileText}
+            color="text-blue-600"
+            bgColor="bg-blue-50"
+            subtext={`${stats.approvedPOs} approved • ${stats.pendingPOs} pending`}
+            onClick={() => setActiveTab("purchase-orders")}
+          />
+        )}
+
+        {can("view_pos") && (
+          <SummaryCard
+            label="PO Value"
+            value={formatCurrency(stats.totalPOValue)}
+            icon={IndianRupee}
+            color="text-green-600"
+            bgColor="bg-green-50"
+            subtext={`Paid: ${formatCurrency(stats.totalPaidAmount)}`}
+          />
+        )}
+
+        {can("view_vendors") && (
+          <SummaryCard
+            label="Vendors"
+            value={stats.totalVendors}
+            icon={Building2}
+            color="text-emerald-600"
+            bgColor="bg-emerald-50"
+            subtext={`${stats.activeVendors} active`}
+            onClick={() => setActiveTab("vendors")}
+          />
+        )}
+        {can("view_wo") && (
+          <SummaryCard
+            label="Work Orders"
+            value={stats.totalWorkOrders}
+            icon={Briefcase}
+            color="text-purple-600"
+            bgColor="bg-purple-50"
+            subtext={`${stats.activeWorkOrders} in progress`}
+            onClick={() => setActiveTab("service-orders")}
+          />
+        )}
+        {can("view_employee") && (
+          <SummaryCard
+            label="Employees"
+            value={stats.totalEmployees}
+            icon={Users}
+            color="text-cyan-600"
+            bgColor="bg-cyan-50"
+            subtext={`${stats.activeEmployees} active`}
+            onClick={() => setActiveTab("employees")}
+          />
+        )}
+        {can("view_projects") && (
+          <SummaryCard
+            label="Projects"
+            value={stats.totalProjects}
+            icon={Truck}
+            color="text-orange-600"
+            bgColor="bg-orange-50"
+            subtext={`${stats.ongoingProjects} ongoing`}
+            onClick={() => setActiveTab("projects")}
+          />
+        )}
+        {can("view_material_requests") && (
+          <SummaryCard
+            label="Material Requests"
+            value={`${stats.approvedRequests}/${stats.totalMaterialRequests}`}
+            icon={Package}
+            color="text-amber-600"
+            bgColor="bg-amber-50"
+            subtext={`${stats.lowStockItems} low stock items`}
+            onClick={() => setActiveTab("material-requests")}
+          />
+        )}
       </div>
 
       {/* Charts Section */}
       {/* Charts Section */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Bar Chart - PO vs Payments */}
-        <ChartCard title="Purchase Orders vs Payments" icon={BarChart3}>
-          <div className="h-72">
-            <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={poVsPaymentData}>
-                <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
-                <XAxis dataKey="name" tick={{ fontSize: 11 }} />
-                <YAxis tick={{ fontSize: 11 }} />
-                <Tooltip
-                  formatter={(
-                    value: number | undefined,
-                    name: string | undefined,
-                  ) => {
-                    if (value === undefined) return ["0", name || ""];
-                    return [value.toString(), name || ""];
-                  }}
-                  contentStyle={{
-                    borderRadius: "8px",
-                    border: "none",
-                    boxShadow: "0 4px 6px -1px rgb(0 0 0 / 0.1)",
-                  }}
-                />
-                <Legend />
-                <Bar
-                  dataKey="purchaseOrders"
-                  name="Purchase Orders"
-                  fill="#3b82f6"
-                  radius={[4, 4, 0, 0]}
-                />
-                <Bar
-                  dataKey="payments"
-                  name="Payments"
-                  fill="#10b981"
-                  radius={[4, 4, 0, 0]}
-                />
-              </BarChart>
-            </ResponsiveContainer>
-          </div>
-        </ChartCard>
+        {can("view_pos") && can("view_payments") && (
+          <ChartCard title="Purchase Orders vs Payments" icon={BarChart3}>
+            <div className="h-72">
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart data={poVsPaymentData}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
+                  <XAxis dataKey="name" tick={{ fontSize: 11 }} />
+                  <YAxis tick={{ fontSize: 11 }} />
+                  <Tooltip
+                    formatter={(
+                      value: number | undefined,
+                      name: string | undefined,
+                    ) => {
+                      if (value === undefined) return ["0", name || ""];
+                      return [value.toString(), name || ""];
+                    }}
+                    contentStyle={{
+                      borderRadius: "8px",
+                      border: "none",
+                      boxShadow: "0 4px 6px -1px rgb(0 0 0 / 0.1)",
+                    }}
+                  />
+                  <Legend />
+                  <Bar
+                    dataKey="purchaseOrders"
+                    name="Purchase Orders"
+                    fill="#3b82f6"
+                    radius={[4, 4, 0, 0]}
+                  />
+                  <Bar
+                    dataKey="payments"
+                    name="Payments"
+                    fill="#10b981"
+                    radius={[4, 4, 0, 0]}
+                  />
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
+          </ChartCard>
+        )}
 
         {/* Line Chart - Monthly Expenses */}
-        <ChartCard title="Monthly Expenses" icon={TrendingUp}>
-          <div className="h-72">
-            <ResponsiveContainer width="100%" height="100%">
-              <AreaChart data={monthlyExpenseData}>
-                <defs>
-                  <linearGradient
-                    id="expenseGradient"
-                    x1="0"
-                    y1="0"
-                    x2="0"
-                    y2="1"
-                  >
-                    <stop offset="5%" stopColor="#ef4444" stopOpacity={0.3} />
-                    <stop offset="95%" stopColor="#ef4444" stopOpacity={0} />
-                  </linearGradient>
-                </defs>
-                <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
-                <XAxis dataKey="month" tick={{ fontSize: 11 }} />
-                <YAxis
-                  tick={{ fontSize: 11 }}
-                  tickFormatter={(value: number) => formatCurrency(value)}
-                />
-                <Tooltip
-                  formatter={(
-                    value: number | undefined,
-                    name: string | undefined,
-                  ) => {
-                    if (value === undefined) return ["₹0", name || "Expenses"];
-                    return [formatCurrency(value), name || "Expenses"];
-                  }}
-                  contentStyle={{
-                    borderRadius: "8px",
-                    border: "none",
-                    boxShadow: "0 4px 6px -1px rgb(0 0 0 / 0.1)",
-                  }}
-                />
-                <Area
-                  type="monotone"
-                  dataKey="expenses"
-                  name="Expenses"
-                  stroke="#ef4444"
-                  strokeWidth={2}
-                  fill="url(#expenseGradient)"
-                />
-              </AreaChart>
-            </ResponsiveContainer>
-          </div>
-        </ChartCard>
+        {can("view_expenses") && (
+          <ChartCard title="Monthly Expenses" icon={TrendingUp}>
+            <div className="h-72">
+              <ResponsiveContainer width="100%" height="100%">
+                <AreaChart data={monthlyExpenseData}>
+                  <defs>
+                    <linearGradient
+                      id="expenseGradient"
+                      x1="0"
+                      y1="0"
+                      x2="0"
+                      y2="1"
+                    >
+                      <stop offset="5%" stopColor="#ef4444" stopOpacity={0.3} />
+                      <stop offset="95%" stopColor="#ef4444" stopOpacity={0} />
+                    </linearGradient>
+                  </defs>
+                  <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
+                  <XAxis dataKey="month" tick={{ fontSize: 11 }} />
+                  <YAxis
+                    tick={{ fontSize: 11 }}
+                    tickFormatter={(value: number) => formatCurrency(value)}
+                  />
+                  <Tooltip
+                    formatter={(
+                      value: number | undefined,
+                      name: string | undefined,
+                    ) => {
+                      if (value === undefined)
+                        return ["₹0", name || "Expenses"];
+                      return [formatCurrency(value), name || "Expenses"];
+                    }}
+                    contentStyle={{
+                      borderRadius: "8px",
+                      border: "none",
+                      boxShadow: "0 4px 6px -1px rgb(0 0 0 / 0.1)",
+                    }}
+                  />
+                  <Area
+                    type="monotone"
+                    dataKey="expenses"
+                    name="Expenses"
+                    stroke="#ef4444"
+                    strokeWidth={2}
+                    fill="url(#expenseGradient)"
+                  />
+                </AreaChart>
+              </ResponsiveContainer>
+            </div>
+          </ChartCard>
+        )}
 
         {/* Pie Chart - Work Order Status */}
-        <ChartCard title="Work Order Status" icon={PieChartIcon}>
-          <div className="h-72">
-            <ResponsiveContainer width="100%" height="100%">
-              <PieChart>
-                <Pie
-                  data={workOrderStatusData}
-                  cx="50%"
-                  cy="50%"
-                  innerRadius={60}
-                  outerRadius={80}
-                  paddingAngle={5}
-                  dataKey="value"
-                  stroke="none"
-                >
-                  {workOrderStatusData.map((entry, index) => (
-                    <Cell key={`cell-${index}`} fill={entry.color} />
-                  ))}
-                </Pie>
-                <Tooltip
-                  formatter={(
-                    value: number | undefined,
-                    name: string | undefined,
-                  ) => {
-                    if (value === undefined) return ["0", name || ""];
-                    return [`${value}`, name || ""];
-                  }}
-                  contentStyle={{
-                    borderRadius: "8px",
-                    border: "none",
-                    boxShadow: "0 4px 6px -1px rgb(0 0 0 / 0.1)",
-                  }}
-                />
-                <Legend
-                  layout="vertical"
-                  verticalAlign="middle"
-                  align="right"
-                  wrapperStyle={{ fontSize: "12px" }}
-                />
-              </PieChart>
-            </ResponsiveContainer>
-          </div>
-        </ChartCard>
+        {can("view_wo") && (
+          <ChartCard title="Work Order Status" icon={PieChartIcon}>
+            <div className="h-72">
+              <ResponsiveContainer width="100%" height="100%">
+                <PieChart>
+                  <Pie
+                    data={workOrderStatusData}
+                    cx="50%"
+                    cy="50%"
+                    innerRadius={60}
+                    outerRadius={80}
+                    paddingAngle={5}
+                    dataKey="value"
+                    stroke="none"
+                  >
+                    {workOrderStatusData.map((entry, index) => (
+                      <Cell key={`cell-${index}`} fill={entry.color} />
+                    ))}
+                  </Pie>
+                  <Tooltip
+                    formatter={(
+                      value: number | undefined,
+                      name: string | undefined,
+                    ) => {
+                      if (value === undefined) return ["0", name || ""];
+                      return [`${value}`, name || ""];
+                    }}
+                    contentStyle={{
+                      borderRadius: "8px",
+                      border: "none",
+                      boxShadow: "0 4px 6px -1px rgb(0 0 0 / 0.1)",
+                    }}
+                  />
+                  <Legend
+                    layout="vertical"
+                    verticalAlign="middle"
+                    align="right"
+                    wrapperStyle={{ fontSize: "12px" }}
+                  />
+                </PieChart>
+              </ResponsiveContainer>
+            </div>
+          </ChartCard>
+        )}
       </div>
 
       {/* Recent Activity Tables */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Latest Purchase Orders */}
-        <ActivityTable
-          title="Latest Purchase Orders"
-          icon={ShoppingCart}
-          columns={["PO Number", "Vendor", "Amount", "Status", "Payment"]}
-          data={purchaseOrders}
-          renderRow={(po: any) => (
-            <>
-              <td className="px-6 py-4">
-                <p className="text-sm font-medium text-gray-800">
-                  {po.po_number || `PO-${po.id}`}
-                </p>
-                <p className="text-xs text-gray-400">
-                  {formatDate(po.po_date || po.created_at)}
-                </p>
-              </td>
-              <td className="px-6 py-4 text-sm text-gray-600">
-                {po.vendors?.name || po.vendor_name || "N/A"}
-              </td>
-              <td className="px-6 py-4 text-sm font-semibold text-gray-800">
-                {formatCurrency(po.grand_total)}
-              </td>
-              <td className="px-6 py-4">
-                <span
-                  className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(po.status)}`}
-                >
-                  {(po.status || "draft").toUpperCase()}
-                </span>
-              </td>
-              <td className="px-6 py-4">
-                <span
-                  className={`px-2 py-1 rounded-full text-xs font-medium ${getPaymentStatusColor(po.payment_status)}`}
-                >
-                  {(po.payment_status || "pending").toUpperCase()}
-                </span>
-              </td>
-            </>
-          )}
-          action={
-            <button
-              onClick={() => navigateTo("/purchase-orders")}
-              className="text-xs text-blue-600 hover:text-blue-700 font-medium"
-            >
-              View All →
-            </button>
-          }
-          onRowClick={(po) => navigateTo(`/purchase-orders/${po.id}`)}
-        />
+        {can("view_pos") && (
+          <ActivityTable
+            title="Latest Purchase Orders"
+            icon={ShoppingCart}
+            columns={["PO Number", "Vendor", "Amount", "Status", "Payment"]}
+            data={purchaseOrders}
+            renderRow={(po: any) => (
+              <>
+                <td className="px-6 py-4">
+                  <p className="text-sm font-medium text-gray-800">
+                    {po.po_number || `PO-${po.id}`}
+                  </p>
+                  <p className="text-xs text-gray-400">
+                    {formatDate(po.po_date || po.created_at)}
+                  </p>
+                </td>
+                <td className="px-6 py-4 text-sm text-gray-600">
+                  {po.vendors?.name || po.vendor_name || "N/A"}
+                </td>
+                <td className="px-6 py-4 text-sm font-semibold text-gray-800">
+                  {formatCurrency(po.grand_total)}
+                </td>
+                <td className="px-6 py-4">
+                  <span
+                    className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(po.status)}`}
+                  >
+                    {(po.status || "draft").toUpperCase()}
+                  </span>
+                </td>
+                <td className="px-6 py-4">
+                  <span
+                    className={`px-2 py-1 rounded-full text-xs font-medium ${getPaymentStatusColor(po.payment_status)}`}
+                  >
+                    {(po.payment_status || "pending").toUpperCase()}
+                  </span>
+                </td>
+              </>
+            )}
+            action={
+              <button
+                onClick={() => setActiveTab("purchase-orders")}
+                className="text-xs text-blue-600 hover:text-blue-700 font-medium"
+              >
+                View All →
+              </button>
+            }
+            onRowClick={(po) => setActiveTab("purchase-orders")}
+          />
+        )}
 
         {/* Recent Payments */}
-        <ActivityTable
-          title="Recent Payments"
-          icon={CreditCard}
-          columns={["Payment No", "PO/Vendor", "Amount", "Date", "Status"]}
-          data={payments}
-          renderRow={(payment: any) => (
-            <>
-              <td className="px-6 py-4">
-                <p className="text-sm font-medium text-gray-800">
-                  {payment.payment_number || `PAY-${payment.id}`}
-                </p>
-              </td>
-              <td className="px-6 py-4">
-                <p className="text-sm text-gray-800">
-                  {payment.po_number || "N/A"}
-                </p>
-                <p className="text-xs text-gray-400">{payment.vendor_name}</p>
-              </td>
-              <td className="px-6 py-4 text-sm font-semibold text-green-600">
-                {formatCurrency(payment.amount)}
-              </td>
-              <td className="px-6 py-4 text-sm text-gray-500">
-                {formatDate(payment.payment_date)}
-              </td>
-              <td className="px-6 py-4">
-                <span
-                  className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(payment.status)}`}
-                >
-                  {(payment.status || "pending").toUpperCase()}
-                </span>
-              </td>
-            </>
-          )}
-          action={
-            <button
-              onClick={() => navigateTo("/payments")}
-              className="text-xs text-blue-600 hover:text-blue-700 font-medium"
-            >
-              View All →
-            </button>
-          }
-        />
+        {can("view_payments") && (
+          <ActivityTable
+            title="Recent Payments"
+            icon={CreditCard}
+            columns={["Payment No", "PO/Vendor", "Amount", "Date", "Status"]}
+            data={payments}
+            renderRow={(payment: any) => (
+              <>
+                <td className="px-6 py-4">
+                  <p className="text-sm font-medium text-gray-800">
+                    {payment.payment_number || `PAY-${payment.id}`}
+                  </p>
+                </td>
+                <td className="px-6 py-4">
+                  <p className="text-sm text-gray-800">
+                    {payment.po_number || "N/A"}
+                  </p>
+                  <p className="text-xs text-gray-400">{payment.vendor_name}</p>
+                </td>
+                <td className="px-6 py-4 text-sm font-semibold text-green-600">
+                  {formatCurrency(payment.amount)}
+                </td>
+                <td className="px-6 py-4 text-sm text-gray-500">
+                  {formatDate(payment.payment_date)}
+                </td>
+                <td className="px-6 py-4">
+                  <span
+                    className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(payment.status)}`}
+                  >
+                    {(payment.status || "pending").toUpperCase()}
+                  </span>
+                </td>
+              </>
+            )}
+            action={
+              <button
+                onClick={() => setActiveTab("payments")}
+                className="text-xs text-blue-600 hover:text-blue-700 font-medium"
+              >
+                View All →
+              </button>
+            }
+          />
+        )}
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Material Requests */}
-        <ActivityTable
-          title="Material Requests"
-          icon={Package}
-          columns={["Request No", "Requester", "Project", "Items", "Status"]}
-          data={materialRequests}
-          renderRow={(request: any) => (
-            <>
-              <td className="px-6 py-4">
-                <p className="text-sm font-medium text-gray-800">
-                  {request.request_no || `MR-${request.id}`}
-                </p>
-              </td>
-              <td className="px-6 py-4 text-sm text-gray-600">
-                {request.user_name || request.created_by_name || "N/A"}
-              </td>
-              <td className="px-6 py-4 text-sm text-gray-600">
-                {request.project_name || request.projectId || "N/A"}
-              </td>
-              <td className="px-6 py-4 text-sm text-gray-600">
-                {request.materials?.length || request.items_count || 0}
-              </td>
-              <td className="px-6 py-4">
-                <span
-                  className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(request.status)}`}
-                >
-                  {(request.status || "draft").toUpperCase()}
-                </span>
-              </td>
-            </>
-          )}
-          action={
-            <button
-              onClick={() => navigateTo("/material-requests")}
-              className="text-xs text-blue-600 hover:text-blue-700 font-medium"
-            >
-              View All →
-            </button>
-          }
-          onRowClick={(req) => navigateTo(`/material-requests/${req.id}`)}
-        />
+        {can("view_material_requests") && (
+          <ActivityTable
+            title="Material Requests"
+            icon={Package}
+            columns={["Request No", "Requester", "Project", "Items", "Status"]}
+            data={materialRequests}
+            renderRow={(request: any) => (
+              <>
+                <td className="px-6 py-4">
+                  <p className="text-sm font-medium text-gray-800">
+                    {request.request_no || `MR-${request.id}`}
+                  </p>
+                </td>
+                <td className="px-6 py-4 text-sm text-gray-600">
+                  {request.user_name || request.created_by_name || "N/A"}
+                </td>
+                <td className="px-6 py-4 text-sm text-gray-600">
+                  {request.project_name || request.projectId || "N/A"}
+                </td>
+                <td className="px-6 py-4 text-sm text-gray-600">
+                  {request.materials?.length || request.items_count || 0}
+                </td>
+                <td className="px-6 py-4">
+                  <span
+                    className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(request.status)}`}
+                  >
+                    {(request.status || "draft").toUpperCase()}
+                  </span>
+                </td>
+              </>
+            )}
+            action={
+              <button
+                onClick={() => setActiveTab("material-requests")}
+                className="text-xs text-blue-600 hover:text-blue-700 font-medium"
+              >
+                View All →
+              </button>
+            }
+            onRowClick={() => setActiveTab(`material-requests`)}
+          />
+        )}
 
         {/* Work Orders */}
-        <ActivityTable
-          title="Active Work Orders"
-          icon={Briefcase}
-          columns={["WO Number", "Vendor", "Project", "Amount", "Status"]}
-          data={workOrders}
-          renderRow={(wo: any) => (
-            <>
-              <td className="px-6 py-4">
-                <p className="text-sm font-medium text-gray-800">
-                  {wo.so_number || `WO-${wo.id}`}
-                </p>
-              </td>
-              <td className="px-6 py-4 text-sm text-gray-600">
-                {wo.vendors?.name || wo.vendor_name || "N/A"}
-              </td>
-              <td className="px-6 py-4 text-sm text-gray-600">
-                {wo.projects?.name || wo.project_name || "N/A"}
-              </td>
-              <td className="px-6 py-4 text-sm font-semibold text-gray-800">
-                {formatCurrency(wo.grand_total)}
-              </td>
-              <td className="px-6 py-4">
-                <span
-                  className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(wo.status)}`}
-                >
-                  {(wo.status || "draft").toUpperCase()}
-                </span>
-              </td>
-            </>
-          )}
-          action={
-            <button
-              onClick={() => navigateTo("/work-orders")}
-              className="text-xs text-blue-600 hover:text-blue-700 font-medium"
-            >
-              View All →
-            </button>
-          }
-          onRowClick={(wo) => navigateTo(`/work-orders/${wo.id}`)}
-        />
+        {can("view_wo") && (
+          <ActivityTable
+            title="Active Work Orders"
+            icon={Briefcase}
+            columns={["WO Number", "Vendor", "Project", "Amount", "Status"]}
+            data={workOrders}
+            renderRow={(wo: any) => (
+              <>
+                <td className="px-6 py-4">
+                  <p className="text-sm font-medium text-gray-800">
+                    {wo.so_number || `WO-${wo.id}`}
+                  </p>
+                </td>
+                <td className="px-6 py-4 text-sm text-gray-600">
+                  {wo.vendors?.name || wo.vendor || "N/A"}
+                </td>
+                <td className="px-6 py-4 text-sm text-gray-600">
+                  {wo.projects?.name || wo.project || "N/A"}
+                </td>
+                <td className="px-6 py-4 text-sm font-semibold text-gray-800">
+                  {formatCurrency(wo.grand_total)}
+                </td>
+                <td className="px-6 py-4">
+                  <span
+                    className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(wo.status)}`}
+                  >
+                    {(wo.status || "draft").toUpperCase()}
+                  </span>
+                </td>
+              </>
+            )}
+            action={
+              <button
+                onClick={() => setActiveTab("service-orders")}
+                className="text-xs text-blue-600 hover:text-blue-700 font-medium"
+              >
+                View All →
+              </button>
+            }
+            onRowClick={() => setActiveTab(`service-orders`)}
+          />
+        )}
       </div>
 
       {/* Quick Actions */}
@@ -1074,34 +1106,45 @@ const Dashboard: React.FC = () => {
           Quick Actions
         </h3>
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
-          <QuickActionButton
-            icon={FileText}
-            label="Create Purchase Order"
-            description="Create new purchase order"
-            onClick={() => navigateTo("/purchase-orders/new")}
-            color="bg-blue-600"
-          />
-          <QuickActionButton
-            icon={Building2}
-            label="Add Vendor"
-            description="Register new vendor"
-            onClick={() => navigateTo("/vendors/new")}
-            color="bg-emerald-600"
-          />
-          <QuickActionButton
-            icon={Briefcase}
-            label="Create Work Order"
-            description="Create new work order"
-            onClick={() => navigateTo("/work-orders/new")}
-            color="bg-purple-600"
-          />
-          <QuickActionButton
-            icon={UserPlus}
-            label="Add Employee"
-            description="Add new employee"
-            onClick={() => navigateTo("/hrms/employees/new")}
-            color="bg-cyan-600"
-          />
+          {can("view_pos") && (
+            <QuickActionButton
+              icon={FileText}
+              label="Purchase Order"
+              description="purchase order management."
+              onClick={() => setActiveTab("purchase-orders")}
+              color="bg-blue-600"
+            />
+          )}
+
+          {can("view_vendors") && (
+            <QuickActionButton
+              icon={Building2}
+              label="Vendor"
+              description="vendor management."
+              onClick={() => setActiveTab("vendors")}
+              color="bg-emerald-600"
+            />
+          )}
+
+          {can("view_wo") && (
+            <QuickActionButton
+              icon={Briefcase}
+              label="Work Order"
+              description="work order management."
+              onClick={() => setActiveTab("service-orders")}
+              color="bg-purple-600"
+            />
+          )}
+
+          {can("employees") && (
+            <QuickActionButton
+              icon={UserPlus}
+              label="Employee"
+              description="employee management."
+              onClick={() => setActiveTab("employees")}
+              color="bg-cyan-600"
+            />
+          )}
         </div>
       </div>
 

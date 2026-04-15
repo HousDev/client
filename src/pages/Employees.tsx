@@ -1029,6 +1029,20 @@ export default function Employees({ onViewProfile }: EmployeesProps) {
                           </button>
                         )}
 
+                        {/* Edit Profile Button */}
+                        {can("edit_employee") && (
+                          <button
+                            onClick={() => {
+                              setShowEditModal(true);
+                              setSelectedEmployee(employee);
+                            }}
+                            className="p-1.5 md:p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition"
+                            title="View Profile"
+                          >
+                            <Edit className="w-3.5 h-3.5 md:w-4 md:h-4" />
+                          </button>
+                        )}
+
                         {/* Delete Button */}
                         {can("delete_employee") && (
                           <button

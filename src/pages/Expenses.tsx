@@ -12,6 +12,7 @@ import {
   X,
   MoreVertical,
   AlertTriangle,
+  Eye,
 } from "lucide-react";
 import Card from "../components/ui/Card";
 import Button from "../components/ui/Button";
@@ -35,6 +36,9 @@ export default function Expenses() {
   const [showSubmitModal, setShowSubmitModal] = useState(false);
   const [showRejectModal, setShowRejectModal] = useState(false);
   const [rejectReason, setRejectReason] = useState("");
+
+  const [showViewModal, setShowViewModal] = useState(false);
+
   const [selectedExpenseId, setSelectedExpenseId] = useState<number | null>(
     null,
   );
@@ -58,6 +62,31 @@ export default function Expenses() {
   const [searchAmount, setSearchAmount] = useState("");
   const [searchDate, setSearchDate] = useState("");
   const [searchStatus, setSearchStatus] = useState("");
+  const [selectedExpense, setSelectedExpense] = useState<any>({
+    amount: "",
+    approval_date: "",
+    approval_notes: "",
+    approver_id: "",
+    approver_name: "",
+    category: "",
+    claim_number: "",
+    created_at: "",
+    currency: "",
+    description: "",
+    employee: undefined,
+    employee_id: "",
+    employee_name: "",
+    expense_date: "",
+    id: "",
+    merchant_vendor_name: "",
+    receipt_file_type: null,
+    receipt_original_name: null,
+    receipt_path: null,
+    receipt_size: null,
+    rejection_reason: null,
+    status: "",
+    updated_at: "",
+  });
 
   // Date filter states
   const [startDate, setStartDate] = useState<Date | null>(null);
@@ -179,6 +208,7 @@ export default function Expenses() {
         });
       }
     }
+    console.log(filtered);
 
     setFilteredExpenses(filtered);
     setSelectAll(false);
@@ -930,20 +960,20 @@ export default function Expenses() {
                       {openMenuId === expense.id && (
                         <div className="absolute right-4 top-10 z-50 w-44 bg-white border border-gray-200 rounded-lg shadow-lg">
                           <ul className="py-1 text-sm text-gray-700">
-                            {expense.receipt_path && (
+                            {
                               <li>
                                 <button
                                   onClick={() => {
-                                    handleViewReceipt(expense);
-                                    setOpenMenuId(null);
+                                    setShowViewModal(true);
+                                    setSelectedExpense(expense);
                                   }}
                                   className="w-full flex items-center gap-2 px-4 py-2 hover:bg-gray-100 text-blue-600 text-left"
                                 >
                                   <FileText className="w-4 h-4" />
-                                  View Receipt
+                                  View Expense
                                 </button>
                               </li>
-                            )}
+                            }
                             {expense.status === "pending" && (
                               <>
                                 <li>
@@ -1261,6 +1291,245 @@ export default function Expenses() {
               >
                 Confirm Rejection
               </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {showViewModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-4xl max-h-[95vh] overflow-hidden">
+            <div className="bg-[#C62828] px-6 py-4 flex justify-between items-center">
+              <div className="flex items-center space-x-3">
+                <h2 className="text-2xl font-bold text-white">
+                  Expense Details - {selectedExpense.claim_number}
+                </h2>
+                {/* Status Badge */}
+                <div>
+                  <span
+                    className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium
+          ${
+            selectedExpense.status === "approved"
+              ? "bg-green-100 text-green-800"
+              : status === "rejected"
+                ? "bg-red-100 text-red-800"
+                : "bg-yellow-100 text-yellow-800"
+          }`}
+                  >
+                    {selectedExpense.status?.toUpperCase()}
+                  </span>
+                </div>
+              </div>
+              <button
+                onClick={() => setShowViewModal(false)}
+                className="text-white hover:bg-white hover:bg-opacity-20 rounded-lg p-2 transition"
+              >
+                <X className="w-6 h-6" />
+              </button>
+            </div>
+            <div className="overflow-y-auto max-h-[900px] p-6">
+              {/* Two Column Grid */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                {/* Left Column */}
+                <div className="space-y-4">
+                  <div className="border-b pb-2">
+                    <label className="text-xs text-gray-500 font-medium">
+                      Claim Number
+                    </label>
+                    <p className="text-gray-900 font-semibold mt-1">
+                      {selectedExpense.claim_number}
+                    </p>
+                  </div>
+
+                  <div className="border-b pb-2">
+                    <label className="text-xs text-gray-500 font-medium">
+                      Amount
+                    </label>
+                    <p className="text-2xl font-bold text-[#C62828] mt-1">
+                      {selectedExpense.currency}{" "}
+                      {parseFloat(selectedExpense.amount).toLocaleString(
+                        "en-IN",
+                        {
+                          minimumFractionDigits: 2,
+                        },
+                      )}
+                    </p>
+                  </div>
+
+                  <div className="border-b pb-2">
+                    <label className="text-xs text-gray-500 font-medium">
+                      Category
+                    </label>
+                    <p className="text-gray-900 mt-1">
+                      {selectedExpense.category}
+                    </p>
+                  </div>
+
+                  <div className="border-b pb-2">
+                    <label className="text-xs text-gray-500 font-medium">
+                      Expense Date
+                    </label>
+                    <p className="text-gray-900 mt-1">
+                      {new Date(
+                        selectedExpense.expense_date,
+                      ).toLocaleDateString("en-IN", {
+                        day: "2-digit",
+                        month: "long",
+                        year: "numeric",
+                      })}
+                    </p>
+                  </div>
+
+                  <div className="border-b pb-2">
+                    <label className="text-xs text-gray-500 font-medium">
+                      Merchant/Vendor
+                    </label>
+                    <p className="text-gray-900 mt-1">
+                      {selectedExpense.merchant_vendor_name}
+                    </p>
+                  </div>
+                </div>
+
+                {/* Right Column */}
+                <div className="space-y-4">
+                  <div className="border-b pb-2">
+                    <label className="text-xs text-gray-500 font-medium">
+                      Employee Name
+                    </label>
+                    <p className="text-gray-900 font-semibold mt-1">
+                      {selectedExpense.employee_name}
+                    </p>
+                  </div>
+
+                  <div className="border-b pb-2">
+                    <label className="text-xs text-gray-500 font-medium">
+                      Employee ID
+                    </label>
+                    <p className="text-gray-900 mt-1">
+                      {selectedExpense.employee_id}
+                    </p>
+                  </div>
+
+                  <div className="border-b pb-2">
+                    <label className="text-xs text-gray-500 font-medium">
+                      Approved By
+                    </label>
+                    <p className="text-gray-900 mt-1">
+                      {selectedExpense.approver_name}
+                    </p>
+                    <p className="text-xs text-gray-400 mt-0.5">
+                      {new Date(selectedExpense.approval_date).toLocaleString(
+                        "en-IN",
+                      )}
+                    </p>
+                  </div>
+
+                  <div className="border-b pb-2">
+                    <label className="text-xs text-gray-500 font-medium">
+                      Created At
+                    </label>
+                    <p className="text-gray-900 mt-1">
+                      {new Date(selectedExpense.created_at).toLocaleString(
+                        "en-IN",
+                      )}
+                    </p>
+                  </div>
+
+                  {selectedExpense.rejection_reason && (
+                    <div className="border-b pb-2">
+                      <label className="text-xs text-gray-500 font-medium">
+                        Rejection Reason
+                      </label>
+                      <p className="text-red-600 mt-1">
+                        {selectedExpense.rejection_reason}
+                      </p>
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* Description Section - Full Width */}
+              <div className="mt-6 pt-4 border-t">
+                <label className="text-xs text-gray-500 font-medium">
+                  Description
+                </label>
+                <p className="text-gray-900 mt-1 bg-gray-50 p-3 rounded-lg">
+                  {selectedExpense.description}
+                </p>
+              </div>
+
+              {/* Approval Notes Section - Full Width */}
+              {selectedExpense.approval_notes && (
+                <div className="mt-4 pt-2">
+                  <label className="text-xs text-gray-500 font-medium">
+                    Approval Notes
+                  </label>
+                  <p className="text-gray-900 mt-1 bg-gray-50 p-3 rounded-lg">
+                    {selectedExpense.approval_notes}
+                  </p>
+                </div>
+              )}
+
+              {/* Receipt Section - If available */}
+              {selectedExpense.receipt_path ? (
+                <div className="mt-6 pt-4 border-t">
+                  <label className="text-xs text-gray-500 font-medium">
+                    Receipt
+                  </label>
+                  <div className="mt-2">
+                    <button
+                      onClick={() => {
+                        handleViewReceipt(selectedExpense);
+                      }}
+                      className="inline-flex items-center px-4 py-2 bg-blue-50 text-blue-600 rounded-lg hover:bg-blue-100 transition"
+                    >
+                      <Eye className="text-blue-600 w-4 h-4 mr-3" />
+                      View Receipt
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                <div className="mt-6 pt-4 border-t">
+                  <label className="text-xs text-gray-500 font-medium">
+                    Receipt
+                  </label>
+                  <p className="text-gray-400 italic mt-1">
+                    No receipt uploaded
+                  </p>
+                </div>
+              )}
+
+              {/* Footer with Actions */}
+              <div className="mt-6 pt-4 border-t flex justify-end space-x-3">
+                <button
+                  onClick={() => setShowViewModal(false)}
+                  className="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition"
+                >
+                  Close
+                </button>
+                {selectedExpense.status === "pending" && (
+                  <>
+                    <button
+                      onClick={() => {
+                        handleApprove(selectedExpense.id);
+                        setOpenMenuId(null);
+                      }}
+                      className="px-4 py-2 bg-yellow-500 text-white rounded-lg hover:bg-yellow-600 transition"
+                    >
+                      Approve
+                    </button>
+                    <button
+                      onClick={() => {
+                        handleRejectClick(selectedExpense.id);
+                        setOpenMenuId(null);
+                      }}
+                      className="px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition"
+                    >
+                      Reject
+                    </button>
+                  </>
+                )}
+              </div>
             </div>
           </div>
         </div>

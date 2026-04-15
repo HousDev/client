@@ -48,6 +48,9 @@ const ServiceOrdersApi = {
   getAll: async (): Promise<ServiceOrder[]> =>
     unwrap(api.get("/service-orders")),
 
+  getEmployeeSos: async (id: number | string): Promise<ServiceOrder[]> =>
+    unwrap(api.get("/service-orders/" + id)),
+
   /**
    * GET all service orders
    */

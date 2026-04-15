@@ -113,7 +113,7 @@ function AppContent() {
 
     switch (activeTab) {
       case "dashboard":
-        return <Dashboard />;
+        return <Dashboard setActiveTab={setActiveTab} />;
       case "vendors":
         return <VendorsEnhanced />;
       case "purchase-orders":
@@ -192,7 +192,7 @@ function AppContent() {
       case "permissions":
         return <Permissions />;
       default:
-        return <Dashboard />;
+        return <Dashboard setActiveTab={setActiveTab} />;
     }
   };
 

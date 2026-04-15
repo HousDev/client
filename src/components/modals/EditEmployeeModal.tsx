@@ -335,7 +335,40 @@ export default function EditEmployeeModal({
         salary: data.salary || "",
         salary_type: data.salary_type || "monthly",
         punch_in_time: data.emp_punch_in_time || "10:00:00",
-        week_off_days: JSON.parse(data.week_off_days) || [0],
+        week_off_days: (() => {
+          if (!data.week_off_days) return [0];
+
+          // If it's already an array, return it
+          if (Array.isArray(data.week_off_days)) return data.week_off_days;
+
+          // If it's a string, try to parse it
+          if (typeof data.week_off_days === "string") {
+            try {
+              const parsed = JSON.parse(data.week_off_days);
+              // Handle case where parsed is a string representation like "[0]"
+              if (typeof parsed === "string") {
+                return JSON.parse(parsed);
+              }
+              return Array.isArray(parsed) ? parsed : [0];
+            } catch {
+              // If parsing fails, check if it's a comma-separated string
+              if (data.week_off_days.includes(",")) {
+                return data.week_off_days
+                  .split(",")
+                  .map(Number)
+                  .filter((n: any) => !isNaN(n));
+              }
+              // Try to extract numbers from string like "[0]"
+              const match = data.week_off_days.match(/\d+/g);
+              if (match) {
+                return match.map(Number);
+              }
+              return [0];
+            }
+          }
+
+          return [0];
+        })(),
 
         // System Details
         laptop_assigned: data.laptop_assigned || "no",

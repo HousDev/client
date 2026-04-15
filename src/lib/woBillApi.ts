@@ -9,6 +9,14 @@ async function getWoBills() {
 }
 
 /**
+ * Get all WO bill
+ */
+async function getEmployeeWoBills(id: number | string) {
+  const res: any = await api.get("/wo-bill/" + id);
+  return unwrap(res);
+}
+
+/**
  * Get WO bill by ID
  */
 async function getWoBillById(id: number | string) {
@@ -58,6 +66,7 @@ async function deleteWoBill(id: number | string) {
 
 const woBillsApi = {
   getWoBills,
+  getEmployeeWoBills,
   getWoBillById,
   getBillsByWoId,
   createWoBill,

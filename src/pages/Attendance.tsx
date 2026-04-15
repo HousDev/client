@@ -23,9 +23,7 @@ import attendanceApi from "../lib/attendanceApi";
 import { useAuth } from "../contexts/AuthContext";
 import HrmsEmployeesApi from "../lib/employeeApi";
 import AttendanceCalender from "../components/attendence/AttendanceCalender";
-import { BiLeftArrow, BiLeftArrowAlt } from "react-icons/bi";
-import ViewTodayAttendanceModal from "../components/attendence/ViewTodayAttendanceModal";
-import { toast } from "sonner";
+import { BiLeftArrowAlt } from "react-icons/bi";
 import SearchableSelect from "../components/SearchableSelect";
 import { LeaveApi } from "../lib/leaveApi";
 
@@ -64,7 +62,7 @@ interface AttendanceStats {
 export default function Attendance() {
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("");
-  const [activeTab, setActiveTab] = useState<string>("todays");
+  const [activeTab, setActiveTab] = useState<string>("employee");
   const [selectedDateForAttendance, setSelectedDateAttendance] =
     useState<string>("");
   const [employeeDetails, setEmployeeDetails] = useState({
@@ -733,12 +731,14 @@ export default function Attendance() {
         </h2>
 
         <div className="space-x-3 my-2">
-          <button
-            onClick={() => setActiveTab("todays")}
-            className={`bg-slate-200 px-3 py-1 text-sm rounded-full font-medium ${activeTab === "todays" ? "bg-blue-200 border border-blue-600" : ""}`}
-          >
-            Today's Attendance
-          </button>
+          {user.role === "admin" && (
+            <button
+              onClick={() => setActiveTab("todays")}
+              className={`bg-slate-200 px-3 py-1 text-sm rounded-full font-medium ${activeTab === "todays" ? "bg-blue-200 border border-blue-600" : ""}`}
+            >
+              Today's Attendance
+            </button>
+          )}
           <button
             onClick={() => setActiveTab("employee")}
             className={`bg-slate-200 px-3 py-1 text-sm rounded-full font-medium ${activeTab === "employee" ? "bg-blue-300 border border-blue-600" : ""}`}

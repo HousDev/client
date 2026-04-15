@@ -1393,36 +1393,37 @@ export default function UpdatePurchaseOrderForm({
                       options={allPayments
                         .filter((term: any) => {
                           return !formData.payment_terms.find(
-                            (d: any) => Number(d.id) === Number(term.id)
+                            (d: any) => Number(d.id) === Number(term.id),
                           );
-                        }).map((term: any) => {
-                        const concatinatedTerm = [
-                          term.percentPayment != null
-                            ? `${Number(term.percentPayment).toFixed(2)}`
-                            : "",
+                        })
+                        .map((term: any) => {
+                          const concatinatedTerm = [
+                            term.percentPayment != null
+                              ? `${Number(term.percentPayment).toFixed(2)}`
+                              : "",
 
-                          term.firstText ?? "",
-                          term.gracePeriod != null
-                            ? `${Number(term.gracePeriod).toFixed(2)}`
-                            : "",
+                            term.firstText ?? "",
+                            term.gracePeriod != null
+                              ? `${Number(term.gracePeriod).toFixed(2)}`
+                              : "",
 
-                          term.gracePeriod != null
-                            ? (term.secondText ?? "")
-                            : "",
-                        ]
-                          .filter(Boolean)
-                          .join(" ");
-                        return {
-                          id: term.id,
-                          name: concatinatedTerm || "",
-                        };
-                      })}
+                            term.gracePeriod != null
+                              ? (term.secondText ?? "")
+                              : "",
+                          ]
+                            .filter(Boolean)
+                            .join(" ");
+                          return {
+                            id: term.id,
+                            name: concatinatedTerm || "",
+                          };
+                        })}
                       value={selectedPaymentTermData.id}
                       onChange={(id) => {
                         const findedData = allPayments.find(
                           (d: any) => Number(d.id) === Number(id),
                         );
-                        if (findedData.gracePeriod) {
+                        if (findedData.gracePeriod !== null) {
                           setSelectedTermsWithGracePeriod(true);
                         } else {
                           setSelectedTermsWithGracePeriod(false);
@@ -1443,7 +1444,7 @@ export default function UpdatePurchaseOrderForm({
                             type="text"
                             value={selectedPaymentTermData.percentPayment}
                             onChange={(e) => {
-                              console.log(selectedPaymentTermData);
+                              if (!/^\d*\.?\d*$/.test(e.target.value)) return;
                               const totalPercent =
                                 formData.payment_terms.reduce(
                                   (sum: number, item: any) =>
@@ -1470,12 +1471,15 @@ export default function UpdatePurchaseOrderForm({
                           <p className="text-sm text-slate-800">
                             {selectedPaymentTermData.firstText}
                           </p>
+
                           {selectedTermsWithGracePeriod && (
                             <div className="flex items-center">
                               <input
                                 type="text"
                                 value={selectedPaymentTermData.gracePeriod}
                                 onChange={(e) => {
+                                  if (!/^\d*\.?\d*$/.test(e.target.value))
+                                    return;
                                   setSelectedPaymentTermData({
                                     ...selectedPaymentTermData,
                                     gracePeriod: e.target.value,
@@ -1496,8 +1500,16 @@ export default function UpdatePurchaseOrderForm({
                   <div>
                     <button
                       type="button"
-                      disabled={!selectedPaymentTermData}
+                      disabled={
+                        !selectedPaymentTermData ||
+                        String(selectedPaymentTermData.gracePeriod) === "0"
+                      }
                       onClick={() => {
+                        if (
+                          selectedPaymentTermData.secondText &&
+                          Number(selectedPaymentTermData.gracePeriod) === 0
+                        )
+                          return;
                         const totalPercent = formData.payment_terms.reduce(
                           (sum: number, item: any) =>
                             sum + Number(item.percentPayment),
@@ -1697,12 +1709,6 @@ export default function UpdatePurchaseOrderForm({
               </div>
               <div className="flex">
                 <button
-                  onClick={() => setShowAddTerm(true)}
-                  className="text-white bg-green-600 hover:bg-green-700 rounded-lg px-2 py-1 font-medium text-xs flex items-center mr-2"
-                >
-                  <Plus className="w-3 h-3 mr-1" /> Add
-                </button>
-                <button
                   onClick={() => setShowTermsConditions(false)}
                   className="text-gray-200 hover:bg-gray-700/40 rounded-xl p-2 transition-all duration-200"
                 >
@@ -1710,8 +1716,107 @@ export default function UpdatePurchaseOrderForm({
                 </button>
               </div>
             </div>
-            <div className="p-4 overflow-y-auto flex-grow min-h-32 max-h-96">
-              <ul className="space-y-3 ">
+            <div className="p-4 flex-grow min-h-32 max-h-[70vh]">
+              <div className="border-b-2 border-gray-300 mb-2">
+                <div>
+                  <label className="block text-xs font-medium text-[#40423f] mb-1">
+                    Category <span className="text-[#b52124]">*</span>
+                  </label>
+                  <select
+                    value={extraTermData.category}
+                    onChange={(e) =>
+                      setExtraTermData({
+                        ...extraTermData,
+                        category: e.target.value,
+                      })
+                    }
+                    className="w-full px-3 py-2 text-sm border border-gray-300 rounded-xl focus:ring-2 focus:ring-[#b52124]/20 focus:border-[#b52124] outline-none bg-white/50"
+                    required
+                  >
+                    <option value="">Select Category</option>
+                    <option value="general">General</option>
+                    <option value="delivery">Delivery</option>
+                    <option value="quality">Quality</option>
+                    <option value="warranty">Warranty</option>
+                    <option value="tax">Tax</option>
+                    <option value="legal">Legal</option>
+                    <option value="returns">Returns</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-xs font-medium text-[#40423f] mb-1">
+                    Terms & Condition <span className="text-[#b52124]">*</span>
+                  </label>
+                  <textarea
+                    value={extraTermData.content}
+                    onChange={(e) => {
+                      setExtraTermData({
+                        ...extraTermData,
+                        content: e.target.value,
+                      });
+                    }}
+                    className="w-full px-3 py-2 text-sm border border-gray-300 rounded-xl focus:ring-2 focus:ring-[#b52124]/20 focus:border-[#b52124] outline-none bg-white/50"
+                    rows={2}
+                    placeholder="Enter the full terms & conditions text..."
+                    required
+                  />
+                </div>
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (
+                      extraTermData.category.length === 0 ||
+                      extraTermData.content.length === 0
+                    ) {
+                      toast.error("All input fields required.");
+                      return;
+                    }
+                    console.log("T&C", formData.terms_and_conditions);
+
+                    const correntTerms = formData.terms_and_conditions;
+                    const categoryIndex = correntTerms.findIndex(
+                      (t: any) => t.category === extraTermData.category,
+                    );
+
+                    if (categoryIndex !== -1) {
+                      // Category exists → add term
+                      correntTerms[categoryIndex].content.push({
+                        category: extraTermData.category,
+                        content: extraTermData.content,
+                        is_default: true,
+                      });
+                    } else {
+                      // Category does not exist → create it
+                      correntTerms.push({
+                        category: extraTermData.category,
+                        content: [
+                          {
+                            category: extraTermData.category,
+                            content: extraTermData.content,
+                            is_default: true,
+                          },
+                        ],
+                      });
+                    }
+
+                    setFormData({
+                      ...formData,
+                      terms_and_conditions: correntTerms,
+                    });
+                    setExtraTermData({
+                      category: "",
+                      content: "",
+                      is_default: false,
+                    });
+                    setShowAddTerm(false);
+                  }}
+                  className="w-full bg-gradient-to-r from-[#b52124] to-[#d43538] text-white px-4 py-1.5 rounded-xl hover:from-[#d43538] hover:to-[#b52124] transition-all duration-200 text-sm font-medium flex items-center justify-center mb-2"
+                >
+                  <Plus className="w-3 h-3" /> Add
+                </button>
+              </div>
+              <ul className="space-y-3  overflow-y-scroll min-h-32 max-h-[40vh] scrollbar-thin pb-3">
                 {formData.terms_and_conditions.map((d, indx: number) => (
                   <li
                     key={indx}
@@ -1819,128 +1924,7 @@ export default function UpdatePurchaseOrderForm({
             </div>
 
             <div className="p-4 space-y-3">
-              <div>
-                <label className="block text-xs font-medium text-[#40423f] mb-1">
-                  Category <span className="text-[#b52124]">*</span>
-                </label>
-                <select
-                  value={extraTermData.category}
-                  onChange={(e) =>
-                    setExtraTermData({
-                      ...extraTermData,
-                      category: e.target.value,
-                    })
-                  }
-                  className="w-full px-3 py-2 text-sm border border-gray-300 rounded-xl focus:ring-2 focus:ring-[#b52124]/20 focus:border-[#b52124] outline-none bg-white/50"
-                  required
-                >
-                  <option value="">Select Category</option>
-                  <option value="general">General</option>
-                  <option value="payment">Payment</option>
-                  <option value="delivery">Delivery</option>
-                  <option value="quality">Quality</option>
-                  <option value="warranty">Warranty</option>
-                  <option value="tax">Tax</option>
-                  <option value="legal">Legal</option>
-                  <option value="returns">Returns</option>
-                </select>
-              </div>
-
-              <div>
-                <label className="block text-xs font-medium text-[#40423f] mb-1">
-                  Terms & Condition <span className="text-[#b52124]">*</span>
-                </label>
-                <textarea
-                  value={extraTermData.content}
-                  onChange={(e) => {
-                    setExtraTermData({
-                      ...extraTermData,
-                      content: e.target.value,
-                    });
-                  }}
-                  className="w-full px-3 py-2 text-sm border border-gray-300 rounded-xl focus:ring-2 focus:ring-[#b52124]/20 focus:border-[#b52124] outline-none bg-white/50"
-                  rows={3}
-                  placeholder="Enter the full terms & conditions text..."
-                  required
-                />
-              </div>
               <div className="flex gap-2 pt-2">
-                <button
-                  type="button"
-                  onClick={() => {
-                    if (
-                      extraTermData.category.length === 0 ||
-                      extraTermData.content.length === 0
-                    ) {
-                      toast.error("All input fields required.");
-                      return;
-                    }
-                    console.log("T&C", formData.terms_and_conditions);
-
-                    const correntTerms = formData.terms_and_conditions;
-                    const categoryIndex = correntTerms.findIndex(
-                      (t: any) => t.category === extraTermData.category,
-                    );
-
-                    if (categoryIndex !== -1) {
-                      // Category exists → add term
-                      correntTerms[categoryIndex].content.push({
-                        category: extraTermData.category,
-                        content: extraTermData.content,
-                        is_default: true,
-                      });
-                    } else {
-                      // Category does not exist → create it
-                      correntTerms.push({
-                        category: extraTermData.category,
-                        content: [
-                          {
-                            category: extraTermData.category,
-                            content: extraTermData.content,
-                            is_default: true,
-                          },
-                        ],
-                      });
-                    }
-
-                    setFormData({
-                      ...formData,
-                      terms_and_conditions: correntTerms,
-                    });
-
-                    // setFormData((prev) => ({
-                    //   ...prev,
-                    //   terms_and_conditions: prev.terms_and_conditions.map(
-                    //     (tc: any) => {
-                    //       if (tc.category === extraTermData.category) {
-                    //         return {
-                    //           ...tc,
-                    //           content: [
-                    //             ...tc.content,
-                    //             {
-                    //               category: extraTermData.category,
-                    //               content: extraTermData.content,
-                    //               is_default: true,
-                    //             },
-                    //           ],
-                    //         };
-                    //       } else {
-                    //         return tc;
-                    //       }
-                    //     },
-                    //   ),
-                    // }));
-                    setExtraTermData({
-                      category: "",
-                      content: "",
-                      is_default: false,
-                    });
-                    setShowAddTerm(false);
-                  }}
-                  className="flex-1 bg-gradient-to-r from-[#b52124] to-[#d43538] text-white px-4 py-2.5 rounded-xl hover:from-[#d43538] hover:to-[#b52124] transition-all duration-200 text-sm font-medium flex items-center justify-center gap-2"
-                >
-                  <Plus className="w-3 h-3" /> Add
-                </button>
                 <button
                   type="button"
                   onClick={() => setShowAddTerm(false)}
