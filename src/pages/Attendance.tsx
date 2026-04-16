@@ -81,6 +81,9 @@ export default function Attendance() {
 
   const [showMarkModal, setShowMarkModal] = useState(false);
   const [attendanceData, setAttendanceData] = useState<AttendanceRecord[]>([]);
+  const [todaysAttendanceData, setTodaysAttendanceData] = useState<
+    AttendanceRecord[]
+  >([]);
   const [selectedAttendance, setSelectedAttendance] = useState<any>();
   const [expandRow, setExpandRow] = useState<number | null>(null);
   const [mapLoading, setMapLoading] = useState<boolean>(false);
@@ -272,23 +275,112 @@ export default function Attendance() {
 
     if (user.role === "admin") {
       try {
-        const response: any = await attendanceApi.getAllToday();
-        console.log("attendance : ", response);
-        const getLeavesResponse: any = await LeaveApi.getCurrentMonthLeaves(
-          selectedUser.user_id ?? empRes[0].user_id,
-          selecteDate || new Date().toISOString().slice(0, 7),
-        );
+        if (activeTab === "todays") {
+          const response: any = await attendanceApi.getAllToday();
+          console.log("attendance : ", response);
+          const getLeavesResponse: any = await LeaveApi.getCurrentMonthLeaves(
+            selectedUser.user_id ?? empRes[0].user_id,
+            selecteDate || new Date().toISOString().slice(0, 7),
+          );
 
-        const finalData = formatAttendanceForAdmin(response.data);
-        let totalWorkingHours = 0;
-        let presentDays = 0;
-        let lateUsers = 0;
+          const finalData = formatAttendanceForAdmin(response.data);
+          let totalWorkingHours = 0;
+          let presentDays = 0;
+          let lateUsers = 0;
 
-        if (response.success) {
+          if (response.success) {
+            for (let i = 0; i < finalData.length; i++) {
+              ++presentDays;
+              let totalHours = 0;
+
+              for (let j = 0; j < finalData[i].trackingHistory.length; j++) {
+                totalHours += Number(
+                  finalData[i].trackingHistory[j].total_hours,
+                );
+              }
+              finalData[i].total_hours = totalHours.toFixed(2);
+              totalWorkingHours += Number(totalHours.toFixed(2));
+              const emp = empRes.find(
+                (e: any) => Number(e.id) === Number(finalData[i].user_id),
+              );
+              if (
+                isUserLate(finalData[i].punch_in_time, emp.emp_punch_in_time)
+              ) {
+                lateUsers += 1;
+              }
+            }
+            let sundayStats = {
+              totalSundays: 0,
+              workedSundays: 0,
+            };
+
+            if (Array.isArray(finalData))
+              sundayStats = getSundayStats(finalData);
+
+            const [year, month] = selecteDate.split("-").map(Number);
+            const totalDaysInMonth = new Date(year, month, 0).getDate();
+
+            const today = new Date();
+            const isCurrentMonth =
+              year === today.getFullYear() && month === today.getMonth() + 1;
+            const daysToConsider = isCurrentMonth
+              ? today.getDate()
+              : totalDaysInMonth;
+
+            const totalHalfDayLeaves = Array.isArray(getLeavesResponse)
+              ? getLeavesResponse.reduce(
+                  (sum, crr) => (Boolean(crr.is_half_day) ? sum + 1 : sum + 0),
+                  0,
+                )
+              : 0;
+
+            const totalPaidLeaves = Array.isArray(getLeavesResponse)
+              ? getLeavesResponse.reduce(
+                  (sum, crr) =>
+                    crr.leave_type === "Paid Leave" ? sum + 1 : sum + 0,
+                  0,
+                )
+              : 0;
+
+            setStats({
+              ...stats,
+              average_hours: Number(totalWorkingHours) / Number(presentDays),
+              present: Number(presentDays),
+              absent: Number(daysToConsider) - Number(presentDays),
+              late: lateUsers,
+              half_day: totalHalfDayLeaves ?? 0,
+              paid_leaves: totalPaidLeaves ?? 0,
+              week_off:
+                Number(sundayStats.totalSundays) -
+                Number(sundayStats.workedSundays),
+            });
+
+            setEmployeeLeaves(
+              Array.isArray(getLeavesResponse) ? getLeavesResponse : [],
+            );
+            setTodaysAttendanceData(Array.isArray(finalData) ? finalData : []);
+            const loginEmployee = Array.isArray(empRes) ? empRes[0] : [];
+            setEmployeeDetails(loginEmployee ?? { joining_date: "", id: "" });
+          }
+        } else {
+          const response: any = await attendanceApi.getCurrentMonthAttendance(
+            selectedUser.user_id ?? empRes[0].user_id,
+            selecteDate || new Date().toISOString().slice(0, 7),
+          );
+
+          const getLeavesResponse: any = await LeaveApi.getCurrentMonthLeaves(
+            selectedUser.user_id ?? empRes[0].user_id,
+            selecteDate || new Date().toISOString().slice(0, 7),
+          );
+
+          const finalData = formatAttendance(response.data.data);
+          let totalWorkingHours = 0;
+          let presentDays = 0;
+          let lateUsers = 0;
+
           for (let i = 0; i < finalData.length; i++) {
-            ++presentDays;
             let totalHours = 0;
-
+            ++presentDays;
             for (let j = 0; j < finalData[i].trackingHistory.length; j++) {
               totalHours += Number(finalData[i].trackingHistory[j].total_hours);
             }
@@ -301,6 +393,7 @@ export default function Attendance() {
               lateUsers += 1;
             }
           }
+
           let sundayStats = {
             totalSundays: 0,
             workedSundays: 0,
@@ -346,12 +439,15 @@ export default function Attendance() {
               Number(sundayStats.workedSundays),
           });
 
-          setEmployeeLeaves(
-            Array.isArray(getLeavesResponse) ? getLeavesResponse : [],
-          );
-          setAttendanceData(Array.isArray(finalData) ? finalData : []);
-          const loginEmployee = Array.isArray(empRes) ? empRes[0] : [];
-          setEmployeeDetails(loginEmployee ?? { joining_date: "", id: "" });
+          if (response.data.success) {
+            setEmployeeLeaves(
+              Array.isArray(getLeavesResponse) ? getLeavesResponse : [],
+            );
+            setAttendanceData(Array.isArray(finalData) ? finalData : []);
+            const empId = selectedUser ? selectedUser.id : empRes[0].user_id;
+            const loginEmployee = empRes.find((e: any) => e.user_id === empId);
+            setEmployeeDetails(loginEmployee);
+          }
         }
       } catch (error) {
         console.error("Error loading attendance:", error);
@@ -456,12 +552,12 @@ export default function Attendance() {
 
   useEffect(() => {
     loadAttendance();
-  }, [selecteDate, selectedUser]);
+  }, [selecteDate, selectedUser, activeTab]);
 
   useEffect(() => {
     loadAttendance();
   }, []);
-  const filteredData = attendanceData.filter((record) => {
+  const filteredData = todaysAttendanceData.filter((record) => {
     const name = record.user_name?.toLowerCase() || "";
     const code = record.employee_code?.toLowerCase() || "";
     const searchLower = searchTerm.toLowerCase();
