@@ -56,6 +56,17 @@ async function updateTransaction(id: number | string, payload: any) {
 }
 
 /**
+ * Update inventory transaction
+ */
+async function updateTransactionStatus(id: number | string, payload: any) {
+  const res: any = await api.put(
+    `/inventory-transaction/updateStatus/${id}`,
+    payload,
+  );
+  return unwrap(res);
+}
+
+/**
  * Delete inventory transaction
  */
 async function deleteTransaction(id: number | string) {
@@ -73,6 +84,7 @@ async function getTransactionsByItemId(itemId: number | string) {
 
 const inventoryTransactionApi = {
   getTransactions,
+  updateTransactionStatus,
   getTransactionById,
   createTransaction,
   updateTransaction,

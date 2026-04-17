@@ -1,13 +1,23 @@
-import React, { useState, useEffect } from "react";
+// Dashboard.tsx
+import React, { useState, useEffect, useCallback } from "react";
 import {
   Users,
   FileText,
   Package,
   TrendingUp,
-  Box,
+  ShoppingCart,
+  CreditCard,
   Briefcase,
-  Layers,
-  Calendar,
+  AlertCircle,
+  RefreshCw,
+  Zap,
+  DollarSign,
+  Building2,
+  UserPlus,
+  Truck,
+  PieChart as PieChartIcon,
+  BarChart3,
+  IndianRupee,
 } from "lucide-react";
 import {
   BarChart,
@@ -21,307 +31,634 @@ import {
   Pie,
   Cell,
   Legend,
+  AreaChart,
+  Area,
 } from "recharts";
+import { useAuth } from "../contexts/AuthContext";
+
+// API Imports
 import poApi from "../lib/poApi";
 import vendorApi from "../lib/vendorApi";
 import inventoryApi from "../lib/inventoryApi";
 import RequestMaterialApi from "../lib/requestMaterialApi";
+import projectApi from "../lib/projectApi";
+import employeeApi from "../lib/employeeApi";
+import serviceOrderApi from "../lib/serviceOrderApi";
 
-// Types
+// ==================== TYPES ====================
 interface DashboardStats {
   totalVendors: number;
+  activeVendors: number;
   totalPOs: number;
-  totalMaterialRequests: { approved: number; total: number };
-  totalStocks: { inStock: number; lowStock: number; outOfStock: number };
-  totalBudgets: number;
-  activeProjects: number;
+  approvedPOs: number;
+  pendingPOs: number;
+  totalPOValue: number;
+  totalPaidAmount: number;
+  pendingPaymentAmount: number;
+  totalWorkOrders: number;
+  activeWorkOrders: number;
+  totalEmployees: number;
+  activeEmployees: number;
+  totalProjects: number;
+  ongoingProjects: number;
+  totalInventoryItems: number;
+  lowStockItems: number;
+  outOfStockItems: number;
+  totalMaterialRequests: number;
+  approvedRequests: number;
 }
 
-interface Task {
-  id: string;
+interface ChartDataPoint {
   name: string;
-  startDate: string;
-  endDate: string;
-  resource: string;
-  progress: number;
-  status: "Completed" | "In Progress" | "Delayed";
+  value: number;
 }
 
-interface Risk {
-  id: string;
-  issue: string;
-  impact: "High" | "Medium" | "Low";
-  description: string;
-}
-
-// Mock Data for Charts
-const costVarianceData = [
-  { name: "W1", budget: 4000, actual: 4400, cpi: 0.91 },
-  { name: "W2", budget: 3000, actual: 3200, cpi: 0.94 },
-  { name: "W3", budget: 2000, actual: 1800, cpi: 1.11 },
-  { name: "W4", budget: 2780, actual: 3908, cpi: 0.71 },
-  { name: "W5", budget: 1890, actual: 4800, cpi: 0.39 },
-  { name: "W6", budget: 2390, actual: 3800, cpi: 0.63 },
-];
-
-const projectStatusData = [
-  { name: "Planning", value: 15, color: "#94a3b8" },
-  { name: "In Progress", value: 45, color: "#3b82f6" },
-  { name: "On Hold", value: 10, color: "#f59e0b" },
-  { name: "Completed", value: 30, color: "#10b981" },
-];
-
-const scheduleComplianceData = [
-  { name: "Mon", planned: 20, actual: 18 },
-  { name: "Tue", planned: 40, actual: 42 },
-  { name: "Wed", planned: 60, actual: 55 },
-  { name: "Thu", planned: 80, actual: 85 },
-  { name: "Fri", planned: 100, actual: 98 },
-];
-
-const categoryCostData = [
-  { name: "Civil", value: 450000 },
-  { name: "Electrical", value: 120000 },
-  { name: "Plumbing", value: 85000 },
-  { name: "Interior", value: 240000 },
-];
-
-const teamAllocation = [
-  { team: "Team Alpha", members: 12, utilization: 85 },
-  { team: "Team Beta", members: 8, utilization: 92 },
-  { team: "Structural", members: 15, utilization: 70 },
-  { team: "Finishing", members: 20, utilization: 45 },
-];
-
-const Dashboard: React.FC = () => {
-  const [stats, setStats] = useState<DashboardStats>({
-    totalVendors: 0,
-    totalPOs: 0,
-    totalMaterialRequests: { approved: 0, total: 0 },
-    totalStocks: { inStock: 0, lowStock: 0, outOfStock: 0 },
-    totalBudgets: 0,
-    activeProjects: 0,
-  });
-  const [loading, setLoading] = useState(true);
-  const [poData, setPoData] = useState<any[]>([]);
-  const [vendorData, setVendorData] = useState<any[]>([]);
-  const [inventoryData, setInventoryData] = useState<any[]>([]);
-  const [materialRequests, setMaterialRequests] = useState<any[]>([]);
-  const [poItemsData, setPoItemsData] = useState<any[]>([]);
-
-  useEffect(() => {
-    fetchDashboardData();
-  }, []);
-
-  const fetchDashboardData = async () => {
+// ==================== API SERVICE LAYER ====================
+class DashboardApiService {
+  static async fetchAllData() {
     try {
-      setLoading(true);
-
-      // Fetch data from all APIs
-      const [pos, vendors, inventory, requests, items] = await Promise.all([
+      const [
+        posRes,
+        vendorsRes,
+        inventoryRes,
+        requestsRes,
+        projectsRes,
+        employeesRes,
+        workOrdersRes,
+      ]: any = await Promise.allSettled([
         poApi.getPOs(),
         vendorApi.getVendors(),
         inventoryApi.getInventory(),
         RequestMaterialApi.getAll(),
-        poApi.getPOsItems()
+        projectApi.getProjects(),
+        employeeApi.getEmployees(),
+        serviceOrderApi.getAll(),
       ]);
 
-      // Set data states
-      setPoData(Array.isArray(pos) ? pos : []);
-      setVendorData(Array.isArray(vendors) ? vendors : []);
-      setInventoryData(Array.isArray(inventory) ? inventory : []);
-      setMaterialRequests(Array.isArray(requests) ? requests : []);
-      setPoItemsData(Array.isArray(items) ? items : []);
+      console.log(
+        "pos",
+        posRes,
+        "vendor",
+        vendorsRes,
+        "inventory",
+        inventoryRes,
+        "reqquest",
+        requestsRes,
+        "project",
+        projectsRes,
+        "employee",
+        employeesRes,
+        "workd",
+        workOrdersRes,
+      );
 
-      // Calculate material requests statistics
-      const totalRequests = Array.isArray(requests) ? requests.length : 0;
-      const approvedRequests = Array.isArray(requests)
-        ? requests.filter((r: any) => r.status === 'approved').length
-        : 0;
-
-      // Calculate stock statistics from inventory
-      let inStockCount = 0;
-      let lowStockCount = 0;
-      let outOfStockCount = 0;
-
-      if (Array.isArray(inventory)) {
-        inventory.forEach((item: any) => {
-          const quantity = item.quantity_available || 0;
-          const minQuantity = item.minimum_quantity || 1;
-
-          // Check for out of stock first
-          if (quantity === 0) {
-            outOfStockCount++;
-          }
-          // Then check for low stock (below minimum quantity but not zero)
-          else if (quantity < minQuantity) {
-            lowStockCount++;
-          }
-          // Everything else is in stock
-          else {
-            inStockCount++;
-          }
-        });
-      }
-
-      // Calculate total budget from POs
-      const totalBudget = Array.isArray(pos)
-        ? pos.reduce((sum: number, po: any) => sum + (po.grand_total || 0), 0)
-        : 0;
-
-      // Count total vendors (not just active)
-      const totalVendors = Array.isArray(vendors) ? vendors.length : 0;
-
-      setStats({
-        totalVendors: totalVendors,
-        totalPOs: Array.isArray(pos) ? pos.length : 0,
-        totalMaterialRequests: {
-          approved: approvedRequests,
-          total: totalRequests
-        },
-        totalStocks: {
-          inStock: inStockCount,
-          lowStock: lowStockCount,
-          outOfStock: outOfStockCount
-        },
-        totalBudgets: 1000000000, // Static value: 100 Crore = 100,00,00,000
-        activeProjects: 12, // Static value as per original code
-      });
-
+      return {
+        purchaseOrders: posRes.status === "fulfilled" ? posRes.value : [],
+        vendors: vendorsRes.status === "fulfilled" ? vendorsRes.value : [],
+        inventory:
+          inventoryRes.status === "fulfilled" ? inventoryRes.value : [],
+        materialRequests:
+          requestsRes.status === "fulfilled" ? requestsRes.value : [],
+        projects:
+          projectsRes.status === "fulfilled" ? projectsRes.value.data : [],
+        employees:
+          employeesRes.status === "fulfilled" ? employeesRes.value : [],
+        workOrders:
+          workOrdersRes.status === "fulfilled" ? workOrdersRes.value : [],
+      };
     } catch (error) {
       console.error("Error fetching dashboard data:", error);
+      throw error;
+    }
+  }
+}
 
-      // Fallback data
-      setStats({
-        totalVendors: 0,
-        totalPOs: 0,
-        totalMaterialRequests: { approved: 0, total: 0 },
-        totalStocks: { inStock: 0, lowStock: 0, outOfStock: 0 },
-        totalBudgets: 0,
-        activeProjects: 12,
+// ==================== UTILITY FUNCTIONS ====================
+const formatCurrency = (amount: number): string => {
+  if (!amount || isNaN(amount)) return "₹0";
+  if (amount >= 10000000) {
+    return `₹${(amount / 10000000).toFixed(1)}Cr`;
+  } else if (amount >= 100000) {
+    return `₹${(amount / 100000).toFixed(1)}L`;
+  }
+  return new Intl.NumberFormat("en-IN", {
+    style: "currency",
+    currency: "INR",
+    maximumFractionDigits: 0,
+  }).format(amount);
+};
+
+const formatDate = (dateString: string): string => {
+  if (!dateString) return "N/A";
+  try {
+    return new Date(dateString).toLocaleDateString("en-GB", {
+      day: "2-digit",
+      month: "short",
+      year: "numeric",
+    });
+  } catch {
+    return "N/A";
+  }
+};
+
+const getStatusColor = (status: string): string => {
+  const statusMap: Record<string, string> = {
+    draft: "bg-gray-100 text-gray-700",
+    pending: "bg-yellow-100 text-yellow-700",
+    pending_approval: "bg-yellow-100 text-yellow-700",
+    approved: "bg-green-100 text-green-700",
+    authorize: "bg-blue-100 text-blue-700",
+    authorised: "bg-blue-100 text-blue-700",
+    rejected: "bg-red-100 text-red-700",
+    completed: "bg-purple-100 text-purple-700",
+    active: "bg-green-100 text-green-700",
+    inactive: "bg-gray-100 text-gray-700",
+  };
+  return statusMap[status?.toLowerCase()] || "bg-gray-100 text-gray-700";
+};
+
+const getPaymentStatusColor = (status: string): string => {
+  const statusMap: Record<string, string> = {
+    pending: "bg-red-100 text-red-700",
+    partial: "bg-yellow-100 text-yellow-700",
+    paid: "bg-green-100 text-green-700",
+    completed: "bg-green-100 text-green-700",
+    success: "bg-green-100 text-green-700",
+  };
+  return statusMap[status?.toLowerCase()] || "bg-gray-100 text-gray-700";
+};
+
+// ==================== SUBCOMPONENTS ====================
+
+// Loading Skeleton
+const DashboardSkeleton: React.FC = () => (
+  <div className="space-y-6 pb-12">
+    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-7 gap-4">
+      {[...Array(7)].map((_, i) => (
+        <div
+          key={i}
+          className="bg-white p-5 rounded-xl shadow-sm border border-gray-100 animate-pulse"
+        >
+          <div className="flex justify-between items-start mb-3">
+            <div className="w-10 h-10 bg-gray-200 rounded-lg"></div>
+            <div className="w-8 h-4 bg-gray-200 rounded"></div>
+          </div>
+          <div className="h-4 bg-gray-200 rounded w-20 mb-2"></div>
+          <div className="h-7 bg-gray-200 rounded w-16 mb-2"></div>
+          <div className="h-3 bg-gray-200 rounded w-32"></div>
+        </div>
+      ))}
+    </div>
+    <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <div className="lg:col-span-2 bg-white rounded-2xl p-6 animate-pulse">
+        <div className="h-6 bg-gray-200 rounded w-40 mb-6"></div>
+        <div className="h-64 bg-gray-100 rounded"></div>
+      </div>
+      <div className="bg-white rounded-2xl p-6 animate-pulse">
+        <div className="h-6 bg-gray-200 rounded w-32 mb-6"></div>
+        <div className="h-64 bg-gray-100 rounded"></div>
+      </div>
+    </div>
+  </div>
+);
+
+// Summary Card Component
+interface SummaryCardProps {
+  label: string;
+  value: string | number;
+  icon: React.ElementType;
+  color: string;
+  bgColor: string;
+  trend?: "up" | "down";
+  trendValue?: string;
+  subtext?: string;
+  onClick?: () => void;
+}
+
+const SummaryCard: React.FC<SummaryCardProps> = ({
+  label,
+  value,
+  icon: Icon,
+  color,
+  bgColor,
+  trend,
+  trendValue,
+  subtext,
+  onClick,
+}) => (
+  <div
+    onClick={onClick}
+    className={`bg-white p-5 rounded-xl shadow-sm border border-gray-100 hover:shadow-md transition-all duration-200 group ${onClick ? "cursor-pointer" : ""}`}
+  >
+    <div className="flex justify-between items-start mb-3">
+      <div
+        className={`${bgColor} ${color} p-2.5 rounded-lg group-hover:scale-110 transition-transform duration-200`}
+      >
+        <Icon className="w-5 h-5" />
+      </div>
+      {trend && (
+        <div
+          className={`flex items-center gap-1 text-xs font-medium ${trend === "up" ? "text-green-600" : "text-red-600"}`}
+        >
+          <span>{trend === "up" ? "↑" : "↓"}</span>
+          <span>{trendValue}</span>
+        </div>
+      )}
+    </div>
+    <p className="text-gray-500 text-xs font-medium uppercase tracking-wider mb-1">
+      {label}
+    </p>
+    <h3 className="text-2xl font-bold text-gray-800 mb-1">{value}</h3>
+    {subtext && <p className="text-xs text-gray-400 truncate">{subtext}</p>}
+  </div>
+);
+
+// Chart Card Component
+interface ChartCardProps {
+  title: string;
+  icon: React.ElementType;
+  children: React.ReactNode;
+  action?: React.ReactNode;
+}
+
+const ChartCard: React.FC<ChartCardProps> = ({
+  title,
+  icon: Icon,
+  children,
+  action,
+}) => (
+  <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+    <div className="px-6 py-4 border-b border-gray-100 flex justify-between items-center">
+      <div className="flex items-center gap-2">
+        <Icon className="w-5 h-5 text-gray-500" />
+        <h3 className="text-sm font-semibold text-gray-800">{title}</h3>
+      </div>
+      {action}
+    </div>
+    <div className="p-6">{children}</div>
+  </div>
+);
+
+// Activity Table Component
+interface ActivityTableProps {
+  title: string;
+  icon: React.ElementType;
+  columns: string[];
+  data: any[];
+  renderRow: (item: any, index: number) => React.ReactNode;
+  action?: React.ReactNode;
+  onRowClick?: (item: any) => void;
+}
+
+const ActivityTable: React.FC<ActivityTableProps> = ({
+  title,
+  icon: Icon,
+  columns,
+  data,
+  renderRow,
+  action,
+  onRowClick,
+}) => (
+  <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+    <div className="px-6 py-4 border-b border-gray-100 flex flex-wrap justify-between items-center gap-4">
+      <div className="flex items-center gap-2">
+        <Icon className="w-5 h-5 text-gray-500" />
+        <h3 className="text-sm font-semibold text-gray-800">{title}</h3>
+      </div>
+      {action}
+    </div>
+    <div className="overflow-x-auto">
+      <table className="w-full">
+        <thead className="bg-gray-50">
+          <tr>
+            {columns.map((col, idx) => (
+              <th
+                key={idx}
+                className="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider"
+              >
+                {col}
+              </th>
+            ))}
+          </tr>
+        </thead>
+        <tbody className="divide-y divide-gray-100">
+          {data.map((item, idx) => (
+            <tr
+              key={idx}
+              onClick={() => onRowClick?.(item)}
+              className={`hover:bg-gray-50 transition-colors ${onRowClick ? "cursor-pointer" : ""}`}
+            >
+              {renderRow(item, idx)}
+            </tr>
+          ))}
+          {data.length === 0 && (
+            <tr>
+              <td
+                colSpan={columns.length}
+                className="px-6 py-8 text-center text-gray-400 text-sm"
+              >
+                No data available
+              </td>
+            </tr>
+          )}
+        </tbody>
+      </table>
+    </div>
+  </div>
+);
+
+// Quick Action Button
+interface QuickActionProps {
+  icon: React.ElementType;
+  label: string;
+  description: string;
+  onClick: () => void;
+  color: string;
+}
+
+const QuickActionButton: React.FC<QuickActionProps> = ({
+  icon: Icon,
+  label,
+  description,
+  onClick,
+  color,
+}) => (
+  <button
+    onClick={onClick}
+    className="bg-white p-4 rounded-xl border border-gray-200 hover:border-gray-300 hover:shadow-md transition-all text-left group"
+  >
+    <div
+      className={`${color} p-2 rounded-lg w-fit mb-3 group-hover:scale-110 transition-transform`}
+    >
+      <Icon className="w-5 h-5 text-white" />
+    </div>
+    <p className="text-sm font-semibold text-gray-800">{label}</p>
+    <p className="text-xs text-gray-500 mt-1">{description}</p>
+  </button>
+);
+
+type DashboardProps = {
+  setActiveTab: React.Dispatch<React.SetStateAction<string>>;
+};
+
+// ==================== MAIN DASHBOARD COMPONENT ====================
+const Dashboard = ({ setActiveTab }: DashboardProps) => {
+  const { can } = useAuth();
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [stats, setStats] = useState<DashboardStats>({
+    totalVendors: 0,
+    activeVendors: 0,
+    totalPOs: 0,
+    approvedPOs: 0,
+    pendingPOs: 0,
+    totalPOValue: 0,
+    totalPaidAmount: 0,
+    pendingPaymentAmount: 0,
+    totalWorkOrders: 0,
+    activeWorkOrders: 0,
+    totalEmployees: 0,
+    activeEmployees: 0,
+    totalProjects: 0,
+    ongoingProjects: 0,
+    totalInventoryItems: 0,
+    lowStockItems: 0,
+    outOfStockItems: 0,
+    totalMaterialRequests: 0,
+    approvedRequests: 0,
+  });
+
+  const [purchaseOrders, setPurchaseOrders] = useState<any[]>([]);
+  const [payments, setPayments] = useState<any[]>([]);
+  const [materialRequests, setMaterialRequests] = useState<any[]>([]);
+  const [workOrders, setWorkOrders] = useState<any[]>([]);
+  const [lastUpdated, setLastUpdated] = useState<Date>(new Date());
+
+  // Chart Data States
+  const [poVsPaymentData, setPoVsPaymentData] = useState<ChartDataPoint[]>([]);
+  const [workOrderStatusData, setWorkOrderStatusData] = useState<any[]>([]);
+  const [monthlyExpenseData, setMonthlyExpenseData] = useState<any[]>([]);
+
+  // Fetch all dashboard data
+  const fetchDashboardData = useCallback(async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const data: any = await DashboardApiService.fetchAllData();
+
+      // Process Purchase Orders
+      const pos = data.purchaseOrders || [];
+      setPurchaseOrders(pos.slice(0, 5));
+
+      const totalPOValue = pos.reduce(
+        (sum: number, po: any) => sum + (Number(po.grand_total) || 0),
+        0,
+      );
+      const totalPaidAmount = pos.reduce(
+        (sum: number, po: any) => sum + (po.total_paid || 0),
+        0,
+      );
+      const pendingPaymentAmount = pos.reduce((sum: number, po: any) => {
+        const balance = (po.grand_total || 0) - (po.total_paid || 0);
+        return sum + (balance > 0 ? balance : 0);
+      }, 0);
+
+      // Process Vendors
+      const vendors = data.vendors || [];
+      const activeVendors = vendors.filter(
+        (v: any) => v.is_active !== false,
+      ).length;
+
+      // Process Inventory
+      const inventory = data.inventory || [];
+      let lowStock = 0;
+      let outOfStock = 0;
+      inventory.forEach((item: any) => {
+        const qty = item.quantity || item.quantity_available || 0;
+        const minQty = item.reorder_qty || item.minimum_quantity || 1;
+        if (qty === 0) outOfStock++;
+        else if (qty < minQty) lowStock++;
       });
 
-      // Set empty arrays for fallback
-      setPoData([]);
-      setVendorData([]);
-      setInventoryData([]);
-      setMaterialRequests([]);
+      // Process Material Requests
+      const requests = data.materialRequests || [];
+      const approvedRequests = requests.filter(
+        (r: any) => r.status === "approved",
+      ).length;
+
+      // Process Projects
+      const projects = data.projects || [];
+      console.log(projects);
+      const ongoingProjects = projects.filter((p: any) => {
+        if (!p.end_date) return true;
+        return new Date(p.end_date) > new Date();
+      }).length;
+
+      // Process Employees
+      const employees = data.employees || [];
+      const activeEmployees = employees.filter(
+        (e: any) => e.status !== "inactive",
+      ).length;
+
+      // Process Work Orders
+      const wos = data.workOrders || [];
+      setWorkOrders(wos.slice(0, 5));
+      const activeWorkOrders = wos.filter(
+        (wo: any) => wo.status === "in_progress" || wo.status === "active",
+      ).length;
+
+      console.log(wos);
+
+      // Update Stats
+      setStats({
+        totalVendors: vendors.length,
+        activeVendors,
+        totalPOs: pos.length,
+        approvedPOs: pos.filter(
+          (p: any) => p.status === "approved" || p.status === "authorize",
+        ).length,
+        pendingPOs: pos.filter(
+          (p: any) =>
+            p.status === "pending" ||
+            p.status === "pending_approval" ||
+            p.status === "draft",
+        ).length,
+        totalPOValue,
+        totalPaidAmount,
+        pendingPaymentAmount,
+        totalWorkOrders: wos.length,
+        activeWorkOrders,
+        totalEmployees: employees.length,
+        activeEmployees,
+        totalProjects: projects.length,
+        ongoingProjects,
+        totalInventoryItems: inventory.length,
+        lowStockItems: lowStock,
+        outOfStockItems: outOfStock,
+        totalMaterialRequests: requests.length,
+        approvedRequests,
+      });
+
+      // Process Payments for table (from PO payments)
+      let allPayments: any[] = [];
+      try {
+        const poPaymentsRes: any = await import("../lib/poPaymentApi").then(
+          (m) => m.default.getPaymentsHistory(),
+        );
+        allPayments = poPaymentsRes || [];
+      } catch {
+        // Generate mock payments from POs
+        allPayments = pos.slice(0, 5).map((po: any, idx: number) => ({
+          id: `pay_${idx}`,
+          payment_number: `PAY/${new Date().getFullYear()}/${String(idx + 1).padStart(3, "0")}`,
+          po_number: po.po_number,
+          vendor_name: po.vendors?.name || po.vendor_name || "N/A",
+          amount: po.total_paid || po.grand_total * 0.3,
+          payment_date: new Date().toISOString().split("T")[0],
+          status: po.payment_status === "paid" ? "completed" : "pending",
+        }));
+      }
+      setPayments(allPayments.slice(0, 5));
+
+      // Process Material Requests
+      setMaterialRequests(requests.slice(0, 5));
+
+      // Generate Chart Data
+      generateChartData(pos, wos, allPayments);
+
+      setLastUpdated(new Date());
+    } catch (err: any) {
+      console.error("Dashboard fetch error:", err);
+      setError(err.message || "Failed to load dashboard data");
     } finally {
       setLoading(false);
     }
+  }, []);
+
+  const generateChartData = (pos: any[], wos: any[], payments: any[]) => {
+    // Monthly PO vs Payment data (last 6 months)
+    const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun"];
+    const poByMonth: any = months.map((month, idx) => ({
+      name: month,
+      purchaseOrders: pos.filter((po: any) => {
+        const poDate = po.po_date ? new Date(po.po_date) : null;
+        return poDate && poDate.getMonth() === idx;
+      }).length,
+      payments: payments.filter((p: any) => {
+        const payDate = p.payment_date ? new Date(p.payment_date) : null;
+        return payDate && payDate.getMonth() === idx;
+      }).length,
+    }));
+    setPoVsPaymentData(poByMonth);
+
+    // Work Order Status Distribution
+    const statusCount: Record<string, number> = {};
+    wos.forEach((wo: any) => {
+      const status = wo.status || "pending";
+      statusCount[status] = (statusCount[status] || 0) + 1;
+    });
+    const statusColors: Record<string, string> = {
+      in_progress: "#3b82f6",
+      active: "#3b82f6",
+      pending: "#f59e0b",
+      authorize: "#3cb371",
+      approved: "#ffa500",
+      pending_approval: "#f59e0b",
+      completed: "#10b981",
+      on_hold: "#ef4444",
+      draft: "#9ca3af",
+    };
+    setWorkOrderStatusData(
+      Object.entries(statusCount).map(([name, value]) => ({
+        name: name.replace("_", " ").toUpperCase(),
+        value,
+        color: statusColors[name] || "#6b7280",
+      })),
+    );
+
+    // Monthly Expenses (from PO values)
+    const monthlyExpenses = months.map((month, idx) => ({
+      month,
+      expenses: pos
+        .filter((po: any) => {
+          const poDate = po.po_date ? new Date(po.po_date) : null;
+          return poDate && poDate.getMonth() === idx;
+        })
+        .reduce((sum: number, po: any) => sum + (po.grand_total || 0), 0),
+    }));
+    setMonthlyExpenseData(monthlyExpenses);
   };
 
-  // Helper function for status colors
-  const getStatusColor = (status: string) => {
-    switch (status?.toLowerCase()) {
-      case 'draft': return "bg-gray-100 text-gray-700";
-      case 'pending': return "bg-yellow-100 text-yellow-700";
-      case 'approved': return "bg-green-100 text-green-700";
-      case 'authorize': return "bg-blue-100 text-blue-700";
-      case 'rejected': return "bg-red-100 text-red-700";
-      case 'completed': return "bg-purple-100 text-purple-700";
-      default: return "bg-gray-100 text-gray-700";
-    }
+  useEffect(() => {
+    fetchDashboardData();
+  }, [fetchDashboardData]);
+
+  const handleRefresh = () => {
+    fetchDashboardData();
   };
 
-  const getPaymentStatusColor = (status: string) => {
-    switch (status?.toLowerCase()) {
-      case 'pending': return "bg-red-100 text-red-700";
-      case 'partial': return "bg-yellow-100 text-yellow-700";
-      case 'paid': return "bg-green-100 text-green-700";
-      default: return "bg-gray-100 text-gray-700";
-    }
+  // Navigation handlers
+  const navigateTo = (path: string) => {
+    window.location.href = path;
   };
-
-  const formatCurrency = (amount: number) => {
-    if (amount >= 10000000) { // 1 Crore and above
-      const crore = amount / 10000000;
-      return `₹${crore.toFixed(1)}Cr`;
-    } else if (amount >= 100000) { // 1 Lakh and above
-      const lakh = amount / 100000;
-      return `₹${lakh.toFixed(1)}L`;
-    }
-    return new Intl.NumberFormat('en-IN', {
-      style: 'currency',
-      currency: 'INR',
-      maximumFractionDigits: 0
-    }).format(amount);
-  };
-
-  const formatDate = (dateString: string) => {
-    if (!dateString) return "N/A";
-    return new Date(dateString).toLocaleDateString('en-GB');
-  };
-
-  const statCards = [
-    {
-      label: "Total POs",
-      value: stats.totalPOs,
-      icon: FileText,
-      color: "text-blue-600",
-      bg: "bg-blue-50",
-      trend: poData.length > 0 ? "↑" : "",
-      subtext: `${poData.filter((p: any) => p.status === 'approved' || p.status === 'authorize').length} approved`
-    },
-    {
-      label: "Total Vendors",
-      value: stats.totalVendors,
-      icon: Users,
-      color: "text-emerald-600",
-      bg: "bg-emerald-50",
-      trend: vendorData.length > 0 ? "↑" : "",
-      subtext: `${vendorData.filter((v: any) => v.is_active).length} active`
-    },
-    {
-      label: "Material Requests",
-      value: `${stats.totalMaterialRequests.approved}/${stats.totalMaterialRequests.total}`,
-      icon: Package,
-      color: "text-amber-600",
-      bg: "bg-amber-50",
-      subtext: `${materialRequests.filter((r: any) => r.status === 'approved').length} approved requests`
-    },
-    {
-      label: "Total Stocks",
-      value: `${stats.totalStocks.inStock}/${inventoryData.length}`,
-      icon: Box,
-      color: "text-purple-600",
-      bg: "bg-purple-50",
-      trend: inventoryData.length > 0 ? "↑" : "",
-      subtext: `${stats.totalStocks.lowStock} low stock • ${stats.totalStocks.outOfStock} out of stock`
-    },
-    {
-      label: "Total Budget",
-      value: formatCurrency(stats.totalBudgets),
-      icon: TrendingUp,
-      color: "text-[#d32f2f]",
-      bg: "bg-red-50",
-      subtext: `${poData.filter((p: any) => p.payment_status === 'paid').length} POs paid`
-    },
-  ];
-
-  const risks: Risk[] = [
-    {
-      id: "r1",
-      issue: "Material Shortage",
-      impact: "High",
-      description: `Low stock: ${stats.totalStocks.lowStock} items • Out of stock: ${stats.totalStocks.outOfStock} items`,
-    },
-    {
-      id: "r2",
-      issue: "PO Approvals Pending",
-      impact: "Medium",
-      description: poData.length > 0
-        ? `${poData.filter((po: any) => po.status === 'pending' || po.status === 'draft').length} POs pending approval`
-        : "Monitor purchase order status",
-    },
-  ];
 
   if (loading) {
+    return <DashboardSkeleton />;
+  }
+
+  if (error) {
     return (
-      <div className="flex items-center justify-center h-64 md:h-full">
+      <div className="flex items-center justify-center h-96">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-10 w-10 md:h-12 md:w-12 border-b-2 border-[#d32f2f] mx-auto mb-4"></div>
-          <p className="text-gray-500 text-sm">Loading dashboard data...</p>
+          <AlertCircle className="w-12 h-12 text-red-500 mx-auto mb-4" />
+          <p className="text-gray-600 mb-2">Failed to load dashboard</p>
+          <p className="text-sm text-gray-400 mb-4">{error}</p>
+          <button
+            onClick={handleRefresh}
+            className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition"
+          >
+            Try Again
+          </button>
         </div>
       </div>
     );
@@ -329,368 +666,515 @@ const Dashboard: React.FC = () => {
 
   return (
     <div className="space-y-6 pb-12">
-      {/* 1. Top Stat Grid */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
-        {statCards.map((card) => (
-          <div
-            key={card.label}
-            className="bg-white p-4 md:p-5 rounded-xl shadow-sm border border-gray-100 hover:shadow-md transition-all"
-          >
-            <div className="flex justify-between items-start mb-3">
-              <div className={`${card.bg} ${card.color} p-2 rounded-lg`}>
-                <card.icon className="w-5 h-5" />
-              </div>
-              {card.trend && (
-                <span className="text-xs font-bold text-green-600">
-                  {card.trend}
-                </span>
-              )}
-            </div>
-            <p className="text-gray-400 text-[9px] md:text-[10px] font-bold uppercase tracking-wider mb-0.5">
-              {card.label}
-            </p>
-            <h3 className="text-lg md:text-xl font-bold text-gray-800 mb-1">
-              {card.value}
-            </h3>
-            {card.subtext && (
-              <p className="text-[9px] text-gray-500 font-medium">
-                {card.subtext}
-              </p>
-            )}
-          </div>
-        ))}
-      </div>
-
-      {/* 2. Main Analytics Row: Project Status Donut & Cost Variance */}
-      {/* <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <div className="bg-white p-4 md:p-6 rounded-2xl border border-gray-100 shadow-sm">
-          <div className="flex items-center justify-between mb-2">
-            <h3 className="text-xs md:text-sm font-bold text-gray-800 uppercase tracking-wide">
-              Project Status
-            </h3>
-            <Layers className="w-4 h-4 text-gray-400" />
-          </div>
-          <div className="h-[250px] md:h-[280px] w-full relative">
-            <ResponsiveContainer width="100%" height="100%">
-              <PieChart>
-                <Pie
-                  data={projectStatusData}
-                  cx="50%"
-                  cy="50%"
-                  innerRadius={55}
-                  outerRadius={75}
-                  paddingAngle={5}
-                  dataKey="value"
-                  stroke="none"
-                >
-                  {projectStatusData.map((entry, index) => (
-                    <Cell key={`cell-${index}`} fill={entry.color} />
-                  ))}
-                </Pie>
-                <Tooltip />
-                <Legend
-                  layout="horizontal"
-                  verticalAlign="bottom"
-                  align="center"
-                  wrapperStyle={{
-                    fontSize: "9px",
-                    fontWeight: "bold",
-                    paddingTop: "10px",
-                  }}
-                />
-              </PieChart>
-            </ResponsiveContainer>
-            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-12 text-center pointer-events-none">
-              <p className="text-[9px] font-bold text-gray-400 uppercase leading-none">
-                Active
-              </p>
-              <p className="text-xl md:text-2xl font-black text-gray-800 leading-tight">
-                {stats.activeProjects}
-              </p>
-            </div>
-          </div>
-        </div>
-        <div className="bg-white p-4 md:p-6 rounded-2xl border border-gray-100 shadow-sm">
-          <h3 className="text-xs md:text-sm font-bold text-gray-800 uppercase tracking-wide mb-6">
-            Budget vs Actual
-          </h3>
-          <div className="h-[220px] md:h-[250px] w-full">
-            <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={costVarianceData}>
-                <CartesianGrid strokeDasharray="3 3" vertical={false} />
-                <XAxis dataKey="name" tick={{ fontSize: 9 }} />
-                <YAxis tick={{ fontSize: 9 }} />
-                <Tooltip />
-                <Bar
-                  dataKey="budget"
-                  fill="#cbd5e1"
-                  radius={[4, 4, 0, 0]}
-                  name="Budgeted"
-                />
-                <Bar
-                  dataKey="actual"
-                  fill="#d32f2f"
-                  radius={[4, 4, 0, 0]}
-                  name="Actual"
-                />
-              </BarChart>
-            </ResponsiveContainer>
-          </div>
-        </div>
-      </div> */}
-      {/* 4. Material Request Drill-Down Section */}
-      <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
-        <div className="p-4 md:p-6 border-b border-gray-100 bg-gray-50/50 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-          <div>
-            <h3 className="text-base md:text-lg font-bold text-gray-800 flex items-center gap-2">
-              <Package className="w-5 h-5 text-amber-600" />
-              Material Requests Overview
-            </h3>
-            <p className="text-[10px] md:text-xs text-gray-500 font-medium">
-              {stats.totalMaterialRequests.total} total requests • {stats.totalMaterialRequests.approved} approved
-            </p>
-          </div>
+      {/* Header */}
+      <div className="flex flex-wrap justify-between items-center gap-4">
+        <div className="flex items-center gap-3">
           <button
-            onClick={fetchDashboardData}
-            className="w-full sm:w-auto text-xs font-bold border border-gray-300 rounded-lg px-3 py-2 outline-none hover:bg-gray-50 transition-colors bg-white flex items-center justify-center gap-2"
+            onClick={handleRefresh}
+            className="flex items-center gap-2 px-3 py-2 text-sm text-gray-600 hover:text-gray-800 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors"
           >
-            <RefreshCw className="w-3 h-3" />
-            Refresh Data
+            <RefreshCw className="w-4 h-4" />
+            Refresh
           </button>
-        </div>
-        <div className="overflow-x-auto">
-          <table className="w-full text-left min-w-[800px]">
-            <thead className="bg-gray-50 text-[9px] md:text-[10px] uppercase font-bold text-gray-400 tracking-wider">
-              <tr>
-                <th className="px-3 py-3">Request No</th>
-                <th className="px-3 py-3">Requester</th>
-                <th className="px-3 py-3">Project</th>
-                <th className="px-3 py-3">Work Type</th>
-                <th className="px-3 py-3">Date</th>
-                <th className="px-3 py-3">Items</th>
-                <th className="px-3 py-3">Status</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-gray-100">
-              {materialRequests.slice(0, 5).map((request: any) => (
-                <tr
-                  key={request.id || request.request_no}
-                  className="hover:bg-gray-50/50 transition-colors cursor-pointer"
-                  onClick={() => {
-                    // You can add click handler here if needed
-                    console.log("View request:", request);
-                  }}
-                >
-                  <td className="px-3 py-4">
-                    <div className="flex items-center">
-                      <div className="min-w-0">
-                        <p className="text-xs md:text-sm font-medium text-black- truncate max-w-[120px]">
-                          {request.request_no || `REQ-${request.id}`}
-                        </p>
-                      </div>
-                    </div>
-                  </td>
-                  <td className="px-3 py-4">
-                    <div className="min-w-0">
-                      <p className="text-xs text-gray-600 font-semibold truncate max-w-[120px]">
-                        {request.user_name || "N/A"}
-                      </p>
-                    </div>
-                  </td>
-                  <td className="px-3 py-4">
-                    <div className="min-w-0">
-                      <p className="text-xs text-gray-600 font-semibold truncate max-w-[120px]">
-                        {request.project_name || request.projectId || "Project"}
-                      </p>
-                      <div className="text-[10px] text-gray-500 mt-0.5 truncate">
-                        {[request.building_name, request.floor_name]
-                          .filter(Boolean)
-                          .join(" • ")}
-                      </div>
-                      {(request.flat_name || request.common_area_name) && (
-                        <div className="text-[10px] text-gray-400 mt-0.5 truncate">
-                          {request.flat_name || request.common_area_name}
-                        </div>
-                      )}
-                    </div>
-                  </td>
-                  <td className="px-3 py-4">
-                    <p className="text-xs text-gray-600 truncate max-w-[150px]">
-                      {request.work || "N/A"}
-                    </p>
-                  </td>
-                  <td className="px-3 py-4">
-                    <div className="flex items-center">
-                      <Calendar className="w-3 h-3 text-gray-400 mr-1.5" />
-                      <p className="text-xs text-gray-700 whitespace-nowrap">
-                        {formatDate(request.start_date || request.created_at)}
-                      </p>
-                    </div>
-                  </td>
-                  <td className="px-3 py-4">
-                    <p className="text-xs font-medium text-gray-600 whitespace-nowrap">
-                      {request.materials?.length || 0} items
-                    </p>
-                  </td>
-                  <td className="px-3 py-4">
-                    <span
-                      className={`px-2 py-0.5 rounded text-[8px] md:text-[9px] font-bold uppercase whitespace-nowrap ${request.status === 'approved'
-                          ? "bg-emerald-100 text-emerald-700"
-                          : request.status === 'pending'
-                            ? "bg-blue-100 text-blue-700"
-                            : request.status === 'rejected'
-                              ? "bg-red-100 text-red-700"
-                              : "bg-gray-100 text-gray-700"
-                        }`}
-                    >
-                      {request.status?.toUpperCase() || 'DRAFT'}
-                    </span>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-          {materialRequests.length === 0 && (
-            <div className="text-center py-8 text-gray-500 text-sm">
-              <Package className="w-10 h-10 text-gray-300 mx-auto mb-3" />
-              No material requests found
-            </div>
-          )}
+          <div className="text-xs text-gray-400">
+            Last updated: {lastUpdated.toLocaleTimeString()}
+          </div>
         </div>
       </div>
 
-      {/* 5. Purchase Orders Drill-Down Section */}
-      <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
-        <div className="p-4 md:p-6 border-b border-gray-100 bg-gray-50/50 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-          <div>
-            <h3 className="text-base md:text-lg font-bold text-gray-800 flex items-center gap-2">
-              <Briefcase className="w-5 h-5 text-[#d32f2f]" />
-              Purchase Orders Overview
-            </h3>
-            <p className="text-[10px] md:text-xs text-gray-500 font-medium">
-              {poData.length} total purchase orders • {formatCurrency(stats.totalBudgets)} total value
-            </p>
-          </div>
-          <div className="flex gap-2">
-            <select className="text-xs font-bold border rounded-lg px-3 py-2 outline-none focus:ring-1 focus:ring-red-500 bg-white">
-              <option>All Status</option>
-              <option>Draft</option>
-              <option>Pending</option>
-              <option>Approved</option>
-              <option>Authorized</option>
-            </select>
-          </div>
-        </div>
-        <div className="overflow-x-auto">
-          <table className="w-full text-left min-w-[800px]">
-            <thead className="bg-gray-50 text-[9px] md:text-[10px] uppercase font-bold text-gray-400 tracking-wider">
-              <tr>
-                <th className="px-6 py-3">PO Number</th>
-                <th className="px-6 py-3">Vendor</th>
-                <th className="px-6 py-3">Project</th>
-                <th className="px-6 py-3">Amount</th>
-                <th className="px-6 py-3">PO Status</th>
-                <th className="px-6 py-3">Payment</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-gray-100">
-              {poData.slice(0, 5).map((po: any) => (
-                <tr key={po.id} className="hover:bg-gray-50/50 transition-colors">
-                  <td className="px-6 py-4">
-                    <p className="text-xs md:text-sm font-bold text-gray-800">
-                      {po.po_number || `PO-${po.id}`}
-                    </p>
-                    <p className="text-[9px] text-gray-500">
-                      {formatDate(po.created_at || po.po_date)}
-                    </p>
-                  </td>
-                  <td className="px-6 py-4">
-                    <p className="text-xs text-gray-600 font-semibold truncate max-w-[120px]">
-                      {po.vendors?.name || po.vendor_name || "N/A"}
-                    </p>
-                  </td>
-                  <td className="px-6 py-4">
-                    <p className="text-xs text-gray-600 truncate max-w-[120px]">
-                      {po.projects?.name || po.project_name || "N/A"}
-                    </p>
-                  </td>
-                  <td className="px-6 py-4">
-                    <p className="text-xs font-bold text-gray-800">
-                      {formatCurrency(po.grand_total || 0)}
-                    </p>
-                    <p className="text-[9px] text-gray-500">
-                      Paid: {formatCurrency(po.total_paid || 0)}
-                    </p>
-                  </td>
-                  <td className="px-6 py-4">
-                    <span
-                      className={`px-2 py-0.5 rounded text-[8px] md:text-[9px] font-bold uppercase whitespace-nowrap ${getStatusColor(
-                        po.status,
-                      )}`}
-                    >
-                      {po.status?.toUpperCase() || 'DRAFT'}
-                    </span>
-                  </td>
-                  <td className="px-6 py-4">
-                    <span
-                      className={`px-2 py-0.5 rounded text-[8px] md:text-[9px] font-bold uppercase whitespace-nowrap ${getPaymentStatusColor(
-                        po.payment_status,
-                      )}`}
-                    >
-                      {po.payment_status?.toUpperCase() || 'PENDING'}
-                    </span>
-                  </td>
+      {/* Summary Cards Row */}
+      <div className="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-7 gap-4">
+        {can("view_pos") && (
+          <SummaryCard
+            label="Total POs"
+            value={stats.totalPOs}
+            icon={FileText}
+            color="text-blue-600"
+            bgColor="bg-blue-50"
+            subtext={`${stats.approvedPOs} approved • ${stats.pendingPOs} pending`}
+            onClick={() => setActiveTab("purchase-orders")}
+          />
+        )}
 
-                </tr>
-              ))}
-            </tbody>
-          </table>
-          {poData.length === 0 && (
-            <div className="text-center py-8 text-gray-500 text-sm">
-              No purchase orders found
-            </div>
-          )}
-        </div>
+        {can("view_pos") && (
+          <SummaryCard
+            label="PO Value"
+            value={formatCurrency(stats.totalPOValue)}
+            icon={IndianRupee}
+            color="text-green-600"
+            bgColor="bg-green-50"
+            subtext={`Paid: ${formatCurrency(stats.totalPaidAmount)}`}
+          />
+        )}
+
+        {can("view_vendors") && (
+          <SummaryCard
+            label="Vendors"
+            value={stats.totalVendors}
+            icon={Building2}
+            color="text-emerald-600"
+            bgColor="bg-emerald-50"
+            subtext={`${stats.activeVendors} active`}
+            onClick={() => setActiveTab("vendors")}
+          />
+        )}
+        {can("view_wo") && (
+          <SummaryCard
+            label="Work Orders"
+            value={stats.totalWorkOrders}
+            icon={Briefcase}
+            color="text-purple-600"
+            bgColor="bg-purple-50"
+            subtext={`${stats.activeWorkOrders} in progress`}
+            onClick={() => setActiveTab("service-orders")}
+          />
+        )}
+        {can("view_employee") && (
+          <SummaryCard
+            label="Employees"
+            value={stats.totalEmployees}
+            icon={Users}
+            color="text-cyan-600"
+            bgColor="bg-cyan-50"
+            subtext={`${stats.activeEmployees} active`}
+            onClick={() => setActiveTab("employees")}
+          />
+        )}
+        {can("view_projects") && (
+          <SummaryCard
+            label="Projects"
+            value={stats.totalProjects}
+            icon={Truck}
+            color="text-orange-600"
+            bgColor="bg-orange-50"
+            subtext={`${stats.ongoingProjects} ongoing`}
+            onClick={() => setActiveTab("projects")}
+          />
+        )}
+        {can("view_material_requests") && (
+          <SummaryCard
+            label="Material Requests"
+            value={`${stats.approvedRequests}/${stats.totalMaterialRequests}`}
+            icon={Package}
+            color="text-amber-600"
+            bgColor="bg-amber-50"
+            subtext={`${stats.lowStockItems} low stock items`}
+            onClick={() => setActiveTab("material-requests")}
+          />
+        )}
       </div>
-      {/* 7. Quick Actions */}
-      <div className="bg-gradient-to-r from-red-50 to-orange-50 p-6 rounded-2xl border border-red-100">
+
+      {/* Charts Section */}
+      {/* Charts Section */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        {/* Bar Chart - PO vs Payments */}
+        {can("view_pos") && can("view_payments") && (
+          <ChartCard title="Purchase Orders vs Payments" icon={BarChart3}>
+            <div className="h-72">
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart data={poVsPaymentData}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
+                  <XAxis dataKey="name" tick={{ fontSize: 11 }} />
+                  <YAxis tick={{ fontSize: 11 }} />
+                  <Tooltip
+                    formatter={(
+                      value: number | undefined,
+                      name: string | undefined,
+                    ) => {
+                      if (value === undefined) return ["0", name || ""];
+                      return [value.toString(), name || ""];
+                    }}
+                    contentStyle={{
+                      borderRadius: "8px",
+                      border: "none",
+                      boxShadow: "0 4px 6px -1px rgb(0 0 0 / 0.1)",
+                    }}
+                  />
+                  <Legend />
+                  <Bar
+                    dataKey="purchaseOrders"
+                    name="Purchase Orders"
+                    fill="#3b82f6"
+                    radius={[4, 4, 0, 0]}
+                  />
+                  <Bar
+                    dataKey="payments"
+                    name="Payments"
+                    fill="#10b981"
+                    radius={[4, 4, 0, 0]}
+                  />
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
+          </ChartCard>
+        )}
+
+        {/* Line Chart - Monthly Expenses */}
+        {can("view_expenses") && (
+          <ChartCard title="Monthly Expenses" icon={TrendingUp}>
+            <div className="h-72">
+              <ResponsiveContainer width="100%" height="100%">
+                <AreaChart data={monthlyExpenseData}>
+                  <defs>
+                    <linearGradient
+                      id="expenseGradient"
+                      x1="0"
+                      y1="0"
+                      x2="0"
+                      y2="1"
+                    >
+                      <stop offset="5%" stopColor="#ef4444" stopOpacity={0.3} />
+                      <stop offset="95%" stopColor="#ef4444" stopOpacity={0} />
+                    </linearGradient>
+                  </defs>
+                  <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
+                  <XAxis dataKey="month" tick={{ fontSize: 11 }} />
+                  <YAxis
+                    tick={{ fontSize: 11 }}
+                    tickFormatter={(value: number) => formatCurrency(value)}
+                  />
+                  <Tooltip
+                    formatter={(
+                      value: number | undefined,
+                      name: string | undefined,
+                    ) => {
+                      if (value === undefined)
+                        return ["₹0", name || "Expenses"];
+                      return [formatCurrency(value), name || "Expenses"];
+                    }}
+                    contentStyle={{
+                      borderRadius: "8px",
+                      border: "none",
+                      boxShadow: "0 4px 6px -1px rgb(0 0 0 / 0.1)",
+                    }}
+                  />
+                  <Area
+                    type="monotone"
+                    dataKey="expenses"
+                    name="Expenses"
+                    stroke="#ef4444"
+                    strokeWidth={2}
+                    fill="url(#expenseGradient)"
+                  />
+                </AreaChart>
+              </ResponsiveContainer>
+            </div>
+          </ChartCard>
+        )}
+
+        {/* Pie Chart - Work Order Status */}
+        {can("view_wo") && (
+          <ChartCard title="Work Order Status" icon={PieChartIcon}>
+            <div className="h-72">
+              <ResponsiveContainer width="100%" height="100%">
+                <PieChart>
+                  <Pie
+                    data={workOrderStatusData}
+                    cx="50%"
+                    cy="50%"
+                    innerRadius={60}
+                    outerRadius={80}
+                    paddingAngle={5}
+                    dataKey="value"
+                    stroke="none"
+                  >
+                    {workOrderStatusData.map((entry, index) => (
+                      <Cell key={`cell-${index}`} fill={entry.color} />
+                    ))}
+                  </Pie>
+                  <Tooltip
+                    formatter={(
+                      value: number | undefined,
+                      name: string | undefined,
+                    ) => {
+                      if (value === undefined) return ["0", name || ""];
+                      return [`${value}`, name || ""];
+                    }}
+                    contentStyle={{
+                      borderRadius: "8px",
+                      border: "none",
+                      boxShadow: "0 4px 6px -1px rgb(0 0 0 / 0.1)",
+                    }}
+                  />
+                  <Legend
+                    layout="vertical"
+                    verticalAlign="middle"
+                    align="right"
+                    wrapperStyle={{ fontSize: "12px" }}
+                  />
+                </PieChart>
+              </ResponsiveContainer>
+            </div>
+          </ChartCard>
+        )}
+      </div>
+
+      {/* Recent Activity Tables */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* Latest Purchase Orders */}
+        {can("view_pos") && (
+          <ActivityTable
+            title="Latest Purchase Orders"
+            icon={ShoppingCart}
+            columns={["PO Number", "Vendor", "Amount", "Status", "Payment"]}
+            data={purchaseOrders}
+            renderRow={(po: any) => (
+              <>
+                <td className="px-6 py-4">
+                  <p className="text-sm font-medium text-gray-800">
+                    {po.po_number || `PO-${po.id}`}
+                  </p>
+                  <p className="text-xs text-gray-400">
+                    {formatDate(po.po_date || po.created_at)}
+                  </p>
+                </td>
+                <td className="px-6 py-4 text-sm text-gray-600">
+                  {po.vendors?.name || po.vendor_name || "N/A"}
+                </td>
+                <td className="px-6 py-4 text-sm font-semibold text-gray-800">
+                  {formatCurrency(po.grand_total)}
+                </td>
+                <td className="px-6 py-4">
+                  <span
+                    className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(po.status)}`}
+                  >
+                    {(po.status || "draft").toUpperCase()}
+                  </span>
+                </td>
+                <td className="px-6 py-4">
+                  <span
+                    className={`px-2 py-1 rounded-full text-xs font-medium ${getPaymentStatusColor(po.payment_status)}`}
+                  >
+                    {(po.payment_status || "pending").toUpperCase()}
+                  </span>
+                </td>
+              </>
+            )}
+            action={
+              <button
+                onClick={() => setActiveTab("purchase-orders")}
+                className="text-xs text-blue-600 hover:text-blue-700 font-medium"
+              >
+                View All →
+              </button>
+            }
+            onRowClick={(po) => setActiveTab("purchase-orders")}
+          />
+        )}
+
+        {/* Recent Payments */}
+        {can("view_payments") && (
+          <ActivityTable
+            title="Recent Payments"
+            icon={CreditCard}
+            columns={["Payment No", "PO/Vendor", "Amount", "Date", "Status"]}
+            data={payments}
+            renderRow={(payment: any) => (
+              <>
+                <td className="px-6 py-4">
+                  <p className="text-sm font-medium text-gray-800">
+                    {payment.payment_number || `PAY-${payment.id}`}
+                  </p>
+                </td>
+                <td className="px-6 py-4">
+                  <p className="text-sm text-gray-800">
+                    {payment.po_number || "N/A"}
+                  </p>
+                  <p className="text-xs text-gray-400">{payment.vendor_name}</p>
+                </td>
+                <td className="px-6 py-4 text-sm font-semibold text-green-600">
+                  {formatCurrency(payment.amount)}
+                </td>
+                <td className="px-6 py-4 text-sm text-gray-500">
+                  {formatDate(payment.payment_date)}
+                </td>
+                <td className="px-6 py-4">
+                  <span
+                    className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(payment.status)}`}
+                  >
+                    {(payment.status || "pending").toUpperCase()}
+                  </span>
+                </td>
+              </>
+            )}
+            action={
+              <button
+                onClick={() => setActiveTab("payments")}
+                className="text-xs text-blue-600 hover:text-blue-700 font-medium"
+              >
+                View All →
+              </button>
+            }
+          />
+        )}
+      </div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* Material Requests */}
+        {can("view_material_requests") && (
+          <ActivityTable
+            title="Material Requests"
+            icon={Package}
+            columns={["Request No", "Requester", "Project", "Items", "Status"]}
+            data={materialRequests}
+            renderRow={(request: any) => (
+              <>
+                <td className="px-6 py-4">
+                  <p className="text-sm font-medium text-gray-800">
+                    {request.request_no || `MR-${request.id}`}
+                  </p>
+                </td>
+                <td className="px-6 py-4 text-sm text-gray-600">
+                  {request.user_name || request.created_by_name || "N/A"}
+                </td>
+                <td className="px-6 py-4 text-sm text-gray-600">
+                  {request.project_name || request.projectId || "N/A"}
+                </td>
+                <td className="px-6 py-4 text-sm text-gray-600">
+                  {request.materials?.length || request.items_count || 0}
+                </td>
+                <td className="px-6 py-4">
+                  <span
+                    className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(request.status)}`}
+                  >
+                    {(request.status || "draft").toUpperCase()}
+                  </span>
+                </td>
+              </>
+            )}
+            action={
+              <button
+                onClick={() => setActiveTab("material-requests")}
+                className="text-xs text-blue-600 hover:text-blue-700 font-medium"
+              >
+                View All →
+              </button>
+            }
+            onRowClick={() => setActiveTab(`material-requests`)}
+          />
+        )}
+
+        {/* Work Orders */}
+        {can("view_wo") && (
+          <ActivityTable
+            title="Active Work Orders"
+            icon={Briefcase}
+            columns={["WO Number", "Vendor", "Project", "Amount", "Status"]}
+            data={workOrders}
+            renderRow={(wo: any) => (
+              <>
+                <td className="px-6 py-4">
+                  <p className="text-sm font-medium text-gray-800">
+                    {wo.so_number || `WO-${wo.id}`}
+                  </p>
+                </td>
+                <td className="px-6 py-4 text-sm text-gray-600">
+                  {wo.vendors?.name || wo.vendor || "N/A"}
+                </td>
+                <td className="px-6 py-4 text-sm text-gray-600">
+                  {wo.projects?.name || wo.project || "N/A"}
+                </td>
+                <td className="px-6 py-4 text-sm font-semibold text-gray-800">
+                  {formatCurrency(wo.grand_total)}
+                </td>
+                <td className="px-6 py-4">
+                  <span
+                    className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(wo.status)}`}
+                  >
+                    {(wo.status || "draft").toUpperCase()}
+                  </span>
+                </td>
+              </>
+            )}
+            action={
+              <button
+                onClick={() => setActiveTab("service-orders")}
+                className="text-xs text-blue-600 hover:text-blue-700 font-medium"
+              >
+                View All →
+              </button>
+            }
+            onRowClick={() => setActiveTab(`service-orders`)}
+          />
+        )}
+      </div>
+
+      {/* Quick Actions */}
+      <div className="bg-gradient-to-r from-blue-50 to-indigo-50 p-6 rounded-2xl border border-blue-100">
         <h3 className="text-sm font-bold text-gray-800 mb-4 flex items-center gap-2">
-          <Zap className="w-4 h-4 text-[#d32f2f]" />
+          <Zap className="w-4 h-4 text-blue-600" />
           Quick Actions
         </h3>
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-          <button className="bg-white p-4 rounded-xl border border-gray-200 hover:border-red-300 hover:shadow-sm transition-all text-left">
-            <FileText className="w-5 h-5 text-blue-600 mb-2" />
-            <p className="text-xs font-bold text-gray-800">Create New PO</p>
-            <p className="text-[10px] text-gray-500">Add purchase order</p>
-          </button>
-          <button className="bg-white p-4 rounded-xl border border-gray-200 hover:border-red-300 hover:shadow-sm transition-all text-left">
-            <Package className="w-5 h-5 text-amber-600 mb-2" />
-            <p className="text-xs font-bold text-gray-800">Material Request</p>
-            <p className="text-[10px] text-gray-500">Request materials</p>
-          </button>
-          <button className="bg-white p-4 rounded-xl border border-gray-200 hover:border-red-300 hover:shadow-sm transition-all text-left">
-            <Users className="w-5 h-5 text-emerald-600 mb-2" />
-            <p className="text-xs font-bold text-gray-800">Manage Vendors</p>
-            <p className="text-[10px] text-gray-500">View all vendors</p>
-          </button>
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
+          {can("view_pos") && (
+            <QuickActionButton
+              icon={FileText}
+              label="Purchase Order"
+              description="purchase order management."
+              onClick={() => setActiveTab("purchase-orders")}
+              color="bg-blue-600"
+            />
+          )}
+
+          {can("view_vendors") && (
+            <QuickActionButton
+              icon={Building2}
+              label="Vendor"
+              description="vendor management."
+              onClick={() => setActiveTab("vendors")}
+              color="bg-emerald-600"
+            />
+          )}
+
+          {can("view_wo") && (
+            <QuickActionButton
+              icon={Briefcase}
+              label="Work Order"
+              description="work order management."
+              onClick={() => setActiveTab("service-orders")}
+              color="bg-purple-600"
+            />
+          )}
+
+          {can("employees") && (
+            <QuickActionButton
+              icon={UserPlus}
+              label="Employee"
+              description="employee management."
+              onClick={() => setActiveTab("employees")}
+              color="bg-cyan-600"
+            />
+          )}
         </div>
       </div>
+
+      {/* Inventory Alert Section */}
+      {(stats.lowStockItems > 0 || stats.outOfStockItems > 0) && (
+        <div className="bg-yellow-50 border border-yellow-200 rounded-2xl p-5">
+          <div className="flex items-start gap-3">
+            <AlertCircle className="w-5 h-5 text-yellow-600 mt-0.5" />
+            <div className="flex-1">
+              <h4 className="text-sm font-semibold text-yellow-800">
+                Inventory Alert
+              </h4>
+              <p className="text-sm text-yellow-700 mt-1">
+                {stats.lowStockItems > 0 &&
+                  `${stats.lowStockItems} items are running low on stock. `}
+                {stats.outOfStockItems > 0 &&
+                  `${stats.outOfStockItems} items are out of stock. `}
+                <button
+                  onClick={() => navigateTo("/store-management")}
+                  className="font-medium underline hover:no-underline"
+                >
+                  Review inventory
+                </button>
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
-
-// Icon components
-const RefreshCw = ({ className }: { className?: string }) => (
-  <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor">
-    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-  </svg>
-);
-
-const Zap = ({ className }: { className?: string }) => (
-  <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor">
-    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
-  </svg>
-);
 
 export default Dashboard;

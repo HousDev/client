@@ -5,6 +5,11 @@ async function getPOs() {
   return unwrap(res);
 }
 
+async function getEmployeePOs(id: number | string) {
+  const res: any = await api.get("/purchase-orders/" + id);
+  return unwrap(res);
+}
+
 async function getVendors(active?: boolean) {
   const res: any = await api.get("/vendors", {
     params: active ? { active: 1 } : undefined,
@@ -104,6 +109,7 @@ export async function getPoPdf(id: number) {
 
 const poApi = {
   getPOs,
+  getEmployeePOs,
   getVendors,
   getProjects,
   getPOTypes,

@@ -458,9 +458,40 @@ export default function EmployeeProfile({
         salary: data.salary || "",
         salary_type: data.salary_type || "monthly",
         punch_in_time: data.emp_punch_in_time || "10:00:00",
-        week_off_days: data.week_off_days
-          ? JSON.parse(data.week_off_days)
-          : [0],
+        week_off_days: (() => {
+          if (!data.week_off_days) return [0];
+
+          // If it's already an array, return it
+          if (Array.isArray(data.week_off_days)) return data.week_off_days;
+
+          // If it's a string, try to parse it
+          if (typeof data.week_off_days === "string") {
+            try {
+              const parsed = JSON.parse(data.week_off_days);
+              // Handle case where parsed is a string representation like "[0]"
+              if (typeof parsed === "string") {
+                return JSON.parse(parsed);
+              }
+              return Array.isArray(parsed) ? parsed : [0];
+            } catch {
+              // If parsing fails, check if it's a comma-separated string
+              if (data.week_off_days.includes(",")) {
+                return data.week_off_days
+                  .split(",")
+                  .map(Number)
+                  .filter((n: any) => !isNaN(n));
+              }
+              // Try to extract numbers from string like "[0]"
+              const match = data.week_off_days.match(/\d+/g);
+              if (match) {
+                return match.map(Number);
+              }
+              return [0];
+            }
+          }
+
+          return [0];
+        })(),
 
         // System Details
         laptop_assigned: data.laptop_assigned || "no",
@@ -1063,10 +1094,36 @@ export default function EmployeeProfile({
           </div>
         </div>
       )}
+      {/* Mobile Profile Header */}
+      {user?.role === "admin" && (
+        <div className="block md:hidden sticky top-16 z-20 bg-white">
+          <div className="max-w-7xl mx-auto px-3 sm:px-4 md:px-6 lg:px-8">
+            <div className="flex items-center justify-between h-6">
+              <div className="flex items-center gap-2 md:gap-3">
+                <button
+                  onClick={onBack}
+                  className="flex items-center gap-1 md:gap-2 text-gray-700 hover:text-[#C62828] transition-colors p-1 md:p-0"
+                >
+                  <ArrowLeft className="w-4 h-4 md:w-5 md:h-5" />
+                  <span className="text-xs md:text-sm font-medium hidden sm:inline">
+                    Employees
+                  </span>
+                  <span className="text-xs md:text-sm font-medium sm:hidden">
+                    Back
+                  </span>
+                </button>
+                <div className="h-4 md:h-6 w-px bg-gray-300 block md:hidden" />
+                <span className="text-xs md:text-sm text-gray-500 inline md:hidden">
+                  Profile
+                </span>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Main Content */}
-      <div className="max-w-7xl mx-auto px-3 sm:px-4 md:px-6 lg:px-8 py-4 md:py-6 lg:py-8">
-        {/* Mobile Profile Header */}
+      <div className="max-w-7xl mx-auto px-3 sm:px-4 md:px-6 lg:px-8 md:py-6 lg:py-8">
         <div className="md:hidden bg-white rounded-xl shadow-lg border overflow-hidden mb-4">
           <div className="relative h-24 bg-gradient-to-r from-[#40423f] to-[#5a5d5a]" />
 

@@ -32,36 +32,36 @@ export interface ProjectFormData {
 
 /** Get all projects */
 export async function getProjects(): Promise<Project[]> {
-  const res = await api.get("/projects");
+  const res: any = await api.get("/projects");
   return unwrap(res);
 }
 
 /** Get project by id */
 export async function getProjectById(id: string | number): Promise<Project> {
-  const res = await api.get(`/projects/${id}`);
+  const res: any = await api.get(`/projects/${id}`);
   return unwrap(res);
 }
 
 /** Create project */
 export async function createProject(payload: any): Promise<Project> {
-  const res = await api.post("/projects", payload);
+  const res: any = await api.post("/projects", payload);
   return unwrap(res);
 }
 
 /** Update project */
 export async function updateProject(
   id: string | number,
-  payload: any
+  payload: any,
 ): Promise<Project> {
-  const res = await api.put(`/projects/${id}`, payload);
+  const res: any = await api.put(`/projects/${id}`, payload);
   return unwrap(res);
 }
 
 /** Delete project */
 export async function deleteProject(
-  id: string | number
+  id: string | number,
 ): Promise<{ message: string }> {
-  const res = await api.delete(`/projects/${id}`);
+  const res: any = await api.delete(`/projects/${id}`);
   return unwrap(res);
 }
 

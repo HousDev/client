@@ -37,7 +37,7 @@ export type LeaveStats = {
 
 export const LeaveApi = {
   // Apply for leave
-  applyLeave: async (formData: FormData): Promise<any> => {
+  applyLeave: async (formData: any): Promise<any> => {
     const response = await api.post("/leaves/apply", formData, {
       headers: {
         "Content-Type": "multipart/form-data",

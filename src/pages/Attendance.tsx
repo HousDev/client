@@ -23,9 +23,7 @@ import attendanceApi from "../lib/attendanceApi";
 import { useAuth } from "../contexts/AuthContext";
 import HrmsEmployeesApi from "../lib/employeeApi";
 import AttendanceCalender from "../components/attendence/AttendanceCalender";
-import { BiLeftArrow, BiLeftArrowAlt } from "react-icons/bi";
-import ViewTodayAttendanceModal from "../components/attendence/ViewTodayAttendanceModal";
-import { toast } from "sonner";
+import { BiLeftArrowAlt } from "react-icons/bi";
 import SearchableSelect from "../components/SearchableSelect";
 import { LeaveApi } from "../lib/leaveApi";
 
@@ -64,6 +62,7 @@ interface AttendanceStats {
 export default function Attendance() {
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("");
+  const [activeTab, setActiveTab] = useState<string>("employee");
   const [selectedDateForAttendance, setSelectedDateAttendance] =
     useState<string>("");
   const [employeeDetails, setEmployeeDetails] = useState({
@@ -82,6 +81,9 @@ export default function Attendance() {
 
   const [showMarkModal, setShowMarkModal] = useState(false);
   const [attendanceData, setAttendanceData] = useState<AttendanceRecord[]>([]);
+  const [todaysAttendanceData, setTodaysAttendanceData] = useState<
+    AttendanceRecord[]
+  >([]);
   const [selectedAttendance, setSelectedAttendance] = useState<any>();
   const [expandRow, setExpandRow] = useState<number | null>(null);
   const [mapLoading, setMapLoading] = useState<boolean>(false);
@@ -273,26 +275,112 @@ export default function Attendance() {
 
     if (user.role === "admin") {
       try {
-        const response: any = await attendanceApi.getCurrentMonthAttendance(
-          selectedUser.user_id ?? empRes[0].user_id,
-          selecteDate || new Date().toISOString().slice(0, 7),
-        );
+        if (activeTab === "todays") {
+          const response: any = await attendanceApi.getAllToday();
+          console.log("attendance : ", response);
+          const getLeavesResponse: any = await LeaveApi.getCurrentMonthLeaves(
+            selectedUser.user_id ?? empRes[0].user_id,
+            selecteDate || new Date().toISOString().slice(0, 7),
+          );
 
-        const getLeavesResponse: any = await LeaveApi.getCurrentMonthLeaves(
-          selectedUser.user_id ?? empRes[0].user_id,
-          selecteDate || new Date().toISOString().slice(0, 7),
-        );
+          const finalData = formatAttendanceForAdmin(response.data);
+          let totalWorkingHours = 0;
+          let presentDays = 0;
+          let lateUsers = 0;
 
-        const finalData = formatAttendance(response.data.data);
-        let totalWorkingHours = 0;
-        let presentDays = 0;
-        let lateUsers = 0;
+          if (response.success) {
+            for (let i = 0; i < finalData.length; i++) {
+              ++presentDays;
+              let totalHours = 0;
 
-        if (response.data.success) {
+              for (let j = 0; j < finalData[i].trackingHistory.length; j++) {
+                totalHours += Number(
+                  finalData[i].trackingHistory[j].total_hours,
+                );
+              }
+              finalData[i].total_hours = totalHours.toFixed(2);
+              totalWorkingHours += Number(totalHours.toFixed(2));
+              const emp = empRes.find(
+                (e: any) => Number(e.id) === Number(finalData[i].user_id),
+              );
+              if (
+                isUserLate(finalData[i].punch_in_time, emp.emp_punch_in_time)
+              ) {
+                lateUsers += 1;
+              }
+            }
+            let sundayStats = {
+              totalSundays: 0,
+              workedSundays: 0,
+            };
+
+            if (Array.isArray(finalData))
+              sundayStats = getSundayStats(finalData);
+
+            const [year, month] = selecteDate.split("-").map(Number);
+            const totalDaysInMonth = new Date(year, month, 0).getDate();
+
+            const today = new Date();
+            const isCurrentMonth =
+              year === today.getFullYear() && month === today.getMonth() + 1;
+            const daysToConsider = isCurrentMonth
+              ? today.getDate()
+              : totalDaysInMonth;
+
+            const totalHalfDayLeaves = Array.isArray(getLeavesResponse)
+              ? getLeavesResponse.reduce(
+                  (sum, crr) => (Boolean(crr.is_half_day) ? sum + 1 : sum + 0),
+                  0,
+                )
+              : 0;
+
+            const totalPaidLeaves = Array.isArray(getLeavesResponse)
+              ? getLeavesResponse.reduce(
+                  (sum, crr) =>
+                    crr.leave_type === "Paid Leave" ? sum + 1 : sum + 0,
+                  0,
+                )
+              : 0;
+
+            setStats({
+              ...stats,
+              average_hours: Number(totalWorkingHours) / Number(presentDays),
+              present: Number(presentDays),
+              absent: Number(daysToConsider) - Number(presentDays),
+              late: lateUsers,
+              half_day: totalHalfDayLeaves ?? 0,
+              paid_leaves: totalPaidLeaves ?? 0,
+              week_off:
+                Number(sundayStats.totalSundays) -
+                Number(sundayStats.workedSundays),
+            });
+
+            setEmployeeLeaves(
+              Array.isArray(getLeavesResponse) ? getLeavesResponse : [],
+            );
+            setTodaysAttendanceData(Array.isArray(finalData) ? finalData : []);
+            const loginEmployee = Array.isArray(empRes) ? empRes[0] : [];
+            setEmployeeDetails(loginEmployee ?? { joining_date: "", id: "" });
+          }
+        } else {
+          const response: any = await attendanceApi.getCurrentMonthAttendance(
+            selectedUser.user_id ?? empRes[0].user_id,
+            selecteDate || new Date().toISOString().slice(0, 7),
+          );
+
+          const getLeavesResponse: any = await LeaveApi.getCurrentMonthLeaves(
+            selectedUser.user_id ?? empRes[0].user_id,
+            selecteDate || new Date().toISOString().slice(0, 7),
+          );
+
+          const finalData = formatAttendance(response.data.data);
+          let totalWorkingHours = 0;
+          let presentDays = 0;
+          let lateUsers = 0;
+
           for (let i = 0; i < finalData.length; i++) {
-            ++presentDays;
             let totalHours = 0;
-
+            ++presentDays;
             for (let j = 0; j < finalData[i].trackingHistory.length; j++) {
               totalHours += Number(finalData[i].trackingHistory[j].total_hours);
             }
@@ -305,6 +393,7 @@ export default function Attendance() {
               lateUsers += 1;
             }
           }
+
           let sundayStats = {
             totalSundays: 0,
             workedSundays: 0,
@@ -350,12 +439,15 @@ export default function Attendance() {
               Number(sundayStats.workedSundays),
           });
 
-          setEmployeeLeaves(
-            Array.isArray(getLeavesResponse) ? getLeavesResponse : [],
-          );
-          setAttendanceData(Array.isArray(finalData) ? finalData : []);
-          const loginEmployee = Array.isArray(empRes) ? empRes[0] : [];
-          setEmployeeDetails(loginEmployee ?? { joining_date: "", id: "" });
+          if (response.data.success) {
+            setEmployeeLeaves(
+              Array.isArray(getLeavesResponse) ? getLeavesResponse : [],
+            );
+            setAttendanceData(Array.isArray(finalData) ? finalData : []);
+            const empId = selectedUser ? selectedUser.id : empRes[0].user_id;
+            const loginEmployee = empRes.find((e: any) => e.user_id === empId);
+            setEmployeeDetails(loginEmployee);
+          }
         }
       } catch (error) {
         console.error("Error loading attendance:", error);
@@ -460,12 +552,12 @@ export default function Attendance() {
 
   useEffect(() => {
     loadAttendance();
-  }, [selecteDate, selectedUser]);
+  }, [selecteDate, selectedUser, activeTab]);
 
   useEffect(() => {
     loadAttendance();
   }, []);
-  const filteredData = attendanceData.filter((record) => {
+  const filteredData = todaysAttendanceData.filter((record) => {
     const name = record.user_name?.toLowerCase() || "";
     const code = record.employee_code?.toLowerCase() || "";
     const searchLower = searchTerm.toLowerCase();
@@ -478,12 +570,10 @@ export default function Attendance() {
   });
 
   const formatTime = (timeString: string | null) => {
+    console.log(timeString);
     if (!timeString) return "-";
-    const date = new Date(timeString);
-    return date.toLocaleTimeString("en-US", {
-      hour: "2-digit",
-      minute: "2-digit",
-    });
+    const time = timeString.split("T")[1];
+    return time;
   };
 
   const getStatusBadgeVariant = (status: string) => {
@@ -735,65 +825,84 @@ export default function Attendance() {
         <h2 className="text-lg sm:text-xl font-semibold text-slate-900 mb-2">
           {selectedDateForAttendance ? "Attendance" : "Attendance Calendar"}
         </h2>
+
+        <div className="space-x-3 my-2">
+          {user.role === "admin" && (
+            <button
+              onClick={() => setActiveTab("todays")}
+              className={`bg-slate-200 px-3 py-1 text-sm rounded-full font-medium ${activeTab === "todays" ? "bg-blue-200 border border-blue-600" : ""}`}
+            >
+              Today's Attendance
+            </button>
+          )}
+          <button
+            onClick={() => setActiveTab("employee")}
+            className={`bg-slate-200 px-3 py-1 text-sm rounded-full font-medium ${activeTab === "employee" ? "bg-blue-300 border border-blue-600" : ""}`}
+          >
+            Employee Attendance
+          </button>
+        </div>
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 flex-wrap">
-          <div className="flex flex-col sm:flex-row">
-            <div className="flex ">
-              {selectedDateForAttendance && (
-                <div className="relative">
-                  <Search className="absolute sm:left-3 top-1/2 sm:-translate-y-1/2 h-5 w-5 text-slate-400" />
-                  <Input
-                    type="text"
-                    placeholder="Search by name or employee code..."
-                    value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
-                    className="pl-10"
+          {activeTab === "employee" && (
+            <div className="flex flex-col sm:flex-row">
+              <div className="flex ">
+                {selectedDateForAttendance && (
+                  <div className="relative">
+                    <Search className="absolute sm:left-3 top-1/2 sm:-translate-y-1/2 h-5 w-5 text-slate-400" />
+                    <Input
+                      type="text"
+                      placeholder="Search by name or employee code..."
+                      value={searchTerm}
+                      onChange={(e) => setSearchTerm(e.target.value)}
+                      className="pl-10"
+                    />
+                  </div>
+                )}
+                <input
+                  type="month"
+                  value={selecteDate}
+                  min={
+                    selectedUser?.joining_date
+                      ? selectedUser?.joining_date.slice(0, 7)
+                      : employeeDetails?.joining_date.slice(0, 7)
+                  }
+                  max={new Date().toISOString().slice(0, 7)}
+                  onChange={(e) => {
+                    setSelectedDate(e.target.value);
+                  }}
+                  className=" sm:mx-3 appearance-none bg-white/60 border border-gray-200 rounded-2xl px-5 py-1 sm:py-2  text-gray-800
+                font-medium shadow-sm transition-all duration-300 focus:outline-none focus:ring-2  focus:ring-black/80  focus:border-black hover:shadow-md hover:border-gray-300 text-xs sm:text-sm w-1/2 sm:w-fit
+                "
+                />
+              </div>
+              {allEmployees && user.role === "admin" && (
+                <div className="w-[70vw] sm:w-[20vw] mt-3 sm:mt-0">
+                  <SearchableSelect
+                    options={allEmployees.map((v: any) => ({
+                      id: v.id,
+                      name:
+                        v.first_name +
+                          " " +
+                          v.last_name +
+                          " ( " +
+                          v.employee_code +
+                          " ) " || "",
+                    }))}
+                    value={selectedUser.id || employeeDetails.id}
+                    onChange={(id) => {
+                      const emp = allEmployees.find(
+                        (e: any) => Number(e.id) === Number(id),
+                      );
+                      setSelectedUser(emp);
+                      setSelectedDate(new Date().toISOString().slice(0, 7));
+                    }}
+                    placeholder="Select Vendor"
+                    required
                   />
                 </div>
               )}
-              <input
-                type="month"
-                value={selecteDate}
-                min={
-                  selectedUser?.joining_date
-                    ? selectedUser?.joining_date.slice(0, 7)
-                    : employeeDetails?.joining_date.slice(0, 7)
-                }
-                max={new Date().toISOString().slice(0, 7)}
-                onChange={(e) => {
-                  setSelectedDate(e.target.value);
-                }}
-                className=" sm:mx-3 appearance-none bg-white/60 border border-gray-200 rounded-2xl px-5 py-1 sm:py-2  text-gray-800
-                font-medium shadow-sm transition-all duration-300 focus:outline-none focus:ring-2  focus:ring-black/80  focus:border-black hover:shadow-md hover:border-gray-300 text-xs sm:text-sm w-1/2 sm:w-fit
-                "
-              />
             </div>
-            {allEmployees && user.role === "admin" && (
-              <div className="w-[70vw] sm:w-[20vw] mt-3 sm:mt-0">
-                <SearchableSelect
-                  options={allEmployees.map((v: any) => ({
-                    id: v.id,
-                    name:
-                      v.first_name +
-                        " " +
-                        v.last_name +
-                        " ( " +
-                        v.employee_code +
-                        " ) " || "",
-                  }))}
-                  value={selectedUser.id || employeeDetails.id}
-                  onChange={(id) => {
-                    const emp = allEmployees.find(
-                      (e: any) => Number(e.id) === Number(id),
-                    );
-                    setSelectedUser(emp);
-                    setSelectedDate(new Date().toISOString().slice(0, 7));
-                  }}
-                  placeholder="Select Vendor"
-                  required
-                />
-              </div>
-            )}
-          </div>
+          )}
 
           {selectedDateForAttendance && (
             <div className="flex gap-2">
@@ -852,7 +961,7 @@ export default function Attendance() {
       </div>
 
       <div className="overflow-x-auto">
-        {selectedDateForAttendance ? (
+        {activeTab === "todays" ? (
           <table className="w-full">
             <thead className="bg-slate-50 border-b border-slate-200">
               <tr>
@@ -1225,20 +1334,22 @@ export default function Attendance() {
                                               </p>
                                             )}
                                           </td>
-                                          <td className="px-4 py-3">
+                                          <td className="px-4 py-3 w-[30vw]">
                                             <div>
                                               <p className="text-sm text-slate-900">
                                                 <span className="font-semibold">
                                                   Punch In :
                                                 </span>{" "}
-                                                {recordHistory.punch_in_address ||
-                                                  "-"}
+                                                <span className="text-xs">
+                                                  {recordHistory.punch_in_location ||
+                                                    "-"}
+                                                </span>
                                               </p>
                                               <p className="text-sm text-slate-900">
                                                 <span className="font-semibold">
                                                   Punch Out :
                                                 </span>{" "}
-                                                {recordHistory.punch_out_address ||
+                                                {recordHistory.punch_out_location ||
                                                   "-"}
                                               </p>
                                             </div>
@@ -1279,7 +1390,7 @@ export default function Attendance() {
           </table>
         ) : (
           <div>
-            {attendanceData && allEmployees && (
+            {attendanceData && allEmployees && activeTab === "employee" && (
               <AttendanceCalender
                 month={Number(selecteDate.slice(5)) - 1}
                 year={Number(selecteDate.slice(0, 4))}

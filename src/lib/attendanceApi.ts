@@ -61,6 +61,24 @@ const attendanceApi = {
     }
   },
 
+  // Add this function to your attendanceApi object
+
+  // Get employee attendance report for date range
+  async getEmployeeAttendanceReport(start_date: string, end_date: string) {
+    try {
+      const response = await api.get("/attendance/employee-report", {
+        params: {
+          start_date,
+          end_date,
+        },
+      });
+      return response.data;
+    } catch (error: any) {
+      console.error("Get Employee Attendance Report API error:", error);
+      throw error;
+    }
+  },
+
   async adminMarkPunchIn(data: any) {
     try {
       const response = await api.post("/attendance/adminMarkPunchIn", data);
@@ -160,6 +178,22 @@ const attendanceApi = {
       console.error("Get All Today API error:", error);
       // Return mock data for testing
       return error;
+    }
+  },
+
+  async getAttendanceByMonthRange(startMonth: string, endMonth: string) {
+    try {
+      const response = await api.get("/attendance/month-range", {
+        params: {
+          startMonth, // format: "YYYY-MM"
+          endMonth, // format: "YYYY-MM"
+        },
+      });
+
+      return response.data;
+    } catch (error: any) {
+      console.error("Get Attendance By Month Range API error:", error);
+      throw error;
     }
   },
 

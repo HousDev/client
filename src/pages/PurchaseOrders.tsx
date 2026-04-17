@@ -33,6 +33,7 @@ import { toast } from "sonner";
 import MySwal from "../utils/swal";
 import TermsConditionsApi from "../lib/termsConditionsApi";
 import poPaymentApi from "../lib/poPaymentApi";
+import HrmsEmployeesApi from "../lib/employeeApi";
 
 type Vendor = {
   id: string;
@@ -491,87 +492,9 @@ export default function PurchaseOrders() {
     { id: "t_2", name: "Urgent", is_active: true },
   ];
 
-  const defaultPOs: PO[] = [
-    {
-      id: "po_1",
-      po_number: "PO-1001",
-      po_date: new Date().toISOString(),
-      vendor_id: "v_1",
-      delivery_date: "2025-12-26",
-      vendors: defaultVendors[0],
-      project_id: "p_1",
-      projects: defaultProjects[0],
-      po_type_id: "t_1",
-      po_types: defaultPOTypes[0],
-      status: "pending",
-      total_amount: 50000,
-      tax_amount: 9000,
-      grand_total: 59000,
-      total_paid: 0,
-      balance_amount: 59000,
-      payment_status: "pending",
-      material_status: "pending",
-      material_received_percentage: 0,
-      created_at: new Date().toISOString(),
-    },
-    {
-      id: "po_2",
-      po_number: "PO-1002",
-      po_date: new Date().toISOString(),
-      vendor_id: "v_2",
-      delivery_date: "2025-12-26",
-      vendors: defaultVendors[1],
-      project_id: "p_2",
-      projects: defaultProjects[1],
-      po_type_id: "t_2",
-      po_types: defaultPOTypes[1],
-      status: "approved",
-      total_amount: 120000,
-      tax_amount: 21600,
-      grand_total: 141600,
-      total_paid: 50000,
-      balance_amount: 91600,
-      payment_status: "partial",
-      material_status: "partial",
-      material_received_percentage: 50,
-      created_at: new Date().toISOString(),
-    },
-  ];
+  const defaultPOs: PO[] = [];
 
-  const defaultTracking: Tracking[] = [
-    {
-      id: "tr_1",
-      po_id: "po_1",
-      item_id: "itm_001",
-      item_description: "Cement Bags",
-      quantity_ordered: 100,
-      quantity_received: 0,
-      quantity_pending: 100,
-      status: "pending",
-      created_at: new Date().toISOString(),
-      purchase_orders: {
-        po_number: "PO-1001",
-        status: "pending",
-        vendors: { name: defaultVendors[0].name },
-      },
-    },
-    {
-      id: "tr_2",
-      po_id: "po_2",
-      item_id: "itm_002",
-      item_description: "Steel Rods",
-      quantity_ordered: 200,
-      quantity_received: 100,
-      quantity_pending: 100,
-      status: "partial",
-      created_at: new Date().toISOString(),
-      purchase_orders: {
-        po_number: "PO-1002",
-        status: "approved",
-        vendors: { name: defaultVendors[1].name },
-      },
-    },
-  ];
+  const defaultTracking: Tracking[] = [];
 
   const loadAllStoreManagementEmployee = async () => {
     const res: any = await UsersApi.list();
@@ -607,14 +530,24 @@ export default function PurchaseOrders() {
       console.log(error);
     }
   };
+
   const loadPOS = async () => {
     try {
-      const response = await poApi.getPOs();
+      let response;
+      if (user.role === "admin") {
+        response = await poApi.getPOs();
+      } else {
+        const emp = await HrmsEmployeesApi.getEmployeeByEmail(user.email);
+        console.log(emp);
+        response = await poApi.getEmployeePOs(emp.id);
+      }
+      console.log(response);
       return response;
     } catch (error) {
       console.log(error);
     }
   };
+
   const loadTrackings = async () => {
     try {
       const response = await po_trackingApi.getTrackings();
@@ -701,7 +634,7 @@ export default function PurchaseOrders() {
   useEffect(() => {
     loadAllData();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [profile?.id]);
+  }, [profile?.id, user]);
 
   // --- Persist helpers ---
   const persistPOs = (newPOs: PO[]) => {

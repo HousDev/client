@@ -1222,12 +1222,6 @@ export default function UpdateServiceOrderForm({
               </div>
               <div className="flex">
                 <button
-                  onClick={() => setShowAddTerm(true)}
-                  className="text-white bg-green-600 hover:bg-green-700 rounded-lg px-2 py-1 font-medium text-xs flex items-center mr-2"
-                >
-                  <Plus className="w-3 h-3 mr-1" /> Add
-                </button>
-                <button
                   onClick={() => setShowTermsConditions(false)}
                   className="text-gray-200 hover:bg-gray-700/40 rounded-xl p-2 transition-all duration-200"
                 >
@@ -1236,6 +1230,106 @@ export default function UpdateServiceOrderForm({
               </div>
             </div>
             <div className="p-4 overflow-y-auto flex-grow min-h-32 max-h-96">
+              <div className="border-b-2 border-gray-300 mb-2">
+                <div>
+                  <label className="block text-xs font-medium text-[#40423f] mb-1">
+                    Category <span className="text-[#b52124]">*</span>
+                  </label>
+                  <select
+                    value={extraTermData.category}
+                    onChange={(e) =>
+                      setExtraTermData({
+                        ...extraTermData,
+                        category: e.target.value,
+                      })
+                    }
+                    className="w-full px-3 py-2 text-sm border border-gray-300 rounded-xl focus:ring-2 focus:ring-[#b52124]/20 focus:border-[#b52124] outline-none bg-white/50"
+                    required
+                  >
+                    <option value="">Select Category</option>
+                    <option value="general">General</option>
+                    <option value="delivery">Delivery</option>
+                    <option value="quality">Quality</option>
+                    <option value="warranty">Warranty</option>
+                    <option value="tax">Tax</option>
+                    <option value="legal">Legal</option>
+                    <option value="returns">Returns</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-xs font-medium text-[#40423f] mb-1">
+                    Terms & Condition <span className="text-[#b52124]">*</span>
+                  </label>
+                  <textarea
+                    value={extraTermData.content}
+                    onChange={(e) => {
+                      setExtraTermData({
+                        ...extraTermData,
+                        content: e.target.value,
+                      });
+                    }}
+                    className="w-full px-3 py-2 text-sm border border-gray-300 rounded-xl focus:ring-2 focus:ring-[#b52124]/20 focus:border-[#b52124] outline-none bg-white/50"
+                    rows={2}
+                    placeholder="Enter the full terms & conditions text..."
+                    required
+                  />
+                </div>
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (
+                      extraTermData.category.length === 0 ||
+                      extraTermData.content.length === 0
+                    ) {
+                      toast.error("All input fields required.");
+                      return;
+                    }
+                    console.log("T&C", formData.terms_and_conditions);
+
+                    const correntTerms = formData.terms_and_conditions;
+                    const categoryIndex = correntTerms.findIndex(
+                      (t: any) => t.category === extraTermData.category,
+                    );
+
+                    if (categoryIndex !== -1) {
+                      // Category exists → add term
+                      correntTerms[categoryIndex].content.push({
+                        category: extraTermData.category,
+                        content: extraTermData.content,
+                        is_default: true,
+                      });
+                    } else {
+                      // Category does not exist → create it
+                      correntTerms.push({
+                        category: extraTermData.category,
+                        content: [
+                          {
+                            category: extraTermData.category,
+                            content: extraTermData.content,
+                            is_default: true,
+                          },
+                        ],
+                      });
+                    }
+
+                    setFormData({
+                      ...formData,
+                      terms_and_conditions: correntTerms,
+                    });
+
+                    setExtraTermData({
+                      category: "",
+                      content: "",
+                      is_default: false,
+                    });
+                    setShowAddTerm(false);
+                  }}
+                  className="w-full bg-gradient-to-r from-[#b52124] to-[#d43538] text-white px-4 py-1.5 rounded-xl hover:from-[#d43538] hover:to-[#b52124] transition-all duration-200 text-sm font-medium flex items-center justify-center mb-2"
+                >
+                  <Plus className="w-3 h-3" /> Add
+                </button>
+              </div>
               <ul className="space-y-3 ">
                 {formData.terms_and_conditions.map((d, indx: number) => (
                   <li
@@ -1313,167 +1407,6 @@ export default function UpdateServiceOrderForm({
                   </li>
                 ))}
               </ul>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {showAddTerm && (
-        <div className="fixed inset-0 bg-gray-900/70 backdrop-blur-md flex items-center justify-center z-[80] p-2 md:p-4">
-          <div className="bg-gradient-to-br from-gray-50 to-white rounded-2xl shadow-2xl shadow-gray-900/30 w-full max-w-md border border-gray-300/50 overflow-hidden max-h-[90vh] flex flex-col">
-            <div className="bg-gradient-to-r from-[#40423f] via-[#4a4c49] to-[#5a5d5a] px-4 md:px-6 py-4 flex justify-between items-center border-b border-gray-700/30">
-              <div className="flex items-center gap-3">
-                <div className="p-2 bg-white/10 rounded-xl">
-                  <Plus className="w-4 h-4 md:w-5 md:h-5 text-gray-100" />
-                </div>
-                <div>
-                  <h3 className="font-bold text-white text-sm md:text-base">
-                    Add Term
-                  </h3>
-                  <p className="text-xs text-gray-300/80 hidden md:block">
-                    Add new terms & conditions
-                  </p>
-                </div>
-              </div>
-              <button
-                onClick={() => setShowAddTerm(false)}
-                className="text-gray-200 hover:bg-gray-700/40 rounded-xl p-2 transition-all duration-200"
-              >
-                <X className="w-4 h-4 md:w-5 md:h-5" />
-              </button>
-            </div>
-
-            <div className="p-4 space-y-3">
-              <div>
-                <label className="block text-xs font-medium text-[#40423f] mb-1">
-                  Category <span className="text-[#b52124]">*</span>
-                </label>
-                <select
-                  value={extraTermData.category}
-                  onChange={(e) =>
-                    setExtraTermData({
-                      ...extraTermData,
-                      category: e.target.value,
-                    })
-                  }
-                  className="w-full px-3 py-2 text-sm border border-gray-300 rounded-xl focus:ring-2 focus:ring-[#b52124]/20 focus:border-[#b52124] outline-none bg-white/50"
-                  required
-                >
-                  <option value="">Select Category</option>
-                  <option value="general">General</option>
-                  <option value="payment">Payment</option>
-                  <option value="delivery">Delivery</option>
-                  <option value="quality">Quality</option>
-                  <option value="warranty">Warranty</option>
-                  <option value="tax">Tax</option>
-                  <option value="legal">Legal</option>
-                  <option value="returns">Returns</option>
-                </select>
-              </div>
-
-              <div>
-                <label className="block text-xs font-medium text-[#40423f] mb-1">
-                  Terms & Condition <span className="text-[#b52124]">*</span>
-                </label>
-                <textarea
-                  value={extraTermData.content}
-                  onChange={(e) => {
-                    setExtraTermData({
-                      ...extraTermData,
-                      content: e.target.value,
-                    });
-                  }}
-                  className="w-full px-3 py-2 text-sm border border-gray-300 rounded-xl focus:ring-2 focus:ring-[#b52124]/20 focus:border-[#b52124] outline-none bg-white/50"
-                  rows={3}
-                  placeholder="Enter the full terms & conditions text..."
-                  required
-                />
-              </div>
-              <div className="flex gap-2 pt-2">
-                <button
-                  type="button"
-                  onClick={() => {
-                    if (
-                      extraTermData.category.length === 0 ||
-                      extraTermData.content.length === 0
-                    ) {
-                      toast.error("All input fields required.");
-                      return;
-                    }
-                    console.log("T&C", formData.terms_and_conditions);
-
-                    const correntTerms = formData.terms_and_conditions;
-                    const categoryIndex = correntTerms.findIndex(
-                      (t: any) => t.category === extraTermData.category,
-                    );
-
-                    if (categoryIndex !== -1) {
-                      // Category exists → add term
-                      correntTerms[categoryIndex].content.push({
-                        category: extraTermData.category,
-                        content: extraTermData.content,
-                        is_default: true,
-                      });
-                    } else {
-                      // Category does not exist → create it
-                      correntTerms.push({
-                        category: extraTermData.category,
-                        content: [
-                          {
-                            category: extraTermData.category,
-                            content: extraTermData.content,
-                            is_default: true,
-                          },
-                        ],
-                      });
-                    }
-
-                    setFormData({
-                      ...formData,
-                      terms_and_conditions: correntTerms,
-                    });
-
-                    // setFormData((prev) => ({
-                    //   ...prev,
-                    //   terms_and_conditions: prev.terms_and_conditions.map(
-                    //     (tc: any) => {
-                    //       if (tc.category === extraTermData.category) {
-                    //         return {
-                    //           ...tc,
-                    //           content: [
-                    //             ...tc.content,
-                    //             {
-                    //               category: extraTermData.category,
-                    //               content: extraTermData.content,
-                    //               is_default: true,
-                    //             },
-                    //           ],
-                    //         };
-                    //       } else {
-                    //         return tc;
-                    //       }
-                    //     },
-                    //   ),
-                    // }));
-                    setExtraTermData({
-                      category: "",
-                      content: "",
-                      is_default: false,
-                    });
-                    setShowAddTerm(false);
-                  }}
-                  className="flex-1 bg-gradient-to-r from-[#b52124] to-[#d43538] text-white px-4 py-2.5 rounded-xl hover:from-[#d43538] hover:to-[#b52124] transition-all duration-200 text-sm font-medium flex items-center justify-center gap-2"
-                >
-                  <Plus className="w-3 h-3" /> Add
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setShowAddTerm(false)}
-                  className="px-4 py-2.5 text-sm border border-gray-300 rounded-xl hover:bg-gray-50/50 hover:border-gray-400 transition-all duration-200 font-medium text-[#40423f]"
-                >
-                  Close
-                </button>
-              </div>
             </div>
           </div>
         </div>

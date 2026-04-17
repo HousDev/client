@@ -44,6 +44,7 @@ import ServiceOrdersApi from "../lib/serviceOrderApi";
 import woPaymentHistoryApi from "../lib/woPayments";
 import CreateWoBill from "../components/ServiceOrder/CreateWoBill";
 import woBillsApi from "../lib/woBillApi";
+import HrmsEmployeesApi from "../lib/employeeApi";
 
 type Vendor = {
   id: string;
@@ -276,7 +277,13 @@ export default function ServiceOrders() {
 
   const loadWoBillData = async () => {
     try {
-      const woBillRes: any = await woBillsApi.getWoBills();
+      let woBillRes: any;
+      if (user.role === "admin") {
+        woBillRes = await woBillsApi.getWoBills();
+      } else {
+        const emp = await HrmsEmployeesApi.getEmployeeByEmail(user.email);
+        woBillRes = await woBillsApi.getEmployeeWoBills(emp.id);
+      }
       console.log(woBillRes);
 
       const woBillsData = await groupWoBills(
@@ -468,87 +475,9 @@ export default function ServiceOrders() {
     { id: "t_2", name: "Urgent", is_active: true },
   ];
 
-  const defaultPOs: PO[] = [
-    {
-      id: "po_1",
-      po_number: "PO-1001",
-      po_date: new Date().toISOString(),
-      vendor_id: "v_1",
-      delivery_date: "2025-12-26",
-      vendors: defaultVendors[0],
-      project_id: "p_1",
-      projects: defaultProjects[0],
-      po_type_id: "t_1",
-      po_types: defaultPOTypes[0],
-      status: "SUCCESS",
-      total_amount: 50000,
-      tax_amount: 9000,
-      grand_total: 59000,
-      total_paid: 0,
-      balance_amount: 59000,
-      payment_status: "SUCCESS",
-      material_status: "SUCCESS",
-      material_received_percentage: 0,
-      created_at: new Date().toISOString(),
-    },
-    {
-      id: "po_2",
-      po_number: "PO-1002",
-      po_date: new Date().toISOString(),
-      vendor_id: "v_2",
-      delivery_date: "2025-12-26",
-      vendors: defaultVendors[1],
-      project_id: "p_2",
-      projects: defaultProjects[1],
-      po_type_id: "t_2",
-      po_types: defaultPOTypes[1],
-      status: "approved",
-      total_amount: 120000,
-      tax_amount: 21600,
-      grand_total: 141600,
-      total_paid: 50000,
-      balance_amount: 91600,
-      payment_status: "partial",
-      material_status: "partial",
-      material_received_percentage: 50,
-      created_at: new Date().toISOString(),
-    },
-  ];
+  const defaultPOs: PO[] = [];
 
-  const defaultTracking: Tracking[] = [
-    {
-      id: "tr_1",
-      po_id: "po_1",
-      item_id: "itm_001",
-      item_description: "Cement Bags",
-      quantity_ordered: 100,
-      quantity_received: 0,
-      quantity_pending: 100,
-      status: "SUCCESS",
-      created_at: new Date().toISOString(),
-      purchase_orders: {
-        po_number: "PO-1001",
-        status: "SUCCESS",
-        vendors: { name: defaultVendors[0].name },
-      },
-    },
-    {
-      id: "tr_2",
-      po_id: "po_2",
-      item_id: "itm_002",
-      item_description: "Steel Rods",
-      quantity_ordered: 200,
-      quantity_received: 100,
-      quantity_pending: 100,
-      status: "partial",
-      created_at: new Date().toISOString(),
-      purchase_orders: {
-        po_number: "PO-1002",
-        status: "approved",
-        vendors: { name: defaultVendors[1].name },
-      },
-    },
-  ];
+  const defaultTracking: Tracking[] = [];
 
   const loadAllStoreManagementEmployee = async () => {
     const res: any = await UsersApi.list();
@@ -592,7 +521,14 @@ export default function ServiceOrders() {
 
   const loadSOS = async () => {
     try {
-      const response = await ServiceOrdersApi.getAll();
+      let response;
+      if (user.role === "admin") {
+        response = await ServiceOrdersApi.getAll();
+      } else {
+        const emp = await HrmsEmployeesApi.getEmployeeByEmail(user.email);
+        console.log(emp);
+        response = await ServiceOrdersApi.getEmployeeSos(emp.id);
+      }
       console.log("Work Orders : ", response);
       return response;
     } catch (error) {
@@ -687,7 +623,7 @@ export default function ServiceOrders() {
   useEffect(() => {
     loadAllData();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [profile?.id]);
+  }, [profile?.id, user]);
 
   // --- Persist helpers ---
   const persistPOs = (newPOs: PO[]) => {
@@ -2086,7 +2022,7 @@ export default function ServiceOrders() {
         <div className="space-y-6">
           {/* PO Overview */}
           <div className="  sticky top-32   bg-white rounded-xl shadow-sm border border-gray-200 ">
-            <div className="overflow-y-auto max-h-[calc(100vh-160px)]">
+            <div className="overflow-y-auto min-h-10 max-h-[calc(100vh-160px)]">
               <table className="w-full min-w-[800px]">
                 <thead className="sticky top-0 z-10 bg-gray-200 border-b border-gray-200">
                   {/* Header Row */}
@@ -2378,13 +2314,24 @@ export default function ServiceOrders() {
                 </tbody>
               </table>
             </div>
+            {filteredPOs.length === 0 && (
+              <div className="text-center py-12">
+                <FileText className="w-12 h-12 md:w-16 md:h-16 text-gray-300 mx-auto mb-3" />
+                <p className="text-gray-600 text-sm md:text-lg font-medium">
+                  No Work orders found
+                </p>
+                <p className="text-gray-500 text-xs md:text-sm mt-2">
+                  {'Click "Create WO" to get started'}
+                </p>
+              </div>
+            )}
           </div>
         </div>
       )}
 
       {activeTab === "management" && (
         <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
-          <div className="overflow-x-auto h-[calc(100vh-160px)]">
+          <div className="overflow-x-auto min-h-10 max-h-[calc(100vh-160px)]">
             <table className="w-full min-w-[800px]">
               <thead className="sticky top-0 z-10 bg-gray-200 border-b border-gray-200">
                 {/* Header Row */}
