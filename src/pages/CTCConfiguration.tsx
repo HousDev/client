@@ -488,6 +488,8 @@ export default function CTCConfiguration() {
         return;
       }
 
+      console.log("templaete form : ", templateForm.components);
+
       const newTemplate: CTCTemplate = {
         id: `TMPL${Date.now()}`,
         name: templateForm.name,
@@ -519,11 +521,15 @@ export default function CTCConfiguration() {
   };
 
   const handleAddComponent = () => {
-    const totalPercent = templateForm.components.reduce(
-      (sum, t) => (sum += Number(t.value)),
-      0,
-    );
-    if (totalPercent >= 100) {
+    const totalPercent = templateForm.components.reduce((sum, t, index) => {
+      if (selectedCtcComponentIndex === index) {
+        return (sum += Number(newComponent.percentage));
+      } else {
+        return (sum += Number(t.value));
+      }
+    }, 0);
+
+    if (totalPercent > 100) {
       toast.error(
         "You have already added " +
           totalPercent +
@@ -541,7 +547,7 @@ export default function CTCConfiguration() {
       return;
     }
 
-    if (selectedCtcComponentIndex) {
+    if (selectedCtcComponentIndex !== null) {
       const tempComp = templateForm.components;
       tempComp[selectedCtcComponentIndex] = {
         name: newComponent.name,
@@ -560,13 +566,13 @@ export default function CTCConfiguration() {
         value: parseFloat(newComponent.percentage),
         is_taxable: newComponent.is_taxable,
       };
-
+      setSelectedCtcComponentIndex(null);
       setTemplateForm({
         ...templateForm,
         components: [...templateForm.components, component],
       });
     }
-
+    setSelectedCtcComponentIndex(null);
     setNewComponent({
       name: "",
       type: "earning",
@@ -627,9 +633,10 @@ export default function CTCConfiguration() {
     }
 
     const totalPercentage = templateForm.components.reduce(
-      (sum, comp) => sum + comp.value,
+      (sum, comp) => sum + Number(comp.value),
       0,
     );
+    console.log(totalPercentage, "while update");
     if (totalPercentage !== 100) {
       toast.error(
         `Total percentage must be 100%. Current: ${totalPercentage}%`,
@@ -1444,15 +1451,17 @@ export default function CTCConfiguration() {
                         value={newComponent.percentage}
                         onChange={(e) => {
                           if (
-                            Number(e.target.value) > 100 ||
-                            Number(e.target.value) + totalPercentage > 100
+                            selectedCtcComponentIndex === null &&
+                            (Number(e.target.value) > 100 ||
+                              Number(e.target.value) + totalPercentage > 100)
                           ) {
                             return;
                           }
-                          setNewComponent({
-                            ...newComponent,
-                            percentage: e.target.value,
-                          });
+                          if (Number(e.target.value) <= 100)
+                            setNewComponent({
+                              ...newComponent,
+                              percentage: e.target.value,
+                            });
                         }}
                         min="0"
                         max="100"
@@ -1833,12 +1842,20 @@ export default function CTCConfiguration() {
                         type="number"
                         placeholder="%"
                         value={newComponent.percentage}
-                        onChange={(e) =>
-                          setNewComponent({
-                            ...newComponent,
-                            percentage: e.target.value,
-                          })
-                        }
+                        onChange={(e) => {
+                          if (
+                            selectedCtcComponentIndex === null &&
+                            (Number(e.target.value) > 100 ||
+                              Number(e.target.value) + totalPercentage > 100)
+                          ) {
+                            return;
+                          }
+                          if (Number(e.target.value) <= 100)
+                            setNewComponent({
+                              ...newComponent,
+                              percentage: e.target.value,
+                            });
+                        }}
                         className="w-full px-3 py-2 text-sm border-2 border-gray-200 rounded-xl focus:border-[#C62828] focus:ring-2 focus:ring-[#C62828]/20 outline-none transition-all duration-200 hover:border-gray-300"
                       />
                     </div>

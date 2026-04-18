@@ -296,7 +296,6 @@ export default function StoreManagement({
       return enhancedTransactions;
     } catch (error) {
       console.error("Error loading transactions:", error);
-      alert("Failed to load transaction data");
       return [];
     } finally {
       setTransactionsLoading(false);
