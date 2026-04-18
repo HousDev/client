@@ -683,7 +683,7 @@ export default function Advance() {
               className="text-sm"
             >
               <Plus className="h-4 w-4 mr-1.5" />
-              New Advance Request
+              Advance Request
             </Button>
           </div>
         )}

@@ -43,6 +43,7 @@ interface MaterialOutFormData {
   receiver_name: string;
   receiver_phone: string;
   delivery_location: string;
+  project_id?: number | string;
   receiving_date: string;
   remark: string;
   vendorId: number;
@@ -61,6 +62,7 @@ export default function MaterialOutForm({
   loadAllData,
   setLoadTableData,
 }: MaterialOutFormProps) {
+  console.log("invtory", allInventory);
   const [loading, setLoading] = useState(false);
   const [showMaterialSelector, setShowMaterialSelector] = useState(false);
   const [materialSearch, setMaterialSearch] = useState("");
@@ -73,6 +75,7 @@ export default function MaterialOutForm({
     receiver_name: "",
     receiver_phone: "",
     delivery_location: "",
+    project_id: "",
     receiving_date: new Date().toISOString().split("T")[0],
     remark: "",
     vendorId: 0,
@@ -214,7 +217,6 @@ export default function MaterialOutForm({
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-
     // Validation
     if (!formData.receiver_name || formData.receiver_name.length < 3) {
       toast.error("Please enter valid receiver name", {
@@ -222,7 +224,9 @@ export default function MaterialOutForm({
       });
       return;
     }
-
+    if (!formData.project_id) {
+      toast.error("Please select a delivery location");
+    }
     if (formData.receiver_phone.length !== 10) {
       toast.error("Please enter valid mobile number", {
         description: "Mobile number must be exactly 10 digits",
@@ -283,6 +287,7 @@ export default function MaterialOutForm({
         receiver_phone: formData.receiver_phone,
         receiving_date: formData.receiving_date,
         delivery_location: formData.delivery_location,
+        project_id: formData.project_id,
         remark: formData.remark,
         materials: formData.materials.map((material) => ({
           materialId: material.materialId,
@@ -297,7 +302,7 @@ export default function MaterialOutForm({
         await inventoryTransactionApi.createTransactionOut(submissionData);
 
       toast.success("Materials issued successfully!", {
-        description: `${formData.materials.length} materials issued to ${formData.receiver_name}`,
+        description: `${formData.materials.length} materials Dispatched to ${formData.receiver_name}`,
       });
 
       setLoadTableData(result);
@@ -448,9 +453,15 @@ export default function MaterialOutForm({
                   </div>
                   <select
                     value={`${formData.delivery_location}`}
-                    onChange={(e) =>
-                      handleInputChange("delivery_location", e.target.value)
-                    }
+                    onChange={(e) => {
+                      handleInputChange("delivery_location", e.target.value);
+
+                      const project = allProjects.find(
+                        (proj: any) =>
+                          `${proj.name} - ${proj.location}` === e.target.value,
+                      );
+                      handleInputChange("project_id", project?.id || "");
+                    }}
                     className="w-full pl-10 pr-10 py-2.5 text-sm border border-gray-300 rounded-xl focus:border-[#b52124] focus:ring-2 focus:ring-[#b52124]/20 bg-white/50 outline-none transition-all duration-200 appearance-none hover:border-gray-400 text-[#40423f]"
                     required
                   >

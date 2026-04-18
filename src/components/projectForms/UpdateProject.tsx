@@ -1407,7 +1407,11 @@ export default function UpdateProject({
                                   </div>
                                   <input
                                     type="text"
-                                    value={floor.floor_name}
+                                    value={
+                                      floor.floor_name +
+                                      " " +
+                                      `(Floor - ${floorIndex + 1})`
+                                    }
                                     disabled
                                     className={`w-full flex-1 bg-transparent border-b focus:outline-none focus:border-[#C62828] px-1 py-1 text-xs ${
                                       errors[
@@ -1526,7 +1530,8 @@ export default function UpdateProject({
                             <div className="flex items-center gap-2">
                               <Layers className="w-3 h-3 text-gray-500" />
                               <span className="font-medium text-gray-700 text-sm">
-                                {floor.floor_name}
+                                {floor.floor_name}{" "}
+                                {"(" + "Floor - " + (floorIndex + 1) + ")"}
                               </span>
                             </div>
                             {errors[
@@ -2006,7 +2011,11 @@ export default function UpdateProject({
                                     <div className="flex items-center gap-1 mb-0.5">
                                       <Layers className="w-3 h-3 text-gray-400" />
                                       <span className="font-medium text-gray-700 text-xs">
-                                        {floor.floor_name}
+                                        {floor.floor_name}{" "}
+                                        {"(" +
+                                          "Floor - " +
+                                          (floorIndex + 1) +
+                                          ")"}
                                       </span>
                                       <span className="text-xs text-gray-500 ml-1">
                                         ({floor.flats.length} flats,{" "}

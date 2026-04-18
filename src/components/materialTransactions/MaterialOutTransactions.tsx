@@ -72,14 +72,17 @@ const MaterialOutTransactions = (loadTableData: any) => {
     }
   };
 
-  const updateTransactionStatus = async (id: number) => {
+  const updateTransactionStatus = async (data: any) => {
     try {
-      console.log("id : ", id);
       const updateRes: any =
-        await inventoryTransactionApi.updateTransactionStatus(id, {
-          status: "RECEIVED",
-        });
-      console.log(updateRes);
+        await inventoryTransactionApi.updateTransactionStatus(
+          data.transaction_id,
+          {
+            ...data,
+            status: "RECEIVED",
+          },
+        );
+
       if (updateRes.success) {
         loadTransactions();
         toast.success("Transaction status updated to RECEIVED");
@@ -109,7 +112,9 @@ const MaterialOutTransactions = (loadTableData: any) => {
           vendor: vendorData?.name || "N/A",
         };
       });
+
       setTransactions(enhancedTransactions);
+      loadTableData();
       return enhancedTransactions;
     } catch (error) {
       console.error("Error loading transactions:", error);
@@ -502,7 +507,7 @@ const MaterialOutTransactions = (loadTableData: any) => {
                     {transaction.request_status === "DISPATCHED" && (
                       <button
                         onClick={() => {
-                          updateTransactionStatus(transaction.transaction_id);
+                          updateTransactionStatus(transaction);
                         }}
                         className="px-2  text-green-600 rounded-lg transition text-xs flex items-center py-1"
                         title="Mark Received"

@@ -7,22 +7,19 @@ import {
   Wallet,
   Receipt,
   Package,
-  TrendingUp,
   AlertCircle,
   CheckCircle,
   Clock,
-  DollarSign,
   Truck,
   Building2,
   FileCheck,
   CreditCard,
+  IndianRupee,
 } from "lucide-react";
 import * as XLSX from "xlsx";
 import { useAuth } from "../contexts/AuthContext";
 import { format } from "date-fns";
 
-// API Service functions (to be implemented with your axios instance)
-import api from "../lib/Api";
 import poApi from "../lib/poApi";
 import poPaymentApi from "../lib/poPaymentApi";
 import inventoryApi from "../lib/inventoryApi";
@@ -225,7 +222,8 @@ export default function Reports() {
 
           // Calculate summary stats
           const totalValue = pos.reduce(
-            (sum: number, po: PurchaseOrder) => sum + (po.grand_total || 0),
+            (sum: number, po: PurchaseOrder) =>
+              sum + (Number(po.grand_total) || 0),
             0,
           );
           setSummaryStats({
@@ -646,7 +644,7 @@ export default function Reports() {
         {
           title: "Total Value",
           value: formatCurrency(summaryStats.totalPOValue),
-          icon: DollarSign,
+          icon: IndianRupee,
           color: "green",
         },
         {
@@ -688,7 +686,7 @@ export default function Reports() {
         {
           title: "Inventory Value",
           value: formatCurrency(summaryStats.totalInventoryValue),
-          icon: DollarSign,
+          icon: IndianRupee,
           color: "green",
         },
         {

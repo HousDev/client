@@ -88,7 +88,9 @@ export async function deletePurchaseOrderItem(
 }
 
 export async function getPOsItems() {
+  console.log("call");
   const res: any = await api.get(`/purchase-orders/purchaseOrderItems`);
+  console.log(res, "form api clal");
   return unwrap(res);
 }
 
