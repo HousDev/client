@@ -572,7 +572,6 @@ export default function UpdateServiceOrderForm({
       );
       console.log(updatePORes);
       if (updatePORes.success) toast.success("WO Updated Successfully.");
-      else toast.error("Faild to update WO.");
       await loadAllData();
 
       setShowEditModal(false);

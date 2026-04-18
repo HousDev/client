@@ -1,223 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
-// import { Eye, Package } from "lucide-react";
-// import { useEffect, useState } from "react";
-// import inventoryTransactionApi from "../../lib/inventoryTransactionApi";
-// import poApi from "../../lib/poApi";
-// import vendorApi from "../../lib/vendorApi";
-// import projectApi from "../../lib/projectApi";
-// import ViewTransaction from "../StoreManagement/ViewTransaction";
-
-// const MaterialIssueTransactions = (loadTableData: any) => {
-//   const [filteredTransactions, setFilteredTransactions] = useState<any>([]);
-//   const [selectedTransaction, setSelectedTransaction] = useState<any | null>(
-//     null
-//   );
-//   const [isOpen, setIsOpen] = useState<boolean>(false);
-
-//   const [activeFormTab, setActiveFormTab] = useState("");
-//   const [transactions, setTransactions] = useState<any>([]);
-//   const [searchTerm, setSearchTerm] = useState("");
-//   const getTransactionTypeColor = (type: string) => {
-//     const colors: Record<string, string> = {
-//       CREDIT: "bg-green-100 text-green-700",
-//       DEBIT: "bg-red-100 text-red-700",
-//     };
-//     return colors[type] || "bg-gray-100 text-gray-700";
-//   };
-//   const loadAllProjects = async () => {
-//     try {
-//       const poRes = await projectApi.getProjects();
-//       console.log("all project details,", poRes);
-//       return Array.isArray(poRes) ? poRes : [];
-//     } catch (error) {
-//       console.log(error);
-//       alert("Something wrong.");
-//     }
-//   };
-//   const loadAllVendors = async () => {
-//     try {
-//       const vendorsRes = await vendorApi.getVendors();
-//       console.log(vendorsRes);
-//       return Array.isArray(vendorsRes) ? vendorsRes : [];
-//     } catch (error) {
-//       console.log(error);
-//       alert("Something wrong.");
-//     }
-//   };
-//   const loadTransactions = async () => {
-//     try {
-//       const projects: any = await loadAllProjects();
-//       const allVendorsData: any = await loadAllVendors();
-
-//       const res: any =
-//         await inventoryTransactionApi.getIssueMaterialTransactions();
-//       console.log(res, "this is issue material");
-
-//       const transactions = Array.isArray(res) ? res : [];
-
-//       console.log(transactions);
-//       setTransactions(transactions);
-//       return transactions;
-//     } catch (error) {
-//       console.error("Error loading transactions:", error);
-//       alert("Failed to load transaction data");
-//       return [];
-//     }
-//   };
-
-//   useEffect(() => {
-//     loadTransactions();
-//   }, [loadTableData]);
-
-//   useEffect(() => {
-//     const searchLower = searchTerm.toLowerCase();
-
-//     const filtered = transactions.filter((transaction: any) => {
-//       const itemName = transaction.project_name?.toLowerCase() || "";
-//       const type = transaction.vendor_name.toLowerCase();
-//       const remark = transaction.receiver_name.toLowerCase();
-
-//       return (
-//         itemName.includes(searchLower) ||
-//         type.includes(searchLower) ||
-//         remark.includes(searchLower)
-//       );
-//     });
-//     setFilteredTransactions(filtered);
-//   }, [searchTerm, transactions]);
-//   return (
-//     <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
-//       <div className="overflow-x-auto">
-//         <table className="w-full">
-//           <thead className="bg-gray-100 border-b border-gray-200">
-//             <tr>
-//               <th className="text-left px-6 py-4 text-sm font-semibold text-gray-700">
-//                 Project
-//               </th>
-//               <th className="text-left px-6 py-4 text-sm font-semibold text-gray-700">
-//                 Building
-//               </th>
-//               <th className="text-left px-6 py-4 text-sm font-semibold text-gray-700">
-//                 Floor
-//               </th>
-//               <th className="text-left px-6 py-4 text-sm font-semibold text-gray-700">
-//                 Flat
-//               </th>
-//               <th className="text-left px-6 py-4 text-sm font-semibold text-gray-700">
-//                 Common Area
-//               </th>
-//               <th className="text-left px-6 py-4 text-sm font-semibold text-gray-700">
-//                 Vendor
-//               </th>
-//               <th className="text-left px-6 py-4 text-sm font-semibold text-gray-700">
-//                 Receiver Name
-//               </th>
-//               <th className="text-left px-6 py-4 text-sm font-semibold text-gray-700">
-//                 Receiver Number
-//               </th>
-//               <th className="text-left px-6 py-4 text-sm font-semibold text-gray-700">
-//                 Issue Date
-//               </th>
-//               <th className="text-left px-6 py-4 text-sm font-semibold text-gray-700">
-//                 Purpose
-//               </th>
-//             </tr>
-//           </thead>
-//           <tbody className="divide-y divide-gray-200">
-//             {filteredTransactions.map((transaction: any) => {
-//               return (
-//                 <tr
-//                   key={transaction.id}
-//                   className="hover:bg-gray-50 transition"
-//                 >
-//                   <td className="px-6 py-4">
-//                     <button
-//                       onClick={() => {
-//                         setSelectedTransaction(transaction);
-//                         setIsOpen(true);
-//                       }}
-//                       className="font-bold hover:underline cursor-pointer text-blue-600"
-//                     >
-//                       {transaction.project_name || "N/A"}
-//                     </button>
-//                   </td>
-//                   <td className="px-6 py-4">
-//                     <div className=" text-gray-800">
-//                       {transaction.building_name || "N/A"}
-//                     </div>
-//                   </td>
-//                   <td className="px-6 py-4">
-//                     <div className="">{transaction.floor_name || "N/A"}</div>
-//                   </td>
-//                   <td className="px-6 py-4">
-//                     <div className=" text-gray-800">
-//                       {transaction.flat_name ?? "N/A"}
-//                     </div>
-//                   </td>
-//                   <td className="px-6 py-4">
-//                     <div className=" text-gray-800">
-//                       {transaction.common_area_name ?? "N/A"}
-//                     </div>
-//                   </td>
-//                   <td className="px-6 py-4">
-//                     <div className=" text-gray-800">
-//                       {transaction.vendor_name ?? "N/A"}
-//                     </div>
-//                   </td>
-//                   <td className="px-6 py-4">
-//                     <div className=" text-gray-800">
-//                       {transaction.receiver_name ?? "N/A"}
-//                     </div>
-//                   </td>
-//                   <td className="px-6 py-4">
-//                     <div className=" text-gray-800">
-//                       {transaction.receiver_name ?? "N/A"}
-//                     </div>
-//                   </td>
-//                   <td className="px-6 py-4">
-//                     <div className=" text-gray-800">
-//                       {transaction.issue_date ?? "N/A"}
-//                     </div>
-//                   </td>
-//                   <td className="px-6 py-4">
-//                     <div className=" text-gray-800">
-//                       {transaction.purpose ?? "N/A"}
-//                     </div>
-//                   </td>
-//                 </tr>
-//               );
-//             })}
-//           </tbody>
-//         </table>
-
-//         {filteredTransactions.length === 0 && (
-//           <div className="text-center py-12">
-//             <Package className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-//             <h3 className="text-lg font-semibold text-gray-800 mb-2">
-//               No Transactions Found
-//             </h3>
-//             <p className="text-gray-600">
-//               {searchTerm
-//                 ? "Try a different search term"
-//                 : "No inventory transactions available"}
-//             </p>
-//           </div>
-//         )}
-//         {isOpen && (
-//           <ViewTransaction
-//             setIsOpen={setIsOpen}
-//             transaction={selectedTransaction}
-//             transactionType={"issueMaterial"}
-//           />
-//         )}
-//       </div>
-//     </div>
-//   );
-// };
-
-// export default MaterialIssueTransactions;
-
-
 import { Eye, Package, Filter, Trash2, X } from "lucide-react";
 import { useEffect, useState } from "react";
 import inventoryTransactionApi from "../../lib/inventoryTransactionApi";
@@ -229,18 +9,18 @@ import { toast } from "sonner";
 const MaterialIssueTransactions = (loadTableData: any) => {
   const [filteredTransactions, setFilteredTransactions] = useState<any>([]);
   const [selectedTransaction, setSelectedTransaction] = useState<any | null>(
-    null
+    null,
   );
   const [isOpen, setIsOpen] = useState<boolean>(false);
   const [transactions, setTransactions] = useState<any>([]);
-  
+
   // Checkbox states
   const [selectedItems, setSelectedItems] = useState<Set<number>>(new Set());
   const [selectAll, setSelectAll] = useState(false);
-  
+
   // Filter sidebar state
   const [showFilterSidebar, setShowFilterSidebar] = useState(false);
-  
+
   // Column search states
   const [searchProject, setSearchProject] = useState("");
   const [searchBuilding, setSearchBuilding] = useState("");
@@ -251,7 +31,7 @@ const MaterialIssueTransactions = (loadTableData: any) => {
   const [searchReceiver, setSearchReceiver] = useState("");
   const [searchIssueDate, setSearchIssueDate] = useState("");
   const [searchPurpose, setSearchPurpose] = useState("");
-  
+
   // Filter states
   const [filterFromDate, setFilterFromDate] = useState("");
   const [filterToDate, setFilterToDate] = useState("");
@@ -272,7 +52,7 @@ const MaterialIssueTransactions = (loadTableData: any) => {
       return Array.isArray(poRes) ? poRes : [];
     } catch (error) {
       console.log(error);
-     toast.error("Something wrong.");
+      toast.error("Something wrong.");
     }
   };
 
@@ -282,7 +62,7 @@ const MaterialIssueTransactions = (loadTableData: any) => {
       return Array.isArray(vendorsRes) ? vendorsRes : [];
     } catch (error) {
       console.log(error);
-     toast.error("Something wrong.");
+      toast.error("Something wrong.");
     }
   };
 
@@ -302,7 +82,7 @@ const MaterialIssueTransactions = (loadTableData: any) => {
       return transactions;
     } catch (error) {
       console.error("Error loading transactions:", error);
-     toast.error("Failed to load transaction data");
+      // toast.error("Failed to load transaction data");
       return [];
     }
   };
@@ -317,55 +97,73 @@ const MaterialIssueTransactions = (loadTableData: any) => {
     // Column searches
     if (searchProject) {
       filtered = filtered.filter((transaction: any) =>
-        (transaction.project_name || "").toLowerCase().includes(searchProject.toLowerCase())
+        (transaction.project_name || "")
+          .toLowerCase()
+          .includes(searchProject.toLowerCase()),
       );
     }
 
     if (searchBuilding) {
       filtered = filtered.filter((transaction: any) =>
-        (transaction.building_name || "").toLowerCase().includes(searchBuilding.toLowerCase())
+        (transaction.building_name || "")
+          .toLowerCase()
+          .includes(searchBuilding.toLowerCase()),
       );
     }
 
     if (searchFloor) {
       filtered = filtered.filter((transaction: any) =>
-        (transaction.floor_name || "").toLowerCase().includes(searchFloor.toLowerCase())
+        (transaction.floor_name || "")
+          .toLowerCase()
+          .includes(searchFloor.toLowerCase()),
       );
     }
 
     if (searchFlat) {
       filtered = filtered.filter((transaction: any) =>
-        (transaction.flat_name || "").toLowerCase().includes(searchFlat.toLowerCase())
+        (transaction.flat_name || "")
+          .toLowerCase()
+          .includes(searchFlat.toLowerCase()),
       );
     }
 
     if (searchCommonArea) {
       filtered = filtered.filter((transaction: any) =>
-        (transaction.common_area_name || "").toLowerCase().includes(searchCommonArea.toLowerCase())
+        (transaction.common_area_name || "")
+          .toLowerCase()
+          .includes(searchCommonArea.toLowerCase()),
       );
     }
 
     if (searchVendor) {
       filtered = filtered.filter((transaction: any) =>
-        (transaction.vendor_name || "").toLowerCase().includes(searchVendor.toLowerCase())
+        (transaction.vendor_name || "")
+          .toLowerCase()
+          .includes(searchVendor.toLowerCase()),
       );
     }
 
     if (searchReceiver) {
       filtered = filtered.filter((transaction: any) =>
-        (transaction.receiver_name || "").toLowerCase().includes(searchReceiver.toLowerCase())
+        (transaction.receiver_name || "")
+          .toLowerCase()
+          .includes(searchReceiver.toLowerCase()),
       );
     }
 
     if (searchIssueDate) {
       filtered = filtered.filter((transaction: any) =>
-        (transaction.issue_date || "").toLowerCase().includes(searchIssueDate.toLowerCase())
+        (transaction.issue_date || "")
+          .toLowerCase()
+          .includes(searchIssueDate.toLowerCase()),
       );
     }
 
     if (searchPurpose) {
       filtered = filtered.filter((transaction: any) =>
-        (transaction.purpose || "").toLowerCase().includes(searchPurpose.toLowerCase())
+        (transaction.purpose || "")
+          .toLowerCase()
+          .includes(searchPurpose.toLowerCase()),
       );
     }
 
@@ -391,19 +189,19 @@ const MaterialIssueTransactions = (loadTableData: any) => {
 
     setFilteredTransactions(filtered);
   }, [
-    searchProject, 
-    searchBuilding, 
-    searchFloor, 
-    searchFlat, 
+    searchProject,
+    searchBuilding,
+    searchFloor,
+    searchFlat,
     searchCommonArea,
-    searchVendor, 
-    searchReceiver, 
+    searchVendor,
+    searchReceiver,
     searchIssueDate,
-    searchPurpose, 
-    filterFromDate, 
-    filterToDate, 
-    ignoreDate, 
-    transactions
+    searchPurpose,
+    filterFromDate,
+    filterToDate,
+    ignoreDate,
+    transactions,
   ]);
 
   // Checkbox handlers
@@ -411,8 +209,10 @@ const MaterialIssueTransactions = (loadTableData: any) => {
     if (selectAll) {
       setSelectedItems(new Set());
     } else {
-      const allIds = new Set(filteredTransactions.map((transaction: any) => transaction.id));
-      setSelectedItems(allIds);
+      const allIds = new Set(
+        filteredTransactions.map((transaction: any) => transaction.id),
+      );
+      // setSelectedItems(allIds);
     }
     setSelectAll(!selectAll);
   };
@@ -430,17 +230,23 @@ const MaterialIssueTransactions = (loadTableData: any) => {
 
   const handleBulkDelete = async () => {
     if (selectedItems.size === 0) {
-     toast.error("Please select transactions to delete");
+      toast.error("Please select transactions to delete");
       return;
     }
 
-    if (!confirm(`Are you sure you want to delete ${selectedItems.size} transaction(s)? This action cannot be undone.`)) {
+    if (
+      !confirm(
+        `Are you sure you want to delete ${selectedItems.size} transaction(s)? This action cannot be undone.`,
+      )
+    ) {
       return;
     }
 
     try {
       await Promise.all(
-        Array.from(selectedItems).map((id) => inventoryTransactionApi.getIssueMaterialTransactions(id))
+        Array.from(selectedItems).map((id) =>
+          inventoryTransactionApi.getIssueMaterialTransactions(id),
+        ),
       );
       toast.error(`${selectedItems.size} transaction(s) deleted successfully!`);
       setSelectedItems(new Set());
@@ -448,7 +254,7 @@ const MaterialIssueTransactions = (loadTableData: any) => {
       await loadTransactions();
     } catch (error) {
       console.error("Error deleting transactions:", error);
-      toast.error("Failed to delete transactions");
+      // toast.error("Failed to delete transactions");
     }
   };
 
@@ -464,344 +270,380 @@ const MaterialIssueTransactions = (loadTableData: any) => {
 
   return (
     <div className="  p-3 md:p-4 bg-gray-50 min-h-screen">
-  {/* Main Table */}
-  <div className=" sticky top-52 z-10 bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
-<div className="overflow-y-auto max-h-[calc(100vh-240px)]">           
-      <table className=" sticky top-48 z-10 w-full min-w-[1000px]">
-        <thead className="sticky top-0 z-10 bg-gray-200 border-b border-gray-200">
-          <tr>
-            <th className="px-2 md:px-4 py-2 text-left">
-              <div className="text-[10px] md:text-xs font-semibold text-gray-700 uppercase tracking-wider">
-                Project
-              </div>
-            </th>
-            <th className="px-2 md:px-4 py-2 text-left">
-              <div className="text-[10px] md:text-xs font-semibold text-gray-700 uppercase tracking-wider">
-                Building
-              </div>
-            </th>
-            <th className="px-2 md:px-4 py-2 text-left">
-              <div className="text-[10px] md:text-xs font-semibold text-gray-700 uppercase tracking-wider">
-                Floor
-              </div>
-            </th>
-            <th className="px-2 md:px-4 py-2 text-left">
-              <div className="text-[10px] md:text-xs font-semibold text-gray-700 uppercase tracking-wider">
-                Flat
-              </div>
-            </th>
-            <th className="px-2 md:px-4 py-2 text-left">
-              <div className="text-[10px] md:text-xs font-semibold text-gray-700 uppercase tracking-wider">
-                Common Area
-              </div>
-            </th>
-            <th className="px-2 md:px-4 py-2 text-left">
-              <div className="text-[10px] md:text-xs font-semibold text-gray-700 uppercase tracking-wider">
-                Vendor
-              </div>
-            </th>
-            <th className="px-2 md:px-4 py-2 text-left">
-              <div className="text-[10px] md:text-xs font-semibold text-gray-700 uppercase tracking-wider">
-                Receiver
-              </div>
-            </th>
-            <th className="px-2 md:px-4 py-2 text-left">
-              <div className="text-[10px] md:text-xs font-semibold text-gray-700 uppercase tracking-wider">
-                Issue Date
-              </div>
-            </th>
-            <th className="px-2 md:px-4 py-2 text-left">
-              <div className="text-[10px] md:text-xs font-semibold text-gray-700 uppercase tracking-wider">
-                Purpose
-              </div>
-            </th>
-          </tr>
-          
-          {/* Search Row - Reduced Height */}
-          <tr className="bg-gray-50 border-b border-gray-200">
-            {/* Project Column */}
-            <td className="px-2 md:px-4 py-1">
-              <input
-                type="text"
-                placeholder="Search project..."
-                value={searchProject}
-                onChange={(e) => setSearchProject(e.target.value)}
-                className="w-full px-2 py-1 text-[10px] md:text-xs border border-gray-300 rounded focus:ring-1 focus:ring-[#C62828] focus:border-transparent"
-              />
-            </td>
-            
-            {/* Building Column */}
-            <td className="px-2 md:px-4 py-1">
-              <input
-                type="text"
-                placeholder="Search building..."
-                value={searchBuilding}
-                onChange={(e) => setSearchBuilding(e.target.value)}
-                className="w-full px-2 py-1 text-[10px] md:text-xs border border-gray-300 rounded focus:ring-1 focus:ring-[#C62828] focus:border-transparent"
-              />
-            </td>
-            
-            {/* Floor Column */}
-            <td className="px-2 md:px-4 py-1">
-              <input
-                type="text"
-                placeholder="Search floor..."
-                value={searchFloor}
-                onChange={(e) => setSearchFloor(e.target.value)}
-                className="w-full px-2 py-1 text-[10px] md:text-xs border border-gray-300 rounded focus:ring-1 focus:ring-[#C62828] focus:border-transparent"
-              />
-            </td>
-            
-            {/* Flat Column */}
-            <td className="px-2 md:px-4 py-1">
-              <input
-                type="text"
-                placeholder="Search flat..."
-                value={searchFlat}
-                onChange={(e) => setSearchFlat(e.target.value)}
-                className="w-full px-2 py-1 text-[10px] md:text-xs border border-gray-300 rounded focus:ring-1 focus:ring-[#C62828] focus:border-transparent"
-              />
-            </td>
-            
-            {/* Common Area Column */}
-            <td className="px-2 md:px-4 py-1">
-              <input
-                type="text"
-                placeholder="Search common area..."
-                value={searchCommonArea}
-                onChange={(e) => setSearchCommonArea(e.target.value)}
-                className="w-full px-2 py-1 text-[10px] md:text-xs border border-gray-300 rounded focus:ring-1 focus:ring-[#C62828] focus:border-transparent"
-              />
-            </td>
-            
-            {/* Vendor Column */}
-            <td className="px-2 md:px-4 py-1">
-              <input
-                type="text"
-                placeholder="Search vendor..."
-                value={searchVendor}
-                onChange={(e) => setSearchVendor(e.target.value)}
-                className="w-full px-2 py-1 text-[10px] md:text-xs border border-gray-300 rounded focus:ring-1 focus:ring-[#C62828] focus:border-transparent"
-              />
-            </td>
-            
-            {/* Receiver Column */}
-            <td className="px-2 md:px-4 py-1">
-              <input
-                type="text"
-                placeholder="Search receiver..."
-                value={searchReceiver}
-                onChange={(e) => setSearchReceiver(e.target.value)}
-                className="w-full px-2 py-1 text-[10px] md:text-xs border border-gray-300 rounded focus:ring-1 focus:ring-[#C62828] focus:border-transparent"
-              />
-            </td>
-            
-            {/* Issue Date Column */}
-            <td className="px-2 md:px-4 py-1">
-              <input
-                type="text"
-                placeholder="Search date..."
-                value={searchIssueDate}
-                onChange={(e) => setSearchIssueDate(e.target.value)}
-                className="w-full px-2 py-1 text-[10px] md:text-xs border border-gray-300 rounded focus:ring-1 focus:ring-[#C62828] focus:border-transparent"
-              />
-            </td>
-            
-            {/* Purpose Column */}
-            <td className="px-2 md:px-4 py-1">
-              <input
-                type="text"
-                placeholder="Search purpose..."
-                value={searchPurpose}
-                onChange={(e) => setSearchPurpose(e.target.value)}
-                className="w-full px-2 py-1 text-[10px] md:text-xs border border-gray-300 rounded focus:ring-1 focus:ring-[#C62828] focus:border-transparent"
-              />
-            </td>
-          </tr>
-        </thead>
-        <tbody className="divide-y divide-gray-200">
-          {filteredTransactions.map((transaction: any) => (
-            <tr
-              key={transaction.id}
-              className="hover:bg-gray-50 transition"
-            >
-              <td className="px-2 md:px-4 py-2">
-                <button
-                  onClick={() => {
-                    setSelectedTransaction(transaction);
-                    setIsOpen(true);
-                  }}
-                  className="font-bold hover:underline cursor-pointer text-blue-600 text-xs md:text-sm truncate block max-w-[120px]"
-                  title={transaction.project_name || "N/A"}
+      {/* Main Table */}
+      <div className=" sticky top-52 z-10 bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+        <div className="overflow-y-auto max-h-[calc(100vh-240px)]">
+          <table className=" sticky top-48 z-10 w-full min-w-[1000px]">
+            <thead className="sticky top-0 z-10 bg-gray-200 border-b border-gray-200">
+              <tr>
+                <th className="px-2 md:px-4 py-2 text-left">
+                  <div className="text-[10px] md:text-xs font-semibold text-gray-700 uppercase tracking-wider">
+                    Project
+                  </div>
+                </th>
+                <th className="px-2 md:px-4 py-2 text-left">
+                  <div className="text-[10px] md:text-xs font-semibold text-gray-700 uppercase tracking-wider">
+                    Building
+                  </div>
+                </th>
+                <th className="px-2 md:px-4 py-2 text-left">
+                  <div className="text-[10px] md:text-xs font-semibold text-gray-700 uppercase tracking-wider">
+                    Floor
+                  </div>
+                </th>
+                <th className="px-2 md:px-4 py-2 text-left">
+                  <div className="text-[10px] md:text-xs font-semibold text-gray-700 uppercase tracking-wider">
+                    Flat
+                  </div>
+                </th>
+                <th className="px-2 md:px-4 py-2 text-left">
+                  <div className="text-[10px] md:text-xs font-semibold text-gray-700 uppercase tracking-wider">
+                    Common Area
+                  </div>
+                </th>
+                <th className="px-2 md:px-4 py-2 text-left">
+                  <div className="text-[10px] md:text-xs font-semibold text-gray-700 uppercase tracking-wider">
+                    Vendor
+                  </div>
+                </th>
+                <th className="px-2 md:px-4 py-2 text-left">
+                  <div className="text-[10px] md:text-xs font-semibold text-gray-700 uppercase tracking-wider">
+                    Receiver
+                  </div>
+                </th>
+                <th className="px-2 md:px-4 py-2 text-left">
+                  <div className="text-[10px] md:text-xs font-semibold text-gray-700 uppercase tracking-wider">
+                    Issue Date
+                  </div>
+                </th>
+                <th className="px-2 md:px-4 py-2 text-left">
+                  <div className="text-[10px] md:text-xs font-semibold text-gray-700 uppercase tracking-wider">
+                    Purpose
+                  </div>
+                </th>
+              </tr>
+
+              {/* Search Row - Reduced Height */}
+              <tr className="bg-gray-50 border-b border-gray-200">
+                {/* Project Column */}
+                <td className="px-2 md:px-4 py-1">
+                  <input
+                    type="text"
+                    placeholder="Search project..."
+                    value={searchProject}
+                    onChange={(e) => setSearchProject(e.target.value)}
+                    className="w-full px-2 py-1 text-[10px] md:text-xs border border-gray-300 rounded focus:ring-1 focus:ring-[#C62828] focus:border-transparent"
+                  />
+                </td>
+
+                {/* Building Column */}
+                <td className="px-2 md:px-4 py-1">
+                  <input
+                    type="text"
+                    placeholder="Search building..."
+                    value={searchBuilding}
+                    onChange={(e) => setSearchBuilding(e.target.value)}
+                    className="w-full px-2 py-1 text-[10px] md:text-xs border border-gray-300 rounded focus:ring-1 focus:ring-[#C62828] focus:border-transparent"
+                  />
+                </td>
+
+                {/* Floor Column */}
+                <td className="px-2 md:px-4 py-1">
+                  <input
+                    type="text"
+                    placeholder="Search floor..."
+                    value={searchFloor}
+                    onChange={(e) => setSearchFloor(e.target.value)}
+                    className="w-full px-2 py-1 text-[10px] md:text-xs border border-gray-300 rounded focus:ring-1 focus:ring-[#C62828] focus:border-transparent"
+                  />
+                </td>
+
+                {/* Flat Column */}
+                <td className="px-2 md:px-4 py-1">
+                  <input
+                    type="text"
+                    placeholder="Search flat..."
+                    value={searchFlat}
+                    onChange={(e) => setSearchFlat(e.target.value)}
+                    className="w-full px-2 py-1 text-[10px] md:text-xs border border-gray-300 rounded focus:ring-1 focus:ring-[#C62828] focus:border-transparent"
+                  />
+                </td>
+
+                {/* Common Area Column */}
+                <td className="px-2 md:px-4 py-1">
+                  <input
+                    type="text"
+                    placeholder="Search common area..."
+                    value={searchCommonArea}
+                    onChange={(e) => setSearchCommonArea(e.target.value)}
+                    className="w-full px-2 py-1 text-[10px] md:text-xs border border-gray-300 rounded focus:ring-1 focus:ring-[#C62828] focus:border-transparent"
+                  />
+                </td>
+
+                {/* Vendor Column */}
+                <td className="px-2 md:px-4 py-1">
+                  <input
+                    type="text"
+                    placeholder="Search vendor..."
+                    value={searchVendor}
+                    onChange={(e) => setSearchVendor(e.target.value)}
+                    className="w-full px-2 py-1 text-[10px] md:text-xs border border-gray-300 rounded focus:ring-1 focus:ring-[#C62828] focus:border-transparent"
+                  />
+                </td>
+
+                {/* Receiver Column */}
+                <td className="px-2 md:px-4 py-1">
+                  <input
+                    type="text"
+                    placeholder="Search receiver..."
+                    value={searchReceiver}
+                    onChange={(e) => setSearchReceiver(e.target.value)}
+                    className="w-full px-2 py-1 text-[10px] md:text-xs border border-gray-300 rounded focus:ring-1 focus:ring-[#C62828] focus:border-transparent"
+                  />
+                </td>
+
+                {/* Issue Date Column */}
+                <td className="px-2 md:px-4 py-1">
+                  <input
+                    type="text"
+                    placeholder="Search date..."
+                    value={searchIssueDate}
+                    onChange={(e) => setSearchIssueDate(e.target.value)}
+                    className="w-full px-2 py-1 text-[10px] md:text-xs border border-gray-300 rounded focus:ring-1 focus:ring-[#C62828] focus:border-transparent"
+                  />
+                </td>
+
+                {/* Purpose Column */}
+                <td className="px-2 md:px-4 py-1">
+                  <input
+                    type="text"
+                    placeholder="Search purpose..."
+                    value={searchPurpose}
+                    onChange={(e) => setSearchPurpose(e.target.value)}
+                    className="w-full px-2 py-1 text-[10px] md:text-xs border border-gray-300 rounded focus:ring-1 focus:ring-[#C62828] focus:border-transparent"
+                  />
+                </td>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-gray-200">
+              {filteredTransactions.map((transaction: any) => (
+                <tr
+                  key={transaction.id}
+                  className="hover:bg-gray-50 transition"
                 >
-                  {transaction.project_name || "N/A"}
-                </button>
-              </td>
-              <td className="px-2 md:px-4 py-2">
-                <div className="text-gray-800 text-xs md:text-sm truncate max-w-[120px]" title={transaction.building_name || "N/A"}>
-                  {transaction.building_name || "N/A"}
-                </div>
-              </td>
-              <td className="px-2 md:px-4 py-2">
-                <div className="text-gray-800 text-xs md:text-sm truncate max-w-[120px]" title={transaction.floor_name || "N/A"}>
-                  {transaction.floor_name || "N/A"}
-                </div>
-              </td>
-              <td className="px-2 md:px-4 py-2">
-                <div className="text-gray-800 text-xs md:text-sm truncate max-w-[120px]" title={transaction.flat_name ?? "N/A"}>
-                  {transaction.flat_name ?? "N/A"}
-                </div>
-              </td>
-              <td className="px-2 md:px-4 py-2">
-                <div className="text-gray-800 text-xs md:text-sm truncate max-w-[120px]" title={transaction.common_area_name ?? "N/A"}>
-                  {transaction.common_area_name ?? "N/A"}
-                </div>
-              </td>
-              <td className="px-2 md:px-4 py-2">
-                <div className="text-gray-800 text-xs md:text-sm truncate max-w-[120px]" title={transaction.vendor_name ?? "N/A"}>
-                  {transaction.vendor_name ?? "N/A"}
-                </div>
-              </td>
-              <td className="px-2 md:px-4 py-2">
-                <div className="text-gray-800 text-xs md:text-sm truncate max-w-[120px]" title={transaction.receiver_name ?? "N/A"}>
-                  {transaction.receiver_name ?? "N/A"}
-                </div>
-              </td>
-              <td className="px-2 md:px-4 py-2">
-                <div className="text-gray-800 text-xs md:text-sm whitespace-nowrap">
-                  {transaction.issue_date ?? "N/A"}
-                </div>
-              </td>
-              <td className="px-2 md:px-4 py-2">
-                <div className="text-gray-800 text-xs md:text-sm truncate max-w-[120px]" title={transaction.purpose ?? "N/A"}>
-                  {transaction.purpose ?? "N/A"}
-                </div>
-              </td>
-            </tr>
-          ))}
-          
-          {filteredTransactions.length === 0 && (
-            <tr>
-              <td colSpan={9} className="px-4 py-8 text-center">
-                <Package className="w-12 h-12 md:w-16 md:h-16 text-gray-300 mx-auto mb-3" />
-                <p className="text-gray-600 text-sm md:text-lg font-medium">No Transactions Found</p>
-                <p className="text-gray-500 text-xs md:text-sm mt-1">
-                  {searchProject || searchBuilding || searchFloor || searchFlat || searchCommonArea || searchVendor || searchReceiver || searchIssueDate || searchPurpose
-                    ? "Try a different search term"
-                    : "No issue transactions available"}
-                </p>
-              </td>
-            </tr>
-          )}
-        </tbody>
-      </table>
-    </div>
-  </div>
+                  <td className="px-2 md:px-4 py-2">
+                    <button
+                      onClick={() => {
+                        setSelectedTransaction(transaction);
+                        setIsOpen(true);
+                      }}
+                      className="font-bold hover:underline cursor-pointer text-blue-600 text-xs md:text-sm truncate block max-w-[120px]"
+                      title={transaction.project_name || "N/A"}
+                    >
+                      {transaction.project_name || "N/A"}
+                    </button>
+                  </td>
+                  <td className="px-2 md:px-4 py-2">
+                    <div
+                      className="text-gray-800 text-xs md:text-sm truncate max-w-[120px]"
+                      title={transaction.building_name || "N/A"}
+                    >
+                      {transaction.building_name || "N/A"}
+                    </div>
+                  </td>
+                  <td className="px-2 md:px-4 py-2">
+                    <div
+                      className="text-gray-800 text-xs md:text-sm truncate max-w-[120px]"
+                      title={transaction.floor_name || "N/A"}
+                    >
+                      {transaction.floor_name || "N/A"}
+                    </div>
+                  </td>
+                  <td className="px-2 md:px-4 py-2">
+                    <div
+                      className="text-gray-800 text-xs md:text-sm truncate max-w-[120px]"
+                      title={transaction.flat_name ?? "N/A"}
+                    >
+                      {transaction.flat_name ?? "N/A"}
+                    </div>
+                  </td>
+                  <td className="px-2 md:px-4 py-2">
+                    <div
+                      className="text-gray-800 text-xs md:text-sm truncate max-w-[120px]"
+                      title={transaction.common_area_name ?? "N/A"}
+                    >
+                      {transaction.common_area_name ?? "N/A"}
+                    </div>
+                  </td>
+                  <td className="px-2 md:px-4 py-2">
+                    <div
+                      className="text-gray-800 text-xs md:text-sm truncate max-w-[120px]"
+                      title={transaction.vendor_name ?? "N/A"}
+                    >
+                      {transaction.vendor_name ?? "N/A"}
+                    </div>
+                  </td>
+                  <td className="px-2 md:px-4 py-2">
+                    <div
+                      className="text-gray-800 text-xs md:text-sm truncate max-w-[120px]"
+                      title={transaction.receiver_name ?? "N/A"}
+                    >
+                      {transaction.receiver_name ?? "N/A"}
+                    </div>
+                  </td>
+                  <td className="px-2 md:px-4 py-2">
+                    <div className="text-gray-800 text-xs md:text-sm whitespace-nowrap">
+                      {transaction.issue_date ?? "N/A"}
+                    </div>
+                  </td>
+                  <td className="px-2 md:px-4 py-2">
+                    <div
+                      className="text-gray-800 text-xs md:text-sm truncate max-w-[120px]"
+                      title={transaction.purpose ?? "N/A"}
+                    >
+                      {transaction.purpose ?? "N/A"}
+                    </div>
+                  </td>
+                </tr>
+              ))}
 
-  {/* Filter Sidebar - Fixed for mobile */}
-  {showFilterSidebar && (
-    <div className="fixed inset-0 z-50 overflow-hidden">
-      <div
-        className={`absolute inset-0 bg-black bg-opacity-50 transition-opacity ${
-          showFilterSidebar ? 'opacity-100' : 'opacity-0'
-        }`}
-        onClick={() => setShowFilterSidebar(false)}
-      ></div>
-      <div className={`absolute inset-y-0 right-0 bg-white shadow-2xl flex flex-col transition-transform duration-300 ${
-        showFilterSidebar ? 'translate-x-0' : 'translate-x-full'
-      } md:max-w-md w-full md:w-96`}>
-        <div className="bg-[#C62828] px-4 py-3 flex justify-between items-center">
-          <h2 className="text-lg font-bold text-white">Filters</h2>
-          <div className="flex items-center gap-2 md:gap-3">
-            <button
-              onClick={resetFilters}
-              className="text-white text-xs md:text-sm hover:bg-white hover:bg-opacity-20 px-2 md:px-3 py-1 md:py-1.5 rounded transition"
-            >
-              Reset
-            </button>
-            <button
-              onClick={() => setShowFilterSidebar(false)}
-              className="text-white hover:bg-white hover:bg-opacity-20 rounded-lg p-1 transition"
-            >
-              <X className="w-4 h-4 md:w-5 md:h-5" />
-            </button>
-          </div>
-        </div>
-
-        <div className="flex-1 overflow-y-auto p-4 md:p-6 space-y-4 md:space-y-6">
-          <div className="border-t pt-4">
-            <label className="block text-xs md:text-sm font-medium text-gray-700 mb-2">
-              From Date
-            </label>
-            <input
-              type="date"
-              value={filterFromDate}
-              onChange={(e) => setFilterFromDate(e.target.value)}
-              disabled={ignoreDate}
-              className="w-full px-3 py-2 text-xs md:text-sm border border-gray-300 rounded focus:ring-1 md:focus:ring-2 focus:ring-[#C62828] focus:border-transparent disabled:bg-gray-100 disabled:cursor-not-allowed"
-            />
-          </div>
-
-          <div>
-            <label className="block text-xs md:text-sm font-medium text-gray-700 mb-2">
-              To Date
-            </label>
-            <input
-              type="date"
-              value={filterToDate}
-              onChange={(e) => setFilterToDate(e.target.value)}
-              disabled={ignoreDate}
-              className="w-full px-3 py-2 text-xs md:text-sm border border-gray-300 rounded focus:ring-1 md:focus:ring-2 focus:ring-[#C62828] focus:border-transparent disabled:bg-gray-100 disabled:cursor-not-allowed"
-            />
-          </div>
-
-          <div className="flex items-center gap-2">
-            <input
-              type="checkbox"
-              id="ignoreDate"
-              checked={ignoreDate}
-              onChange={(e) => {
-                setIgnoreDate(e.target.checked);
-                if (e.target.checked) {
-                  setFilterFromDate("");
-                  setFilterToDate("");
-                }
-              }}
-              className="w-4 h-4 text-[#C62828] border-gray-300 rounded focus:ring-[#C62828]"
-            />
-            <label htmlFor="ignoreDate" className="text-xs md:text-sm text-gray-700 cursor-pointer">
-              Ignore Date
-            </label>
-          </div>
-        </div>
-
-        <div className="border-t p-3 md:p-4 flex gap-2 md:gap-3">
-          <button
-            onClick={resetFilters}
-            className="flex-1 px-3 md:px-4 py-2 text-xs md:text-sm border border-gray-300 rounded hover:bg-gray-50 transition font-medium text-gray-700"
-          >
-            Reset
-          </button>
-          <button
-            onClick={applyFilters}
-            className="flex-1 bg-[#C62828] text-white px-3 md:px-4 py-2 text-xs md:text-sm rounded hover:shadow-lg transition font-medium"
-          >
-            Apply
-          </button>
+              {filteredTransactions.length === 0 && (
+                <tr>
+                  <td colSpan={9} className="px-4 py-8 text-center">
+                    <Package className="w-12 h-12 md:w-16 md:h-16 text-gray-300 mx-auto mb-3" />
+                    <p className="text-gray-600 text-sm md:text-lg font-medium">
+                      No Transactions Found
+                    </p>
+                    <p className="text-gray-500 text-xs md:text-sm mt-1">
+                      {searchProject ||
+                      searchBuilding ||
+                      searchFloor ||
+                      searchFlat ||
+                      searchCommonArea ||
+                      searchVendor ||
+                      searchReceiver ||
+                      searchIssueDate ||
+                      searchPurpose
+                        ? "Try a different search term"
+                        : "No issue transactions available"}
+                    </p>
+                  </td>
+                </tr>
+              )}
+            </tbody>
+          </table>
         </div>
       </div>
-    </div>
-  )}
 
-  {/* View Transaction Modal */}
-  {isOpen && (
-    <ViewTransaction
-      setIsOpen={setIsOpen}
-      transaction={selectedTransaction}
-      transactionType={"issueMaterial"}
-    />
-  )}
-</div>
+      {/* Filter Sidebar - Fixed for mobile */}
+      {showFilterSidebar && (
+        <div className="fixed inset-0 z-50 overflow-hidden">
+          <div
+            className={`absolute inset-0 bg-black bg-opacity-50 transition-opacity ${
+              showFilterSidebar ? "opacity-100" : "opacity-0"
+            }`}
+            onClick={() => setShowFilterSidebar(false)}
+          ></div>
+          <div
+            className={`absolute inset-y-0 right-0 bg-white shadow-2xl flex flex-col transition-transform duration-300 ${
+              showFilterSidebar ? "translate-x-0" : "translate-x-full"
+            } md:max-w-md w-full md:w-96`}
+          >
+            <div className="bg-[#C62828] px-4 py-3 flex justify-between items-center">
+              <h2 className="text-lg font-bold text-white">Filters</h2>
+              <div className="flex items-center gap-2 md:gap-3">
+                <button
+                  onClick={resetFilters}
+                  className="text-white text-xs md:text-sm hover:bg-white hover:bg-opacity-20 px-2 md:px-3 py-1 md:py-1.5 rounded transition"
+                >
+                  Reset
+                </button>
+                <button
+                  onClick={() => setShowFilterSidebar(false)}
+                  className="text-white hover:bg-white hover:bg-opacity-20 rounded-lg p-1 transition"
+                >
+                  <X className="w-4 h-4 md:w-5 md:h-5" />
+                </button>
+              </div>
+            </div>
+
+            <div className="flex-1 overflow-y-auto p-4 md:p-6 space-y-4 md:space-y-6">
+              <div className="border-t pt-4">
+                <label className="block text-xs md:text-sm font-medium text-gray-700 mb-2">
+                  From Date
+                </label>
+                <input
+                  type="date"
+                  value={filterFromDate}
+                  onChange={(e) => setFilterFromDate(e.target.value)}
+                  disabled={ignoreDate}
+                  className="w-full px-3 py-2 text-xs md:text-sm border border-gray-300 rounded focus:ring-1 md:focus:ring-2 focus:ring-[#C62828] focus:border-transparent disabled:bg-gray-100 disabled:cursor-not-allowed"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs md:text-sm font-medium text-gray-700 mb-2">
+                  To Date
+                </label>
+                <input
+                  type="date"
+                  value={filterToDate}
+                  onChange={(e) => setFilterToDate(e.target.value)}
+                  disabled={ignoreDate}
+                  className="w-full px-3 py-2 text-xs md:text-sm border border-gray-300 rounded focus:ring-1 md:focus:ring-2 focus:ring-[#C62828] focus:border-transparent disabled:bg-gray-100 disabled:cursor-not-allowed"
+                />
+              </div>
+
+              <div className="flex items-center gap-2">
+                <input
+                  type="checkbox"
+                  id="ignoreDate"
+                  checked={ignoreDate}
+                  onChange={(e) => {
+                    setIgnoreDate(e.target.checked);
+                    if (e.target.checked) {
+                      setFilterFromDate("");
+                      setFilterToDate("");
+                    }
+                  }}
+                  className="w-4 h-4 text-[#C62828] border-gray-300 rounded focus:ring-[#C62828]"
+                />
+                <label
+                  htmlFor="ignoreDate"
+                  className="text-xs md:text-sm text-gray-700 cursor-pointer"
+                >
+                  Ignore Date
+                </label>
+              </div>
+            </div>
+
+            <div className="border-t p-3 md:p-4 flex gap-2 md:gap-3">
+              <button
+                onClick={resetFilters}
+                className="flex-1 px-3 md:px-4 py-2 text-xs md:text-sm border border-gray-300 rounded hover:bg-gray-50 transition font-medium text-gray-700"
+              >
+                Reset
+              </button>
+              <button
+                onClick={applyFilters}
+                className="flex-1 bg-[#C62828] text-white px-3 md:px-4 py-2 text-xs md:text-sm rounded hover:shadow-lg transition font-medium"
+              >
+                Apply
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* View Transaction Modal */}
+      {isOpen && (
+        <ViewTransaction
+          setIsOpen={setIsOpen}
+          transaction={selectedTransaction}
+          transactionType={"issueMaterial"}
+        />
+      )}
+    </div>
   );
 };
 

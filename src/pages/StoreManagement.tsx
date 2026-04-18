@@ -23,7 +23,6 @@ import {
   CircleX,
 } from "lucide-react";
 import { useAuth } from "../contexts/AuthContext";
-import InventoryTransaction from "../components/InventoryTransaction";
 import UpdateInventoryForm from "../components/UpdateInventory";
 import inventoryApi from "../lib/inventoryApi";
 import inventoryTransactionApi from "../lib/inventoryTransactionApi";
