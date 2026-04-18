@@ -19,6 +19,7 @@ import { LeaveApi } from "../lib/leaveApi";
 import expenseApi from "../lib/expenseApi";
 import * as XLSX from "xlsx";
 import ticketApi from "../lib/ticketApi";
+import { useAuth } from "../contexts/AuthContext";
 
 type ReportType =
   | "employees"
@@ -57,6 +58,7 @@ export default function Reports() {
   };
   const [fromAttendance, setFromAttendance] = useState(getCurrentMonth());
   const [toAttendance, setToAttendance] = useState(getCurrentMonth());
+  const { can, user } = useAuth();
 
   useEffect(() => {
     fetchReportData();
@@ -235,7 +237,8 @@ export default function Reports() {
           [
             "Employee",
             "Employee Code",
-            "Date",
+            "From Month",
+            "To Month",
             "Check In",
             "Check In Location",
             "Check Out",
@@ -246,7 +249,8 @@ export default function Reports() {
           ...reportData.attendance.map((att) => [
             att.user_name,
             att.employee_code,
-            formatters.date(att.date),
+            fromAttendance,
+            toAttendance,
             att.punch_in_time || "N/A",
             att.punch_in_location || "N/A",
             att.punch_out_time || "N/A",
@@ -866,6 +870,7 @@ export default function Reports() {
           {reportTypes.map((type) => {
             const Icon = type.icon;
             const isSelected = selectedReport === type.value;
+            if (!can("view_employee") && type.value === "employees") return;
             return (
               <button
                 key={type.value}

@@ -150,8 +150,6 @@ const CtcTemplate = () => {
       console.log("component", ctcTemplatesRes.data);
       setTemplates(ctcTemplatesRes.data || []);
     } catch (error) {
-      console.error("Error loading data:", error);
-      toast.error("Failed to load data");
     } finally {
       setLoading(false);
     }

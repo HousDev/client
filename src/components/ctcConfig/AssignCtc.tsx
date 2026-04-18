@@ -273,7 +273,6 @@ const AssignCtc = () => {
       console.log("res : ", ctcTemplatesRes);
     } catch (error) {
       console.error("Error loading data:", error);
-      toast.error("Failed to load data");
     } finally {
       setLoading(false);
     }

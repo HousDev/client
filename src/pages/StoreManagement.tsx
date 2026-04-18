@@ -105,6 +105,9 @@ export default function StoreManagement({
   // ADD RETURN TYPE JSX.Element
   const { can } = useAuth();
   const [inventory, setInventory] = useState<InventoryItem[]>([]);
+  const [allInventoryItems, setAllInventoryItems] = useState<InventoryItem[]>(
+    [],
+  );
   const [transactions, setTransactions] = useState<InventoryTransaction[]>([]);
   const [loadTableData, setLoadTableData] = useState<any>();
   const [loading, setLoading] = useState(true);
@@ -225,8 +228,7 @@ export default function StoreManagement({
     try {
       setInventoryLoading(true);
       const data: any = await inventoryApi.getInventory();
-
-      console.log(data);
+      setAllInventoryItems(Array.isArray(data) ? data : []);
       const inventoryData: InventoryItem[] = data.map((inventoryItem: any) => {
         const item: any = items.find((i) => i.id === inventoryItem.item_id);
         return {
@@ -321,7 +323,6 @@ export default function StoreManagement({
       }
     } catch (error) {
       console.error("Error loading all data:", error);
-      alert("Failed to load data");
     } finally {
       setRefreshing(false);
       setLoading(false);
@@ -768,7 +769,7 @@ export default function StoreManagement({
         <MaterialOutForm
           setLoadTableData={setLoadTableData}
           setActiveFormTab={setActiveFormTab}
-          allInventory={filteredInventory}
+          allInventory={allInventoryItems}
           loadAllData={loadAllData}
         />
       )}

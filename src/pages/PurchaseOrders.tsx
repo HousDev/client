@@ -541,7 +541,7 @@ export default function PurchaseOrders() {
         console.log(emp);
         response = await poApi.getEmployeePOs(emp.id);
       }
-      console.log(response);
+      console.log("pos res: ", response);
       return response;
     } catch (error) {
       console.log(error);
@@ -649,11 +649,6 @@ export default function PurchaseOrders() {
     setPOs(newPOs);
   };
 
-  const persistTracking = (newTracking: Tracking[]) => {
-    localStorage.setItem(KEY_TRACKING, JSON.stringify(newTracking));
-    setTrackingData(newTracking);
-  };
-
   const persistMasters = (v: Vendor[], p: Project[], t: POType[]) => {
     localStorage.setItem(KEY_VENDORS, JSON.stringify(v));
     localStorage.setItem(KEY_PROJECTS, JSON.stringify(p));
@@ -691,110 +686,6 @@ export default function PurchaseOrders() {
       setPOs(poWithRelations);
       setLoading(false);
     }, 200);
-  };
-
-  const loadTrackingData = async () => {
-    setLoading(true);
-    setTimeout(() => {
-      const strack = localStorage.getItem(KEY_TRACKING);
-      const spo = localStorage.getItem(KEY_POS);
-      const poList: PO[] = spo ? JSON.parse(spo) : defaultPOs;
-      const trackingList: Tracking[] = strack
-        ? JSON.parse(strack)
-        : defaultTracking;
-
-      const trackingWithPO = trackingList.map((t) => ({
-        ...t,
-        purchase_orders: {
-          po_number: poList.find((p) => p.id === t.po_id)?.po_number,
-          status: poList.find((p) => p.id === t.po_id)?.status,
-          vendors: {
-            name: vendors.find(
-              (v) => v.id === poList.find((p) => p.id === t.po_id)?.vendor_id,
-            )?.name,
-          },
-        },
-      }));
-      setTrackingData(trackingWithPO);
-      setLoading(false);
-    }, 200);
-  };
-
-  const loadMasterData = async () => {
-    setLoading(true);
-    setTimeout(() => {
-      const sv = localStorage.getItem(KEY_VENDORS);
-      const sp = localStorage.getItem(KEY_PROJECTS);
-      const st = localStorage.getItem(KEY_PO_TYPES);
-
-      const vs: Vendor[] = sv ? JSON.parse(sv) : defaultVendors;
-      const ps: Project[] = sp ? JSON.parse(sp) : defaultProjects;
-      const ts: POType[] = st ? JSON.parse(st) : defaultPOTypes;
-
-      persistMasters(vs, ps, ts);
-      setLoading(false);
-    }, 150);
-  };
-
-  // --- Handlers ---
-  const handleView = async (po: any) => {
-    // const blob = await pdf(<PurchaseOrderPDF />).toBlob();
-    // window.open(URL.createObjectURL(blob));
-    // console.log(po, "from pdf preview");
-    if (!po) return;
-    if (!allPurchaseOrderItems) {
-      toast.success("wait data is loading");
-      return;
-    }
-
-    const itemsList = allPurchaseOrderItems.filter(
-      (d: any) => d.po_id === po.id,
-    );
-
-    const result = itemsList.map((item: any) => {
-      let materialTrackingId = null;
-
-      for (let i = 0; i < filteredTracking.length; i++) {
-        if (
-          String(filteredTracking[i].item_id) === String(item.item_id) &&
-          String(filteredTracking[i].po_id) === String(item.po_id)
-        ) {
-          materialTrackingId = filteredTracking[i].id; // ONLY ONE VALUE
-          break;
-        }
-      }
-
-      return {
-        ...item,
-        materialTrackingId: materialTrackingId,
-      };
-    });
-
-    const data: any = {
-      po_number: po.po_number,
-      po_date: po.po_date,
-      vendor_name: po.vendor_name,
-      vendor_address: `${po.vendors.name}, ${po.vendors.office_street}, ${po.vendors.office_city}, ${po.vendors.office_state}, ${po.vendors.office_country} - ${po.vendors.office_pincode}`,
-      vendor_gstn: po.vendors.gst_number,
-      vendor_phone: po.vendors.company_phone,
-      po_items: result,
-      po_terms_and_conditions: po.terms_and_conditions
-        ? po.terms_and_conditions
-            .replace(/,\s*$/, "") // remove trailing comma if exists
-            .split(",") // split into array
-            .map((t: any) => t.trim()) // clean spaces
-            .filter(Boolean)
-        : [],
-    };
-    // console.log(data, "data values from preview");
-    setPdfLoading(true);
-    setSelectedPO(data);
-    setShowViewModal(true);
-
-    // Small delay to ensure state is updated
-    setTimeout(() => {
-      setPdfLoading(false);
-    }, 100);
   };
 
   const updateMaterialQuantity = async (e: React.FormEvent) => {
@@ -1019,6 +910,7 @@ export default function PurchaseOrders() {
   const loadAllPOsItems = async () => {
     try {
       const data: any = await poApi.getPOsItems();
+      console.log("po it", data);
       setAllPurchaseOrderItems(data.data);
       // console.log(data, "from purchase orders items");
     } catch (error) {
@@ -1858,7 +1750,7 @@ export default function PurchaseOrders() {
                           </button>
                         )}
 
-                        {can("make_payment_pos") &&
+                        {/* {can("make_payment_pos") &&
                           po.balance_amount! > 0 &&
                           po.status === "authorize" && (
                             <button
@@ -1870,7 +1762,7 @@ export default function PurchaseOrders() {
                             >
                               <IndianRupee className="w-3.5 h-3.5 md:w-4 md:h-4" />
                             </button>
-                          )}
+                          )} */}
                         <div className="relative">
                           {showApprovalButtons === po.id && (
                             <div className="absolute -top-16 right-2 z-50 space-x-3 bg-white flex shadow-xl px-6 py-3 rounded-md border border-slate-300">

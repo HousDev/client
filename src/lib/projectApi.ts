@@ -36,6 +36,14 @@ export async function getProjects(): Promise<Project[]> {
   return unwrap(res);
 }
 
+/** Get all projects */
+export async function getEmployeeProjects(
+  employeeId: string | number,
+): Promise<Project[]> {
+  const res: any = await api.get(`/projects/employees/${employeeId}`);
+  return unwrap(res);
+}
+
 /** Get project by id */
 export async function getProjectById(id: string | number): Promise<Project> {
   const res: any = await api.get(`/projects/${id}`);
@@ -70,6 +78,7 @@ export async function deleteProject(
 ---------------------------------------------- */
 const projectApi = {
   getProjects,
+  getEmployeeProjects,
   getProjectById,
   createProject,
   updateProject,

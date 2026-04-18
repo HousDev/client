@@ -448,9 +448,7 @@ export default function UsersMaster() {
             setLoadingDepartments(false);
           }
         }
-      } catch (err: any) {
-        console.error("Failed to load data:", err);
-      }
+      } catch (err: any) {}
     };
 
     loadData();

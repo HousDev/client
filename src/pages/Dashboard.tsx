@@ -42,7 +42,7 @@ import vendorApi from "../lib/vendorApi";
 import inventoryApi from "../lib/inventoryApi";
 import RequestMaterialApi from "../lib/requestMaterialApi";
 import projectApi from "../lib/projectApi";
-import employeeApi from "../lib/employeeApi";
+import employeeApi, { HrmsEmployeesApi } from "../lib/employeeApi";
 import serviceOrderApi from "../lib/serviceOrderApi";
 
 // ==================== TYPES ====================
@@ -75,7 +75,7 @@ interface ChartDataPoint {
 
 // ==================== API SERVICE LAYER ====================
 class DashboardApiService {
-  static async fetchAllData() {
+  static async fetchAllData(role: string, employeeId: string | number) {
     try {
       const [
         posRes,
@@ -86,31 +86,16 @@ class DashboardApiService {
         employeesRes,
         workOrdersRes,
       ]: any = await Promise.allSettled([
-        poApi.getPOs(),
+        role === "admin" ? poApi.getPOs() : poApi.getEmployeePOs(employeeId),
         vendorApi.getVendors(),
         inventoryApi.getInventory(),
         RequestMaterialApi.getAll(),
         projectApi.getProjects(),
         employeeApi.getEmployees(),
-        serviceOrderApi.getAll(),
+        role === "admin"
+          ? serviceOrderApi.getAll()
+          : serviceOrderApi.getEmployeeSos(employeeId),
       ]);
-
-      console.log(
-        "pos",
-        posRes,
-        "vendor",
-        vendorsRes,
-        "inventory",
-        inventoryRes,
-        "reqquest",
-        requestsRes,
-        "project",
-        projectsRes,
-        "employee",
-        employeesRes,
-        "workd",
-        workOrdersRes,
-      );
 
       return {
         purchaseOrders: posRes.status === "fulfilled" ? posRes.value : [],
@@ -438,13 +423,22 @@ const Dashboard = ({ setActiveTab }: DashboardProps) => {
   const [poVsPaymentData, setPoVsPaymentData] = useState<ChartDataPoint[]>([]);
   const [workOrderStatusData, setWorkOrderStatusData] = useState<any[]>([]);
   const [monthlyExpenseData, setMonthlyExpenseData] = useState<any[]>([]);
+  const { user } = useAuth();
 
   // Fetch all dashboard data
   const fetchDashboardData = useCallback(async () => {
     setLoading(true);
     setError(null);
     try {
-      const data: any = await DashboardApiService.fetchAllData();
+      let employee: any = { id: null };
+      if (user.role !== "admin") {
+        employee = await HrmsEmployeesApi.getEmployeeByEmail(user.email);
+      }
+      console.log(employee);
+      const data: any = await DashboardApiService.fetchAllData(
+        user.role,
+        employee.id,
+      );
 
       // Process Purchase Orders
       const pos = data.purchaseOrders || [];

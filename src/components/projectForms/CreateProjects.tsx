@@ -373,8 +373,6 @@ export default function ConstructionProjectWizardForm({
   }, [formData, isDraftLoaded]);
 
   const handleSubmit = async () => {
-    console.log(formData, "formdata for test");
-    console.log(validateStep(5));
     if (validateStep(5)) {
       let hasError = false;
       let errMsg = "";
@@ -451,6 +449,8 @@ export default function ConstructionProjectWizardForm({
       } else {
         toast.error("Something went wrong try again.");
       }
+    } else {
+      toast.error("fill valid details in all steps before submit.");
     }
   };
 
@@ -1452,7 +1452,11 @@ export default function ConstructionProjectWizardForm({
                             </div>
                             <input
                               type="text"
-                              value={floor.floor_name}
+                              value={
+                                floor.floor_name +
+                                " " +
+                                `(Floor - ${floorIndex + 1})`
+                              }
                               onChange={(e) =>
                                 updateFloor(
                                   buildingIndex,
@@ -1576,7 +1580,8 @@ export default function ConstructionProjectWizardForm({
                         <div className="flex items-center gap-2">
                           <Layers className="w-3 h-3 text-gray-500" />
                           <span className="font-medium text-gray-700 text-sm">
-                            {floor.floor_name}
+                            {floor.floor_name}{" "}
+                            {"(" + "Floor - " + (floorIndex + 1) + ")"}
                           </span>
                         </div>
                         {errors[
@@ -2053,7 +2058,8 @@ export default function ConstructionProjectWizardForm({
                               <div className="flex items-center gap-1 mb-0.5">
                                 <Layers className="w-3 h-3 text-gray-400" />
                                 <span className="font-medium text-gray-700 text-xs">
-                                  {floor.floor_name}
+                                  {floor.floor_name}{" "}
+                                  {"(" + "Floor - " + (floorIndex + 1) + ")"}
                                 </span>
                                 <span className="text-xs text-gray-500 ml-1">
                                   ({floor.flats.length} flats,{" "}
