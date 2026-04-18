@@ -383,7 +383,7 @@ export default function CTCConfiguration() {
         const template = (ctcTemplatesRes.data || []).find(
           (t: any) => Number(t.id) === Number(ut.template_id),
         );
-
+        console.log("of emp : ", template);
         const annualCTC = parseFloat(ut.ctc_amount);
         const monthlyCTC = annualCTC / 12;
 
@@ -398,7 +398,7 @@ export default function CTCConfiguration() {
             is_taxable: comp.is_taxable,
           }),
         );
-
+        console.log("emp asssigned ctc : ", components);
         const newConfig: CTCConfig = {
           id: ut.id,
           employee,
@@ -1081,6 +1081,7 @@ export default function CTCConfiguration() {
                               <li>
                                 <button
                                   onClick={() => {
+                                    console.log(config);
                                     handleViewConfig(config);
                                     setOpenMenuId(null);
                                   }}

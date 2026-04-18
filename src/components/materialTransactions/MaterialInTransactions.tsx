@@ -96,7 +96,6 @@ const MaterialInTransactions = (loadTableData: any) => {
       return enhancedTransactions;
     } catch (error) {
       console.error("Error loading transactions:", error);
-      toast.error("Failed to load transaction data");
       return [];
     }
   };

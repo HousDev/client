@@ -269,7 +269,6 @@ export default function CreateTask({
                   <label className="text-xs font-semibold text-gray-700 mb-1 flex items-center gap-1.5">
                     <Home className="w-3 h-3 text-purple-600" />
                     <span>Flat</span>
-                    <span className="text-red-500">*</span>
                   </label>
                   <div className="relative group">
                     <div className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 group-focus-within:text-purple-600 transition-colors">
@@ -302,7 +301,6 @@ export default function CreateTask({
                   <label className="text-xs font-semibold text-gray-700 mb-1 flex items-center gap-1.5">
                     <DoorOpen className="w-3 h-3 text-purple-600" />
                     <span>Common Area</span>
-                    <span className="text-red-500">*</span>
                   </label>
                   <div className="relative group">
                     <div className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 group-focus-within:text-purple-600 transition-colors">
@@ -354,7 +352,6 @@ export default function CreateTask({
                   <label className="block text-xs font-semibold text-gray-700 mb-1 flex items-center gap-1.5">
                     <AreaChart className="w-3 h-3 text-purple-600" />
                     <span>Flat Area</span>
-                    <span className="text-red-500">*</span>
                   </label>
                   <div className="relative group">
                     <div className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 group-focus-within:text-purple-600 transition-colors">

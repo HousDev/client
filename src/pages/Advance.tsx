@@ -357,8 +357,6 @@ export default function Advance() {
         // Close modal and reset form
         setShowCreateModal(false);
         resetForm();
-      } else {
-        toast.error("Faild to create advance.");
       }
       // Reload advances
       await loadAdvances();

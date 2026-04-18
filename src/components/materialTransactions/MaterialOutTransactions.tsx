@@ -118,7 +118,6 @@ const MaterialOutTransactions = (loadTableData: any) => {
       return enhancedTransactions;
     } catch (error) {
       console.error("Error loading transactions:", error);
-      toast.error("Failed to load transaction data");
       return [];
     }
   };
@@ -260,7 +259,6 @@ const MaterialOutTransactions = (loadTableData: any) => {
       await loadTransactions();
     } catch (error) {
       console.error("Error deleting transactions:", error);
-      toast.error("Failed to delete transactions");
     }
   };
 
