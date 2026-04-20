@@ -234,7 +234,6 @@ export default function PurchaseOrderPayments() {
             };
           }
 
-          // Only transaction-related fields push karo
           acc[curr.po_id].transactions.push({
             id: curr.id,
             total_amount: curr.total_amount,
@@ -257,10 +256,6 @@ export default function PurchaseOrderPayments() {
 
       grouped.sort((a: any, b: any) => b.po_number.localeCompare(a.po_number));
 
-      console.log("clg gtounped data : ", grouped);
-
-      console.log("heloow  : ", poPaymentsRes);
-      console.log(poPaymentHistoryRes);
       setPaymentHistorys(Array.isArray(grouped) ? grouped : []);
       setPaymentTransactionHistorys(
         Array.isArray(poPaymentHistoryRes) ? poPaymentHistoryRes : [],
@@ -300,7 +295,7 @@ export default function PurchaseOrderPayments() {
     };
 
     const today = new Date();
-    today.setHours(0, 0, 0, 0); // ✅ move outside reduce
+    today.setHours(0, 0, 0, 0);
 
     const totalPaid = paymentHistorys.reduce(
       (sum: number, po: any) => sum + Number(po.po_amount_paid || 0),
@@ -313,16 +308,13 @@ export default function PurchaseOrderPayments() {
     );
 
     const totalOverdue = paymentHistorys.reduce((total: number, po: any) => {
-      // Har PO ke transactions loop karo
       const poOverdue = po.transactions.reduce((sum: number, txn: any) => {
         if (!txn.payment_due_date) return sum;
 
-        // DD/MM/YYYY format ko parse karo
         const [day, month, year] = txn.payment_due_date.split("/");
         const dueDate = new Date(`${year}-${month}-${day}`);
         dueDate.setHours(0, 0, 0, 0);
 
-        // Overdue condition
         if (dueDate < today && Number(txn.balance_amount) > 0) {
           return sum + Number(txn.balance_amount);
         }
@@ -355,24 +347,17 @@ export default function PurchaseOrderPayments() {
 
   // Search and filter functions - Updated to use tab-specific states
   const getFilteredPOs = () => {
-    // return paymentHistorys;
     return paymentHistorys.filter((po: any) => {
-      if (
-        poStatusFilter !== "all" &&
-        poStatusFilter.toLowerCase() !== po.status.toLowerCase()
-      ) {
-        return false;
+      // Status filter
+      if (poStatusFilter !== "all") {
+        const filterStatus = poStatusFilter.toLowerCase();
+        const poStatus = (po.po_payment_status || "").toLowerCase();
+        if (poStatus !== filterStatus) {
+          return false;
+        }
       }
 
-      if (searchTerm) {
-        const searchLower = searchTerm.toLowerCase();
-        const matches =
-          po.po_number?.toLowerCase().includes(searchLower) ||
-          po?.name?.toLowerCase().includes(searchLower) ||
-          po.status?.toLowerCase().includes(searchLower);
-        if (!matches) return false;
-      }
-
+      // PO Number search
       if (
         poSearchPONumber &&
         !po.po_number?.toLowerCase().includes(poSearchPONumber.toLowerCase())
@@ -380,17 +365,23 @@ export default function PurchaseOrderPayments() {
         return false;
       }
 
+      // Vendor search
       if (
         poSearchVendor &&
-        !po?.name?.toLowerCase().includes(poSearchVendor.toLowerCase())
+        !po.name?.toLowerCase().includes(poSearchVendor.toLowerCase())
       ) {
         return false;
       }
 
-      if (poSearchAmount && !String(po.total_amount).includes(poSearchAmount)) {
+      // Amount search (total amount)
+      if (
+        poSearchAmount &&
+        !String(po.po_grand_total || 0).includes(poSearchAmount)
+      ) {
         return false;
       }
 
+      // Date search (po_date)
       if (poSearchDate && po.po_date && !po.po_date.includes(poSearchDate)) {
         return false;
       }
@@ -400,92 +391,74 @@ export default function PurchaseOrderPayments() {
   };
 
   const getFilteredHistory = () => {
-    return paymentTransactionHistorys;
-    // return paymentHistorys.filter((payment: any) => {
-    //   const paymentMethod = (payment.payment_method || "").toLowerCase();
-    //   const paymentStatus = (payment.status || "").toLowerCase();
+    return paymentTransactionHistorys.filter((payment: any) => {
+      // PO Number search
+      if (
+        historySearchPONumber &&
+        !payment.po_number
+          ?.toLowerCase()
+          .includes(historySearchPONumber.toLowerCase())
+      ) {
+        return false;
+      }
 
-    //   // General search term across multiple fields
-    //   if (searchTerm) {
-    //     const searchLower = searchTerm.toLowerCase();
-    //     const matches =
-    //       payment.purchase_order?.po_number
-    //         ?.toLowerCase()
-    //         .includes(searchLower) ||
-    //       payment.purchase_order?.vendors?.name
-    //         ?.toLowerCase()
-    //         .includes(searchLower) ||
-    //       paymentMethod.includes(searchLower) ||
-    //       paymentStatus.includes(searchLower) ||
-    //       payment.payment_reference_no?.toLowerCase().includes(searchLower);
-    //     if (!matches) return false;
-    //   }
+      // Vendor search
+      if (
+        historySearchVendor &&
+        !payment.vendor
+          ?.toLowerCase()
+          .includes(historySearchVendor.toLowerCase())
+      ) {
+        return false;
+      }
 
-    //   // PO Number specific search
-    //   if (
-    //     historySearchPONumber &&
-    //     !payment.purchase_order?.po_number
-    //       ?.toLowerCase()
-    //       .includes(historySearchPONumber.toLowerCase())
-    //   ) {
-    //     return false;
-    //   }
+      // Amount search
+      if (
+        historySearchAmount &&
+        !String(payment.amount_paid || 0).includes(historySearchAmount)
+      ) {
+        return false;
+      }
 
-    //   // Vendor specific search
-    //   if (
-    //     historySearchVendor &&
-    //     !payment.purchase_order?.vendors?.name
-    //       ?.toLowerCase()
-    //       .includes(historySearchVendor.toLowerCase())
-    //   ) {
-    //     return false;
-    //   }
+      // Payment method filter
+      if (historyPaymentMethodFilter !== "all") {
+        const filterMethod = historyPaymentMethodFilter.toLowerCase();
+        const paymentMethod = (payment.payment_method || "").toLowerCase();
+        if (paymentMethod !== filterMethod) {
+          return false;
+        }
+      }
 
-    //   // Amount specific search
-    //   if (
-    //     historySearchAmount &&
-    //     !String(payment.amount_paid || 0).includes(historySearchAmount)
-    //   ) {
-    //     return false;
-    //   }
+      // Reference number search
+      if (
+        historySearchReference &&
+        !payment.payment_reference_no
+          ?.toLowerCase()
+          .includes(historySearchReference.toLowerCase())
+      ) {
+        return false;
+      }
 
-    //   // Payment method filter
-    //   if (historyPaymentMethodFilter !== "all") {
-    //     const filterMethod = historyPaymentMethodFilter.toLowerCase();
-    //     if (paymentMethod !== filterMethod) {
-    //       return false;
-    //     }
-    //   }
+      // Date search
+      if (
+        historySearchDate &&
+        payment.payment_date &&
+        !payment.payment_date.includes(historySearchDate)
+      ) {
+        return false;
+      }
 
-    //   // Reference number search
-    //   if (
-    //     historySearchReference &&
-    //     !payment.payment_reference_no
-    //       ?.toLowerCase()
-    //       .includes(historySearchReference.toLowerCase())
-    //   ) {
-    //     return false;
-    //   }
+      // Status filter
+      if (historyStatusFilter !== "all") {
+        const filterStatus = historyStatusFilter.toLowerCase();
+        const paymentStatus = (payment.status || "").toLowerCase();
+        if (paymentStatus !== filterStatus) {
+          return false;
+        }
+      }
 
-    //   // Date search
-    //   if (
-    //     historySearchDate &&
-    //     payment.payment_date &&
-    //     !payment.payment_date.includes(historySearchDate)
-    //   ) {
-    //     return false;
-    //   }
-
-    //   // Status filter
-    //   if (historyStatusFilter !== "all") {
-    //     const filterStatus = historyStatusFilter.toLowerCase();
-    //     if (paymentStatus !== filterStatus) {
-    //       return false;
-    //     }
-    //   }
-
-    //   return true;
-    // });
+      return true;
+    });
   };
 
   const getFilteredReminders = () => {
@@ -519,7 +492,7 @@ export default function PurchaseOrderPayments() {
         return false;
       }
 
-      // Amount search
+      // Amount search (balance_amount)
       if (
         remindersSearchAmount &&
         !String(reminder.balance_amount || 0).includes(remindersSearchAmount)
@@ -527,7 +500,7 @@ export default function PurchaseOrderPayments() {
         return false;
       }
 
-      // Date search
+      // Date search (due_date)
       if (
         remindersSearchDate &&
         reminder.due_date &&
@@ -612,11 +585,10 @@ export default function PurchaseOrderPayments() {
 
   // Payment actions
   const openPaymentModal = (po: any) => {
-    console.log("ppo data ", po);
     setSelectedPO(po);
     setPaymentData({
       ...paymentData,
-      amount_paid: String(po.balance_amount) || String(po.grand_total),
+      amount_paid: String(po.balance_amount) || String(po.total_amount),
       payment_date: new Date().toISOString().split("T")[0],
       po_id: po.po_id,
       po_payment_id: po.po_payment_id,
@@ -625,13 +597,12 @@ export default function PurchaseOrderPayments() {
   };
 
   const createPaymentReminder = async (payload: any) => {
-    console.log("payload : ", payload);
     try {
       const paymentReminderRes: any =
         await PoPaymentRemindersApi.createReminder(payload);
       if (paymentReminderRes.success) {
         loadPaymentReminders();
-        toast.success(" created successfully!");
+        toast.success("Reminder created successfully!");
       } else {
         toast.error("Failed to create payment reminder");
       }
@@ -682,7 +653,7 @@ export default function PurchaseOrderPayments() {
         remarks: paymentData.remarks,
         created_by: user?.id,
       };
-      console.log("this is po", newPayment);
+
       setSubmitting(true);
       const res: any = await poPaymentApi.createPayment(newPayment);
 
@@ -979,7 +950,6 @@ export default function PurchaseOrderPayments() {
                       PO TOTAL BALANCE
                     </div>
                   </th>
-
                   <th className="px-2 md:px-4 py-2 text-left">
                     <div className="text-[10px] md:text-xs font-semibold text-gray-700 uppercase tracking-wider">
                       PO PAYMENT STATUS
@@ -990,8 +960,6 @@ export default function PurchaseOrderPayments() {
                 {/* Search Row */}
                 <tr className="bg-gray-50 border-b border-gray-200">
                   <td className="px-2 md:px-4 py-1"></td>
-
-                  {/* PO Number Search */}
                   <td className="px-2 md:px-4 py-1">
                     <div className="relative">
                       <div className="absolute left-2 top-1/2 -translate-y-1/2">
@@ -999,15 +967,13 @@ export default function PurchaseOrderPayments() {
                       </div>
                       <input
                         type="text"
-                        placeholder="Search..."
+                        placeholder="Search PO..."
                         value={poSearchPONumber}
                         onChange={(e) => setPoSearchPONumber(e.target.value)}
                         className="w-auto pl-7 pr-2 py-1 text-[10px] md:text-xs border border-gray-300 rounded focus:ring-1 focus:ring-blue-500 focus:border-transparent"
                       />
                     </div>
                   </td>
-
-                  {/* Vendor Search */}
                   <td className="px-2 md:px-4 py-1">
                     <div className="relative">
                       <div className="absolute left-2 top-1/2 -translate-y-1/2">
@@ -1015,15 +981,13 @@ export default function PurchaseOrderPayments() {
                       </div>
                       <input
                         type="text"
-                        placeholder="Search..."
+                        placeholder="Search Vendor..."
                         value={poSearchVendor}
                         onChange={(e) => setPoSearchVendor(e.target.value)}
                         className="w-auto pl-7 pr-2 py-1 text-[10px] md:text-xs border border-gray-300 rounded focus:ring-1 focus:ring-blue-500 focus:border-transparent"
                       />
                     </div>
                   </td>
-
-                  {/* Total Search */}
                   <td className="px-2 md:px-4 py-1">
                     <div className="relative">
                       <div className="absolute left-2 top-1/2 -translate-y-1/2">
@@ -1031,24 +995,15 @@ export default function PurchaseOrderPayments() {
                       </div>
                       <input
                         type="text"
-                        placeholder="Search..."
+                        placeholder="Search Amount..."
                         value={poSearchAmount}
                         onChange={(e) => setPoSearchAmount(e.target.value)}
                         className="w-auto pl-7 pr-2 py-1 text-[10px] md:text-xs border border-gray-300 rounded focus:ring-1 focus:ring-blue-500 focus:border-transparent"
                       />
                     </div>
                   </td>
-
-                  {/* Paid Column - No search */}
                   <td className="px-2 md:px-4 py-1"></td>
-
-                  {/* Balance Column - No search */}
-                  {/* <td className="px-2 md:px-4 py-1"></td> */}
-
-                  {/* Due Date Column - No search */}
                   <td className="px-2 md:px-4 py-1"></td>
-
-                  {/* Status Search */}
                   <td className="px-2 md:px-4 py-1">
                     <div className="relative">
                       <select
@@ -1073,13 +1028,12 @@ export default function PurchaseOrderPayments() {
                 {filteredPOs.map((po: any) => {
                   const isSelected = selectedItems.has(po.po_id);
                   return (
-                    <React.Fragment>
+                    <React.Fragment key={po.po_id}>
                       <tr
-                        key={po.po_id}
                         onClick={() => {
                           setExpandPO(expandPO === po.po_id ? "" : po.po_id);
                         }}
-                        className={`hover:bg-gray-50 transition ${
+                        className={`hover:bg-gray-50 transition cursor-pointer ${
                           isSelected ? "bg-blue-50" : ""
                         }`}
                       >
@@ -1088,6 +1042,7 @@ export default function PurchaseOrderPayments() {
                             type="checkbox"
                             checked={isSelected}
                             onChange={() => handleSelectItem(po.po_id)}
+                            onClick={(e) => e.stopPropagation()}
                             className="w-3 h-3 md:w-4 md:h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
                           />
                         </td>
@@ -1133,7 +1088,7 @@ export default function PurchaseOrderPayments() {
                       </tr>
                       {Number(expandPO) === Number(po.po_id) && (
                         <tr className="bg-gray-50">
-                          <td colSpan={10} className="p-0">
+                          <td colSpan={7} className="p-0">
                             <div className="px-3 py-2 border-t border-gray-200">
                               <h4 className="text-xs font-semibold text-gray-700 mb-2 flex items-center gap-1">
                                 <FileText className="w-3 h-3" />
@@ -1144,9 +1099,6 @@ export default function PurchaseOrderPayments() {
                                 <table className="w-full bg-white rounded-lg border border-gray-200 min-w-[600px]">
                                   <thead className="bg-gray-100">
                                     <tr>
-                                      <th className="text-left px-2 py-1.5 text-[10px] md:text-xs font-medium text-gray-700">
-                                        PO NUMBER
-                                      </th>
                                       <th className="text-left px-2 py-1.5 text-[10px] md:text-xs font-medium text-gray-700">
                                         Payment Type
                                       </th>
@@ -1162,7 +1114,6 @@ export default function PurchaseOrderPayments() {
                                       <th className="text-left px-2 py-1.5 text-[10px] md:text-xs font-medium text-gray-700">
                                         STATUS
                                       </th>
-
                                       <th className="text-left px-2 py-1.5 text-[10px] md:text-xs font-medium text-gray-700">
                                         ACTION
                                       </th>
@@ -1180,32 +1131,24 @@ export default function PurchaseOrderPayments() {
                                                 : "bg-gray-50/50"
                                             }`}
                                           >
-                                            <td className="px-2 py-1.5">
-                                              <div
-                                                className="font-medium text-gray-800 text-xs truncate max-w-[150px]"
-                                                title={
-                                                  po.po_number || "Unknown"
-                                                }
-                                              >
-                                                {po.po_number || "Unknown"}
-                                              </div>
-                                              <div className="text-[10px] text-gray-500">
-                                                PO Date: {po.po_date || "N/A"}
-                                              </div>
-                                            </td>
-                                            <td className="px-2 py-1.5 font-medium  text-xs">
+                                            <td className="px-2 py-1.5 font-medium text-xs">
                                               {transaction.payment_type}
                                             </td>
                                             <td className="px-2 py-1.5 text-gray-700 text-xs">
-                                              {transaction.total_amount || "-"}
+                                              {formatCurrency(
+                                                transaction.total_amount,
+                                              ) || "-"}
                                             </td>
                                             <td className="px-2 py-1.5 font-medium text-green-600 text-xs">
-                                              {transaction.amount_paid}
+                                              {formatCurrency(
+                                                transaction.amount_paid,
+                                              )}
                                             </td>
                                             <td className="px-2 py-1.5 font-medium text-red-600 text-xs">
-                                              {transaction.balance_amount}
+                                              {formatCurrency(
+                                                transaction.balance_amount,
+                                              )}
                                             </td>
-
                                             <td className="px-2 py-1.5">
                                               <span
                                                 className={`px-2 py-0.5 rounded-full text-[10px] font-medium ${getStatusColor(
@@ -1216,68 +1159,64 @@ export default function PurchaseOrderPayments() {
                                                   "PENDING"}
                                               </span>
                                             </td>
-                                            <td className="px-2 md:px-4 py-2">
+                                            <td className="px-2 py-2">
                                               {Number(
                                                 transaction.balance_amount,
                                               ) !== 0 ? (
                                                 <div className="flex gap-1">
-                                                  <>
-                                                    {can("make_payments") && (
-                                                      <button
-                                                        onClick={() =>
-                                                          openPaymentModal({
-                                                            po_id: po.po_id,
-                                                            po_payment_id:
-                                                              transaction.id,
-                                                            po_number:
-                                                              po.po_number,
-                                                            name: po.name,
-                                                            total_amount:
-                                                              transaction.total_amount,
-                                                            total_paid:
-                                                              transaction.amount_paid,
-                                                            balance_amount:
-                                                              transaction.balance_amount,
-                                                            due_date:
-                                                              transaction.payment_due_date,
-                                                          })
-                                                        }
-                                                        className="px-2 py-1 bg-green-600 text-white rounded hover:bg-green-700 transition-all duration-200 flex items-center gap-1 text-[10px] md:text-xs"
-                                                        title="Make Payment"
-                                                      >
-                                                        <IndianRupee className="w-3 h-3" />
-                                                        Pay
-                                                      </button>
-                                                    )}
-                                                    {can("send_reminder") && (
-                                                      <button
-                                                        onClick={() =>
-                                                          createPaymentReminder(
-                                                            {
-                                                              po_id: po.po_id,
-                                                              po_payment_id:
-                                                                transaction.id,
-                                                              po_number:
-                                                                po.po_number,
-                                                              vendor: po.name,
-                                                              total_amount:
-                                                                transaction.total_amount,
-                                                              total_paid:
-                                                                transaction.amount_paid,
-                                                              balance_amount:
-                                                                transaction.balance_amount,
-                                                              due_date:
-                                                                transaction.payment_due_date,
-                                                            },
-                                                          )
-                                                        }
-                                                        className="p-1 bg-blue-600 text-white rounded hover:bg-blue-700 transition-all duration-200 flex items-center justify-center"
-                                                        title="Set Reminder"
-                                                      >
-                                                        <Bell className="w-3 h-3" />
-                                                      </button>
-                                                    )}
-                                                  </>
+                                                  {can("make_payments") && (
+                                                    <button
+                                                      onClick={() =>
+                                                        openPaymentModal({
+                                                          po_id: po.po_id,
+                                                          po_payment_id:
+                                                            transaction.id,
+                                                          po_number:
+                                                            po.po_number,
+                                                          name: po.name,
+                                                          total_amount:
+                                                            transaction.total_amount,
+                                                          total_paid:
+                                                            transaction.amount_paid,
+                                                          balance_amount:
+                                                            transaction.balance_amount,
+                                                          due_date:
+                                                            transaction.payment_due_date,
+                                                        })
+                                                      }
+                                                      className="px-2 py-1 bg-green-600 text-white rounded hover:bg-green-700 transition-all duration-200 flex items-center gap-1 text-[10px] md:text-xs"
+                                                      title="Make Payment"
+                                                    >
+                                                      <IndianRupee className="w-3 h-3" />
+                                                      Pay
+                                                    </button>
+                                                  )}
+                                                  {can("send_reminder") && (
+                                                    <button
+                                                      onClick={() =>
+                                                        createPaymentReminder({
+                                                          po_id: po.po_id,
+                                                          po_payment_id:
+                                                            transaction.id,
+                                                          po_number:
+                                                            po.po_number,
+                                                          vendor: po.name,
+                                                          total_amount:
+                                                            transaction.total_amount,
+                                                          total_paid:
+                                                            transaction.amount_paid,
+                                                          balance_amount:
+                                                            transaction.balance_amount,
+                                                          due_date:
+                                                            transaction.payment_due_date,
+                                                        })
+                                                      }
+                                                      className="p-1 bg-blue-600 text-white rounded hover:bg-blue-700 transition-all duration-200 flex items-center justify-center"
+                                                      title="Set Reminder"
+                                                    >
+                                                      <Bell className="w-3 h-3" />
+                                                    </button>
+                                                  )}
                                                 </div>
                                               ) : (
                                                 <div>--</div>
@@ -1300,7 +1239,7 @@ export default function PurchaseOrderPayments() {
 
                 {filteredPOs.length === 0 && (
                   <tr>
-                    <td colSpan={8} className="px-4 py-8 text-center">
+                    <td colSpan={7} className="px-4 py-8 text-center">
                       <IndianRupee className="w-12 h-12 md:w-16 md:h-16 text-gray-300 mx-auto mb-3" />
                       <p className="text-gray-600 text-sm md:text-lg font-medium">
                         No payments found
@@ -1389,7 +1328,6 @@ export default function PurchaseOrderPayments() {
                       />
                     </div>
                   </td>
-
                   <td className="px-2 md:px-4 py-1">
                     <div className="relative">
                       <div className="absolute left-2 top-1/2 -translate-y-1/2">
@@ -1404,7 +1342,6 @@ export default function PurchaseOrderPayments() {
                       />
                     </div>
                   </td>
-
                   <td className="px-2 md:px-4 py-1">
                     <div className="relative">
                       <div className="absolute left-2 top-1/2 -translate-y-1/2">
@@ -1419,7 +1356,6 @@ export default function PurchaseOrderPayments() {
                       />
                     </div>
                   </td>
-
                   <td className="px-2 md:px-4 py-1">
                     <select
                       value={historyPaymentMethodFilter}
@@ -1435,7 +1371,6 @@ export default function PurchaseOrderPayments() {
                       <option value="online">Online</option>
                     </select>
                   </td>
-
                   <td className="px-2 md:px-4 py-1">
                     <div className="relative">
                       <div className="absolute left-2 top-1/2 -translate-y-1/2">
@@ -1452,7 +1387,6 @@ export default function PurchaseOrderPayments() {
                       />
                     </div>
                   </td>
-
                   <td className="px-2 md:px-4 py-1">
                     <div className="relative">
                       <div className="absolute left-2 top-1/2 -translate-y-1/2">
@@ -1466,7 +1400,6 @@ export default function PurchaseOrderPayments() {
                       />
                     </div>
                   </td>
-
                   <td className="px-2 md:px-4 py-1">
                     <select
                       value={historyStatusFilter}
@@ -1481,7 +1414,6 @@ export default function PurchaseOrderPayments() {
                       <option value="completed">Completed</option>
                     </select>
                   </td>
-
                   <td className="px-2 md:px-4 py-1">
                     <div className="flex gap-1">
                       <button
@@ -1501,12 +1433,12 @@ export default function PurchaseOrderPayments() {
                   <tr key={payment.id} className="hover:bg-gray-50 transition">
                     <td className="px-2 md:px-4 py-2">
                       <div className="font-bold text-blue-600 text-xs md:text-sm">
-                        {payment?.po_number}
+                        {payment.po_number || "-"}
                       </div>
                     </td>
                     <td className="px-2 md:px-4 py-2">
                       <div className="text-gray-800 text-xs md:text-sm truncate max-w-[120px]">
-                        {payment?.vendor || "-"}
+                        {payment.vendor || "-"}
                       </div>
                     </td>
                     <td className="px-2 md:px-4 py-2">
@@ -1541,13 +1473,13 @@ export default function PurchaseOrderPayments() {
                       </span>
                     </td>
                     <td className="px-2 md:px-4 py-2">
-                      {can("verify_payments") && (
+                      {can("verify_payments") && payment.payment_proof && (
                         <button
                           onClick={() => {
                             setShowPaymentProofModal(true);
                             setPaymentProofUrl(payment.payment_proof);
                           }}
-                          className={`px-2 py-1 rounded-full text-[10px] md:text-xs font-medium cursor-pointer text-blue-600 hover:bg-blue-50 transition`}
+                          className="px-2 py-1 rounded-full text-[10px] md:text-xs font-medium cursor-pointer text-blue-600 hover:bg-blue-50 transition"
                           title="View Payment Proof"
                         >
                           <Eye className="w-4 h-4" />
@@ -1580,56 +1512,6 @@ export default function PurchaseOrderPayments() {
               </tbody>
             </table>
           </div>
-          {showPaymentProofModal && (
-            <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-              <div className="bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-hidden">
-                <div
-                  className="bg-gradient-to-r from-[#4b4e4b] via-[#5a5d5a] to-[#6b6e6b]
-            px-6 py-4 flex justify-between items-center
-            rounded-t-2xl border-b border-white/10
-            backdrop-blur-md"
-                >
-                  <h2 className="text-2xl font-bold text-white">
-                    Payment Proof
-                  </h2>
-                  <button
-                    onClick={() => {
-                      setShowPaymentProofModal(false);
-                    }}
-                    className="text-white hover:bg-white hover:bg-opacity-20 rounded-lg p-2 transition"
-                  >
-                    <X className="w-6 h-6" />
-                  </button>
-                </div>
-                <div className="overflow-y-scroll h-[500px]">
-                  {paymentProofUrl.toLowerCase().endsWith(".pdf") ? (
-                    <iframe
-                      src={`${import.meta.env.VITE_API_URL}/uploads/${paymentProofUrl}`}
-                      title="Challan PDF"
-                      className="w-full h-full border rounded-lg"
-                    />
-                  ) : (
-                    <img
-                      src={`${import.meta.env.VITE_API_URL}/uploads/${paymentProofUrl}`}
-                      alt=""
-                      className="w-full h-full"
-                    />
-                  )}
-                </div>
-                <div className="flex justify-end gap-3 p-3 border-t">
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setShowPaymentProofModal(false);
-                    }}
-                    className="px-6 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition font-medium"
-                  >
-                    Cancel
-                  </button>
-                </div>
-              </div>
-            </div>
-          )}
         </div>
       )}
 
@@ -1681,7 +1563,7 @@ export default function PurchaseOrderPayments() {
                       </div>
                       <input
                         type="text"
-                        placeholder="Search..."
+                        placeholder="Search PO..."
                         value={remindersSearchPONumber}
                         onChange={(e) =>
                           setRemindersSearchPONumber(e.target.value)
@@ -1690,7 +1572,6 @@ export default function PurchaseOrderPayments() {
                       />
                     </div>
                   </td>
-
                   <td className="px-2 md:px-4 py-1">
                     <div className="relative">
                       <div className="absolute left-2 top-1/2 -translate-y-1/2">
@@ -1698,7 +1579,7 @@ export default function PurchaseOrderPayments() {
                       </div>
                       <input
                         type="text"
-                        placeholder="Search..."
+                        placeholder="Search Vendor..."
                         value={remindersSearchVendor}
                         onChange={(e) =>
                           setRemindersSearchVendor(e.target.value)
@@ -1707,7 +1588,6 @@ export default function PurchaseOrderPayments() {
                       />
                     </div>
                   </td>
-
                   <td className="px-2 md:px-4 py-1">
                     <div className="relative">
                       <div className="absolute left-2 top-1/2 -translate-y-1/2">
@@ -1715,7 +1595,7 @@ export default function PurchaseOrderPayments() {
                       </div>
                       <input
                         type="text"
-                        placeholder="Search..."
+                        placeholder="Search Amount..."
                         value={remindersSearchAmount}
                         onChange={(e) =>
                           setRemindersSearchAmount(e.target.value)
@@ -1724,7 +1604,6 @@ export default function PurchaseOrderPayments() {
                       />
                     </div>
                   </td>
-
                   <td className="px-2 md:px-4 py-1">
                     <div className="relative">
                       <div className="absolute left-2 top-1/2 -translate-y-1/2">
@@ -1738,7 +1617,6 @@ export default function PurchaseOrderPayments() {
                       />
                     </div>
                   </td>
-
                   <td className="px-2 md:px-4 py-1">
                     <select
                       value={remindersStatusFilter}
@@ -1750,7 +1628,6 @@ export default function PurchaseOrderPayments() {
                       <option value="seen">Seen</option>
                     </select>
                   </td>
-
                   <td className="px-2 md:px-4 py-1">
                     <div className="flex gap-1">
                       {paymentReminders.find(
@@ -1935,7 +1812,7 @@ export default function PurchaseOrderPayments() {
         </div>
       )}
 
-      {/* Payment Modal - Keep existing */}
+      {/* Payment Modal */}
       {showPaymentModal && selectedPO && (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-md flex items-center justify-center z-50 p-4">
           <div className="bg-gradient-to-br from-gray-50 to-white rounded-2xl shadow-2xl shadow-gray-900/20 w-full max-w-2xl border border-gray-200 overflow-hidden">
@@ -2079,7 +1956,7 @@ export default function PurchaseOrderPayments() {
                           Number(selectedPO.balance_amount)
                         ) {
                           toast.warning(
-                            "You can not enter amount greater than balance amount",
+                            "You cannot enter amount greater than balance amount",
                           );
                           return;
                         }
@@ -2170,7 +2047,7 @@ export default function PurchaseOrderPayments() {
               </div>
 
               {/* Modal Footer */}
-              <div className="border-t p-3 flex gap-2">
+              <div className="border-t p-3 flex gap-2 mt-4">
                 <button
                   type="submit"
                   disabled={submitting}
@@ -2195,6 +2072,56 @@ export default function PurchaseOrderPayments() {
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* Payment Proof Modal */}
+      {showPaymentProofModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-hidden">
+            <div
+              className="bg-gradient-to-r from-[#4b4e4b] via-[#5a5d5a] to-[#6b6e6b]
+            px-6 py-4 flex justify-between items-center
+            rounded-t-2xl border-b border-white/10
+            backdrop-blur-md"
+            >
+              <h2 className="text-2xl font-bold text-white">Payment Proof</h2>
+              <button
+                onClick={() => {
+                  setShowPaymentProofModal(false);
+                }}
+                className="text-white hover:bg-white hover:bg-opacity-20 rounded-lg p-2 transition"
+              >
+                <X className="w-6 h-6" />
+              </button>
+            </div>
+            <div className="overflow-y-scroll h-[500px]">
+              {paymentProofUrl.toString().toLowerCase().endsWith(".pdf") ? (
+                <iframe
+                  src={`${import.meta.env.VITE_API_URL}/uploads/${paymentProofUrl}`}
+                  title="Challan PDF"
+                  className="w-full h-full border rounded-lg"
+                />
+              ) : (
+                <img
+                  src={`${import.meta.env.VITE_API_URL}/uploads/${paymentProofUrl}`}
+                  alt="Payment Proof"
+                  className="w-full h-full object-contain"
+                />
+              )}
+            </div>
+            <div className="flex justify-end gap-3 p-3 border-t">
+              <button
+                type="button"
+                onClick={() => {
+                  setShowPaymentProofModal(false);
+                }}
+                className="px-6 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition font-medium"
+              >
+                Close
+              </button>
+            </div>
           </div>
         </div>
       )}
