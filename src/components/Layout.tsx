@@ -62,6 +62,7 @@ import { toast } from "sonner";
 import RequestMaterial from "./materialRequest/RequestMaterial";
 import { BsPerson } from "react-icons/bs";
 import HrmsEmployeesApi from "../lib/employeeApi";
+import socket from "../lib/socket";
 
 // ─── TYPES ────────────────────────────────────────────────────────────────
 interface LayoutProps {
@@ -559,10 +560,23 @@ export default function Layout({
   };
 
   useEffect(() => {
-    fetchNotifications();
-    const intervalId = setInterval(fetchNotifications, 60 * 1000);
-    return () => clearInterval(intervalId);
+    fetchNotifications(); // initial load
+
+    socket.on("notifications_updated", () => {
+      console.log("Socket: notifications updated");
+      fetchNotifications();
+    });
+
+    return () => {
+      socket.off("notifications_updated");
+    };
   }, []);
+
+  // useEffect(() => {
+  //   fetchNotifications();
+  //   const intervalId = setInterval(fetchNotifications, 60 * 1000);
+  //   return () => clearInterval(intervalId);
+  // }, []);
 
   const markAllRead = async () => {
     try {

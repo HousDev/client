@@ -775,7 +775,7 @@ export default function StoreManagement({
         <IssueMaterial
           setLoadTableData={setLoadTableData}
           setActiveFormTab={setActiveFormTab}
-          allInventory={filteredInventory}
+          allInventory={allInventoryItems}
           loadAllData={loadAllData}
         />
       )}
