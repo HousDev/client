@@ -3,27 +3,20 @@ import {
   Users,
   Clock,
   Calendar,
-  Wallet,
-  Receipt,
-  UserPlus,
-  Ticket,
   TrendingUp,
-  Filter,
   Calendar1,
   Clock1,
   ReceiptIndianRupee,
 } from "lucide-react";
 import Card from "../components/ui/Card";
-import Button from "../components/ui/Button";
-import Select from "../components/ui/Select";
 import Badge from "../components/ui/Badge";
-// import { reportAPI } from '../api/report.api';
 import { formatters } from "../utils/formatters";
-import hrmsDashbordApi from "../lib/hrmsDashbordApi";
 import HrmsEmployeesApi from "../lib/employeeApi";
 import attendanceApi from "../lib/attendanceApi";
 import { LeaveApi } from "../lib/leaveApi";
 import expenseApi from "../lib/expenseApi";
+import { useAuth } from "../contexts/AuthContext";
+import ticketApi from "../lib/ticketApi";
 
 type Module =
   | "overview"
@@ -58,6 +51,7 @@ export default function Dashboard() {
   const [payrollData, setPayrollData] = useState<any[]>([]);
   const [expensesData, setExpensesData] = useState<any[]>([]);
   const [ticketsData, setTicketsData] = useState<any[]>([]);
+  const { user, can } = useAuth();
 
   useEffect(() => {
     loadDashboardData();
@@ -66,7 +60,7 @@ export default function Dashboard() {
   const loadDashboardData = async () => {
     setLoading(true);
     try {
-      if (selectedModule === "overview") {
+      if (selectedModule === "overview" && user.role === "admin") {
         const empData = await HrmsEmployeesApi.getEmployees();
         const todaysAttendanceData: any = await attendanceApi.getAllToday();
         const leaveData = await LeaveApi.getLeaves();
@@ -89,9 +83,8 @@ export default function Dashboard() {
             : 0,
           openTickets: 0,
           pendingExpenses: Array.isArray(expensesData.data)
-            ? expensesData.data.filter(
-                (e: any) => e.status === "pending_approval",
-              ).length
+            ? expensesData.data.filter((e: any) => e.status === "pending")
+                .length
             : 0,
           thisMonthPayroll: 0,
           activeRecruitments: 0,
@@ -103,6 +96,58 @@ export default function Dashboard() {
             : [],
         );
         setLeavesData(Array.isArray(leaveData.data) ? leaveData.data : []);
+        setExpensesData(
+          Array.isArray(expensesData.data) ? expensesData.data : [],
+        );
+      } else if (selectedModule === "overview" && user.role !== "admin") {
+        const empData: any = await HrmsEmployeesApi.getEmployees();
+        const empInfo = empData.find((e: any) => e.user_id === user.id);
+        const now = new Date();
+        const formatted = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
+        const todaysAttendanceData: any =
+          await attendanceApi.getCurrentMonthAttendance(user.id, formatted);
+        const leaveData = await LeaveApi.getCurrentMonthLeaves(
+          user.id,
+          formatted,
+        );
+        const empTicketData = await ticketApi.getAllTickets({
+          employee_id: empInfo.id,
+        });
+        console.log(empTicketData, "emp tickets");
+        const expensesData = await expenseApi.getExpenses({
+          employee_id: empInfo.id,
+        });
+
+        console.log(empData, "stats for hrms dashbord");
+        console.log(todaysAttendanceData.data.data, "attendance data");
+        console.log(leaveData, "leave data");
+        console.log(expensesData, "expensesss data");
+
+        setOverviewStats({
+          totalEmployees: Array.isArray(empData) ? empData.length : 0,
+          activeEmployees: Array.isArray(empData)
+            ? empData.filter((e: any) => e.is_active).length
+            : 0,
+          todayAttendance: Array.isArray(todaysAttendanceData.data.data)
+            ? todaysAttendanceData.data.data.filter(
+                (a: any) => a.status === "present",
+              ).length
+            : 0,
+          pendingLeaves: Array.isArray(leaveData) ? leaveData.length : 0,
+          openTickets: empTicketData.data.length,
+          pendingExpenses: Array.isArray(expensesData.data)
+            ? expensesData.data.length
+            : 0,
+          thisMonthPayroll: 0,
+          activeRecruitments: 0,
+        });
+        setEmployeesData(Array.isArray(empData) ? empData : []);
+        setAttendanceData(
+          Array.isArray(todaysAttendanceData.data.data)
+            ? todaysAttendanceData.data.data
+            : [],
+        );
+        setLeavesData(Array.isArray(leaveData) ? leaveData : []);
         setExpensesData(
           Array.isArray(expensesData.data) ? expensesData.data : [],
         );
@@ -172,6 +217,8 @@ export default function Dashboard() {
         {modules.map((module) => {
           const Icon = module.icon;
           const isSelected = selectedModule === module.value;
+          if (!can("view_employee") && module.value === "employees")
+            return null;
           return (
             <button
               key={module.value}
@@ -207,7 +254,7 @@ export default function Dashboard() {
         </div>
       ) : (
         <>
-          {selectedModule === "overview" && (
+          {selectedModule === "overview" && user.role === "admin" && (
             <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
               <Card className="p-6">
                 <div className="flex items-center justify-between">
@@ -310,6 +357,68 @@ export default function Dashboard() {
                   </div>
                 </div>
               </Card> */}
+            </div>
+          )}
+
+          {selectedModule === "overview" && user.role !== "admin" && (
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+              <Card className="p-6">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm text-slate-600">Total Present Days</p>
+                    <p className="text-3xl font-bold text-green-600 mt-2">
+                      {overviewStats.todayAttendance}
+                    </p>
+                  </div>
+                  <div className="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center">
+                    <Clock className="h-6 w-6 text-green-600" />
+                  </div>
+                </div>
+              </Card>
+
+              <Card className="p-6">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm text-slate-600">Total Leaves</p>
+                    <p className="text-3xl font-bold text-yellow-600 mt-2">
+                      {overviewStats.pendingLeaves}
+                    </p>
+                  </div>
+                  <div className="w-12 h-12 bg-yellow-100 rounded-lg flex items-center justify-center">
+                    <Calendar className="h-6 w-6 text-yellow-600" />
+                  </div>
+                </div>
+              </Card>
+
+              <Card className="p-6">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm text-slate-600">Total Ticket Rise</p>
+                    <p className="text-3xl font-bold text-slate-900 mt-2">
+                      {overviewStats.openTickets}
+                    </p>
+                  </div>
+                  <div className="w-12 h-12 bg-red-100 rounded-lg flex items-center justify-center">
+                    <Users className="h-6 w-6 text-red-600" />
+                  </div>
+                </div>
+              </Card>
+
+              <Card className="p-6">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm text-slate-600">
+                      Total Expenses Requests
+                    </p>
+                    <p className="text-3xl font-bold text-orange-600 mt-2">
+                      {overviewStats.pendingExpenses}
+                    </p>
+                  </div>
+                  <div className="w-12 h-12 bg-orange-100 rounded-lg flex items-center justify-center">
+                    <ReceiptIndianRupee className="h-6 w-6 text-orange-600" />
+                  </div>
+                </div>
+              </Card>
             </div>
           )}
 

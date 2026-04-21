@@ -27,6 +27,7 @@ import ticketApi, { Ticket as TicketType, TicketStats } from "../lib/ticketApi";
 import { HrmsEmployeesApi } from "../lib/employeeApi";
 import { useAuth } from "../contexts/AuthContext";
 import Swal from "sweetalert2";
+import socket from "../lib/socket";
 
 export default function Tickets() {
   const { user, can } = useAuth();
@@ -81,12 +82,22 @@ export default function Tickets() {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, [openMenuId]);
 
-  // Load data
   useEffect(() => {
-    loadTickets();
-    loadStats();
-    loadCategories();
-    loadAdmins();
+    const loadAllData = async () => {
+      loadTickets();
+      loadStats();
+      loadCategories();
+      loadAdmins();
+    };
+    loadAllData(); // initial load
+
+    socket.on("ticket_rised", () => {
+      loadTickets();
+    });
+
+    return () => {
+      socket.off("ticket_rised");
+    };
   }, []);
 
   // Filter tickets

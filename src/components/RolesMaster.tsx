@@ -351,7 +351,7 @@ export default function RolesMaster() {
   return (
     <div className="px-0 bg-gray-50 ">
       {/* Header Section - Sticky */}
-      <div className="p-4 md:p-6 border-b border-gray-200">
+      <div className="p-4 md:px-6 md:py-2 border-b border-gray-200">
         {/* Header - Responsive */}
         <div className="flex flex-col md:flex-row md:justify-between md:items-center gap-4 mb-6">
           <div className="flex justify-between items-center md:block">
@@ -438,12 +438,7 @@ export default function RolesMaster() {
         </div>
 
         {/* Results Summary */}
-        <div className="flex justify-between items-center">
-          <p className="text-sm text-gray-600">
-            Showing{" "}
-            <span className="font-semibold">{filteredRoles.length}</span> role
-            {filteredRoles.length !== 1 ? "s" : ""}
-          </p>
+        {/* <div className="flex justify-between items-center">
           <button
             onClick={() => setShowMobileFilters(!showMobileFilters)}
             className="md:hidden flex items-center gap-2 px-3 py-1.5 text-sm border border-gray-300 rounded-lg hover:bg-gray-50"
@@ -451,7 +446,7 @@ export default function RolesMaster() {
             <Filter className="w-4 h-4" />
             Filter
           </button>
-        </div>
+        </div> */}
 
         {/* Mobile Filter Options */}
         {showMobileFilters && (
