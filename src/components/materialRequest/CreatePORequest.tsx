@@ -6,20 +6,12 @@ import {
   Calendar,
   User,
   Phone,
-  Building,
-  Layers,
-  Home,
-  DoorOpen,
-  Pickaxe,
   FileText,
   AlertCircle,
   CheckCircle,
   Clock,
-  MapPin,
   MessageSquare,
   ChevronRight,
-  CircleX,
-  ReceiptIndianRupee,
 } from "lucide-react";
 import { toast } from "sonner";
 import RequestMaterialApi from "../../lib/requestMaterialApi";

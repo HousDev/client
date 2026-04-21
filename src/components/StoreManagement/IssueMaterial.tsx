@@ -174,6 +174,7 @@ export default function IssueMaterial({
   ) => {
     try {
       const projectDetailsRes: any = await projectApi.getProjectById(projectId);
+
       if (projectDetailsRes.success) {
         const project = projectDetailsRes.data;
         setSelectedProject(project);
@@ -181,6 +182,7 @@ export default function IssueMaterial({
         const building = project?.buildings?.find(
           (b: any) => b.id === buildingId,
         );
+
         setSelectedBuilding(building ? building : null);
 
         const floor = building?.floors?.find((f: any) => f.id === floorId);

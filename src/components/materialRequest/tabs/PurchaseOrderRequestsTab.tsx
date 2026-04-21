@@ -14,6 +14,7 @@ import { toast } from "sonner";
 import RequestMaterialApi from "../../../lib/requestMaterialApi";
 import ViewRequestMaterial from "../ViewRequestMaterial";
 import inventoryApi from "../../../lib/inventoryApi";
+import socket from "../../../lib/socket";
 
 // Types
 type RequestItem = {
@@ -106,7 +107,16 @@ const PurchaseOrderRequestsTab = () => {
   };
 
   useEffect(() => {
-    loadMaterialRequests();
+    loadMaterialRequests(); // initial load
+
+    socket.on("new_po_material_request", () => {
+      console.log("Socket: notifications updated");
+      loadMaterialRequests();
+    });
+
+    return () => {
+      socket.off("new_po_material_request");
+    };
   }, []);
 
   // Apply filters and searches

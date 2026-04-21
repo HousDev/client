@@ -17,6 +17,7 @@ import {
 import NotificationsApi from "../lib/notificationApi";
 import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
+import socket from "../lib/socket";
 
 interface NotificationType {
   id: number;
@@ -71,11 +72,20 @@ export default function Notifications() {
       setLoading(false);
     }
   };
+
   useEffect(() => {
-    loadNotifications();
-    const intervalId = setInterval(loadNotifications, 60 * 1000);
-    return () => clearInterval(intervalId);
+    loadNotifications(); // initial load
+
+    socket.on("notifications_updated", () => {
+      console.log("Socket: notifications updated");
+      loadNotifications();
+    });
+
+    return () => {
+      socket.off("notifications_updated");
+    };
   }, []);
+
   const filterNotifications = () => {
     let filtered = [...notifications];
 
