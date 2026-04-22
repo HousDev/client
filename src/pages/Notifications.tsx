@@ -41,6 +41,7 @@ export default function Notifications() {
   const [typeFilter, setTypeFilter] = useState<string>("all");
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [searchTerm, setSearchTerm] = useState("");
+  const [filterOptions, setFilterOptions] = useState<any>([]);
   const [stats, setStats] = useState({
     total: 0,
     unread: 0,
@@ -60,7 +61,18 @@ export default function Notifications() {
   const loadNotifications = async () => {
     setLoading(true);
     try {
-      const result: any = await NotificationsApi.getNotifications();
+      let result: any;
+      if (user.role === "admin") {
+        result = await NotificationsApi.getNotifications();
+      } else {
+        result = await NotificationsApi.getNotifications({ user_id: user.id });
+      }
+      const uniqueNotificationTypes = [
+        ...new Set(result.data.map((n: any) => n.type)),
+      ];
+      setFilterOptions(
+        Array.isArray(uniqueNotificationTypes) ? uniqueNotificationTypes : [],
+      );
       console.log("from notification component", result);
       setNotifications(result.data || []);
       setFilteredNotifications(result.data || []);
@@ -351,11 +363,11 @@ export default function Notifications() {
                       className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent"
                     >
                       <option value="all">All Types</option>
-                      <option value="po_delivery_due">PO Delivery Due</option>
-                      <option value="payment_due">Payment Due</option>
-                      <option value="payment_overdue">Payment Overdue</option>
-                      <option value="document_expiry">Document Expiry</option>
-                      <option value="service_due">Service Due</option>
+                      {filterOptions.map((option: string) => (
+                        <option key={option} value={option}>
+                          {getTypeLabel(option)}
+                        </option>
+                      ))}
                     </select>
                   </div>
 
@@ -422,7 +434,7 @@ export default function Notifications() {
                 )}
               </div>
             ) : (
-              <div className="space-y-2 grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div className=" grid grid-cols-1 sm:grid-cols-2 gap-3">
                 {filteredNotifications.map((notif) => (
                   <div
                     key={notif.id}
