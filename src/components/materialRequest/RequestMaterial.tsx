@@ -949,11 +949,12 @@ export default function RequestMaterial({
                       );
 
                       return (
-                        <button
+                        <div
                           key={item.id}
-                          disabled={item.quantity === 0}
-                          onClick={() => addMaterial(item)}
-                          className={`p-4 border-2 rounded-xl cursor-pointer transition w-full text-left group ${
+                          onClick={() =>
+                            item.quantity !== 0 && addMaterial(item)
+                          }
+                          className={`p-4 border-2 rounded-xl transition w-full text-left group cursor-pointer ${
                             existingMaterial
                               ? "bg-blue-50 border-blue-300"
                               : "border-gray-200 hover:border-[#C62828] hover:bg-red-50/30"
@@ -976,21 +977,18 @@ export default function RequestMaterial({
                                   }`}
                                 />
                               </div>
+
                               <div className="flex-1 min-w-0">
                                 <div className="font-semibold text-gray-800 text-sm truncate">
                                   {item.item_name || item.name}
                                 </div>
+
                                 <div className="flex items-center gap-3 mt-1">
                                   <span className="text-xs text-gray-600">
                                     HSN: {item.hsn_code || "N/A"}
                                   </span>
-                                  {/* <span className="text-xs text-gray-600">
-                                    Stock:{" "}
-                                    {item.inventoryItem
-                                      ?.quantity_after_approve || 0}{" "}
-                                    {item.unit}
-                                  </span> */}
                                 </div>
+
                                 {existingMaterial && (
                                   <div className="text-xs bg-blue-100 text-blue-700 px-2 py-1 rounded-full mt-1 inline-flex items-center gap-1">
                                     ✓ Added ({existingMaterial.quantity}{" "}
@@ -1000,10 +998,11 @@ export default function RequestMaterial({
                               </div>
                             </div>
 
+                            {/* ✅ Inner button stays */}
                             <button
                               type="button"
                               onClick={(e) => {
-                                e.stopPropagation();
+                                e.stopPropagation(); // 🔥 prevent parent click
                                 addMaterial(item);
                               }}
                               disabled={item.quantity === 0}
@@ -1011,12 +1010,16 @@ export default function RequestMaterial({
                                 existingMaterial
                                   ? "bg-green-600 hover:bg-green-700 text-white"
                                   : "bg-[#C62828] hover:bg-red-700 text-white"
-                              } ${item.quantity === 0 ? "opacity-50 cursor-not-allowed" : ""} transform hover:-translate-y-0.5`}
+                              } ${
+                                item.quantity === 0
+                                  ? "opacity-50 cursor-not-allowed"
+                                  : ""
+                              } transform hover:-translate-y-0.5`}
                             >
                               {existingMaterial ? "Add More" : "Add"}
                             </button>
                           </div>
-                        </button>
+                        </div>
                       );
                     })
                   )}
