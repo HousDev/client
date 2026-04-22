@@ -23,6 +23,7 @@ import CreateTask from "./CreateTask";
 import UpdateTask from "./UpdateTask";
 import EngineerUdateTask from "./EngineerUpdateTask";
 import { all } from "axios";
+import socket from "../../lib/socket";
 
 interface AreaFormData {
   id?: string;
@@ -335,7 +336,15 @@ export default function AreaTasks({
   };
 
   useEffect(() => {
-    loadAllTask();
+    loadAllTask(); // initial load
+
+    socket.on("tasks_managemtent", () => {
+      loadAllTask();
+    });
+
+    return () => {
+      socket.off("tasks_managemtent");
+    };
   }, []);
 
   const loadEngineers = async () => {

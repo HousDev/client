@@ -7,13 +7,22 @@ export type Notification = {
   description: string;
   type: string; // info | warning | success | error (example)
   seen: boolean;
+  user_id: string;
   created_at: string;
 };
 
 export const NotificationsApi = {
   // Get all notifications
-  getNotifications: async (): Promise<Notification[]> =>
-    unwrap(api.get("/notifications")),
+  getNotifications: async (filters?: {
+    type?: string;
+    user_id?: string;
+    seen?: number;
+    start_date?: string;
+    end_date?: string;
+    search?: string;
+    page?: number;
+  }): Promise<Notification[]> =>
+    unwrap(api.get("/notifications", { params: filters })),
 
   // Get single notification by ID
   getNotification: async (id: number | string): Promise<Notification> =>
@@ -21,7 +30,7 @@ export const NotificationsApi = {
 
   // Create new notification
   createNotification: async (
-    payload: Pick<Notification, "title" | "description" | "type">
+    payload: Pick<Notification, "title" | "description" | "type">,
   ): Promise<Notification> => unwrap(api.post("/notifications", payload)),
 
   // Mark notification as seen

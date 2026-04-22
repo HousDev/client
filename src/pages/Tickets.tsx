@@ -184,7 +184,16 @@ export default function Tickets() {
   const loadTickets = async () => {
     try {
       setLoading(true);
-      const result = await ticketApi.getTickets();
+      let result: any;
+      if (user.role === "admin") {
+        result = await ticketApi.getTickets();
+      } else {
+        const empData = await HrmsEmployeesApi.getEmployeeByEmail(user.email);
+
+        result = await ticketApi.getTickets({
+          employee_id: empData.id,
+        });
+      }
       setTickets(result.data || []);
       setFilteredTickets(result.data || []);
     } catch (error) {
