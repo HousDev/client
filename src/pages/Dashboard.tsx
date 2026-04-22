@@ -1094,53 +1094,58 @@ const Dashboard = ({ setActiveTab }: DashboardProps) => {
       </div>
 
       {/* Quick Actions */}
-      <div className="bg-gradient-to-r from-blue-50 to-indigo-50 p-6 rounded-2xl border border-blue-100">
-        <h3 className="text-sm font-bold text-gray-800 mb-4 flex items-center gap-2">
-          <Zap className="w-4 h-4 text-blue-600" />
-          Quick Actions
-        </h3>
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
-          {can("view_pos") && (
-            <QuickActionButton
-              icon={FileText}
-              label="Purchase Order"
-              description="purchase order management."
-              onClick={() => setActiveTab("purchase-orders")}
-              color="bg-blue-600"
-            />
-          )}
+      {(can("view_pos") ||
+        can("view_vendors") ||
+        can("view_wo") ||
+        can("employees")) && (
+        <div className="bg-gradient-to-r from-blue-50 to-indigo-50 p-6 rounded-2xl border border-blue-100">
+          <h3 className="text-sm font-bold text-gray-800 mb-4 flex items-center gap-2">
+            <Zap className="w-4 h-4 text-blue-600" />
+            Quick Actions
+          </h3>
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
+            {can("view_pos") && (
+              <QuickActionButton
+                icon={FileText}
+                label="Purchase Order"
+                description="purchase order management."
+                onClick={() => setActiveTab("purchase-orders")}
+                color="bg-blue-600"
+              />
+            )}
 
-          {can("view_vendors") && (
-            <QuickActionButton
-              icon={Building2}
-              label="Vendor"
-              description="vendor management."
-              onClick={() => setActiveTab("vendors")}
-              color="bg-emerald-600"
-            />
-          )}
+            {can("view_vendors") && (
+              <QuickActionButton
+                icon={Building2}
+                label="Vendor"
+                description="vendor management."
+                onClick={() => setActiveTab("vendors")}
+                color="bg-emerald-600"
+              />
+            )}
 
-          {can("view_wo") && (
-            <QuickActionButton
-              icon={Briefcase}
-              label="Work Order"
-              description="work order management."
-              onClick={() => setActiveTab("service-orders")}
-              color="bg-purple-600"
-            />
-          )}
+            {can("view_wo") && (
+              <QuickActionButton
+                icon={Briefcase}
+                label="Work Order"
+                description="work order management."
+                onClick={() => setActiveTab("service-orders")}
+                color="bg-purple-600"
+              />
+            )}
 
-          {can("employees") && (
-            <QuickActionButton
-              icon={UserPlus}
-              label="Employee"
-              description="employee management."
-              onClick={() => setActiveTab("employees")}
-              color="bg-cyan-600"
-            />
-          )}
+            {can("employees") && (
+              <QuickActionButton
+                icon={UserPlus}
+                label="Employee"
+                description="employee management."
+                onClick={() => setActiveTab("employees")}
+                color="bg-cyan-600"
+              />
+            )}
+          </div>
         </div>
-      </div>
+      )}
 
       {/* Inventory Alert Section */}
       {(stats.lowStockItems > 0 || stats.outOfStockItems > 0) && (

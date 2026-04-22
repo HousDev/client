@@ -32,6 +32,7 @@ import { Calendar } from "lucide-react";
 import { useAuth } from "../contexts/AuthContext";
 import * as XLSX from "xlsx";
 import { saveAs } from "file-saver";
+import HrmsEmployeesApi from "../lib/employeeApi";
 
 registerLocale("en-GB", enGB);
 
@@ -116,10 +117,19 @@ export default function ProjectsMaster() {
     is_active: true,
   });
 
+  const { user } = useAuth();
+
   const loadProjects = async () => {
     setLoading(true);
     try {
-      const data: any = await projectApi.getProjects();
+      let data: any;
+      if (user?.role === "admin") {
+        data = await projectApi.getProjects();
+      } else {
+        const emp = await HrmsEmployeesApi.getEmployeeByEmail(user.email);
+        data = await projectApi.getEmployeeProjects(emp.id);
+      }
+
       if (data.success) {
         setProjects(data.data);
         setFilteredProjects(data.data);
@@ -275,7 +285,7 @@ export default function ProjectsMaster() {
   useEffect(() => {
     loadAllProjectFloorCommonAreaDetails();
     loadProjects();
-  }, []);
+  }, [user]);
 
   useEffect(() => {
     let filtered = [...projects];

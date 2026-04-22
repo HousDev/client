@@ -26,6 +26,7 @@ import { useAuth } from "../contexts/AuthContext";
 import HrmsEmployeesApi, { HrmsEmployee } from "../lib/employeeApi";
 import { LeaveApi } from "../lib/leaveApi";
 import Swal from "sweetalert2";
+import socket from "../lib/socket";
 
 registerLocale("en-GB", enGB);
 
@@ -205,11 +206,18 @@ export default function Leaves() {
     });
   };
 
-  // Initial load
   useEffect(() => {
     loadEmployees();
     loadLeaves();
     loadStats();
+
+    socket.on("leave_request", () => {
+      loadLeaves();
+    });
+
+    return () => {
+      socket.off("leave_request");
+    };
   }, []);
 
   // Enhance leaves when employees are loaded

@@ -13,6 +13,7 @@ import {
   MoreVertical,
   AlertTriangle,
   Eye,
+  User,
 } from "lucide-react";
 import Card from "../components/ui/Card";
 import Button from "../components/ui/Button";
@@ -28,6 +29,7 @@ import { useAuth } from "../contexts/AuthContext";
 import MySwal from "../utils/swal";
 import * as XLSX from "xlsx";
 import { saveAs } from "file-saver";
+import socket from "../lib/socket";
 
 export default function Expenses() {
   const [expenses, setExpenses] = useState<Expense[]>([]);
@@ -135,7 +137,15 @@ export default function Expenses() {
       await loadExpenses();
       await loadStats();
     };
-    loadAllData();
+    loadAllData(); // initial load
+
+    socket.on("expenses_request", () => {
+      loadExpenses();
+    });
+
+    return () => {
+      socket.off("expenses_request");
+    };
   }, []);
 
   useEffect(() => {
@@ -740,7 +750,7 @@ export default function Expenses() {
                 </th>
                 <th className="px-3 md:px-4 py-2 text-left">
                   <div className="text-[10px] md:text-xs font-semibold text-gray-700 uppercase tracking-wider">
-                    Employee ID
+                    Employee Name
                   </div>
                 </th>
                 <th className="px-3 md:px-4 py-2 text-left">
@@ -886,7 +896,7 @@ export default function Expenses() {
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-200">
-              {filteredExpenses.map((expense) => {
+              {filteredExpenses.map((expense: any) => {
                 const isSelected = selectedItems.has(expense.id);
 
                 return (
@@ -902,8 +912,9 @@ export default function Expenses() {
                       </div>
                     </td>
                     <td className="px-3 md:px-4 py-3">
-                      <div className="text-gray-800 text-xs md:text-sm">
-                        ID: {expense.employee_id}
+                      <div className="text-gray-800 text-xs md:text-sm font-medium flex items-center">
+                        <User className="w-4 h-4 mr-2 inline text-blue-600" />
+                        {expense.employee_name}
                       </div>
                     </td>
                     <td className="px-3 md:px-4 py-3">
