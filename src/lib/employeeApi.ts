@@ -230,12 +230,14 @@ export type HrmsEmployee = {
   attendence_location: string;
   employee_status: string;
   company_name: string;
+  company_id?: string | number;
   // Personal Details
   blood_group?: string;
   date_of_birth?: string;
   marital_status?: string;
   emergency_contact?: string;
   emergency_contact_name?: string;
+  emergency_contact_relationship?: string;
   week_off_days: string;
   nationality?: string;
 
@@ -250,6 +252,7 @@ export type HrmsEmployee = {
   // Identification Details
   aadhar_number?: string;
   pan_number?: string;
+  emp_punch_in_time: string;
 
   // Educational Details
   highest_qualification?: string;
@@ -277,6 +280,7 @@ export type HrmsEmployee = {
 
   // Bank Details
   bank_account_number?: string;
+  account_holder_name?: string;
   bank_name?: string;
   ifsc_code?: string;
   upi_id?: string;

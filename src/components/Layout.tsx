@@ -63,6 +63,10 @@ import RequestMaterial from "./materialRequest/RequestMaterial";
 import { BsPerson } from "react-icons/bs";
 import HrmsEmployeesApi from "../lib/employeeApi";
 import socket from "../lib/socket";
+import {
+  initNotificationSound,
+  playNotificationSound,
+} from "../utils/notificationSound";
 
 // ─── TYPES ────────────────────────────────────────────────────────────────
 interface LayoutProps {
@@ -560,10 +564,22 @@ export default function Layout({
   };
 
   useEffect(() => {
-    fetchNotifications(); // initial load
+    const unlockAudio = () => {
+      initNotificationSound();
 
+      window.removeEventListener("click", unlockAudio);
+    };
+
+    window.addEventListener("click", unlockAudio);
+
+    return () => window.removeEventListener("click", unlockAudio);
+  }, []);
+
+  useEffect(() => {
+    fetchNotifications();
     socket.on("notifications_updated", () => {
       console.log("Socket: notifications updated");
+      playNotificationSound();
       fetchNotifications();
     });
 
@@ -571,12 +587,6 @@ export default function Layout({
       socket.off("notifications_updated");
     };
   }, []);
-
-  // useEffect(() => {
-  //   fetchNotifications();
-  //   const intervalId = setInterval(fetchNotifications, 60 * 1000);
-  //   return () => clearInterval(intervalId);
-  // }, []);
 
   const markAllRead = async () => {
     try {
