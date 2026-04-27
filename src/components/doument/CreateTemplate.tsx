@@ -763,8 +763,7 @@ const CreateTemplate = ({
 
   // Get current logo URL
   const getCurrentLogoUrl = useCallback(() => {
-    if (headerLogo) return headerLogo;
-    if (template?.logo_url) {
+    if (template?.logo_url && !logoFile) {
       if (
         template.logo_url.startsWith("http") ||
         template.logo_url.startsWith("data:")
@@ -772,6 +771,8 @@ const CreateTemplate = ({
         return template.logo_url;
       }
       return `${import.meta.env.VITE_API_URL}/uploads/${template.logo_url}`;
+    } else {
+      return headerLogo;
     }
     return defaultLogo;
   }, [headerLogo, template?.logo_url]);
@@ -1156,8 +1157,7 @@ const CreateTemplate = ({
       ...templateData,
       content: currentContent,
       variables: finalVariables,
-      logo_file: logoFile,
-      logo_url: logoUrlToSave,
+      logo_url: logoFile || logoUrlToSave,
       updated_at: new Date().toISOString(),
       id: template?.id || Date.now(),
     };
@@ -1238,8 +1238,8 @@ const CreateTemplate = ({
         className={`bg-white rounded-lg shadow-xl w-full flex flex-col ${fullscreen ? "h-screen max-h-screen max-w-full rounded-none" : "max-w-6xl max-h-[95vh]"}`}
       >
         {/* HEADER */}
-        <div className="flex-shrink-0 flex items-center justify-between p-4 border-b border-gray-200">
-          <h2 className="text-lg font-semibold text-gray-800">
+        <div className="flex-shrink-0 flex items-center justify-between p-4 border-b border-gray-200 bg-gradient-to-r from-[#4b4e4b] via-[#5a5d5a] to-[#6b6e6b] text-white rounded-t-lg">
+          <h2 className="text-lg font-semibold">
             {template ? "Edit Template" : "Create New Template"}
           </h2>
           <div className="flex items-center gap-2">
@@ -1251,9 +1251,9 @@ const CreateTemplate = ({
             </button>
             <button
               onClick={onClose}
-              className="p-2 rounded-full hover:bg-gray-100"
+              className="p-2 rounded-full hover:bg-gray-100 "
             >
-              <X size={20} className="text-gray-600" />
+              <X size={20} />
             </button>
           </div>
         </div>
@@ -1261,11 +1261,11 @@ const CreateTemplate = ({
         {/* BODY */}
         <div className="flex-1 overflow-y-auto px-6 py-2 space-y-6">
           {/* METADATA */}
-          <fieldset className="border rounded-md p-3 pt-0 space-y-3">
+          <fieldset className="border rounded-md p-3 pt-0 space-y-3 ">
             <legend className="text-xs font-medium text-gray-600 px-1">
               Template Details
             </legend>
-            <div className="grid grid-cols-1 md:grid-cols-5 gap-3">
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
               <div className="space-y-1">
                 <label className="block text-xs font-medium text-gray-700">
                   Template Name
@@ -1282,29 +1282,13 @@ const CreateTemplate = ({
                 />
               </div>
               <div className="space-y-1">
-                <label className="block text-xs font-medium text-gray-700">
-                  Status
-                </label>
-                <select
-                  value={templateData.status}
-                  onChange={(e) =>
-                    setTemplateData({ ...templateData, status: e.target.value })
-                  }
-                  className="w-full px-2 py-1 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 text-sm bg-white"
-                >
-                  <option value="draft">Draft</option>
-                  <option value="active">Active</option>
-                  <option value="archived">Archived</option>
-                </select>
-              </div>
-              <div className="space-y-1">
-                <label className="block text-xs font-medium text-gray-700">
+                <label className="block text-xs font-medium text-gray-700 ">
                   Category
                 </label>
                 <select
                   value={templateData.category}
                   onChange={handleCategoryChange}
-                  className="w-full px-2 py-1 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 text-sm bg-white"
+                  className="w-full px-2 py-1.5 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 text-sm bg-white"
                 >
                   <option value="Offer Letter">Offer Letter</option>
                   <option value="Experience Letter">Experience Letter</option>
@@ -1329,7 +1313,7 @@ const CreateTemplate = ({
                       description: e.target.value,
                     })
                   }
-                  className="w-full px-2.5 py-1.5 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 text-sm h-10 min-h-[40px] resize-y md:resize-none"
+                  className="w-full px-2.5 py-1.5 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 text-sm h-10 min-h-[50px] resize-y md:resize-none"
                   placeholder="Brief description"
                 />
               </div>

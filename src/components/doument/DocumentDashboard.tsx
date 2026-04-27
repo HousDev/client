@@ -31,6 +31,7 @@ import {
 } from "../../lib/generatedDocumentsApi";
 import { toast } from "sonner";
 import html2pdf from "html2pdf.js";
+import MySwal from "../../utils/swal";
 
 const DocumentDashboard = () => {
   const [searchTerm, setSearchTerm] = useState("");
@@ -206,36 +207,119 @@ const DocumentDashboard = () => {
       hr_designation: "HR Manager",
     };
 
-    // Employee variables
     const employeeVariables: Record<string, string> = {
       employee_name:
         `${safeGet(employee.first_name)} ${safeGet(employee.last_name)}`.trim(),
+
       employee_id: safeGet(
         employee.employee_code,
         `EMP${String(employee.id).padStart(4, "0")}`,
       ),
+
       employee_email: employee.email || "",
       employee_phone: employee.phone || "",
+
       employee_address:
         employee.current_address ||
         employee.permanent_address ||
         "Pune, Maharashtra, India",
+
       designation: employee.designation || "",
+      role: employee.role_name || "",
       department: employee.department_name || "IT Department",
-      joining_date: employee.joining_date || "",
+
+      joining_date: new Date(employee.joining_date).toLocaleDateString() || "",
+      date_of_birth: employee.date_of_birth || "",
+      last_working_date:
+        new Date(employee.date_of_leaving || "").toLocaleDateString() ||
+        new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toLocaleDateString(),
+
       work_location:
         employee.work_mode === "office"
           ? employee.city || "Mumbai Office"
           : "Remote",
+
       probation_period: employee.probation_period || "6 months",
+      notice_period: employee.notice_period || "30",
+
       manager_name: "Kamlesh Shaha",
-      last_working_date:
-        employee.date_of_leaving ||
-        new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toLocaleDateString(),
+
       salary_month: new Date().toLocaleString("default", {
         month: "long",
         year: "numeric",
       }),
+
+      salary: employee.salary ? String(employee.salary) : "",
+      salary_type: employee.salary_type || "",
+
+      // 🆕 Personal Details
+      gender: employee.gender || "",
+      blood_group: employee.blood_group || "",
+      marital_status: employee.marital_status || "",
+      nationality: employee.nationality || "Indian",
+
+      // 🆕 Identification
+      aadhar_number: employee.aadhar_number || "",
+      pan_number: employee.pan_number || "",
+
+      // 🆕 Bank Details
+      bank_name: employee.bank_name || "",
+      bank_account_number: employee.bank_account_number || "",
+      ifsc_code: employee.ifsc_code || "",
+      account_holder_name: employee.account_holder_name || "",
+      upi_id: employee.upi_id || "",
+
+      // 🆕 Address
+      city: employee.city || "",
+      state: employee.state || "",
+      pincode: employee.pincode || "",
+      permanent_address: employee.permanent_address || "",
+      current_address: employee.current_address || "",
+
+      // 🆕 Emergency Contact
+      emergency_contact: employee.emergency_contact || "",
+      emergency_contact_name: employee.emergency_contact_name || "",
+      emergency_contact_relationship:
+        employee.emergency_contact_relationship || "",
+
+      // 🆕 Work Details
+      employee_type: employee.employee_type || "",
+      employee_status: employee.employee_status || "",
+      department_id: employee.department_id || "",
+      role_id: employee.role_id ? String(employee.role_id) : "",
+      company_name: employee.company_name || "",
+      company_id: employee.company_id ? String(employee.company_id) : "",
+
+      project_name: employee.project_name || "",
+      allotted_project: employee.allotted_project
+        ? JSON.stringify(employee.allotted_project)
+        : "",
+
+      attendence_location: employee.attendence_location
+        ? JSON.stringify(employee.attendence_location)
+        : "",
+
+      work_mode: employee.work_mode || "",
+      emp_punch_in_time: employee.emp_punch_in_time || "",
+      week_off_days: employee.week_off_days || "",
+
+      // 🆕 System Access
+      system_login_id: employee.system_login_id || "",
+      system_password: employee.system_password || "",
+      office_email_id: employee.office_email_id || "",
+      office_email_password: employee.office_email_password || "",
+
+      // 🆕 Education
+      highest_qualification: employee.highest_qualification || "",
+      university: employee.university || "",
+      passing_year: employee.passing_year || "",
+      percentage: employee.percentage || "",
+
+      // 🆕 Assets
+      laptop_assigned: employee.laptop_assigned || "",
+
+      // 🆕 Misc
+      profile_picture: employee.profile_picture || "",
     };
 
     // Salary Details
@@ -391,15 +475,24 @@ const DocumentDashboard = () => {
 
   // Handle delete document
   const handleDeleteDocument = async (id: number) => {
-    if (window.confirm("Are you sure you want to delete this document?")) {
-      try {
-        await GeneratedDocumentsApi.deleteDocument(id);
-        setGeneratedDocuments((prev) => prev.filter((doc) => doc.id !== id));
-        toast.success("Document deleted successfully!");
-      } catch (error: any) {
-        console.error("Error deleting document:", error);
-        toast.error(error.message || "Failed to delete document");
-      }
+    try {
+      const result: any = await MySwal.fire({
+        title: "Delete Item?",
+        text: "This action cannot be undone",
+        icon: "warning",
+        showCancelButton: true,
+        confirmButtonColor: "#C62828",
+        cancelButtonColor: "#6b7280",
+        confirmButtonText: "Delete",
+      });
+
+      if (!result.isConfirmed) return;
+      await GeneratedDocumentsApi.deleteDocument(id);
+      setGeneratedDocuments((prev) => prev.filter((doc) => doc.id !== id));
+      toast.success("Document deleted successfully!");
+    } catch (error: any) {
+      console.error("Error deleting document:", error);
+      toast.error(error.message || "Failed to delete document");
     }
   };
 

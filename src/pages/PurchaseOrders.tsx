@@ -1941,10 +1941,10 @@ export default function PurchaseOrders() {
                 </div>
                 <div>
                   <h2 className="text-base font-bold text-white">
-                    Reject Work Order
+                    Reject Purchase Order
                   </h2>
                   <p className="text-xs text-white/90 font-medium mt-0.5">
-                    WO: {serviceOrderRejection?.po_number}
+                    PO: {serviceOrderRejection?.po_number}
                   </p>
                 </div>
               </div>
@@ -1989,7 +1989,7 @@ export default function PurchaseOrders() {
                   disabled={submitting}
                   className="flex-1 bg-gradient-to-r from-[#C62828] to-red-600 text-white py-2 px-4 rounded-xl hover:from-red-600 hover:to-red-700 transition-all duration-200 font-semibold flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed text-sm"
                 >
-                  <CircleX className="w-4 h-4" /> Reject Work Order
+                  <CircleX className="w-4 h-4" /> Reject Purchase Order
                 </button>
                 <button
                   type="button"

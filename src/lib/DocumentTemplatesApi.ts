@@ -14,6 +14,8 @@ export type DocumentTemplate = {
   is_active: number;
   created_at: string;
   updated_at: string;
+  status: string;
+  rejection_reason: string;
 };
 
 // ============================================
@@ -37,10 +39,37 @@ export const DocumentTemplatesApi = {
     return response.data.data;
   },
 
+  approveTemplate: async (
+    id: number,
+    payload: any,
+  ): Promise<DocumentTemplate> => {
+    const response = await api.put(
+      `/document-templates/approve/${id}`,
+      payload,
+    );
+    return response.data;
+  },
+
+  activeInactiveTemplate: async (
+    id: number,
+    payload: any,
+  ): Promise<DocumentTemplate> => {
+    const response = await api.put(
+      `/document-templates/active-inactive/${id}`,
+      payload,
+    );
+    return response.data;
+  },
+
   updateTemplate: async (id: number, formData: FormData): Promise<any> => {
     const response = await api.put(`/document-templates/${id}`, formData, {
       headers: { "Content-Type": "multipart/form-data" },
     });
+    return response.data;
+  },
+
+  rejectDocumentTemplate: async (id: string | number, payload: any) => {
+    const response = await api.put(`/document-templates/reject/${id}`, payload);
     return response.data;
   },
 
