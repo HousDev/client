@@ -318,8 +318,8 @@ export default function Notifications() {
 
             {/* Filter Panel */}
             {showFilter && (
-              <div className="mt-4 p-4 border border-gray-200 rounded-lg bg-gray-50">
-                <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+              <div className="absolute  z-[9999] w-full  mt-4 p-4 border border-gray-200 rounded-lg bg-gray-50">
+                <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
                   {/* Date Range Filter */}
                   <div className="space-y-2">
                     <label className="block text-xs font-medium text-gray-700">
@@ -386,25 +386,29 @@ export default function Notifications() {
                       <option value="read">Read</option>
                     </select>
                   </div>
+
+                  <div className="space-y-2">
+                    <label className="block text-xs font-medium text-gray-700 invisible">
+                      Status
+                    </label>
+                    <button
+                      onClick={clearFilters}
+                      className="flex items-center gap-2 px-3 py-2 text-sm font-medium text-white bg-red-600 rounded-lg hover:bg-red-700 transition"
+                    >
+                      <X className="w-4 h-4" />
+                      Clear Filters
+                    </button>
+                  </div>
                 </div>
 
                 {/* Clear Filters Button */}
-                <div className="mt-4 flex justify-end">
-                  <button
-                    onClick={clearFilters}
-                    className="flex items-center gap-2 px-3 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition"
-                  >
-                    <X className="w-4 h-4" />
-                    Clear Filters
-                  </button>
-                </div>
               </div>
             )}
           </div>
         </div>
 
         {/* Notifications List */}
-        <div className="sticky top-32 z-10 p-2">
+        <div className="sticky top-32 p-2">
           <div className="overflow-y-auto max-h-[calc(100vh-240px)] md:max-h-[calc(100vh-210px)]">
             {filteredNotifications.length === 0 ? (
               <div className="bg-white rounded-lg border border-gray-200 p-8 text-center">
