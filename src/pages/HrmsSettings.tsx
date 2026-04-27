@@ -27,6 +27,7 @@ import ViewBranchModal from "../components/modals/ViewBranchModal";
 import companyApi, { Company, OfficeLocation } from "../lib/companyApi";
 import securityApi, { SecuritySettings } from "../lib/securityApi";
 import { toast } from "sonner";
+import MySwal from "../utils/swal";
 
 interface SecuritySettingsState extends SecuritySettings {
   id?: number;
@@ -226,9 +227,6 @@ export default function Settings() {
   };
 
   const handleDeleteOfficeLocation = async (locationId: string) => {
-    if (!confirm("Are you sure you want to delete this office location?"))
-      return;
-
     try {
       // This will now be a HARD DELETE
       await companyApi.deleteOfficeLocation(locationId);

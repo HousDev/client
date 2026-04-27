@@ -1338,7 +1338,7 @@ export default function Expenses() {
                 <X className="w-6 h-6" />
               </button>
             </div>
-            <div className="overflow-y-auto max-h-[900px] p-6">
+            <div className="overflow-y-scroll max-h-[600px] p-6">
               {/* Two Column Grid */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 {/* Left Column */}
@@ -1511,7 +1511,7 @@ export default function Expenses() {
               )}
 
               {/* Footer with Actions */}
-              <div className="mt-6 pt-4 border-t flex justify-end space-x-3">
+              <div className="mt-6 pt-4 border-t flex justify-end space-x-3 sticky bottom-0 bg-white">
                 <button
                   onClick={() => setShowViewModal(false)}
                   className="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition"

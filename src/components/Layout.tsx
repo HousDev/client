@@ -51,7 +51,6 @@ import {
   Ticket,
   Building2,
   Settings,
-  Mail,
   Zap,
   Package,
   ReceiptIndianRupee,
@@ -407,7 +406,7 @@ export default function Layout({
     {
       id: "notifications",
       label: "Notifications",
-      icon: FaConciergeBell,
+      icon: FaBell,
       headerIcon: FaConciergeBell,
       value: ["view_notifications"],
       submenu: null,
@@ -556,7 +555,17 @@ export default function Layout({
   // ── Notifications ────────────────────────────────────────────────────────
   const fetchNotifications = async () => {
     try {
-      const res: any = await NotificationsApi.getNotifications();
+      let res: any;
+      if (user.role === "admin") {
+        res = await NotificationsApi.getNotifications();
+      } else {
+        res = await NotificationsApi.getNotifications({
+          user_id: user.id,
+        });
+      }
+
+      console.log(res);
+
       setNotifications(res.data.filter((n: any) => n.seen === 0));
     } catch (error) {
       console.error("Failed to load notifications", error);
@@ -716,6 +725,7 @@ export default function Layout({
   // ═══════════════════════════════════════════════════════════════════════════
   // RENDER
   // ═══════════════════════════════════════════════════════════════════════════
+
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Mobile Sidebar Overlay */}
@@ -820,8 +830,15 @@ export default function Layout({
                       <div className="flex items-center gap-3">
                         <Icon className="w-5 h-5 flex-shrink-0" />
                         <span className="font-medium text-sm truncate">
-                          {item.label}
+                          {item.label}{" "}
                         </span>
+                        {unreadCount > 0 && item.id === "notifications" && (
+                          <span
+                            className={`w-5 h-5 ${isActive ? "bg-white text-red-600" : "bg-[#C62828] text-white"}  text-xs rounded-full flex items-center justify-center font-semibold border border-white`}
+                          >
+                            {unreadCount > 9 ? "9+" : unreadCount}
+                          </span>
+                        )}
                       </div>
                       {item.submenu && (
                         <div className="flex-shrink-0">

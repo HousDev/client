@@ -44,6 +44,7 @@ import HrmsEmployeesApi, {
 import employeeAdvanceApi from "../lib/employeeAdvanceApi";
 import { useAuth } from "../contexts/AuthContext";
 import MySwal from "../utils/swal";
+import socket from "../lib/socket";
 
 interface AdvanceRequest {
   id: string;
@@ -141,6 +142,19 @@ export default function Advance() {
   useEffect(() => {
     loadAdvances();
     loadEmployees();
+  }, []);
+
+  useEffect(() => {
+    loadEmployees();
+    loadAdvances();
+
+    socket.on("advance_request", () => {
+      loadAdvances();
+    });
+
+    return () => {
+      socket.off("advance_request");
+    };
   }, []);
 
   const calculateEmpSalary = (salary: number, type: string) => {

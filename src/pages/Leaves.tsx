@@ -98,6 +98,7 @@ export default function Leaves() {
   const [showRejectModal, setShowRejectModal] = useState(false);
   const [selectedLeaveId, setSelectedLeaveId] = useState<number | null>(null);
   const [rejectionReason, setRejectionReason] = useState("");
+  const [activeTab, setActiveTab] = useState("employees");
 
   // Checkbox states
   const [selectedItems, setSelectedItems] = useState<Set<number>>(new Set());
@@ -136,7 +137,10 @@ export default function Leaves() {
   // Load leaves data
   const loadLeaves = async () => {
     setLoading(true);
-    if (user.role === "admin") {
+    if (
+      (user.role === "admin" || user.role === "hr") &&
+      activeTab === "employees"
+    ) {
       try {
         const response = await LeaveApi.getLeaves();
 
@@ -218,7 +222,7 @@ export default function Leaves() {
     return () => {
       socket.off("leave_request");
     };
-  }, []);
+  }, [activeTab]);
 
   // Enhance leaves when employees are loaded
   useEffect(() => {
@@ -643,7 +647,28 @@ export default function Leaves() {
         </Card>
       </div>
 
-      {/* Bulk Actions Bar */}
+      {/* tabs for hr */}
+      {user.role === "hr" && (
+        <div className="space-x-2">
+          <button
+            onClick={() => {
+              console.log("lllll");
+              setActiveTab("your");
+            }}
+            className={`${activeTab === "your" ? "bg-blue-200" : "bg-gray-200"}  font-medium text-xs px-3 py-1.5 rounded-full border border-gray-600`}
+          >
+            Your Leaves
+          </button>
+          <button
+            onClick={() => {
+              setActiveTab("employees");
+            }}
+            className={`${activeTab === "employees" ? "bg-blue-200" : "bg-gray-200"} font-medium text-xs px-3 py-1.5 rounded-full border border-gray-600`}
+          >
+            Employee Leaves
+          </button>
+        </div>
+      )}
 
       {/* Main Table */}
       <div className="sticky top-32 bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden md:-mt-1">
