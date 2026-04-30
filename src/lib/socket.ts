@@ -9,11 +9,15 @@
 
 import { io } from "socket.io-client";
 
-// 🔥 dynamic URL (production safe)
-const SOCKET_URL = import.meta.env.VITE_API_URL.replace("/api", "");
+const API_URL = import.meta.env.VITE_API_URL;
+
+// 🔥 safe URL handling
+const SOCKET_URL = API_URL
+  ? API_URL.replace(/\/api\/?$/, "")
+  : window.location.origin;
 
 const socket = io(SOCKET_URL, {
-  transports: ["websocket", "polling"], // ✅ allow fallback
+  transports: ["websocket", "polling"],
   withCredentials: true,
 });
 
